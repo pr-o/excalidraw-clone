@@ -62,6 +62,7 @@ These were not explicitly added back during scope discussion but could be recons
 | Align commands (Ctrl+Shift+Arrow) | Trivial to add later |
 | Find on canvas (Ctrl+F) | Indexes text content; small effort post-MVP |
 | Localization beyond EN/KO | i18next infra is in place; only json files needed |
+| Arrow-to-shape binding | v1 ships free-floating arrows. Type definitions reserve `boundElements`/`startBinding`/`endBinding` for forward compat; binding logic deferred to v1.1 |
 
 ## Notes
 - "Defer" ≠ "never". Re-evaluating any of these is just a design-doc amendment + a new task.

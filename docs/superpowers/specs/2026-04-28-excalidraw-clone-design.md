@@ -312,16 +312,16 @@ Each numbered phase is a separate plan/PR. Phase 1 unblocks everything else. Pha
 - **Font licensing**: Excalifont (Virgil successor) ships under OFL but is a custom variant. We will use `Caveat` + `Architects Daughter` + `Comic Neue` from Google Fonts. Visual parity will be close but not identical. (Could be revisited if licensing for Excalifont is clarified.)
 - **rough.js performance ceiling**: ~1k–2k elements is the practical limit before we need tile caching. v1 won't ship tile cache; we'll add it if real usage shows the pain.
 - **Image paste from clipboard** can produce huge dataURLs; we'll cap at 10 MB and downsize if larger.
-- **Hand-drawn arrow binding** (the way arrows snap to and follow shapes) is one of the more subtle features. We'll prototype this in Phase 5 with a bounded time-box; if it slips, we ship arrows as free-floating in v1 and add binding in v1.1.
+- **Hand-drawn arrow binding** (the way arrows snap to and follow shapes) is **deferred to v1.1**. v1 ships arrows as free-floating elements only — they can be drawn between two points but won't track a shape if it moves. The element type still carries `boundElements` / `startBinding` / `endBinding` fields for forward compatibility (so v1 files load cleanly into v1.1), but the binding logic is not implemented in v1.
 - **Frame containment semantics**: which elements belong to a frame is determined by spatial overlap on creation/move. Edge cases (an element straddling two frames) need a tie-break rule — proposing: highest z-index wins.
 - **Browser support**: target evergreen (last 2 versions of Chrome/Firefox/Safari). No IE, no edge legacy, no mobile Safari acrobatics in v1.
 
 ---
 
-## Open for review
+## Resolved decisions
 
-Before we move to the implementation plan:
+Decided 2026-04-28 during brainstorming review:
 
-1. Does the **element type mirroring upstream** decision feel right, or do you want a clean-slate model with our own naming?
-2. Do you want **arrow binding** in v1 (risky), or explicitly defer to v1.1?
-3. Are the **build-sequence phases** sized acceptably, or should any be split further?
+1. **Element types mirror upstream `.excalidraw`** so files round-trip between this app and the real Excalidraw. (Confirmed.)
+2. **Arrow-to-shape binding deferred to v1.1.** v1 ships arrows as free-floating elements only. The element fields needed for binding (`boundElements`, `startBinding`, `endBinding`) are present in the type definitions for forward compatibility — only the binding *logic* is deferred. See section 13.
+3. **Build-sequence phases approved as written** (section 12). No further subdivision needed at this stage.
