@@ -27,6 +27,8 @@ export {
 } from "./factories"
 export type { NewElementInput, NewFrameInput, NewImageInput, NewTextInput } from "./factories"
 export { getElementBounds } from "./bounds"
+export { hitTestElement } from "./hit-test"
+export type { HitTestOptions } from "./hit-test"
 
 export type {
   Arrowhead,
