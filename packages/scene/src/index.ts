@@ -26,6 +26,7 @@ export {
   newText,
 } from "./factories"
 export type { NewElementInput, NewFrameInput, NewImageInput, NewTextInput } from "./factories"
+export { getElementBounds } from "./bounds"
 
 export type {
   Arrowhead,
