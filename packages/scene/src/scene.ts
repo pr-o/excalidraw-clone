@@ -7,9 +7,14 @@ export interface MutateOptions {
 export class Scene {
   private elements: readonly ExcalidrawElement[]
   private listeners = new Set<() => void>()
+  private history: readonly (readonly ExcalidrawElement[])[]
+  private historyIndex: number
+  private static readonly MAX_HISTORY = 100
 
   constructor(initial: readonly ExcalidrawElement[] = []) {
     this.elements = initial
+    this.history = [initial]
+    this.historyIndex = 0
   }
 
   subscribe(fn: () => void): () => void {
@@ -42,8 +47,38 @@ export class Scene {
     if (!opts?.skipHistory) this.pushHistory(draft)
   }
 
-  protected pushHistory(_snapshot: readonly ExcalidrawElement[]): void {
-    // stub — replaced in Phase 3.7
+  protected pushHistory(snapshot: readonly ExcalidrawElement[]): void {
+    const truncated = this.history.slice(0, this.historyIndex + 1)
+    const next = [...truncated, snapshot]
+    const capped =
+      next.length > Scene.MAX_HISTORY ? next.slice(next.length - Scene.MAX_HISTORY) : next
+    this.history = capped
+    this.historyIndex = capped.length - 1
+  }
+
+  undo(): void {
+    if (!this.canUndo()) return
+    this.historyIndex -= 1
+    this.setElements(this.history[this.historyIndex]!)
+  }
+
+  redo(): void {
+    if (!this.canRedo()) return
+    this.historyIndex += 1
+    this.setElements(this.history[this.historyIndex]!)
+  }
+
+  canUndo(): boolean {
+    return this.historyIndex > 0
+  }
+
+  canRedo(): boolean {
+    return this.historyIndex < this.history.length - 1
+  }
+
+  protected resetHistory(snapshot: readonly ExcalidrawElement[]): void {
+    this.history = [snapshot]
+    this.historyIndex = 0
   }
 
   protected notify(): void {
