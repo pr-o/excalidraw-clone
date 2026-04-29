@@ -12,3 +12,4 @@ export {
   pointDistanceSq,
   normalize,
 } from "./vector"
+export { clamp, lerp, degToRad, radToDeg } from "./scalar"
