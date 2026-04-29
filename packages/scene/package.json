@@ -18,7 +18,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@excalidraw-clone/geometry": "workspace:*"
+    "@excalidraw-clone/geometry": "workspace:*",
+    "nanoid": "^5.1.9"
   },
   "devDependencies": {
     "typescript": "^5.7.2",
