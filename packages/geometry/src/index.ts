@@ -14,3 +14,11 @@ export {
 } from "./vector"
 export { clamp, lerp, degToRad, radToDeg } from "./scalar"
 export { rotatePoint } from "./rotation"
+export {
+  boundsContainsPoint,
+  boundsIntersect,
+  boundsContains,
+  boundsFromPoints,
+  boundsCenter,
+  boundsExpand,
+} from "./bounds"
