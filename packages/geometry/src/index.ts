@@ -13,3 +13,4 @@ export {
   normalize,
 } from "./vector"
 export { clamp, lerp, degToRad, radToDeg } from "./scalar"
+export { rotatePoint } from "./rotation"
