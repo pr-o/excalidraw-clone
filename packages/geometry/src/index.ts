@@ -22,3 +22,4 @@ export {
   boundsCenter,
   boundsExpand,
 } from "./bounds"
+export { pointInRectangle, pointInEllipse, pointInDiamond } from "./hit-test"
