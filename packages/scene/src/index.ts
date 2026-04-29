@@ -29,6 +29,7 @@ export type { NewElementInput, NewFrameInput, NewImageInput, NewTextInput } from
 export { getElementBounds } from "./bounds"
 export { hitTestElement } from "./hit-test"
 export type { HitTestOptions } from "./hit-test"
+export { Scene } from "./scene"
 
 export type {
   Arrowhead,
