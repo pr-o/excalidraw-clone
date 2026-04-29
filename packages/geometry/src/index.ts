@@ -23,3 +23,4 @@ export {
   boundsExpand,
 } from "./bounds"
 export { pointInRectangle, pointInEllipse, pointInDiamond } from "./hit-test"
+export { distancePointToSegment, pointOnSegment } from "./segment"
