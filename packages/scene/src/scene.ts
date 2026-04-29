@@ -1,4 +1,10 @@
-import type { ExcalidrawElement } from "./types"
+import { buildExcalidrawData } from "./json"
+import type {
+  ExcalidrawAppStateSnapshot,
+  ExcalidrawData,
+  ExcalidrawElement,
+  ExcalidrawFiles,
+} from "./types"
 
 export interface MutateOptions {
   skipHistory?: boolean
@@ -79,6 +85,22 @@ export class Scene {
   protected resetHistory(snapshot: readonly ExcalidrawElement[]): void {
     this.history = [snapshot]
     this.historyIndex = 0
+  }
+
+  toJSON(appState?: ExcalidrawAppStateSnapshot, files?: ExcalidrawFiles): ExcalidrawData {
+    return buildExcalidrawData(this.elements, appState, files)
+  }
+
+  loadFromJSON(data: ExcalidrawData): {
+    appState?: ExcalidrawAppStateSnapshot
+    files?: ExcalidrawFiles
+  } {
+    this.setElements(data.elements)
+    this.resetHistory(data.elements)
+    return {
+      ...(data.appState ? { appState: data.appState } : {}),
+      ...(data.files ? { files: data.files } : {}),
+    }
   }
 
   protected notify(): void {
