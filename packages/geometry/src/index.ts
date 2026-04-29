@@ -24,3 +24,4 @@ export {
 } from "./bounds"
 export { pointInRectangle, pointInEllipse, pointInDiamond } from "./hit-test"
 export { distancePointToSegment, pointOnSegment } from "./segment"
+export { sceneToViewport, viewportToScene } from "./transform"
