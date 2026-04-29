@@ -17,6 +17,7 @@
 ## Task 1: Initialize pnpm workspace at the repo root
 
 **Files:**
+
 - Create: `package.json`
 - Create: `pnpm-workspace.yaml`
 - Create: `.npmrc`
@@ -95,6 +96,7 @@ git commit -m "Phase 1.1: pnpm workspace skeleton"
 ## Task 2: Add TurboRepo configuration
 
 **Files:**
+
 - Create: `turbo.json`
 
 - [ ] **Step 1: Create `turbo.json`**
@@ -147,6 +149,7 @@ git commit -m "Phase 1.2: TurboRepo task graph"
 ## Task 3: Shared TypeScript base config
 
 **Files:**
+
 - Create: `tsconfig.base.json`
 - Create: `tsconfig.json` (root, references — added later as workspaces grow)
 
@@ -212,6 +215,7 @@ git commit -m "Phase 1.3: shared TypeScript base config"
 ## Task 4: Prettier configuration
 
 **Files:**
+
 - Create: `.prettierrc.json`
 - Create: `.prettierignore`
 
@@ -262,6 +266,7 @@ git commit -m "Phase 1.4: Prettier config"
 ## Task 5: Shared ESLint flat config (without boundary rule yet)
 
 **Files:**
+
 - Create: `eslint.config.mjs`
 - Modify: `package.json` (add eslint deps + `lint` script)
 
@@ -301,7 +306,10 @@ export default tseslint.config(
       "import-x/no-cycle": ["error", { maxDepth: 10 }],
       "import-x/no-self-import": "error",
       "@typescript-eslint/consistent-type-imports": ["error", { prefer: "type-imports" }],
-      "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }],
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
+      ],
       "@typescript-eslint/no-explicit-any": "warn",
     },
   },
@@ -328,6 +336,7 @@ git commit -m "Phase 1.5: shared ESLint flat config"
 ## Task 6: Vitest base config
 
 **Files:**
+
 - Create: `vitest.workspace.ts`
 - Modify: root `package.json` (add Vitest dev dep)
 
@@ -342,10 +351,7 @@ pnpm add -Dw vitest@^2.1.8 @vitest/coverage-v8@^2.1.8
 ```ts
 import { defineWorkspace } from "vitest/config"
 
-export default defineWorkspace([
-  "packages/*",
-  "apps/*",
-])
+export default defineWorkspace(["packages/*", "apps/*"])
 ```
 
 - [ ] **Step 3: Verify Vitest discovers the workspace**
@@ -370,6 +376,7 @@ git commit -m "Phase 1.6: Vitest workspace config"
 This is the template. We'll repeat for the other 5 packages.
 
 **Files:**
+
 - Create: `packages/geometry/package.json`
 - Create: `packages/geometry/tsconfig.json`
 - Create: `packages/geometry/vitest.config.ts`
@@ -497,6 +504,7 @@ git commit -m "Phase 1.7: geometry package skeleton with smoke test"
 Same pattern as Task 7. The `scene` package depends on `geometry`.
 
 **Files:**
+
 - Create: `packages/scene/package.json`
 - Create: `packages/scene/tsconfig.json`
 - Create: `packages/scene/vitest.config.ts`
@@ -1147,6 +1155,7 @@ Expected: 6 build tasks run; all succeed (each is a `tsc --noEmit` so emits no a
 ## Task 14: Scaffold `apps/web` — Next.js 16 + Tailwind v4
 
 **Files:**
+
 - Create: `apps/web/package.json`
 - Create: `apps/web/tsconfig.json`
 - Create: `apps/web/next.config.ts`
@@ -1210,12 +1219,7 @@ Expected: 6 build tasks run; all succeed (each is a `tsc --noEmit` so emits no a
       "@/*": ["./src/*"]
     }
   },
-  "include": [
-    "next-env.d.ts",
-    "src/**/*",
-    "test/**/*",
-    ".next/types/**/*"
-  ],
+  "include": ["next-env.d.ts", "src/**/*", "test/**/*", ".next/types/**/*"],
   "exclude": ["node_modules", ".next", "dist"]
 }
 ```
@@ -1261,10 +1265,14 @@ export default config
   color-scheme: light dark;
 }
 
-html, body {
+html,
+body {
   margin: 0;
   padding: 0;
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family:
+    system-ui,
+    -apple-system,
+    sans-serif;
 }
 ```
 
@@ -1422,6 +1430,7 @@ git commit -m "Phase 1.13: Next.js 16 + Tailwind v4 web app skeleton"
 This is what makes the monorepo's contract from spec § 4 enforceable.
 
 **Files:**
+
 - Modify: `eslint.config.mjs`
 - Create: `eslint-rules/no-cross-boundary-imports.mjs` (custom rule check via `import-x/no-restricted-paths`)
 
@@ -1462,7 +1471,9 @@ const FORBIDDEN_FOR_NON_UI = ["react", "react-dom", "react/jsx-runtime"]
 const allWorkspacePackages = Object.keys(ALLOWED_DEPS)
 
 function packageRules(pkgName, allowedDeps) {
-  const forbiddenWorkspaceDeps = allWorkspacePackages.filter((p) => p !== pkgName && !allowedDeps.includes(p))
+  const forbiddenWorkspaceDeps = allWorkspacePackages.filter(
+    (p) => p !== pkgName && !allowedDeps.includes(p),
+  )
   const forbiddenReact = pkgName === "@excalidraw-clone/ui" ? [] : FORBIDDEN_FOR_NON_UI
   const allForbidden = [...forbiddenWorkspaceDeps, ...forbiddenReact]
 
@@ -1501,7 +1512,10 @@ export default tseslint.config(
       "import-x/no-cycle": ["error", { maxDepth: 10 }],
       "import-x/no-self-import": "error",
       "@typescript-eslint/consistent-type-imports": ["error", { prefer: "type-imports" }],
-      "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }],
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
+      ],
       "@typescript-eslint/no-explicit-any": "warn",
     },
   },
@@ -1564,6 +1578,7 @@ git commit -m "Phase 1.14: enforce cross-package import boundaries via ESLint"
 ## Task 16: Add Husky + lint-staged pre-commit hook
 
 **Files:**
+
 - Modify: root `package.json` (add husky + lint-staged + `prepare` script + `lint-staged` config)
 - Create: `.husky/pre-commit`
 

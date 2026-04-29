@@ -9,19 +9,19 @@ A solo-drawing clone of [Excalidraw](https://excalidraw.com/) built with TypeScr
 
 ## Stack
 
-| Layer | Choice | Notes |
-|---|---|---|
-| Runtime / framework | **Next.js 16** + **React 19** | App Router. Static export supported. |
-| Language | **TypeScript** | Strict mode across all packages. |
-| Monorepo | **TurboRepo** + **pnpm** workspaces | Standard for the toolchain. |
-| Styling | **Tailwind CSS v4** | First-class Next 16 integration. |
-| Drawing engine | **rough.js** | Non-negotiable for the hand-drawn look. |
-| State | Vanilla store + tool FSMs + **Zustand** | See [State Management](#state-management---three-layers) below. |
-| Persistence | **localStorage** + **IndexedDB** (`idb`) | Scene in localStorage; image binaries in IndexedDB. |
-| File format | `.excalidraw` JSON | Same shape as upstream → files interop with the real Excalidraw. |
-| i18n | **i18next** | English + Korean only for v1. |
-| Tests | **Vitest** (unit, per package) + **Playwright** (e2e in `apps/web`) | |
-| Deploy | **Vercel** (primary) + static export for self-hosting | |
+| Layer               | Choice                                                              | Notes                                                            |
+| ------------------- | ------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| Runtime / framework | **Next.js 16** + **React 19**                                       | App Router. Static export supported.                             |
+| Language            | **TypeScript**                                                      | Strict mode across all packages.                                 |
+| Monorepo            | **TurboRepo** + **pnpm** workspaces                                 | Standard for the toolchain.                                      |
+| Styling             | **Tailwind CSS v4**                                                 | First-class Next 16 integration.                                 |
+| Drawing engine      | **rough.js**                                                        | Non-negotiable for the hand-drawn look.                          |
+| State               | Vanilla store + tool FSMs + **Zustand**                             | See [State Management](#state-management---three-layers) below.  |
+| Persistence         | **localStorage** + **IndexedDB** (`idb`)                            | Scene in localStorage; image binaries in IndexedDB.              |
+| File format         | `.excalidraw` JSON                                                  | Same shape as upstream → files interop with the real Excalidraw. |
+| i18n                | **i18next**                                                         | English + Korean only for v1.                                    |
+| Tests               | **Vitest** (unit, per package) + **Playwright** (e2e in `apps/web`) |                                                                  |
+| Deploy              | **Vercel** (primary) + static export for self-hosting               |                                                                  |
 
 ---
 
@@ -55,7 +55,7 @@ The trade-off vs. the layered (4-package) option: more `package.json` files and 
 
 ## State Management — three layers
 
-An Excalidraw-style app has three different *kinds* of state, each best handled differently. Putting them all in one library is a mistake — the performance characteristics, lifecycle, and consumers are different.
+An Excalidraw-style app has three different _kinds_ of state, each best handled differently. Putting them all in one library is a mistake — the performance characteristics, lifecycle, and consumers are different.
 
 ### Layer 1 — Scene state (`packages/scene`)
 
@@ -64,6 +64,7 @@ An Excalidraw-style app has three different *kinds* of state, each best handled 
 **Implementation:** a **vanilla TypeScript `Store` class** with a pub/sub interface. No React, no state library.
 
 **Why:**
+
 - It must be testable without React.
 - The SVG/PNG exporter consumes it directly without spinning up a React tree.
 - Our render loop must **not** go through React reconciliation — at 60fps on a canvas with hundreds of elements, that's a non-starter. The renderer subscribes once and reads directly.
@@ -76,6 +77,7 @@ An Excalidraw-style app has three different *kinds* of state, each best handled 
 **Implementation:** **hand-rolled discriminated-union state machines**, one per tool. Each tool exports a reducer `(state, event) → state` plus a commit hook that mutates the scene.
 
 **Why not XState:**
+
 - Each tool has 3–5 states, tightly bound to pointer/keyboard events.
 - XState's invocations, parallel states, history states, and visualization are overhead we don't need.
 - Discriminated unions give us perfect TS narrowing in switch statements — no library required.
@@ -88,6 +90,7 @@ An Excalidraw-style app has three different *kinds* of state, each best handled 
 **Implementation:** **Zustand** with the slice pattern (one slice per concern: `useToolStore`, `useThemeStore`, `useDialogStore`, …).
 
 **Why Zustand:**
+
 - One store object, no Provider tree, no atom graph.
 - Selector subscriptions — components only re-render when the slice they read changes (unlike Context).
 - Plays well with React 19's `useSyncExternalStore`.

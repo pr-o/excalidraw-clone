@@ -3,6 +3,7 @@
 **Date:** 2026-04-28
 **Status:** Draft, pending user review
 **Companion docs:**
+
 - [`../exploration/excalidraw-feature-inventory.md`](../exploration/excalidraw-feature-inventory.md) — full upstream inventory
 - [`../exploration/v1-scope-decision.md`](../exploration/v1-scope-decision.md) — in / out / deferred lists
 - [`../../../README.md`](../../../README.md) — stack and architecture summary
@@ -24,33 +25,38 @@ We adopt Excalidraw's element shape so files round-trip. All elements share a ba
 ```ts
 // packages/scene/src/types.ts
 export interface ExcalidrawElementBase {
-  id: string                       // nanoid
-  type: ElementType                // discriminator
-  x: number; y: number             // top-left in scene coords
-  width: number; height: number
-  angle: number                    // radians
-  strokeColor: string              // CSS color or hex
-  backgroundColor: string          // "transparent" | css color
+  id: string // nanoid
+  type: ElementType // discriminator
+  x: number
+  y: number // top-left in scene coords
+  width: number
+  height: number
+  angle: number // radians
+  strokeColor: string // CSS color or hex
+  backgroundColor: string // "transparent" | css color
   fillStyle: "hachure" | "cross-hatch" | "solid"
-  strokeWidth: 1 | 2 | 4           // thin / bold / extra-bold
+  strokeWidth: 1 | 2 | 4 // thin / bold / extra-bold
   strokeStyle: "solid" | "dashed" | "dotted"
-  roughness: 0 | 1 | 2             // architect / artist / cartoonist
-  opacity: number                  // 0–100
-  groupIds: string[]               // membership in zero or more groups
-  frameId: string | null           // membership in a frame
+  roughness: 0 | 1 | 2 // architect / artist / cartoonist
+  opacity: number // 0–100
+  groupIds: string[] // membership in zero or more groups
+  frameId: string | null // membership in a frame
   roundness: { type: 1 | 2 } | null // edge style (rect only)
-  seed: number                     // rough.js determinism seed
-  versionNonce: number             // for ordering / cheap diff
-  isDeleted: boolean               // soft-delete (history-friendly)
+  seed: number // rough.js determinism seed
+  versionNonce: number // for ordering / cheap diff
+  isDeleted: boolean // soft-delete (history-friendly)
   boundElements: { id: string; type: "arrow" | "text" }[] | null
-  updated: number                  // ms epoch
+  updated: number // ms epoch
   link: string | null
   locked: boolean
 }
 
 export type ElementType =
-  | "rectangle" | "diamond" | "ellipse"
-  | "arrow" | "line"
+  | "rectangle"
+  | "diamond"
+  | "ellipse"
+  | "arrow"
+  | "line"
   | "freedraw"
   | "text"
   | "image"
@@ -61,10 +67,10 @@ export interface ExcalidrawTextElement extends ExcalidrawElementBase {
   type: "text"
   text: string
   fontSize: number
-  fontFamily: 1 | 2 | 3            // virgil / helvetica / cascadia (we substitute fonts)
+  fontFamily: 1 | 2 | 3 // virgil / helvetica / cascadia (we substitute fonts)
   textAlign: "left" | "center" | "right"
   verticalAlign: "top" | "middle" | "bottom"
-  containerId: string | null       // bound to a shape?
+  containerId: string | null // bound to a shape?
   baseline: number
   lineHeight: number
 }
@@ -83,9 +89,15 @@ class Scene {
   private history: HistoryEntry[] = []
   private historyIndex = -1
 
-  subscribe(fn: () => void): () => void { /* … */ }
-  getElements(): readonly ExcalidrawElement[] { /* visible (non-deleted) */ }
-  getElementsIncludingDeleted(): readonly ExcalidrawElement[] { /* … */ }
+  subscribe(fn: () => void): () => void {
+    /* … */
+  }
+  getElements(): readonly ExcalidrawElement[] {
+    /* visible (non-deleted) */
+  }
+  getElementsIncludingDeleted(): readonly ExcalidrawElement[] {
+    /* … */
+  }
 
   mutate(mutation: (draft: ExcalidrawElement[]) => void, opts?: { skipHistory?: boolean }): void
   // mutation runs against a structural-shared draft; immutable snapshot replaces internal array
@@ -147,6 +159,7 @@ packages/persistence           localStorage + IndexedDB + .excalidraw I/O
 ```
 
 **Hard rules:**
+
 - `geometry` imports nothing else (pure helpers).
 - `scene` imports only `geometry`.
 - `renderer` imports only `scene` + `geometry`. **Zero React.**
@@ -178,11 +191,12 @@ class CanvasRenderer {
 ```
 
 **Per-frame steps:**
+
 1. Clear canvas, fill background.
 2. Apply `setTransform(zoom, 0, 0, zoom, scrollX*zoom, scrollY*zoom)`.
 3. Optionally draw grid (when grid mode is on).
 4. For each non-deleted element in z-order (= array order from `scene.getElements()`; index 0 = back, last = front): render via per-type renderer.
-5. Draw selection overlays (handles, marquee) on a *second* canvas layer in viewport coords (so handles don't scale weirdly with zoom). Selection IDs are pushed into the renderer via `renderer.setSelection(ids)`; the renderer never reads from the UI store directly (preserves the "renderer = zero React, zero Zustand" boundary).
+5. Draw selection overlays (handles, marquee) on a _second_ canvas layer in viewport coords (so handles don't scale weirdly with zoom). Selection IDs are pushed into the renderer via `renderer.setSelection(ids)`; the renderer never reads from the UI store directly (preserves the "renderer = zero React, zero Zustand" boundary).
 
 **rough.js integration:** each element type has a `getShape(element, generator)` that returns rough Drawables, cached by `versionNonce` in a `WeakMap` keyed by element identity. Cache invalidates automatically when the element object is replaced (immutable snapshots).
 
@@ -209,7 +223,7 @@ interface ToolContext {
   // No write access — writes happen via the returned mutation.
   readElements(): readonly ExcalidrawElement[]
   hitTest(at: Point): ExcalidrawElement | null
-  viewTransform: ViewTransform   // for snap calculations
+  viewTransform: ViewTransform // for snap calculations
   modifiers: { shift: boolean; alt: boolean; ctrl: boolean; meta: boolean }
 }
 
@@ -219,11 +233,12 @@ export const rectangleTool: Tool<RectangleState, RectangleEvent> = {
   initial: { phase: "idle" },
   reduce(state, event, ctx: ToolContext): [RectangleState, SceneMutation | null] {
     // pure reducer — returns [nextState, sceneMutation | null]
-  }
+  },
 }
 ```
 
 **Why this shape:**
+
 - The reducer is pure and unit-testable. `ToolContext` is read-only, so reducers can never sneak a side effect in.
 - The driver loop in `apps/web` calls `reduce(state, event, ctx)`, persists the new state in a Zustand `toolStateSlice`, and applies the returned mutation (if any) via `scene.mutate()`.
 - Switching tools is just swapping which reducer you're running — UI state owns the active tool.
@@ -238,13 +253,13 @@ import { create } from "zustand"
 
 export const useAppStore = create<AppState>()((set) => ({
   // Slices:
-  ...createToolSlice(set),    // active tool, "keep tool active" flag
-  ...createThemeSlice(set),   // light / dark / system
-  ...createViewSlice(set),    // zoom, pan, view mode, zen mode
-  ...createGridSlice(set),    // grid visible, snap on
-  ...createDialogSlice(set),  // help / shortcuts / export / canvas-bg
+  ...createToolSlice(set), // active tool, "keep tool active" flag
+  ...createThemeSlice(set), // light / dark / system
+  ...createViewSlice(set), // zoom, pan, view mode, zen mode
+  ...createGridSlice(set), // grid visible, snap on
+  ...createDialogSlice(set), // help / shortcuts / export / canvas-bg
   ...createPaletteSlice(set), // command palette open, query
-  ...createI18nSlice(set),    // current locale ("en" | "ko")
+  ...createI18nSlice(set), // current locale ("en" | "ko")
   ...createSelectionSlice(set), // selectedElementIds: Set<string>
 }))
 ```
@@ -256,18 +271,22 @@ The renderer receives selection via `renderer.setSelection(ids)`; the driver in 
 ## 8. Persistence
 
 ### 8.1 Auto-save
+
 Subscribe to scene + UI store; on debounced (500ms) change, write `localStorage["excalidraw-scene"] = JSON.stringify(scene.toJSON())` and `localStorage["excalidraw-ui"] = JSON.stringify(uiSnapshot)`.
 
 On boot, hydrate from these keys before mounting the canvas. If parse fails, fall back to empty scene and surface a non-blocking toast.
 
 ### 8.2 Image binaries
+
 Image elements reference a `fileId` (sha-256 of the binary). Binaries live in IndexedDB under store `files` (key = fileId, value = `{ mimeType, dataURL, created }`). The renderer warms an in-memory `Map<fileId, HTMLImageElement>` once per session. Why IndexedDB and not localStorage: localStorage is ~5 MB per origin and stringifies everything; IDB handles binary blobs and many MBs.
 
 ### 8.3 File I/O
+
 - **Save to file**: `scene.toJSON()` → `{ type: "excalidraw", version: 2, source, elements, appState, files }` → blob → download. `files` field embeds binaries inline (matching upstream).
 - **Open**: file picker → `JSON.parse` → migrate (if version mismatch) → `scene.loadFromJSON()`. Embedded `files` get hydrated into IndexedDB.
 
 ### 8.4 Migrations
+
 Version field on the file. Each migration is `(data: vN) => vN+1`. Pipeline runs before `loadFromJSON`. v1 ships with version 2 of the format and the Excalidraw v1→v2 migration is included for inbound compatibility.
 
 ## 9. Export
@@ -282,15 +301,15 @@ Initial languages: `en`, `ko`. JSON keys stay flat and human-readable (e.g. `"to
 
 ## 11. Testing strategy
 
-| Layer | Framework | What we test |
-|---|---|---|
-| `geometry` | Vitest (unit) | hit-test, bbox, rotation: pure math, table-driven |
-| `scene` | Vitest | mutation + history correctness, JSON round-trips |
-| `tools` | Vitest | reducer fixtures: feed event sequence → assert state + emitted mutation |
-| `renderer` | Vitest + jsdom + canvas-mock | snapshot tests on draw call sequences |
-| `persistence` | Vitest | localStorage / IDB shimmed via `fake-indexeddb`; migration goldens |
-| `ui` | Vitest + RTL | component-level: toolbar selection, properties panel binding |
-| `apps/web` | Playwright (e2e) | golden flows: draw rect → resize → undo → export PNG; open `.excalidraw` file; theme toggle; zen mode |
+| Layer         | Framework                    | What we test                                                                                          |
+| ------------- | ---------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `geometry`    | Vitest (unit)                | hit-test, bbox, rotation: pure math, table-driven                                                     |
+| `scene`       | Vitest                       | mutation + history correctness, JSON round-trips                                                      |
+| `tools`       | Vitest                       | reducer fixtures: feed event sequence → assert state + emitted mutation                               |
+| `renderer`    | Vitest + jsdom + canvas-mock | snapshot tests on draw call sequences                                                                 |
+| `persistence` | Vitest                       | localStorage / IDB shimmed via `fake-indexeddb`; migration goldens                                    |
+| `ui`          | Vitest + RTL                 | component-level: toolbar selection, properties panel binding                                          |
+| `apps/web`    | Playwright (e2e)             | golden flows: draw rect → resize → undo → export PNG; open `.excalidraw` file; theme toggle; zen mode |
 
 Coverage target is **not** a fixed percentage. Required: every `tools/*` reducer has a fixture file; every persistence migration has a before/after golden; every keyboard shortcut listed in the help dialog has a Playwright test.
 
@@ -323,5 +342,5 @@ Each numbered phase is a separate plan/PR. Phase 1 unblocks everything else. Pha
 Decided 2026-04-28 during brainstorming review:
 
 1. **Element types mirror upstream `.excalidraw`** so files round-trip between this app and the real Excalidraw. (Confirmed.)
-2. **Arrow-to-shape binding deferred to v1.1.** v1 ships arrows as free-floating elements only. The element fields needed for binding (`boundElements`, `startBinding`, `endBinding`) are present in the type definitions for forward compatibility — only the binding *logic* is deferred. See section 13.
+2. **Arrow-to-shape binding deferred to v1.1.** v1 ships arrows as free-floating elements only. The element fields needed for binding (`boundElements`, `startBinding`, `endBinding`) are present in the type definitions for forward compatibility — only the binding _logic_ is deferred. See section 13.
 3. **Build-sequence phases approved as written** (section 12). No further subdivision needed at this stage.
