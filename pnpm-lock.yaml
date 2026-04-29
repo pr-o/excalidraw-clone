@@ -39,6 +39,15 @@ importers:
         specifier: ^2.1.9
         version: 2.1.9
 
+  packages/geometry:
+    devDependencies:
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.8
+        version: 2.1.9
+
 packages:
 
   '@ampproject/remapping@2.3.0':
