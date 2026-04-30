@@ -8,6 +8,9 @@ export { rectangleTool } from "./tools/rectangle"
 export { ellipseTool } from "./tools/ellipse"
 export { diamondTool } from "./tools/diamond"
 export type { ShapeState } from "./tools/shape"
+export { lineTool } from "./tools/line"
+export { arrowTool } from "./tools/arrow"
+export type { LinearState } from "./tools/linear"
 export type {
   Modifiers,
   SceneMutation,
