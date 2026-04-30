@@ -7,6 +7,14 @@ import {
   buildResizeRevertEffect,
   snapshotElementBox,
 } from "./resize"
+import {
+  buildRotateCommitEffect,
+  buildRotateMoveEffect,
+  buildRotateRevertEffect,
+  computeRotation,
+  elementCenter,
+  pointerAngle,
+} from "./rotate"
 import { SELECTION_INITIAL, type SelectionState } from "./types"
 
 export type { SelectionState } from "./types"
@@ -22,10 +30,10 @@ const reduceIdle = (
   if (event.type === "pointerDown") {
     // Prefer handle hits if they occur on a single-selected element.
     const handle = findHandleAt(event.at, ctx.selectedIds, ctx.readElements(), ctx.viewTransform)
-    if (handle && handle.kind === "resize") {
+    if (handle) {
       const elements = ctx.readElements()
       const e = elements.find((el) => el.id === handle.elementId)
-      if (e) {
+      if (e && handle.kind === "resize") {
         return [
           {
             phase: "resizing",
@@ -33,6 +41,19 @@ const reduceIdle = (
             elementId: handle.elementId,
             origin: snapshotElementBox(e),
             start: event.at,
+          },
+          [],
+        ]
+      }
+      if (e && handle.kind === "rotate") {
+        const center = elementCenter(e)
+        return [
+          {
+            phase: "rotating",
+            elementId: handle.elementId,
+            origin: { angle: e.angle },
+            center,
+            pointerAngleAtStart: pointerAngle(center, event.at),
           },
           [],
         ]
@@ -155,6 +176,31 @@ const reduceResizing = (
   }
 }
 
+const reduceRotating = (
+  state: Extract<SelectionState, { phase: "rotating" }>,
+  event: ToolEvent,
+  ctx: ToolContext,
+): [SelectionState, readonly ToolEffect[]] => {
+  switch (event.type) {
+    case "pointerMove": {
+      const current = pointerAngle(state.center, event.at)
+      const newAngle = computeRotation(
+        state.origin,
+        state.pointerAngleAtStart,
+        current,
+        ctx.modifiers,
+      )
+      return [state, [buildRotateMoveEffect(state.elementId, newAngle)]]
+    }
+    case "pointerUp":
+      return [{ phase: "idle" }, [buildRotateCommitEffect(state.elementId)]]
+    case "escape":
+      return [{ phase: "idle" }, [buildRotateRevertEffect(state.elementId, state.origin.angle)]]
+    default:
+      return [state, []]
+  }
+}
+
 export const selectionTool: Tool<SelectionState, ToolEvent> = {
   name: "selection",
   initial: SELECTION_INITIAL,
@@ -169,7 +215,7 @@ export const selectionTool: Tool<SelectionState, ToolEvent> = {
       case "resizing":
         return reduceResizing(state, event, ctx)
       case "rotating":
-        return [state, []]
+        return reduceRotating(state, event, ctx)
     }
   },
 }
