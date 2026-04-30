@@ -1,6 +1,12 @@
 import type { Tool, ToolContext, ToolEffect, ToolEvent } from "../../types"
 import { buildDragCommitEffect, buildDragMoveEffect, buildDragRevertEffect } from "./drag"
 import { findHandleAt } from "./handles"
+import {
+  buildResizeCommitEffect,
+  buildResizeMoveEffect,
+  buildResizeRevertEffect,
+  snapshotElementBox,
+} from "./resize"
 import { SELECTION_INITIAL, type SelectionState } from "./types"
 
 export type { SelectionState } from "./types"
@@ -16,10 +22,21 @@ const reduceIdle = (
   if (event.type === "pointerDown") {
     // Prefer handle hits if they occur on a single-selected element.
     const handle = findHandleAt(event.at, ctx.selectedIds, ctx.readElements(), ctx.viewTransform)
-    if (handle) {
-      // Resize / rotate phases are wired up in Tasks 5.7 / 5.8. Until then we
-      // fall through to drag-on-self so the click isn't lost.
-      void handle
+    if (handle && handle.kind === "resize") {
+      const elements = ctx.readElements()
+      const e = elements.find((el) => el.id === handle.elementId)
+      if (e) {
+        return [
+          {
+            phase: "resizing",
+            handle: handle.handle,
+            elementId: handle.elementId,
+            origin: snapshotElementBox(e),
+            start: event.at,
+          },
+          [],
+        ]
+      }
     }
     const hit = ctx.hitTest(event.at)
     if (!hit) {
@@ -108,6 +125,36 @@ const reduceMarquee = (
   return [state, []]
 }
 
+const reduceResizing = (
+  state: Extract<SelectionState, { phase: "resizing" }>,
+  event: ToolEvent,
+  ctx: ToolContext,
+): [SelectionState, readonly ToolEffect[]] => {
+  switch (event.type) {
+    case "pointerMove": {
+      return [
+        state,
+        [
+          buildResizeMoveEffect(
+            state.elementId,
+            state.origin,
+            state.handle,
+            state.start,
+            event.at,
+            ctx.modifiers,
+          ),
+        ],
+      ]
+    }
+    case "pointerUp":
+      return [{ phase: "idle" }, [buildResizeCommitEffect(state.elementId)]]
+    case "escape":
+      return [{ phase: "idle" }, [buildResizeRevertEffect(state.elementId, state.origin)]]
+    default:
+      return [state, []]
+  }
+}
+
 export const selectionTool: Tool<SelectionState, ToolEvent> = {
   name: "selection",
   initial: SELECTION_INITIAL,
@@ -120,8 +167,8 @@ export const selectionTool: Tool<SelectionState, ToolEvent> = {
       case "marquee":
         return reduceMarquee(state, event)
       case "resizing":
+        return reduceResizing(state, event, ctx)
       case "rotating":
-        // Implemented in Tasks 5.7 and 5.8.
         return [state, []]
     }
   },

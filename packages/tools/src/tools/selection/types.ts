@@ -10,6 +10,7 @@ export type SelectionState =
       handle: ResizeHandle
       elementId: string
       origin: { x: number; y: number; width: number; height: number; angle: number }
+      start: Point
     }
   | {
       phase: "rotating"
