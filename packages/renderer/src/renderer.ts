@@ -2,6 +2,7 @@ import type { ViewTransform } from "@excalidraw-clone/geometry"
 import type { ExcalidrawElement, Scene } from "@excalidraw-clone/scene"
 import { RoughCanvas } from "roughjs/bin/canvas"
 import { drawElement } from "./draw-element"
+import { drawGrid } from "./grid"
 import { type MarqueeBox, drawSelectionChrome } from "./overlay"
 import { ShapeCache } from "./shape-cache"
 import type { CanvasRendererOptions, GridOptions, Theme } from "./types"
@@ -115,7 +116,7 @@ export class CanvasRenderer {
     ctx.fillRect(0, 0, canvas.width, canvas.height)
     const { scrollX, scrollY, zoom } = this.viewTransform
     ctx.setTransform(zoom, 0, 0, zoom, scrollX * zoom, scrollY * zoom)
-    void this.grid
+    drawGrid(ctx, canvas, this.viewTransform, this.grid, this.theme)
     const elements = this.scene.getElements()
     for (const element of elements) {
       drawElement(ctx, element, this.rough, this.shapeCache)
