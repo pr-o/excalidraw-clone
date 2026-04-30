@@ -98,10 +98,12 @@ export class CanvasRenderer {
 
   private render(): void {
     const { canvas, ctx } = this
+    ctx.setTransform(1, 0, 0, 1, 0, 0)
     ctx.clearRect(0, 0, canvas.width, canvas.height)
     ctx.fillStyle = BACKGROUND[this.theme]
     ctx.fillRect(0, 0, canvas.width, canvas.height)
-    void this.viewTransform
+    const { scrollX, scrollY, zoom } = this.viewTransform
+    ctx.setTransform(zoom, 0, 0, zoom, scrollX * zoom, scrollY * zoom)
     void this.selection
     void this.grid
     for (const element of this.scene.getElements()) {
