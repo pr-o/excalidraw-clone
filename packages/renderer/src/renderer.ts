@@ -1,7 +1,8 @@
 import type { ViewTransform } from "@excalidraw-clone/geometry"
-import type { Scene } from "@excalidraw-clone/scene"
+import type { ExcalidrawElement, Scene } from "@excalidraw-clone/scene"
 import { RoughCanvas } from "roughjs/bin/canvas"
 import { drawElement } from "./draw-element"
+import { type MarqueeBox, drawSelectionChrome } from "./overlay"
 import { ShapeCache } from "./shape-cache"
 import type { CanvasRendererOptions, GridOptions, Theme } from "./types"
 
@@ -24,6 +25,9 @@ export class CanvasRenderer {
 
   private readonly rough: RoughCanvas
   private readonly shapeCache = new ShapeCache()
+  private readonly overlayCanvas: HTMLCanvasElement | null
+  private readonly overlayCtx: CanvasRenderingContext2D | null
+  private marquee: MarqueeBox | null = null
 
   private dirty = false
   private rafId: number | null = null
@@ -41,6 +45,13 @@ export class CanvasRenderer {
     this.theme = options.theme ?? "light"
     this.selection = options.selection ?? []
     this.grid = options.grid ?? { enabled: false, size: 20 }
+    this.overlayCanvas = options.overlayCanvas ?? null
+    this.overlayCtx = this.overlayCanvas ? this.overlayCanvas.getContext("2d") : null
+  }
+
+  setMarquee(box: MarqueeBox | null): void {
+    this.marquee = box
+    this.requestRedraw()
   }
 
   start(): void {
@@ -104,10 +115,38 @@ export class CanvasRenderer {
     ctx.fillRect(0, 0, canvas.width, canvas.height)
     const { scrollX, scrollY, zoom } = this.viewTransform
     ctx.setTransform(zoom, 0, 0, zoom, scrollX * zoom, scrollY * zoom)
-    void this.selection
     void this.grid
-    for (const element of this.scene.getElements()) {
+    const elements = this.scene.getElements()
+    for (const element of elements) {
       drawElement(ctx, element, this.rough, this.shapeCache)
     }
+    this.renderSelection(elements)
+  }
+
+  private renderSelection(elements: readonly ExcalidrawElement[]): void {
+    if (this.overlayCanvas && this.overlayCtx) {
+      drawSelectionChrome(
+        this.overlayCtx,
+        this.overlayCanvas,
+        this.selection,
+        elements,
+        this.viewTransform,
+        this.theme,
+        this.marquee,
+        { clearBackground: true },
+      )
+      return
+    }
+    if (this.selection.length === 0 && !this.marquee) return
+    drawSelectionChrome(
+      this.ctx,
+      this.canvas,
+      this.selection,
+      elements,
+      this.viewTransform,
+      this.theme,
+      this.marquee,
+      { clearBackground: false },
+    )
   }
 }
