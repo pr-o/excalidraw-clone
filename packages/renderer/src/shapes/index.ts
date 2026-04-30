@@ -4,6 +4,7 @@ import type { RoughGenerator } from "roughjs/bin/generator"
 import { arrowShape } from "./arrow"
 import { diamondShape } from "./diamond"
 import { ellipseShape } from "./ellipse"
+import { freedrawShape } from "./freedraw"
 import { lineShape } from "./line"
 import { rectangleShape } from "./rectangle"
 
@@ -22,9 +23,10 @@ export const generateShape = (
       return lineShape(element, gen)
     case "arrow":
       return arrowShape(element, gen)
+    case "freedraw":
+      return freedrawShape(element, gen)
     case "frame":
       return rectangleShape({ ...element, type: "rectangle" }, gen)
-    case "freedraw":
     case "text":
     case "image":
       return []
@@ -36,3 +38,5 @@ export { ellipseShape } from "./ellipse"
 export { diamondShape } from "./diamond"
 export { lineShape } from "./line"
 export { arrowShape } from "./arrow"
+export { freedrawShape } from "./freedraw"
+export { drawText } from "./text"
