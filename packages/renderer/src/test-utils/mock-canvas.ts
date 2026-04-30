@@ -24,6 +24,8 @@ const RECORDABLE_METHODS = [
   "closePath",
   "moveTo",
   "lineTo",
+  "bezierCurveTo",
+  "quadraticCurveTo",
   "rect",
   "arc",
   "ellipse",

@@ -1,5 +1,8 @@
 import type { ViewTransform } from "@excalidraw-clone/geometry"
 import type { Scene } from "@excalidraw-clone/scene"
+import { RoughCanvas } from "roughjs/bin/canvas"
+import { drawElement } from "./draw-element"
+import { ShapeCache } from "./shape-cache"
 import type { CanvasRendererOptions, GridOptions, Theme } from "./types"
 
 const IDENTITY: ViewTransform = { scrollX: 0, scrollY: 0, zoom: 1 }
@@ -19,6 +22,9 @@ export class CanvasRenderer {
   private selection: readonly string[]
   private grid: GridOptions
 
+  private readonly rough: RoughCanvas
+  private readonly shapeCache = new ShapeCache()
+
   private dirty = false
   private rafId: number | null = null
   private unsubscribe: (() => void) | null = null
@@ -30,6 +36,7 @@ export class CanvasRenderer {
     const ctx = canvas.getContext("2d")
     if (!ctx) throw new Error("CanvasRenderer: failed to acquire 2D context")
     this.ctx = ctx
+    this.rough = new RoughCanvas(canvas)
     this.viewTransform = options.viewTransform ?? IDENTITY
     this.theme = options.theme ?? "light"
     this.selection = options.selection ?? []
@@ -97,6 +104,8 @@ export class CanvasRenderer {
     void this.viewTransform
     void this.selection
     void this.grid
-    void this.scene
+    for (const element of this.scene.getElements()) {
+      drawElement(ctx, element, this.rough, this.shapeCache)
+    }
   }
 }
