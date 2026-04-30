@@ -11,6 +11,10 @@ export type { ShapeState } from "./tools/shape"
 export { lineTool } from "./tools/line"
 export { arrowTool } from "./tools/arrow"
 export type { LinearState } from "./tools/linear"
+export { freedrawTool } from "./tools/freedraw"
+export type { FreedrawState } from "./tools/freedraw"
+export { textTool } from "./tools/text"
+export type { TextState } from "./tools/text"
 export type {
   Modifiers,
   SceneMutation,
