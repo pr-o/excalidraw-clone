@@ -15,6 +15,9 @@ export { freedrawTool } from "./tools/freedraw"
 export type { FreedrawState } from "./tools/freedraw"
 export { textTool } from "./tools/text"
 export type { TextState } from "./tools/text"
+export { eraserTool } from "./tools/eraser"
+export type { EraserState } from "./tools/eraser"
+export { frameTool } from "./tools/frame"
 export type {
   Modifiers,
   SceneMutation,
