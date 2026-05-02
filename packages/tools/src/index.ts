@@ -4,6 +4,7 @@ export { PACKAGE_NAME, PACKAGE_VERSION } from "./version"
 export const DEPENDS_ON: readonly string[] = [GEOMETRY_NAME, SCENE_NAME]
 
 export { NO_EFFECTS } from "./types"
+export { TOOLS } from "./registry"
 export { rectangleTool } from "./tools/rectangle"
 export { ellipseTool } from "./tools/ellipse"
 export { diamondTool } from "./tools/diamond"
