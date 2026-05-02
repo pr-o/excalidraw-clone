@@ -1,6 +1,7 @@
 import type { Tool, ToolContext, ToolEffect, ToolEvent } from "../../types"
 import { buildDragCommitEffect, buildDragMoveEffect, buildDragRevertEffect } from "./drag"
 import { findHandleAt } from "./handles"
+import { elementsInsideMarquee, marqueeBounds } from "./marquee"
 import {
   buildResizeCommitEffect,
   buildResizeMoveEffect,
@@ -107,6 +108,13 @@ const reduceIdle = (
     if (ctx.selectedIds.length === 0) return [{ phase: "idle" }, []]
     return [{ phase: "idle" }, [{ kind: "select", ids: [] }]]
   }
+  if (event.type === "doubleClick") {
+    const hit = ctx.hitTest(event.at)
+    if (hit && hit.type === "text") {
+      return [{ phase: "idle" }, [{ kind: "startTextEdit", elementId: hit.id }]]
+    }
+    return [{ phase: "idle" }, []]
+  }
   return [{ phase: "idle" }, []]
 }
 
@@ -134,13 +142,21 @@ const reduceDragging = (
 const reduceMarquee = (
   state: Extract<SelectionState, { phase: "marquee" }>,
   event: ToolEvent,
+  ctx: ToolContext,
 ): [SelectionState, readonly ToolEffect[]] => {
-  // Marquee tail (compute selection set on pointerUp) is implemented in Task 5.9.
-  // For Task 5.6 we only handle the entry + exit transitions.
   if (event.type === "pointerMove") {
     return [{ ...state, current: event.at }, []]
   }
-  if (event.type === "pointerUp" || event.type === "escape") {
+  if (event.type === "pointerUp") {
+    const bounds = marqueeBounds(state.start, event.at)
+    const enclosed = elementsInsideMarquee(bounds, ctx.readElements())
+    if (state.baseSelection.length > 0) {
+      const merged = Array.from(new Set([...state.baseSelection, ...enclosed]))
+      return [{ phase: "idle" }, [{ kind: "select", ids: merged }]]
+    }
+    return [{ phase: "idle" }, [{ kind: "select", ids: enclosed }]]
+  }
+  if (event.type === "escape") {
     return [{ phase: "idle" }, []]
   }
   return [state, []]
@@ -211,7 +227,7 @@ export const selectionTool: Tool<SelectionState, ToolEvent> = {
       case "dragging":
         return reduceDragging(state, event)
       case "marquee":
-        return reduceMarquee(state, event)
+        return reduceMarquee(state, event, ctx)
       case "resizing":
         return reduceResizing(state, event, ctx)
       case "rotating":
