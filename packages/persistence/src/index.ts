@@ -4,7 +4,14 @@ export const DEPENDS_ON: readonly string[] = [SCENE_NAME]
 
 export { blobToDataURL, dataURLToBlob, sha256Hex } from "./binary"
 export { clearLocal, loadScene, loadUI, saveScene, saveUI } from "./local-store"
-export { clearAllFiles, deleteFile, getAllFiles, getFile, putFile } from "./image-store"
+export {
+  addImageFromBlob,
+  clearAllFiles,
+  deleteFile,
+  getAllFiles,
+  getFile,
+  putFile,
+} from "./image-store"
 export { migrate } from "./migrations"
 export { download, parseExcalidrawFile, serializeScene, toExcalidrawBlob } from "./file-io"
 export { createAutoSaver } from "./auto-save"

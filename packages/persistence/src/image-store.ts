@@ -1,5 +1,6 @@
 import type { ExcalidrawBinaryFile } from "@excalidraw-clone/scene"
 import { type IDBPDatabase, openDB } from "idb"
+import { blobToDataURL, sha256Hex } from "./binary"
 
 const DB_NAME = "excalidraw-clone"
 const DB_VERSION = 1
@@ -50,6 +51,21 @@ export async function deleteFile(id: string): Promise<void> {
 export async function clearAllFiles(): Promise<void> {
   const db = await getDB()
   await db.clear(STORE)
+}
+
+export async function addImageFromBlob(blob: Blob): Promise<ExcalidrawBinaryFile> {
+  const id = await sha256Hex(blob)
+  const existing = await getFile(id)
+  if (existing) return existing
+  const dataURL = await blobToDataURL(blob)
+  const file: ExcalidrawBinaryFile = {
+    id,
+    mimeType: blob.type !== "" ? blob.type : "application/octet-stream",
+    dataURL,
+    created: Date.now(),
+  }
+  await putFile(file)
+  return file
 }
 
 /** Test-only: close + drop the cached DB handle so `indexedDB.deleteDatabase()` isn't blocked. */
