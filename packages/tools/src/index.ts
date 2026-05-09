@@ -19,6 +19,8 @@ export type { TextState } from "./tools/text"
 export { eraserTool } from "./tools/eraser"
 export type { EraserState } from "./tools/eraser"
 export { frameTool } from "./tools/frame"
+export { imageTool } from "./tools/image"
+export type { ImageEvent, ImageReadyEvent, ImageState } from "./tools/image"
 export { SELECTION_INITIAL, findHandleAt, selectionTool } from "./tools/selection"
 export type { HandleHit, ResizeHandle, SelectionState } from "./tools/selection"
 export type {

@@ -12,6 +12,7 @@ export type ToolName =
   | "text"
   | "eraser"
   | "frame"
+  | "image"
 
 export interface Modifiers {
   shift: boolean
