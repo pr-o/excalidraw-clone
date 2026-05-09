@@ -4,3 +4,4 @@ export const DEPENDS_ON: readonly string[] = [SCENE_NAME]
 
 export { blobToDataURL, dataURLToBlob, sha256Hex } from "./binary"
 export { clearLocal, loadScene, loadUI, saveScene, saveUI } from "./local-store"
+export { clearAllFiles, deleteFile, getAllFiles, getFile, putFile } from "./image-store"
