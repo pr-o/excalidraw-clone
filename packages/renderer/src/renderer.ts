@@ -26,6 +26,7 @@ export class CanvasRenderer {
 
   private readonly rough: RoughCanvas
   private readonly shapeCache = new ShapeCache()
+  private readonly imageMap = new Map<string, HTMLImageElement>()
   private readonly overlayCanvas: HTMLCanvasElement | null
   private readonly overlayCtx: CanvasRenderingContext2D | null
   private marquee: MarqueeBox | null = null
@@ -94,6 +95,23 @@ export class CanvasRenderer {
   setGrid(opts: GridOptions): void {
     this.grid = opts
     this.requestRedraw()
+  }
+
+  preloadImage(fileId: string, dataURL: string): void {
+    if (this.imageMap.has(fileId)) return
+    const img = new Image()
+    img.onload = () => this.requestRedraw()
+    img.src = dataURL
+    this.imageMap.set(fileId, img)
+  }
+
+  unloadImage(fileId: string): void {
+    this.imageMap.delete(fileId)
+    this.requestRedraw()
+  }
+
+  getImage(fileId: string): HTMLImageElement | undefined {
+    return this.imageMap.get(fileId)
   }
 
   requestRedraw(): void {
