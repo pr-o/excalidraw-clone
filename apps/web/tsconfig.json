@@ -8,6 +8,6 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["next-env.d.ts", "src/**/*", "test/**/*", ".next/types/**/*"],
+  "include": ["next-env.d.ts", "src/**/*", "test/**/*", "e2e/**/*", ".next/types/**/*"],
   "exclude": ["node_modules", ".next", "dist"]
 }
