@@ -9,7 +9,9 @@
     "start": "next start -p 3000",
     "lint": "eslint src test",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "e2e": "playwright test",
+    "e2e:install": "playwright install --with-deps chromium"
   },
   "dependencies": {
     "@excalidraw-clone/geometry": "workspace:*",
@@ -18,11 +20,15 @@
     "@excalidraw-clone/scene": "workspace:*",
     "@excalidraw-clone/tools": "workspace:*",
     "@excalidraw-clone/ui": "workspace:*",
+    "i18next": "^24.0.0",
     "next": "^16.2.2",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "react-i18next": "^15.0.0",
+    "zustand": "^5.0.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.49.0",
     "@tailwindcss/postcss": "^4.0.0",
     "@types/node": "^22.10.0",
     "@types/react": "^19.0.0",

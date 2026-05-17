@@ -1,0 +1,73 @@
+{
+  "toolbar": {
+    "label": "도구 모음",
+    "lock": "도구 잠금",
+    "selection": "선택",
+    "rectangle": "사각형",
+    "ellipse": "타원",
+    "diamond": "마름모",
+    "line": "선",
+    "arrow": "화살표",
+    "freedraw": "그리기",
+    "text": "텍스트",
+    "image": "이미지",
+    "eraser": "지우개",
+    "frame": "프레임"
+  },
+  "properties": {
+    "label": "속성",
+    "stroke": "선 색상",
+    "background": "채움 색상",
+    "strokeWidth": "선 두께",
+    "opacity": "투명도",
+    "layers": "레이어",
+    "actions": "동작",
+    "duplicate": "복제",
+    "delete": "삭제",
+    "sendToBack": "맨 뒤로",
+    "sendBackward": "뒤로",
+    "bringForward": "앞으로",
+    "bringToFront": "맨 앞으로"
+  },
+  "menu": {
+    "label": "메뉴",
+    "open": "열기…",
+    "saveAs": "다른 이름으로 저장…",
+    "export": "이미지 내보내기…",
+    "reset": "캔버스 초기화",
+    "help": "도움말",
+    "enterZen": "젠 모드",
+    "exitZen": "젠 모드 종료",
+    "theme": "테마",
+    "themeLight": "밝게",
+    "themeDark": "어둡게",
+    "themeSystem": "시스템",
+    "language": "언어"
+  },
+  "common": { "close": "닫기" },
+  "palette": {
+    "title": "명령어 팔레트",
+    "placeholder": "명령어 입력…",
+    "empty": "일치하는 명령어가 없습니다"
+  },
+  "export": {
+    "title": "이미지 내보내기",
+    "format": "형식",
+    "scale": "배율",
+    "background": "배경",
+    "bgWhite": "밝게",
+    "bgDark": "어둡게",
+    "bgTransparent": "투명",
+    "embed": "장면 정보 포함",
+    "cancel": "취소",
+    "confirm": "내보내기"
+  },
+  "reset": {
+    "title": "캔버스 초기화",
+    "body": "모든 작업이 영구적으로 삭제됩니다. 되돌릴 수 없습니다.",
+    "cancel": "취소",
+    "confirm": "초기화"
+  },
+  "canvasBg": { "title": "캔버스 배경" },
+  "shortcuts": { "title": "키보드 단축키", "tools": "도구", "editor": "편집", "view": "보기" }
+}

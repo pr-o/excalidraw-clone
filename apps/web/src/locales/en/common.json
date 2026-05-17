@@ -1,0 +1,82 @@
+{
+  "toolbar": {
+    "label": "Toolbar",
+    "lock": "Lock active tool",
+    "selection": "Selection",
+    "rectangle": "Rectangle",
+    "ellipse": "Ellipse",
+    "diamond": "Diamond",
+    "line": "Line",
+    "arrow": "Arrow",
+    "freedraw": "Draw",
+    "text": "Text",
+    "image": "Image",
+    "eraser": "Eraser",
+    "frame": "Frame"
+  },
+  "properties": {
+    "label": "Properties",
+    "stroke": "Stroke",
+    "background": "Background",
+    "strokeWidth": "Stroke width",
+    "opacity": "Opacity",
+    "layers": "Layers",
+    "actions": "Actions",
+    "duplicate": "Duplicate",
+    "delete": "Delete",
+    "sendToBack": "Send to back",
+    "sendBackward": "Send backward",
+    "bringForward": "Bring forward",
+    "bringToFront": "Bring to front"
+  },
+  "menu": {
+    "label": "Menu",
+    "open": "Open…",
+    "saveAs": "Save as…",
+    "export": "Export image…",
+    "reset": "Reset the canvas",
+    "help": "Help",
+    "enterZen": "Enter zen mode",
+    "exitZen": "Exit zen mode",
+    "theme": "Theme",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "themeSystem": "System",
+    "language": "Language"
+  },
+  "common": {
+    "close": "Close"
+  },
+  "palette": {
+    "title": "Command palette",
+    "placeholder": "Type a command…",
+    "empty": "No matching commands"
+  },
+  "export": {
+    "title": "Export image",
+    "format": "Format",
+    "scale": "Scale",
+    "background": "Background",
+    "bgWhite": "Light",
+    "bgDark": "Dark",
+    "bgTransparent": "Transparent",
+    "embed": "Embed scene (re-importable)",
+    "cancel": "Cancel",
+    "confirm": "Export"
+  },
+  "reset": {
+    "title": "Reset the canvas",
+    "body": "This will permanently remove all your work. This action cannot be undone.",
+    "cancel": "Cancel",
+    "confirm": "Reset canvas"
+  },
+  "canvasBg": {
+    "title": "Canvas background"
+  },
+  "shortcuts": {
+    "title": "Keyboard shortcuts",
+    "tools": "Tools",
+    "editor": "Editor",
+    "view": "View"
+  }
+}
