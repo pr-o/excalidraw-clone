@@ -14,6 +14,8 @@ import { attachShortcuts } from "../keyboard/shortcuts"
 import { useAppStore } from "../store"
 import { CanvasShell } from "./CanvasShell"
 import { Dialogs } from "./Dialogs"
+import { PaletteHost } from "./PaletteHost"
+import { TextEditingOverlay } from "./TextEditingOverlay"
 
 export function App(): React.ReactElement {
   const locale = useAppStore((s) => s.locale)
@@ -217,6 +219,8 @@ function Inner(): React.ReactElement {
       )}
 
       <Dialogs scene={scene} />
+      <PaletteHost scene={scene} />
+      <TextEditingOverlay scene={scene} />
     </main>
   )
 }

@@ -26,7 +26,7 @@ export function applyEffects(scene: Scene, effects: readonly ToolEffect[]): void
         useAppStore.getState().setActiveTool(eff.tool)
         break
       case "startTextEdit":
-        useAppStore.setState({ textEditElementId: eff.elementId } as never)
+        useAppStore.getState().setTextEditElementId(eff.elementId)
         break
     }
   }
