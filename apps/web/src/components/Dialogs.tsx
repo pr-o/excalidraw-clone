@@ -1,5 +1,5 @@
 "use client"
-import { clearAllFiles, clearLocal } from "@excalidraw-clone/persistence"
+import { clearAllFiles, clearLocal, download } from "@excalidraw-clone/persistence"
 import type { Scene } from "@excalidraw-clone/scene"
 import {
   CanvasBgDialog,
@@ -9,6 +9,7 @@ import {
   type ExportOptions,
 } from "@excalidraw-clone/ui"
 import { useTranslation } from "react-i18next"
+import { exportToPNG } from "../driver/exportPNG"
 import { useAppStore } from "../store"
 
 export function Dialogs({ scene }: { scene: Scene }): React.ReactElement {
@@ -59,6 +60,9 @@ export function Dialogs({ scene }: { scene: Scene }): React.ReactElement {
   )
 }
 
-async function exportScene(_scene: Scene, _opts: ExportOptions): Promise<void> {
-  // Implemented in Task 7 (export pipeline). Here we no-op safely.
+async function exportScene(scene: Scene, opts: ExportOptions): Promise<void> {
+  // SVG draw is deferred to v1.1; fall back to PNG if requested.
+  const pngOpts: ExportOptions = opts.format === "png" ? opts : { ...opts, format: "png" }
+  const blob = await exportToPNG(scene, pngOpts)
+  download(blob, "drawing.png")
 }

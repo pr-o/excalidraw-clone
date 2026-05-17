@@ -1,10 +1,13 @@
 "use client"
+import type { CanvasRenderer } from "@excalidraw-clone/renderer"
 import type { ExcalidrawElement } from "@excalidraw-clone/scene"
 import { HamburgerMenu, PropertiesPanel, Toolbar } from "@excalidraw-clone/ui"
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { I18nextProvider, useTranslation } from "react-i18next"
 import { startAutoSave } from "../driver/autoSave"
 import { hydrateScene, hydrateUI } from "../driver/hydration"
+import { openExcalidrawFromPicker } from "../driver/openFile"
+import { saveAsExcalidraw } from "../driver/saveFile"
 import { ensureI18n } from "../i18n"
 import { useAppStore } from "../store"
 import { CanvasShell } from "./CanvasShell"
@@ -42,6 +45,9 @@ function Inner(): React.ReactElement {
   const setOpenDialog = useAppStore((s) => s.setOpenDialog)
   const selectedIds = useAppStore((s) => s.selectedIds)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [renderer, setRenderer] = useState<CanvasRenderer | null>(null)
+  const onRendererReady = useCallback((r: CanvasRenderer): void => setRenderer(r), [])
+  const onRendererTeardown = useCallback((): void => setRenderer(null), [])
 
   useEffect(() => {
     document.documentElement.dataset.theme =
@@ -63,7 +69,11 @@ function Inner(): React.ReactElement {
 
   return (
     <main className="relative h-screen w-screen overflow-hidden">
-      <CanvasShell scene={scene} />
+      <CanvasShell
+        scene={scene}
+        onRendererReady={onRendererReady}
+        onRendererTeardown={onRendererTeardown}
+      />
 
       {!zenMode && (
         <>
@@ -79,10 +89,10 @@ function Inner(): React.ReactElement {
               zenMode={zenMode}
               onZenModeToggle={toggleZenMode}
               onOpenFile={() => {
-                /* Task 7 */
+                void openExcalidrawFromPicker(scene, renderer)
               }}
               onSaveFile={() => {
-                /* Task 7 */
+                void saveAsExcalidraw(scene)
               }}
               onExport={() => setOpenDialog("export")}
               onReset={() => setOpenDialog("reset")}

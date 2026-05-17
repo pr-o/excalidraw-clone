@@ -1,9 +1,20 @@
 "use client"
+import type { CanvasRenderer } from "@excalidraw-clone/renderer"
 import type { Scene } from "@excalidraw-clone/scene"
 import { useEffect, useRef } from "react"
 import { useDrawingDriver } from "../driver/useDrawingDriver"
 
-export function CanvasShell({ scene }: { scene: Scene }): React.ReactElement {
+export interface CanvasShellProps {
+  scene: Scene
+  onRendererReady?: (renderer: CanvasRenderer) => void
+  onRendererTeardown?: () => void
+}
+
+export function CanvasShell({
+  scene,
+  onRendererReady,
+  onRendererTeardown,
+}: CanvasShellProps): React.ReactElement {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const overlayRef = useRef<HTMLCanvasElement>(null)
   const wrapperRef = useRef<HTMLDivElement>(null)
@@ -33,7 +44,13 @@ export function CanvasShell({ scene }: { scene: Scene }): React.ReactElement {
     return () => window.removeEventListener("resize", resize)
   }, [])
 
-  useDrawingDriver({ scene, canvasRef, overlayRef })
+  useDrawingDriver({
+    scene,
+    canvasRef,
+    overlayRef,
+    ...(onRendererReady ? { onReady: onRendererReady } : {}),
+    ...(onRendererTeardown ? { onTeardown: onRendererTeardown } : {}),
+  })
 
   return (
     <div ref={wrapperRef} className="absolute inset-0">

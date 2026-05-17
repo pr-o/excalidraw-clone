@@ -17,9 +17,17 @@ interface DriverOptions {
   scene: Scene
   canvasRef: RefObject<HTMLCanvasElement | null>
   overlayRef: RefObject<HTMLCanvasElement | null>
+  onReady?: (renderer: CanvasRenderer) => void
+  onTeardown?: () => void
 }
 
-export function useDrawingDriver({ scene, canvasRef, overlayRef }: DriverOptions): void {
+export function useDrawingDriver({
+  scene,
+  canvasRef,
+  overlayRef,
+  onReady,
+  onTeardown,
+}: DriverOptions): void {
   const rendererRef = useRef<CanvasRenderer | null>(null)
 
   useEffect(() => {
@@ -30,6 +38,7 @@ export function useDrawingDriver({ scene, canvasRef, overlayRef }: DriverOptions
     const renderer = new CanvasRenderer(canvas, scene, { overlayCanvas: overlay })
     rendererRef.current = renderer
     renderer.start()
+    onReady?.(renderer)
 
     const unsubStore = useAppStore.subscribe((s, prev) => {
       if (s.theme !== prev.theme) renderer.setTheme(s.theme === "dark" ? "dark" : "light")
@@ -112,6 +121,7 @@ export function useDrawingDriver({ scene, canvasRef, overlayRef }: DriverOptions
       unsubStore()
       renderer.stop()
       rendererRef.current = null
+      onTeardown?.()
     }
-  }, [scene, canvasRef, overlayRef])
+  }, [scene, canvasRef, overlayRef, onReady, onTeardown])
 }
