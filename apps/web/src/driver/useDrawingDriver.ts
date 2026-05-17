@@ -113,11 +113,17 @@ export function useDrawingDriver({
     canvas.addEventListener("pointerup", onPointerUp)
     canvas.addEventListener("dblclick", onDoubleClick)
 
+    // v1.1 cleanup: replace with a proper ref + Zustand action.
+    ;(window as unknown as { __dispatchToolEvent?: (e: ToolEvent) => void }).__dispatchToolEvent = (
+      e,
+    ) => dispatch(e, { shift: false, alt: false, ctrl: false, meta: false })
+
     return () => {
       canvas.removeEventListener("pointerdown", onPointerDown)
       canvas.removeEventListener("pointermove", onPointerMove)
       canvas.removeEventListener("pointerup", onPointerUp)
       canvas.removeEventListener("dblclick", onDoubleClick)
+      delete (window as unknown as { __dispatchToolEvent?: unknown }).__dispatchToolEvent
       unsubStore()
       renderer.stop()
       rendererRef.current = null

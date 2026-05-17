@@ -6,9 +6,11 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { I18nextProvider, useTranslation } from "react-i18next"
 import { startAutoSave } from "../driver/autoSave"
 import { hydrateScene, hydrateUI } from "../driver/hydration"
+import { pickAndUploadImage } from "../driver/imageUpload"
 import { openExcalidrawFromPicker } from "../driver/openFile"
 import { saveAsExcalidraw } from "../driver/saveFile"
 import { ensureI18n } from "../i18n"
+import { attachShortcuts } from "../keyboard/shortcuts"
 import { useAppStore } from "../store"
 import { CanvasShell } from "./CanvasShell"
 import { Dialogs } from "./Dialogs"
@@ -32,6 +34,9 @@ function Inner(): React.ReactElement {
   useEffect(() => {
     return startAutoSave(scene)
   }, [scene])
+  useEffect(() => {
+    return attachShortcuts({ scene })
+  }, [scene])
   const activeTool = useAppStore((s) => s.activeTool)
   const setActiveTool = useAppStore((s) => s.setActiveTool)
   const lockActiveTool = useAppStore((s) => s.lockActiveTool)
@@ -48,6 +53,21 @@ function Inner(): React.ReactElement {
   const [renderer, setRenderer] = useState<CanvasRenderer | null>(null)
   const onRendererReady = useCallback((r: CanvasRenderer): void => setRenderer(r), [])
   const onRendererTeardown = useCallback((): void => setRenderer(null), [])
+
+  useEffect(() => {
+    if (activeTool !== "image") return
+    let cancelled = false
+    void (async () => {
+      const event = await pickAndUploadImage({ x: 100, y: 100 })
+      if (cancelled || !event) return
+      ;(window as unknown as { __dispatchToolEvent?: (e: unknown) => void }).__dispatchToolEvent?.(
+        event,
+      )
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [activeTool])
 
   useEffect(() => {
     document.documentElement.dataset.theme =
@@ -134,19 +154,62 @@ function Inner(): React.ReactElement {
                 useAppStore.getState().setSelection([])
               }}
               onDuplicate={() => {
-                /* Task 8 */
+                const newIds: string[] = []
+                scene.mutate((draft) => {
+                  for (const el of draft.slice()) {
+                    if (selectedIds.includes(el.id)) {
+                      const copy = {
+                        ...el,
+                        id: crypto.randomUUID(),
+                        x: el.x + 12,
+                        y: el.y + 12,
+                      }
+                      draft.push(copy)
+                      newIds.push(copy.id)
+                    }
+                  }
+                })
+                useAppStore.getState().setSelection(newIds)
               }}
               onSendToBack={() => {
-                /* Task 8 */
+                scene.mutate((draft) => {
+                  const moved = draft.filter((e) => selectedIds.includes(e.id))
+                  const remaining = draft.filter((e) => !selectedIds.includes(e.id))
+                  draft.length = 0
+                  draft.push(...moved, ...remaining)
+                })
               }}
               onSendBackward={() => {
-                /* Task 8 */
+                scene.mutate((draft) => {
+                  for (let i = 1; i < draft.length; i += 1) {
+                    if (
+                      selectedIds.includes(draft[i]!.id) &&
+                      !selectedIds.includes(draft[i - 1]!.id)
+                    ) {
+                      ;[draft[i - 1], draft[i]] = [draft[i]!, draft[i - 1]!]
+                    }
+                  }
+                })
               }}
               onBringForward={() => {
-                /* Task 8 */
+                scene.mutate((draft) => {
+                  for (let i = draft.length - 2; i >= 0; i -= 1) {
+                    if (
+                      selectedIds.includes(draft[i]!.id) &&
+                      !selectedIds.includes(draft[i + 1]!.id)
+                    ) {
+                      ;[draft[i + 1], draft[i]] = [draft[i]!, draft[i + 1]!]
+                    }
+                  }
+                })
               }}
               onBringToFront={() => {
-                /* Task 8 */
+                scene.mutate((draft) => {
+                  const moved = draft.filter((e) => selectedIds.includes(e.id))
+                  const remaining = draft.filter((e) => !selectedIds.includes(e.id))
+                  draft.length = 0
+                  draft.push(...remaining, ...moved)
+                })
               }}
             />
           </div>
