@@ -5,17 +5,24 @@ export const DEPENDS_ON: readonly string[] = [SCENE_NAME, TOOLS_NAME]
 
 export { Toolbar } from "./Toolbar"
 export type { ToolbarProps } from "./Toolbar"
+
 export { PropertiesPanel } from "./PropertiesPanel"
 export type { PropertiesPanelProps } from "./PropertiesPanel"
+
 export { HamburgerMenu } from "./HamburgerMenu"
 export type { HamburgerMenuProps, Locale, Theme } from "./HamburgerMenu"
+
 export { HelpDialog } from "./HelpDialog"
 export type { HelpDialogProps } from "./HelpDialog"
+
 export { CommandPalette } from "./CommandPalette"
 export type { CommandPaletteProps, PaletteCommand } from "./CommandPalette"
+
 export { ExportDialog } from "./ExportDialog"
 export type { ExportDialogProps, ExportOptions } from "./ExportDialog"
+
 export { ResetCanvasDialog } from "./ResetCanvasDialog"
 export type { ResetCanvasDialogProps } from "./ResetCanvasDialog"
+
 export { CanvasBgDialog } from "./CanvasBgDialog"
 export type { CanvasBgDialogProps } from "./CanvasBgDialog"
