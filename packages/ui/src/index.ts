@@ -5,3 +5,5 @@ export const DEPENDS_ON: readonly string[] = [SCENE_NAME, TOOLS_NAME]
 
 export { Toolbar } from "./Toolbar"
 export type { ToolbarProps } from "./Toolbar"
+export { PropertiesPanel } from "./PropertiesPanel"
+export type { PropertiesPanelProps } from "./PropertiesPanel"
