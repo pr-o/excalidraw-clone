@@ -1,8 +1,10 @@
 "use client"
-import { Scene, type ExcalidrawElement } from "@excalidraw-clone/scene"
+import type { ExcalidrawElement } from "@excalidraw-clone/scene"
 import { HamburgerMenu, PropertiesPanel, Toolbar } from "@excalidraw-clone/ui"
 import { useEffect, useMemo, useState } from "react"
 import { I18nextProvider, useTranslation } from "react-i18next"
+import { startAutoSave } from "../driver/autoSave"
+import { hydrateScene, hydrateUI } from "../driver/hydration"
 import { ensureI18n } from "../i18n"
 import { useAppStore } from "../store"
 import { CanvasShell } from "./CanvasShell"
@@ -20,7 +22,13 @@ export function App(): React.ReactElement {
 
 function Inner(): React.ReactElement {
   const { t, i18n } = useTranslation()
-  const scene = useMemo(() => new Scene(), [])
+  const scene = useMemo(() => hydrateScene(), [])
+  useEffect(() => {
+    hydrateUI()
+  }, [])
+  useEffect(() => {
+    return startAutoSave(scene)
+  }, [scene])
   const activeTool = useAppStore((s) => s.activeTool)
   const setActiveTool = useAppStore((s) => s.setActiveTool)
   const lockActiveTool = useAppStore((s) => s.lockActiveTool)
