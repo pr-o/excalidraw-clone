@@ -1,5 +1,6 @@
 "use client"
 import { clearAllFiles, clearLocal, download } from "@excalidraw-clone/persistence"
+import { renderToSVG } from "@excalidraw-clone/renderer"
 import type { Scene } from "@excalidraw-clone/scene"
 import {
   CanvasBgDialog,
@@ -60,9 +61,19 @@ export function Dialogs({ scene }: { scene: Scene }): React.ReactElement {
   )
 }
 
+const BG_FOR_SVG: Record<ExportOptions["background"], string> = {
+  white: "#ffffff",
+  dark: "#1e1e1e",
+  transparent: "transparent",
+}
+
 async function exportScene(scene: Scene, opts: ExportOptions): Promise<void> {
-  // SVG draw is deferred to v1.1; fall back to PNG if requested.
-  const pngOpts: ExportOptions = opts.format === "png" ? opts : { ...opts, format: "png" }
-  const blob = await exportToPNG(scene, pngOpts)
+  if (opts.format === "svg") {
+    const svg = renderToSVG(scene, { background: BG_FOR_SVG[opts.background] })
+    const blob = new Blob([svg], { type: "image/svg+xml" })
+    download(blob, "drawing.svg")
+    return
+  }
+  const blob = await exportToPNG(scene, opts)
   download(blob, "drawing.png")
 }
