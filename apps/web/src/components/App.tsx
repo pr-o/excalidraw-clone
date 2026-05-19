@@ -62,9 +62,7 @@ function Inner(): React.ReactElement {
     void (async () => {
       const event = await pickAndUploadImage({ x: 100, y: 100 })
       if (cancelled || !event) return
-      ;(window as unknown as { __dispatchToolEvent?: (e: unknown) => void }).__dispatchToolEvent?.(
-        event,
-      )
+      useAppStore.getState().dispatchToolEvent?.(event)
     })()
     return () => {
       cancelled = true

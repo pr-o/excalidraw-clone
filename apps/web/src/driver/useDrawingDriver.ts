@@ -3,6 +3,7 @@ import { CanvasRenderer } from "@excalidraw-clone/renderer"
 import { hitTestElement, type ExcalidrawElement, type Scene } from "@excalidraw-clone/scene"
 import {
   TOOLS,
+  type ImageReadyEvent,
   type Modifiers,
   type Tool,
   type ToolContext,
@@ -51,10 +52,10 @@ export function useDrawingDriver({
       if (s.selectedIds !== prev.selectedIds) renderer.setSelection(s.selectedIds)
     })
 
-    const dispatch = (event: ToolEvent, modifiers: Modifiers): void => {
+    const dispatch = (event: ToolEvent | ImageReadyEvent, modifiers: Modifiers): void => {
       const store = useAppStore.getState()
       const toolName = store.activeTool
-      const tool: Tool<unknown, ToolEvent> = TOOLS[toolName]
+      const tool: Tool<unknown, ToolEvent | ImageReadyEvent> = TOOLS[toolName]
       const currentState = store.toolStates[toolName] ?? tool.initial
       const ctx: ToolContext = {
         readElements: () => scene.getElements(),
@@ -113,17 +114,18 @@ export function useDrawingDriver({
     canvas.addEventListener("pointerup", onPointerUp)
     canvas.addEventListener("dblclick", onDoubleClick)
 
-    // v1.1 cleanup: replace with a proper ref + Zustand action.
-    ;(window as unknown as { __dispatchToolEvent?: (e: ToolEvent) => void }).__dispatchToolEvent = (
-      e,
-    ) => dispatch(e, { shift: false, alt: false, ctrl: false, meta: false })
+    useAppStore
+      .getState()
+      .setDispatchToolEvent((e) =>
+        dispatch(e, { shift: false, alt: false, ctrl: false, meta: false }),
+      )
 
     return () => {
       canvas.removeEventListener("pointerdown", onPointerDown)
       canvas.removeEventListener("pointermove", onPointerMove)
       canvas.removeEventListener("pointerup", onPointerUp)
       canvas.removeEventListener("dblclick", onDoubleClick)
-      delete (window as unknown as { __dispatchToolEvent?: unknown }).__dispatchToolEvent
+      useAppStore.getState().setDispatchToolEvent(null)
       unsubStore()
       renderer.stop()
       rendererRef.current = null
