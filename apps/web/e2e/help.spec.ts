@@ -4,6 +4,7 @@ test("'?' opens the help dialog", async ({ page }) => {
   await page.goto("/")
   await page.evaluate(() => localStorage.clear())
   await page.reload()
+  await page.locator('[data-testid="toolbar-rectangle"]').waitFor()
   await page.keyboard.press("Shift+/")
-  await expect(page.getByText("shortcuts.tools")).toBeVisible()
+  await expect(page.getByText("Tools")).toBeVisible()
 })

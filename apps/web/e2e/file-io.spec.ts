@@ -10,7 +10,7 @@ test("save as → open round-trips the scene", async ({ page }) => {
 
   const downloadPromise = page.waitForEvent("download")
   await page.getByRole("button", { name: /menu/i }).click()
-  await page.getByText("menu.saveAs").click()
+  await page.getByText("Save as…").click()
   const download = await downloadPromise
   const path = await download.path()
   expect(path).toBeTruthy()
@@ -20,7 +20,7 @@ test("save as → open round-trips the scene", async ({ page }) => {
 
   const fileChooserPromise = page.waitForEvent("filechooser")
   await page.getByRole("button", { name: /menu/i }).click()
-  await page.getByText("menu.open").click()
+  await page.getByText("Open…").click()
   const chooser = await fileChooserPromise
   await chooser.setFiles(path)
 
