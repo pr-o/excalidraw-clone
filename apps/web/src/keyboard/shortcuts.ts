@@ -53,7 +53,7 @@ export function attachShortcuts({ scene }: Bindings): () => void {
       useAppStore.getState().setSelection([])
       return
     }
-    if (key === "?") {
+    if (key === "?" || (e.shiftKey && key === "/")) {
       useAppStore.getState().setOpenDialog("help")
       return
     }
