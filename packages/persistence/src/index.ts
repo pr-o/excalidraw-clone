@@ -21,6 +21,9 @@ export {
 // File I/O
 export { download, parseExcalidrawFile, serializeScene, toExcalidrawBlob } from "./file-io"
 
+// PNG tEXt chunk for embedScene
+export { embedTextChunk, extractTextChunk, PNG_EXCALIDRAW_KEYWORD } from "./png-text"
+
 // Migrations
 export { migrate } from "./migrations"
 

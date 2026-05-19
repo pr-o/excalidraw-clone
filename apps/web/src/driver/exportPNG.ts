@@ -1,4 +1,9 @@
 "use client"
+import {
+  embedTextChunk,
+  PNG_EXCALIDRAW_KEYWORD,
+  serializeScene,
+} from "@excalidraw-clone/persistence"
 import { CanvasRenderer } from "@excalidraw-clone/renderer"
 import type { Scene } from "@excalidraw-clone/scene"
 import type { ExportOptions } from "@excalidraw-clone/ui"
@@ -38,12 +43,18 @@ export async function exportToPNG(scene: Scene, opts: ExportOptions): Promise<Bl
   await new Promise<void>((r) => requestAnimationFrame(() => r()))
   renderer.stop()
 
-  return new Promise<Blob>((resolve, reject) => {
-    canvas.toBlob((blob) => {
-      if (blob) resolve(blob)
+  const blob = await new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob((b) => {
+      if (b) resolve(b)
       else reject(new Error("exportToPNG: toBlob returned null"))
     }, "image/png")
   })
+
+  if (opts.embedScene) {
+    const json = JSON.stringify(serializeScene(scene))
+    return embedTextChunk(blob, PNG_EXCALIDRAW_KEYWORD, json)
+  }
+  return blob
 }
 
 function computeBBox(elements: ReturnType<Scene["getElements"]>): {

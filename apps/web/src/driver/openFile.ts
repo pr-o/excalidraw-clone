@@ -1,15 +1,22 @@
 "use client"
-import { parseExcalidrawFile, putFile } from "@excalidraw-clone/persistence"
+import {
+  extractTextChunk,
+  migrate,
+  parseExcalidrawFile,
+  PNG_EXCALIDRAW_KEYWORD,
+  putFile,
+} from "@excalidraw-clone/persistence"
 import type { CanvasRenderer } from "@excalidraw-clone/renderer"
-import type { Scene } from "@excalidraw-clone/scene"
+import type { ExcalidrawData, Scene } from "@excalidraw-clone/scene"
 
 export async function openExcalidrawFromPicker(
   scene: Scene,
   renderer: CanvasRenderer | null,
 ): Promise<void> {
-  const file = await pickFile(".excalidraw,application/json")
+  const file = await pickFile(".excalidraw,.png,application/json,image/png")
   if (!file) return
-  const data = await parseExcalidrawFile(file)
+  const data = await readSceneFromFile(file)
+  if (!data) return
   scene.loadFromJSON(data)
   if (data.files) {
     for (const id of Object.keys(data.files)) {
@@ -18,6 +25,17 @@ export async function openExcalidrawFromPicker(
       renderer?.preloadImage(id, f.dataURL)
     }
   }
+}
+
+async function readSceneFromFile(file: File): Promise<ExcalidrawData | null> {
+  const isPng = file.type === "image/png" || file.name.toLowerCase().endsWith(".png")
+  if (!isPng) return parseExcalidrawFile(file)
+
+  const text = await extractTextChunk(file, PNG_EXCALIDRAW_KEYWORD)
+  if (!text) {
+    throw new Error("openFile: PNG has no embedded Excalidraw scene")
+  }
+  return migrate(JSON.parse(text))
 }
 
 function pickFile(accept: string): Promise<File | null> {
