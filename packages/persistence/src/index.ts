@@ -22,8 +22,11 @@ export {
 export {
   clearLibrary,
   deleteLibraryItem,
+  EXCALIDRAWLIB_VERSION,
+  exportLibraryFile,
   getAllLibraryItems,
   getLibraryItem,
+  importLibraryFile,
   putLibraryItem,
   renameLibraryItem,
 } from "./library-store"
