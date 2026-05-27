@@ -69,5 +69,18 @@
     "confirm": "초기화"
   },
   "canvasBg": { "title": "캔버스 배경" },
-  "shortcuts": { "title": "키보드 단축키", "tools": "도구", "editor": "편집", "view": "보기" }
+  "shortcuts": { "title": "키보드 단축키", "tools": "도구", "editor": "편집", "view": "보기" },
+  "library": {
+    "title": "라이브러리",
+    "toggle": "라이브러리 열고 닫기",
+    "addFromSelection": "선택 항목 추가",
+    "empty": "라이브러리가 비어 있습니다",
+    "import": "라이브러리 가져오기…",
+    "export": "라이브러리 내보내기",
+    "rename": "이름 변경",
+    "delete": "삭제",
+    "imported": "추가 {added}, 건너뜀 {skipped}",
+    "importError": "라이브러리 파일을 읽을 수 없습니다",
+    "placing": "클릭하여 배치 • Esc로 취소"
+  }
 }
