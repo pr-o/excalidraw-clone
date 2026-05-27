@@ -31,6 +31,7 @@ export { hitTestElement } from "./hit-test"
 export type { HitTestOptions } from "./hit-test"
 export { Scene } from "./scene"
 export type { MutateOptions } from "./scene"
+export type { LibraryItem } from "./library-item"
 export { SCENE_FORMAT_SOURCE, SCENE_FORMAT_VERSION, buildExcalidrawData } from "./json"
 
 export type {
