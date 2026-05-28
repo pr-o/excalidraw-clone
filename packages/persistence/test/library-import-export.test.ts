@@ -120,7 +120,7 @@ describe("importLibraryFile", () => {
     }
     await importLibraryFile(new Blob([JSON.stringify(file)]))
     const items = await getAllLibraryItems()
-    expect(items[0].files?.binA).toEqual(binA)
+    expect(items[0]!.files?.binA).toEqual(binA)
   })
 
   it("rejects malformed JSON without partial writes", async () => {
