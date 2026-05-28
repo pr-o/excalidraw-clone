@@ -66,10 +66,12 @@ function Inner(): React.ReactElement {
   const zenMode = useAppStore((s) => s.zenMode)
   const toggleZenMode = useAppStore((s) => s.toggleZenMode)
   const setOpenDialog = useAppStore((s) => s.setOpenDialog)
+  const openDialog = useAppStore((s) => s.openDialog)
   const selectedIds = useAppStore((s) => s.selectedIds)
   const libraryItems = useAppStore((s) => s.libraryItems)
   const setLibraryItems = useAppStore((s) => s.setLibraryItems)
   const armLibraryItem = useAppStore((s) => s.armLibraryItem)
+  const clearPendingItem = useAppStore((s) => s.clearPendingItem)
   const [menuOpen, setMenuOpen] = useState(false)
   const [libraryOpen, setLibraryOpen] = useState(false)
   const [renderer, setRenderer] = useState<CanvasRenderer | null>(null)
@@ -110,6 +112,18 @@ function Inner(): React.ReactElement {
   useEffect(() => {
     void getAllLibraryItems().then(setLibraryItems)
   }, [setLibraryItems])
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === "Escape") clearPendingItem()
+    }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [clearPendingItem])
+
+  useEffect(() => {
+    clearPendingItem()
+  }, [activeTool, openDialog, clearPendingItem])
 
   const refreshLibrary = useCallback(async (): Promise<void> => {
     setLibraryItems(await getAllLibraryItems())
