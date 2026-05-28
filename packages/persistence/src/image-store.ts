@@ -1,56 +1,30 @@
 import type { ExcalidrawBinaryFile } from "@excalidraw-clone/scene"
-import { type IDBPDatabase, openDB } from "idb"
 import { blobToDataURL, sha256Hex } from "./binary"
-
-const DB_NAME = "excalidraw-clone"
-const DB_VERSION = 1
-const STORE = "files"
-
-interface ExcalidrawDB {
-  files: {
-    key: string
-    value: ExcalidrawBinaryFile
-  }
-}
-
-let dbPromise: Promise<IDBPDatabase<ExcalidrawDB>> | null = null
-
-function getDB(): Promise<IDBPDatabase<ExcalidrawDB>> {
-  if (dbPromise === null) {
-    dbPromise = openDB<ExcalidrawDB>(DB_NAME, DB_VERSION, {
-      upgrade(db) {
-        if (!db.objectStoreNames.contains(STORE)) {
-          db.createObjectStore(STORE, { keyPath: "id" })
-        }
-      },
-    })
-  }
-  return dbPromise
-}
+import { _resetDBForTesting as _resetSharedDB, FILES_STORE, getDB } from "./db"
 
 export async function putFile(file: ExcalidrawBinaryFile): Promise<void> {
   const db = await getDB()
-  await db.put(STORE, file)
+  await db.put(FILES_STORE, file)
 }
 
 export async function getFile(id: string): Promise<ExcalidrawBinaryFile | undefined> {
   const db = await getDB()
-  return (await db.get(STORE, id)) as ExcalidrawBinaryFile | undefined
+  return (await db.get(FILES_STORE, id)) as ExcalidrawBinaryFile | undefined
 }
 
 export async function getAllFiles(): Promise<ExcalidrawBinaryFile[]> {
   const db = await getDB()
-  return (await db.getAll(STORE)) as ExcalidrawBinaryFile[]
+  return (await db.getAll(FILES_STORE)) as ExcalidrawBinaryFile[]
 }
 
 export async function deleteFile(id: string): Promise<void> {
   const db = await getDB()
-  await db.delete(STORE, id)
+  await db.delete(FILES_STORE, id)
 }
 
 export async function clearAllFiles(): Promise<void> {
   const db = await getDB()
-  await db.clear(STORE)
+  await db.clear(FILES_STORE)
 }
 
 export async function addImageFromBlob(blob: Blob): Promise<ExcalidrawBinaryFile> {
@@ -68,10 +42,5 @@ export async function addImageFromBlob(blob: Blob): Promise<ExcalidrawBinaryFile
   return file
 }
 
-/** Test-only: close + drop the cached DB handle so `indexedDB.deleteDatabase()` isn't blocked. */
-export async function _resetDBForTesting(): Promise<void> {
-  if (dbPromise === null) return
-  const db = await dbPromise
-  db.close()
-  dbPromise = null
-}
+/** Test-only: re-exported from the shared DB module for backward-compat with the existing test setup. */
+export const _resetDBForTesting = _resetSharedDB

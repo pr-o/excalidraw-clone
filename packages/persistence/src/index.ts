@@ -18,6 +18,19 @@ export {
   putFile,
 } from "./image-store"
 
+// IndexedDB library
+export {
+  clearLibrary,
+  deleteLibraryItem,
+  EXCALIDRAWLIB_VERSION,
+  exportLibraryFile,
+  getAllLibraryItems,
+  getLibraryItem,
+  importLibraryFile,
+  putLibraryItem,
+  renameLibraryItem,
+} from "./library-store"
+
 // File I/O
 export { download, parseExcalidrawFile, serializeScene, toExcalidrawBlob } from "./file-io"
 

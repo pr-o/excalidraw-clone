@@ -1,6 +1,13 @@
 "use client"
+import { sceneToViewport } from "@excalidraw-clone/geometry"
+import { putFile } from "@excalidraw-clone/persistence"
 import { CanvasRenderer } from "@excalidraw-clone/renderer"
-import { hitTestElement, type ExcalidrawElement, type Scene } from "@excalidraw-clone/scene"
+import {
+  hitTestElement,
+  type ExcalidrawElement,
+  type LibraryItem,
+  type Scene,
+} from "@excalidraw-clone/scene"
 import {
   TOOLS,
   type ImageReadyEvent,
@@ -13,6 +20,49 @@ import { useEffect, useRef, type RefObject } from "react"
 import { useAppStore } from "../store"
 import { applyEffects } from "./effects"
 import { clientToScene, modifiersOf, pointerEventToToolEvent } from "./events"
+
+const GHOST_STROKE = "#6b46c1"
+
+function placeLibraryItem(item: LibraryItem, x: number, y: number, scene: Scene): void {
+  if (item.files) {
+    for (const bin of Object.values(item.files)) {
+      void putFile(bin)
+    }
+  }
+  const placed: ExcalidrawElement[] = item.elements.map((el) => ({
+    ...el,
+    id: crypto.randomUUID(),
+    x: el.x + x,
+    y: el.y + y,
+  }))
+  scene.mutate((draft) => {
+    draft.push(...placed)
+  })
+  useAppStore.getState().setSelection(placed.map((e) => e.id))
+}
+
+function drawGhost(
+  overlay: HTMLCanvasElement,
+  item: LibraryItem,
+  scenePoint: { x: number; y: number },
+  view: { scrollX: number; scrollY: number; zoom: number },
+): void {
+  const ctx = overlay.getContext("2d")
+  if (!ctx) return
+  ctx.setTransform(1, 0, 0, 1, 0, 0)
+  ctx.clearRect(0, 0, overlay.width, overlay.height)
+  ctx.save()
+  ctx.globalAlpha = 0.6
+  ctx.strokeStyle = GHOST_STROKE
+  ctx.lineWidth = 1
+  for (const el of item.elements) {
+    const tl = sceneToViewport({ x: el.x + scenePoint.x, y: el.y + scenePoint.y }, view)
+    const w = (el.width ?? 10) * view.zoom
+    const h = (el.height ?? 10) * view.zoom
+    ctx.strokeRect(tl.x, tl.y, w, h)
+  }
+  ctx.restore()
+}
 
 interface DriverOptions {
   scene: Scene
@@ -91,11 +141,42 @@ export function useDrawingDriver({
     }
 
     const onPointerDown = (e: PointerEvent): void => {
+      const store = useAppStore.getState()
+      const pending = store.pendingItem
+      if (pending) {
+        const at = clientToScene(
+          canvas,
+          { scrollX: store.scrollX, scrollY: store.scrollY, zoom: store.zoom },
+          e,
+        )
+        placeLibraryItem(pending, at.x, at.y, scene)
+        store.clearPendingItem()
+        overlay.getContext("2d")?.clearRect(0, 0, overlay.width, overlay.height)
+        return
+      }
       canvas.setPointerCapture(e.pointerId)
       dispatchPointer("pointerDown", e)
     }
-    const onPointerMove = (e: PointerEvent): void => dispatchPointer("pointerMove", e)
+    const onPointerMove = (e: PointerEvent): void => {
+      const store = useAppStore.getState()
+      const pending = store.pendingItem
+      if (pending) {
+        const at = clientToScene(
+          canvas,
+          { scrollX: store.scrollX, scrollY: store.scrollY, zoom: store.zoom },
+          e,
+        )
+        drawGhost(overlay, pending, at, {
+          scrollX: store.scrollX,
+          scrollY: store.scrollY,
+          zoom: store.zoom,
+        })
+        return
+      }
+      dispatchPointer("pointerMove", e)
+    }
     const onPointerUp = (e: PointerEvent): void => {
+      if (useAppStore.getState().pendingItem) return
       canvas.releasePointerCapture(e.pointerId)
       dispatchPointer("pointerUp", e)
     }

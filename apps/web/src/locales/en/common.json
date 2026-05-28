@@ -78,5 +78,18 @@
     "tools": "Tools",
     "editor": "Editor",
     "view": "View"
+  },
+  "library": {
+    "title": "Library",
+    "toggle": "Toggle library",
+    "addFromSelection": "Add from selection",
+    "empty": "Library is empty",
+    "import": "Import library…",
+    "export": "Export library",
+    "rename": "Rename",
+    "delete": "Delete",
+    "imported": "{added} added, {skipped} skipped",
+    "importError": "Could not read library file",
+    "placing": "Click to place • Esc to cancel"
   }
 }
