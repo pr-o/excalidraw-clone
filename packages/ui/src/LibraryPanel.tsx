@@ -2,7 +2,7 @@ import type { LibraryItem } from "@excalidraw-clone/scene"
 import { useState } from "react"
 
 export interface LibraryPanelProps {
-  t: (key: string, params?: Record<string, string | number>) => string
+  t: (key: string) => string
   open: boolean
   onToggle: () => void
   items: LibraryItem[]
