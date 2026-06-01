@@ -25,3 +25,5 @@ export {
 export { pointInRectangle, pointInEllipse, pointInDiamond } from "./hit-test"
 export { distancePointToSegment, pointOnSegment } from "./segment"
 export { sceneToViewport, viewportToScene } from "./transform"
+export { snapPointToGrid } from "./snap"
+export type { GridSnap, SnapModifiers } from "./snap"
