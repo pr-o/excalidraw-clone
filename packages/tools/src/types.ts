@@ -1,4 +1,4 @@
-import type { Point, ViewTransform } from "@excalidraw-clone/geometry"
+import type { GridSnap, Point, ViewTransform } from "@excalidraw-clone/geometry"
 import type { ExcalidrawElement } from "@excalidraw-clone/scene"
 
 export type ToolName =
@@ -27,6 +27,7 @@ export interface ToolContext {
   viewTransform: ViewTransform
   modifiers: Modifiers
   selectedIds: readonly string[]
+  grid: GridSnap
 }
 
 export type ToolEvent =

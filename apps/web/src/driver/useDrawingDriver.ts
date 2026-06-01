@@ -120,6 +120,7 @@ export function useDrawingDriver({
         viewTransform: { scrollX: store.scrollX, scrollY: store.scrollY, zoom: store.zoom },
         modifiers,
         selectedIds: store.selectedIds,
+        grid: { enabled: false, size: store.gridSize },
       }
       const [next, effects] = tool.reduce(currentState, event, ctx)
       useAppStore.getState().setToolState(toolName, next)
