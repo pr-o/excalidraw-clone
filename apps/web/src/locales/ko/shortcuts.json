@@ -18,6 +18,7 @@
   "delete": "삭제",
   "selectAll": "모두 선택",
   "deselect": "선택 해제",
+  "bypassSnap": "스냅 해제",
   "zoomReset": "확대/축소 초기화",
   "zoomIn": "확대",
   "zoomOut": "축소",

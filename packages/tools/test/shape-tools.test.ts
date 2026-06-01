@@ -160,3 +160,26 @@ describe.each(TOOLS)("$name tool: creation flow", ({ tool, type }) => {
     expect(NO_MODIFIERS.shift).toBe(false)
   })
 })
+
+describe("shape tool — receives snapped input", () => {
+  it("rectangle drawn with on-grid start and end produces on-grid box", () => {
+    const ctx = makeCtx()
+    const down = rectangleTool.reduce(
+      rectangleTool.initial,
+      { type: "pointerDown", at: point(20, 40) },
+      ctx,
+    )
+    const draft: ExcalidrawElement[] = []
+    applyMutation(down[1], draft)
+    const move = rectangleTool.reduce(down[0], { type: "pointerMove", at: point(80, 100) }, ctx)
+    applyMutation(move[1], draft)
+    const up = rectangleTool.reduce(move[0], { type: "pointerUp", at: point(80, 100) }, ctx)
+    applyMutation(up[1], draft)
+
+    const r = draft[0]!
+    expect(r.x % 20).toBe(0)
+    expect(r.y % 20).toBe(0)
+    expect(r.width % 20).toBe(0)
+    expect(r.height % 20).toBe(0)
+  })
+})

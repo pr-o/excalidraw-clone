@@ -116,3 +116,21 @@ describe("LinearState narrowing compiles", () => {
     expect(idle.phase).toBe("idle")
   })
 })
+
+describe("linear tool — shift wins over grid", () => {
+  it("with shift held and on-grid endpoints, 45° constraint may pull the end off-grid", () => {
+    const ctx = makeCtx({ modifiers: withModifiers({ shift: true }) })
+    const draft: ExcalidrawElement[] = []
+    const down = lineTool.reduce(lineTool.initial, { type: "pointerDown", at: point(0, 0) }, ctx)
+    applyMutation(down[1], draft)
+    // Pointer at (80, 20) — atan2(20, 80) ≈ 14°. Snapped to nearest 45° (0 rad).
+    // constrainAngle keeps the original length (hypot ≈ 82.46), producing
+    // an endpoint near (82.46, 0): y is on-grid, x is off-grid.
+    const move = lineTool.reduce(down[0], { type: "pointerMove", at: point(80, 20) }, ctx)
+    applyMutation(move[1], draft)
+    const line = draft[0]!
+    expect(line.height).toBeCloseTo(0, 5)
+    expect(line.width).toBeGreaterThan(0)
+    expect(line.width % 20).not.toBe(0)
+  })
+})

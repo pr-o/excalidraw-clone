@@ -28,6 +28,7 @@ const EDITOR_SHORTCUTS: readonly Shortcut[] = [
   { keys: "Delete", label: "shortcuts.delete" },
   { keys: "Cmd/Ctrl+A", label: "shortcuts.selectAll" },
   { keys: "Esc", label: "shortcuts.deselect" },
+  { keys: "Hold Cmd/Ctrl", label: "shortcuts.bypassSnap" },
 ]
 
 const VIEW_SHORTCUTS: readonly Shortcut[] = [

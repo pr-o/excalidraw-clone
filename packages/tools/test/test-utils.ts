@@ -1,4 +1,4 @@
-import type { Point, ViewTransform } from "@excalidraw-clone/geometry"
+import type { GridSnap, Point, ViewTransform } from "@excalidraw-clone/geometry"
 import type { ExcalidrawElement } from "@excalidraw-clone/scene"
 import type { Modifiers, ToolContext } from "../src"
 
@@ -11,12 +11,15 @@ export const NO_MODIFIERS: Modifiers = {
 
 export const IDENTITY_VIEW: ViewTransform = { scrollX: 0, scrollY: 0, zoom: 1 }
 
+export const NO_GRID: GridSnap = { enabled: false, size: 20 }
+
 export const makeCtx = (overrides: Partial<ToolContext> = {}): ToolContext => ({
   readElements: () => [],
   hitTest: () => null,
   viewTransform: IDENTITY_VIEW,
   modifiers: NO_MODIFIERS,
   selectedIds: [],
+  grid: NO_GRID,
   ...overrides,
 })
 

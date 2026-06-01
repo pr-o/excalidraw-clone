@@ -44,6 +44,11 @@ export function attachShortcuts({ scene }: Bindings): () => void {
       scene.redo()
       return
     }
+    if (isMeta && e.shiftKey && key === "g") {
+      e.preventDefault()
+      useAppStore.getState().toggleGrid()
+      return
+    }
     if (isMeta && key === "/") {
       e.preventDefault()
       useAppStore.getState().setPaletteOpen(true)

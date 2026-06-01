@@ -1,3 +1,4 @@
+import type { GridSnap } from "@excalidraw-clone/geometry"
 import type { ExcalidrawElement } from "@excalidraw-clone/scene"
 import { newRectangle } from "@excalidraw-clone/scene"
 import { describe, expect, it } from "vitest"
@@ -167,5 +168,78 @@ describe("selection — keyboard while idle", () => {
     const r = selectionTool.reduce(selectionTool.initial, { type: "escape" }, ctx)
     const sel = r[1].find((e) => e.kind === "select")
     if (sel?.kind === "select") expect(sel.ids).toEqual([])
+  })
+})
+
+describe("selection — drag with grid snap", () => {
+  const GRID: GridSnap = { enabled: true, size: 20 }
+
+  it("first pointerMove snaps off-grid element to grid, then delta math takes over", () => {
+    const r = newRectangle({ x: 13, y: 27, width: 50, height: 50 })
+    const ctx = makeCtx({
+      hitTest: () => r,
+      readElements: () => [r],
+      grid: GRID,
+    })
+    const down = selectionTool.reduce(
+      selectionTool.initial,
+      { type: "pointerDown", at: point(20, 40) },
+      ctx,
+    )
+    expect(down[0].phase).toBe("dragging")
+
+    // Anchor (13,27) snaps to nearest grid intersection: (20, 20). 27 rounds DOWN to 20
+    // (Math.round(27/20)=1). First-move delta from down(20,40) to move(40,40) = (+20, 0).
+    // dx = (20-13) + 20 = 27; dy = (20-27) + 0 = -7. Element: 13+27=40, 27-7=20.
+    const draft: ExcalidrawElement[] = [{ ...r }]
+    const move1 = selectionTool.reduce(down[0], { type: "pointerMove", at: point(40, 40) }, ctx)
+    applyMutation(move1[1], draft)
+    expect(draft[0]!.x).toBe(40)
+    expect(draft[0]!.y).toBe(20)
+
+    // Second pointerMove — pure delta from last(40,40) to at(60,40). +20 x.
+    const move2 = selectionTool.reduce(move1[0], { type: "pointerMove", at: point(60, 40) }, ctx)
+    applyMutation(move2[1], draft)
+    expect(draft[0]!.x).toBe(60)
+    expect(draft[0]!.y).toBe(20)
+  })
+
+  it("when grid is disabled, drag uses pure delta math (no correction)", () => {
+    const r = newRectangle({ x: 13, y: 27, width: 50, height: 50 })
+    const ctx = makeCtx({
+      hitTest: () => r,
+      readElements: () => [r],
+    })
+    const down = selectionTool.reduce(
+      selectionTool.initial,
+      { type: "pointerDown", at: point(20, 40) },
+      ctx,
+    )
+    const draft: ExcalidrawElement[] = [{ ...r }]
+    const move = selectionTool.reduce(down[0], { type: "pointerMove", at: point(30, 40) }, ctx)
+    applyMutation(move[1], draft)
+    expect(draft[0]!.x).toBe(23)
+    expect(draft[0]!.y).toBe(27)
+  })
+
+  it("ctrl bypass skips first-move correction even when grid is enabled", () => {
+    const r = newRectangle({ x: 13, y: 27, width: 50, height: 50 })
+    const ctx = makeCtx({
+      hitTest: () => r,
+      readElements: () => [r],
+      grid: GRID,
+      modifiers: withModifiers({ ctrl: true }),
+    })
+    const down = selectionTool.reduce(
+      selectionTool.initial,
+      { type: "pointerDown", at: point(20, 40) },
+      ctx,
+    )
+    const draft: ExcalidrawElement[] = [{ ...r }]
+    const move = selectionTool.reduce(down[0], { type: "pointerMove", at: point(30, 40) }, ctx)
+    applyMutation(move[1], draft)
+    // Pure delta: +10 x, 0 y. No snap correction.
+    expect(draft[0]!.x).toBe(23)
+    expect(draft[0]!.y).toBe(27)
   })
 })

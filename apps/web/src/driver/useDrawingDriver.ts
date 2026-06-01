@@ -1,5 +1,5 @@
 "use client"
-import { sceneToViewport } from "@excalidraw-clone/geometry"
+import { sceneToViewport, type GridSnap } from "@excalidraw-clone/geometry"
 import { putFile } from "@excalidraw-clone/persistence"
 import { CanvasRenderer } from "@excalidraw-clone/renderer"
 import {
@@ -19,9 +19,20 @@ import {
 import { useEffect, useRef, type RefObject } from "react"
 import { useAppStore } from "../store"
 import { applyEffects } from "./effects"
-import { clientToScene, modifiersOf, pointerEventToToolEvent } from "./events"
+import { clientToScene, modifiersOf, pointerEventToToolEvent, snapScenePoint } from "./events"
 
 const GHOST_STROKE = "#6b46c1"
+
+const SNAPPABLE_TOOLS: ReadonlySet<string> = new Set([
+  "selection",
+  "rectangle",
+  "ellipse",
+  "diamond",
+  "line",
+  "arrow",
+  "text",
+  "image",
+])
 
 function placeLibraryItem(item: LibraryItem, x: number, y: number, scene: Scene): void {
   if (item.files) {
@@ -102,6 +113,14 @@ export function useDrawingDriver({
       if (s.selectedIds !== prev.selectedIds) renderer.setSelection(s.selectedIds)
     })
 
+    const resolveGrid = (): GridSnap => {
+      const s = useAppStore.getState()
+      return {
+        enabled: s.gridEnabled && SNAPPABLE_TOOLS.has(s.activeTool),
+        size: s.gridSize,
+      }
+    }
+
     const dispatch = (event: ToolEvent | ImageReadyEvent, modifiers: Modifiers): void => {
       const store = useAppStore.getState()
       const toolName = store.activeTool
@@ -120,6 +139,7 @@ export function useDrawingDriver({
         viewTransform: { scrollX: store.scrollX, scrollY: store.scrollY, zoom: store.zoom },
         modifiers,
         selectedIds: store.selectedIds,
+        grid: resolveGrid(),
       }
       const [next, effects] = tool.reduce(currentState, event, ctx)
       useAppStore.getState().setToolState(toolName, next)
@@ -135,6 +155,7 @@ export function useDrawingDriver({
         type,
         canvas,
         { scrollX: store.scrollX, scrollY: store.scrollY, zoom: store.zoom },
+        resolveGrid(),
         e,
       )
       dispatch(event, modifiersOf(e))
@@ -144,11 +165,12 @@ export function useDrawingDriver({
       const store = useAppStore.getState()
       const pending = store.pendingItem
       if (pending) {
-        const at = clientToScene(
+        const raw = clientToScene(
           canvas,
           { scrollX: store.scrollX, scrollY: store.scrollY, zoom: store.zoom },
           e,
         )
+        const at = snapScenePoint(raw, resolveGrid(), e)
         placeLibraryItem(pending, at.x, at.y, scene)
         store.clearPendingItem()
         overlay.getContext("2d")?.clearRect(0, 0, overlay.width, overlay.height)
@@ -161,11 +183,12 @@ export function useDrawingDriver({
       const store = useAppStore.getState()
       const pending = store.pendingItem
       if (pending) {
-        const at = clientToScene(
+        const raw = clientToScene(
           canvas,
           { scrollX: store.scrollX, scrollY: store.scrollY, zoom: store.zoom },
           e,
         )
+        const at = snapScenePoint(raw, resolveGrid(), e)
         drawGhost(overlay, pending, at, {
           scrollX: store.scrollX,
           scrollY: store.scrollY,
@@ -182,11 +205,12 @@ export function useDrawingDriver({
     }
     const onDoubleClick = (e: MouseEvent): void => {
       const store = useAppStore.getState()
-      const at = clientToScene(
+      const raw = clientToScene(
         canvas,
         { scrollX: store.scrollX, scrollY: store.scrollY, zoom: store.zoom },
         e,
       )
+      const at = snapScenePoint(raw, resolveGrid(), e)
       dispatch({ type: "doubleClick", at }, modifiersOf(e))
     }
 
