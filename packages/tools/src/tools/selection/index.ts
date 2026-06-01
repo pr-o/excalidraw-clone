@@ -1,3 +1,4 @@
+import { snapPointToGrid } from "@excalidraw-clone/geometry"
 import type { Tool, ToolContext, ToolEffect, ToolEvent } from "../../types"
 import { buildDragCommitEffect, buildDragMoveEffect, buildDragRevertEffect } from "./drag"
 import { findHandleAt } from "./handles"
@@ -83,7 +84,10 @@ const reduceIdle = (
       : ctx.modifiers.shift
         ? [{ kind: "addToSelection", ids: [hit.id] }]
         : [{ kind: "select", ids: [hit.id] }]
-    return [{ phase: "dragging", start: event.at, last: event.at, movedIds }, selectionEffects]
+    return [
+      { phase: "dragging", start: event.at, last: event.at, movedIds, firstMove: true },
+      selectionEffects,
+    ]
   }
   if (event.type === "delete") {
     if (ctx.selectedIds.length === 0) return [{ phase: "idle" }, []]
@@ -121,12 +125,32 @@ const reduceIdle = (
 const reduceDragging = (
   state: Extract<SelectionState, { phase: "dragging" }>,
   event: ToolEvent,
+  ctx: ToolContext,
 ): [SelectionState, readonly ToolEffect[]] => {
   switch (event.type) {
     case "pointerMove": {
+      if (state.firstMove && ctx.grid.enabled) {
+        const elements = ctx.readElements()
+        const anchor = elements.find((e) => state.movedIds.includes(e.id))
+        if (anchor) {
+          const snapped = snapPointToGrid({ x: anchor.x, y: anchor.y }, ctx.grid, {
+            ctrl: ctx.modifiers.ctrl,
+            meta: ctx.modifiers.meta,
+          })
+          const dx = snapped.x - anchor.x + (event.at.x - state.last.x)
+          const dy = snapped.y - anchor.y + (event.at.y - state.last.y)
+          return [
+            { ...state, last: event.at, firstMove: false },
+            [buildDragMoveEffect(state.movedIds, dx, dy)],
+          ]
+        }
+      }
       const dx = event.at.x - state.last.x
       const dy = event.at.y - state.last.y
-      return [{ ...state, last: event.at }, [buildDragMoveEffect(state.movedIds, dx, dy)]]
+      return [
+        { ...state, last: event.at, firstMove: false },
+        [buildDragMoveEffect(state.movedIds, dx, dy)],
+      ]
     }
     case "pointerUp": {
       return [{ phase: "idle" }, [buildDragCommitEffect(state.movedIds)]]
@@ -225,7 +249,7 @@ export const selectionTool: Tool<SelectionState, ToolEvent> = {
       case "idle":
         return reduceIdle(event, ctx)
       case "dragging":
-        return reduceDragging(state, event)
+        return reduceDragging(state, event, ctx)
       case "marquee":
         return reduceMarquee(state, event, ctx)
       case "resizing":

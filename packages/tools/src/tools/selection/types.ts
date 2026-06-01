@@ -4,7 +4,13 @@ export type ResizeHandle = "nw" | "n" | "ne" | "e" | "se" | "s" | "sw" | "w"
 
 export type SelectionState =
   | { phase: "idle" }
-  | { phase: "dragging"; start: Point; last: Point; movedIds: readonly string[] }
+  | {
+      phase: "dragging"
+      start: Point
+      last: Point
+      movedIds: readonly string[]
+      firstMove: boolean
+    }
   | {
       phase: "resizing"
       handle: ResizeHandle
