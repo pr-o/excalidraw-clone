@@ -18,6 +18,7 @@
   "delete": "Delete",
   "selectAll": "Select all",
   "deselect": "Deselect",
+  "bypassSnap": "Bypass snap",
   "zoomReset": "Reset zoom",
   "zoomIn": "Zoom in",
   "zoomOut": "Zoom out",
