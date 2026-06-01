@@ -1,4 +1,9 @@
-import type { Point, ViewTransform } from "@excalidraw-clone/geometry"
+import {
+  snapPointToGrid,
+  type GridSnap,
+  type Point,
+  type ViewTransform,
+} from "@excalidraw-clone/geometry"
 import type { Modifiers, ToolEvent } from "@excalidraw-clone/tools"
 
 export function modifiersOf(e: {
@@ -24,11 +29,22 @@ export function clientToScene(
   }
 }
 
+export function snapScenePoint(
+  raw: Point,
+  grid: GridSnap,
+  mods: { ctrlKey: boolean; metaKey: boolean },
+): Point {
+  return snapPointToGrid(raw, grid, { ctrl: mods.ctrlKey, meta: mods.metaKey })
+}
+
 export function pointerEventToToolEvent(
   type: "pointerDown" | "pointerMove" | "pointerUp",
   canvas: HTMLCanvasElement,
   view: ViewTransform,
+  grid: GridSnap,
   e: PointerEvent,
 ): ToolEvent {
-  return { type, at: clientToScene(canvas, view, e) }
+  const raw = clientToScene(canvas, view, e)
+  const at = snapScenePoint(raw, grid, e)
+  return { type, at }
 }
