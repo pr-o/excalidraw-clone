@@ -138,7 +138,7 @@ Note: `ToolContext.grid` is the _one_ piece of snap state visible to reducers. O
 
 ### Keyboard shortcut
 
-`Cmd/Ctrl + '` toggles `gridEnabled`. Matches upstream Excalidraw. Wired in the existing keyboard handler that owns Delete / Escape / undo / redo.
+`Cmd/Ctrl + Shift + G` toggles `gridEnabled`. The HelpDialog row, the i18n key `shortcuts.toggleGrid`, and the Korean translation `격자 토글` all already exist (`packages/ui/src/HelpDialog.tsx:38`, `apps/web/src/locales/{en,ko}/shortcuts.json`). The actual keyboard handler is missing — this spec adds it in `apps/web/src/keyboard/shortcuts.ts`.
 
 ### Modifier bypass
 
@@ -148,14 +148,13 @@ Note: this _only_ affects snap. It does not interfere with existing shortcuts be
 
 ### HelpDialog
 
-Two new rows:
+One new row added to `EDITOR_SHORTCUTS` in `packages/ui/src/HelpDialog.tsx` (the toggle-grid row already exists in `VIEW_SHORTCUTS`):
 
 | Action                         | Shortcut        |
 | ------------------------------ | --------------- |
-| Toggle grid                    | `Cmd/Ctrl + '`  |
 | Bypass snap (while grid is on) | Hold `Cmd/Ctrl` |
 
-i18n keys: `shortcut.toggleGrid`, `shortcut.bypassSnap`. English + Korean.
+New i18n key: `shortcuts.bypassSnap` in both `en/shortcuts.json` ("Bypass snap") and `ko/shortcuts.json` ("스냅 해제").
 
 ### PropertiesPanel
 
@@ -221,7 +220,7 @@ The store snapshot is read at dispatch time inside `useDrawingDriver`'s `dispatc
 - `packages/tools/src/tools/selection/index.ts` — first-move correction in `reduceDragging`; `firstMove: true` in initial dragging state
 - `apps/web/src/driver/events.ts` — `pointerEventToToolEvent` takes `grid` param; add `SNAPPABLE_TOOLS`
 - `apps/web/src/driver/useDrawingDriver.ts` — pass `grid` through; snap `onDoubleClick` and library placement clicks
-- `apps/web/src/keyboard/shortcuts.ts` — add `isMeta && key === "'"` → `toggleGrid()` (sits alongside existing undo / redo / palette / escape / help / delete handlers)
+- `apps/web/src/keyboard/shortcuts.ts` — add `isMeta && e.shiftKey && key === "g"` → `useAppStore.getState().toggleGrid()` (sits alongside existing undo / redo / palette handlers)
 - `packages/ui/src/HelpDialog.tsx` — two new rows
 - `apps/web/src/i18n/en.json` and `ko.json` — `shortcut.toggleGrid`, `shortcut.bypassSnap`
 - `packages/tools/test/selection-drag.test.ts` — extend
