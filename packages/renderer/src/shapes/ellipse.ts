@@ -1,6 +1,7 @@
 import type { ExcalidrawEllipseElement } from "@excalidraw-clone/scene"
 import type { Drawable, Options } from "roughjs/bin/core"
 import type { RoughGenerator } from "roughjs/bin/generator"
+import { strokeLineDash } from "./stroke-dash"
 
 const ellipseOptions = (e: ExcalidrawEllipseElement): Options => {
   const opts: Options = {
@@ -9,6 +10,7 @@ const ellipseOptions = (e: ExcalidrawEllipseElement): Options => {
     fillStyle: e.fillStyle,
     roughness: e.roughness,
     seed: e.seed,
+    strokeLineDash: strokeLineDash(e.strokeStyle),
   }
   if (e.backgroundColor !== "transparent") opts.fill = e.backgroundColor
   return opts

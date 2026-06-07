@@ -2,6 +2,7 @@ import type { ExcalidrawArrowElement } from "@excalidraw-clone/scene"
 import type { Drawable, Options } from "roughjs/bin/core"
 import type { RoughGenerator } from "roughjs/bin/generator"
 import type { Point as RoughPoint } from "roughjs/bin/geometry"
+import { strokeLineDash } from "./stroke-dash"
 
 const ARROWHEAD_LENGTH = 20
 const ARROWHEAD_ANGLE = Math.PI / 6
@@ -11,6 +12,7 @@ const arrowOptions = (e: ExcalidrawArrowElement): Options => ({
   strokeWidth: e.strokeWidth,
   roughness: e.roughness,
   seed: e.seed,
+  strokeLineDash: strokeLineDash(e.strokeStyle),
 })
 
 const arrowhead = (
