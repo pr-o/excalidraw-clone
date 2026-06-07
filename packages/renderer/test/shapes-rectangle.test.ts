@@ -30,3 +30,28 @@ describe("rectangleShape", () => {
     expect(rectangleOptions(r).fill).toBe("#ff00ff")
   })
 })
+
+describe("rectangleShape roundness", () => {
+  it("sharp (roundness null) calls gen.rectangle", () => {
+    const gen = new RoughGenerator()
+    const rectSpy = vi.spyOn(gen, "rectangle")
+    const pathSpy = vi.spyOn(gen, "path")
+    const r = newRectangle({ x: 0, y: 0, width: 30, height: 20 })
+    rectangleShape(r, gen)
+    expect(rectSpy).toHaveBeenCalledOnce()
+    expect(pathSpy).not.toHaveBeenCalled()
+  })
+
+  it("round (roundness {type:1}) calls gen.path instead", () => {
+    const gen = new RoughGenerator()
+    const rectSpy = vi.spyOn(gen, "rectangle")
+    const pathSpy = vi.spyOn(gen, "path")
+    const r = {
+      ...newRectangle({ x: 0, y: 0, width: 30, height: 20 }),
+      roundness: { type: 1 as const },
+    }
+    rectangleShape(r, gen)
+    expect(pathSpy).toHaveBeenCalledOnce()
+    expect(rectSpy).not.toHaveBeenCalled()
+  })
+})
