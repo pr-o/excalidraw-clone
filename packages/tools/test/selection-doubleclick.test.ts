@@ -37,4 +37,22 @@ describe("selection — double click", () => {
     )
     expect(out[1]).toEqual([])
   })
+
+  it("double-click on a note container emits startTextEdit for its bound text", () => {
+    const text = newText({ x: 0, y: 0, text: "", containerId: "C" })
+    const container = {
+      ...newRectangle({ x: 0, y: 0, width: 60, height: 40 }),
+      id: "C",
+      boundElements: [{ id: text.id, type: "text" as const }],
+    }
+    const ctx = makeCtx({ readElements: () => [container, text], hitTest: () => container })
+    const r = selectionTool.reduce(
+      selectionTool.initial,
+      { type: "doubleClick", at: point(5, 5) },
+      ctx,
+    )
+    const eff = r[1].find((e) => e.kind === "startTextEdit")
+    expect(eff).toBeDefined()
+    if (eff?.kind === "startTextEdit") expect(eff.elementId).toBe(text.id)
+  })
 })

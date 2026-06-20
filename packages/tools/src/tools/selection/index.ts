@@ -114,8 +114,14 @@ const reduceIdle = (
   }
   if (event.type === "doubleClick") {
     const hit = ctx.hitTest(event.at)
-    if (hit && hit.type === "text") {
-      return [{ phase: "idle" }, [{ kind: "startTextEdit", elementId: hit.id }]]
+    if (hit) {
+      if (hit.type === "text") {
+        return [{ phase: "idle" }, [{ kind: "startTextEdit", elementId: hit.id }]]
+      }
+      const textRef = hit.boundElements?.find((b) => b.type === "text")
+      if (textRef) {
+        return [{ phase: "idle" }, [{ kind: "startTextEdit", elementId: textRef.id }]]
+      }
     }
     return [{ phase: "idle" }, []]
   }
