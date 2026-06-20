@@ -1,4 +1,5 @@
 import { buildExcalidrawData } from "./json"
+import { reconcileBoundText } from "./reconcile-bound-text"
 import type {
   ExcalidrawAppStateSnapshot,
   ExcalidrawData,
@@ -49,6 +50,7 @@ export class Scene {
   mutate(fn: (draft: ExcalidrawElement[]) => void, opts?: MutateOptions): void {
     const draft = [...this.elements]
     fn(draft)
+    reconcileBoundText(draft)
     this.setElements(draft)
     if (!opts?.skipHistory) this.pushHistory(draft)
   }
