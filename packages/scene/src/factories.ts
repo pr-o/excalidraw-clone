@@ -27,6 +27,8 @@ import {
   DEFAULT_STROKE_WIDTH,
 } from "./defaults"
 
+import { NOTE_PADDING } from "./reconcile-bound-text"
+
 const newSeed = (): number => Math.floor(Math.random() * 2 ** 31)
 
 export interface NewElementInput {
@@ -161,3 +163,40 @@ export const newFrame = (input: NewFrameInput): ExcalidrawFrameElement => ({
   name: input.name ?? null,
   isCollapsed: false,
 })
+
+export interface NewNoteInput {
+  x: number
+  y: number
+  width?: number
+  height?: number
+}
+
+export const NOTE_BG_COLOR = "#ffec99"
+
+export const newNote = (
+  input: NewNoteInput,
+): { container: ExcalidrawRectangleElement; text: ExcalidrawTextElement } => {
+  const w = input.width ?? 0
+  const h = input.height ?? 0
+  const text = newText({
+    x: input.x + NOTE_PADDING,
+    y: input.y + NOTE_PADDING,
+    width: Math.max(0, w - 2 * NOTE_PADDING),
+    height: Math.max(0, h - 2 * NOTE_PADDING),
+    text: "",
+    textAlign: "center",
+    verticalAlign: "middle",
+  })
+  const container: ExcalidrawRectangleElement = {
+    ...newRectangle({
+      x: input.x,
+      y: input.y,
+      width: w,
+      height: h,
+      backgroundColor: NOTE_BG_COLOR,
+    }),
+    roundness: { type: 1 },
+    boundElements: [{ id: text.id, type: "text" }],
+  }
+  return { container, text: { ...text, containerId: container.id } }
+}

@@ -171,3 +171,19 @@ describe("frame factory", () => {
     expect(f.name).toBe("Group A")
   })
 })
+
+import { newNote } from "../src/factories"
+
+describe("newNote", () => {
+  it("creates a rounded yellow container bound to a centered text child", () => {
+    const { container, text } = newNote({ x: 10, y: 20, width: 60, height: 40 })
+    expect(container.type).toBe("rectangle")
+    expect(container.backgroundColor).toBe("#ffec99")
+    expect(container.roundness).toEqual({ type: 1 })
+    expect(container.boundElements).toEqual([{ id: text.id, type: "text" }])
+    expect(text.type).toBe("text")
+    expect(text.containerId).toBe(container.id)
+    expect(text.textAlign).toBe("center")
+    expect(text.verticalAlign).toBe("middle")
+  })
+})

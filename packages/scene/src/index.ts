@@ -22,6 +22,8 @@ export {
   newFreedraw,
   newImage,
   newLine,
+  newNote,
+  NOTE_BG_COLOR,
   newRectangle,
   newText,
 } from "./factories"
