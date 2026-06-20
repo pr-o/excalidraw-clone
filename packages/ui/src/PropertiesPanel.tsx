@@ -1,8 +1,16 @@
-import type { ExcalidrawElement, StrokeWidth } from "@excalidraw-clone/scene"
+import type {
+  ExcalidrawElement,
+  FillStyle,
+  Roundness,
+  StrokeStyle,
+  StrokeWidth,
+} from "@excalidraw-clone/scene"
 
 const STROKE_COLORS = ["#1e1e1e", "#e03131", "#2f9e44", "#1971c2", "#f08c00"] as const
 const BG_COLORS = ["transparent", "#ffc9c9", "#b2f2bb", "#a5d8ff", "#ffec99"] as const
 const STROKE_WIDTHS: readonly StrokeWidth[] = [1, 2, 4]
+const STROKE_STYLES: readonly StrokeStyle[] = ["solid", "dashed", "dotted"]
+const FILL_STYLES: readonly FillStyle[] = ["hachure", "cross-hatch", "solid"]
 const OPACITY_STEPS = [25, 50, 75, 100] as const
 
 export interface PropertiesPanelProps {
@@ -57,6 +65,19 @@ export function PropertiesPanel({
     selectedElements as unknown as readonly { [k: string]: unknown }[],
     "opacity",
   )
+  const strokeStyle = commonValue<StrokeStyle>(
+    selectedElements as unknown as readonly { [k: string]: unknown }[],
+    "strokeStyle",
+  )
+  const fillStyle = commonValue<FillStyle>(
+    selectedElements as unknown as readonly { [k: string]: unknown }[],
+    "fillStyle",
+  )
+  const roundness = commonValue<Roundness>(
+    selectedElements as unknown as readonly { [k: string]: unknown }[],
+    "roundness",
+  )
+  const isRound = roundness !== undefined && roundness !== null
 
   return (
     <aside
@@ -105,6 +126,63 @@ export function PropertiesPanel({
               <div style={{ height: `${w}px` }} className="mx-auto w-5 bg-current" aria-hidden />
             </button>
           ))}
+        </div>
+      </Section>
+
+      <Section label={t("properties.strokeStyle")}>
+        <div className="flex gap-1">
+          {STROKE_STYLES.map((s) => (
+            <button
+              key={s}
+              type="button"
+              data-testid={`stroke-style-${s}`}
+              aria-pressed={strokeStyle === s}
+              onClick={() => onChange({ strokeStyle: s })}
+              className={`h-8 flex-1 rounded border text-xs ${strokeStyle === s ? "border-violet-600 bg-violet-100" : "border-gray-300"}`}
+            >
+              {t(`properties.strokeStyle_${s}`)}
+            </button>
+          ))}
+        </div>
+      </Section>
+
+      <Section label={t("properties.fillStyle")}>
+        <div className="flex gap-1">
+          {FILL_STYLES.map((s) => (
+            <button
+              key={s}
+              type="button"
+              data-testid={`fill-style-${s}`}
+              aria-pressed={fillStyle === s}
+              onClick={() => onChange({ fillStyle: s })}
+              className={`h-8 flex-1 rounded border text-xs ${fillStyle === s ? "border-violet-600 bg-violet-100" : "border-gray-300"}`}
+            >
+              {t(`properties.fillStyle_${s}`)}
+            </button>
+          ))}
+        </div>
+      </Section>
+
+      <Section label={t("properties.roundness")}>
+        <div className="flex gap-1">
+          <button
+            type="button"
+            data-testid="roundness-sharp"
+            aria-pressed={roundness !== undefined && !isRound}
+            onClick={() => onChange({ roundness: null })}
+            className={`h-8 flex-1 rounded border text-xs ${roundness !== undefined && !isRound ? "border-violet-600 bg-violet-100" : "border-gray-300"}`}
+          >
+            {t("properties.roundness_sharp")}
+          </button>
+          <button
+            type="button"
+            data-testid="roundness-round"
+            aria-pressed={isRound}
+            onClick={() => onChange({ roundness: { type: 1 } })}
+            className={`h-8 flex-1 rounded border text-xs ${isRound ? "border-violet-600 bg-violet-100" : "border-gray-300"}`}
+          >
+            {t("properties.roundness_round")}
+          </button>
         </div>
       </Section>
 

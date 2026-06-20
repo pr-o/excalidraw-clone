@@ -62,4 +62,42 @@ describe("PropertiesPanel", () => {
     expect(screen.getByTestId("stroke-1e1e1e")).toHaveAttribute("aria-pressed", "false")
     expect(screen.getByTestId("stroke-e03131")).toHaveAttribute("aria-pressed", "false")
   })
+
+  it("emits onChange({ strokeStyle }) when a stroke-style button is clicked", async () => {
+    const el = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
+    const onChange = vi.fn()
+    render(<PropertiesPanel t={t} selectedElements={[el]} {...handlers} onChange={onChange} />)
+    await userEvent.click(screen.getByTestId("stroke-style-dashed"))
+    expect(onChange).toHaveBeenCalledWith({ strokeStyle: "dashed" })
+  })
+
+  it("emits onChange({ fillStyle }) when a fill-style button is clicked", async () => {
+    const el = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
+    const onChange = vi.fn()
+    render(<PropertiesPanel t={t} selectedElements={[el]} {...handlers} onChange={onChange} />)
+    await userEvent.click(screen.getByTestId("fill-style-cross-hatch"))
+    expect(onChange).toHaveBeenCalledWith({ fillStyle: "cross-hatch" })
+  })
+
+  it("emits onChange({ roundness }) when a roundness button is clicked", async () => {
+    const el = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
+    const onChange = vi.fn()
+    render(<PropertiesPanel t={t} selectedElements={[el]} {...handlers} onChange={onChange} />)
+    await userEvent.click(screen.getByTestId("roundness-round"))
+    expect(onChange).toHaveBeenCalledWith({ roundness: { type: 1 } })
+  })
+
+  it("mixed strokeStyle selection shows no pressed style button", () => {
+    const a = {
+      ...newRectangle({ x: 0, y: 0, width: 10, height: 10 }),
+      strokeStyle: "solid" as const,
+    }
+    const b = {
+      ...newRectangle({ x: 0, y: 0, width: 10, height: 10 }),
+      strokeStyle: "dashed" as const,
+    }
+    render(<PropertiesPanel t={t} selectedElements={[a, b]} {...handlers} />)
+    expect(screen.getByTestId("stroke-style-solid")).toHaveAttribute("aria-pressed", "false")
+    expect(screen.getByTestId("stroke-style-dashed")).toHaveAttribute("aria-pressed", "false")
+  })
 })
