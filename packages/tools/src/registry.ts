@@ -6,6 +6,7 @@ import { frameTool } from "./tools/frame"
 import { freedrawTool } from "./tools/freedraw"
 import { imageTool } from "./tools/image"
 import { lineTool } from "./tools/line"
+import { noteTool } from "./tools/note"
 import { rectangleTool } from "./tools/rectangle"
 import { selectionTool } from "./tools/selection"
 import { textTool } from "./tools/text"
@@ -23,4 +24,5 @@ export const TOOLS: Record<ToolName, Tool<unknown, ToolEvent>> = {
   eraser: eraserTool,
   frame: frameTool,
   image: imageTool,
+  note: noteTool,
 }
