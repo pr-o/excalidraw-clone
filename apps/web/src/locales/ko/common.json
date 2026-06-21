@@ -12,7 +12,8 @@
     "text": "텍스트",
     "image": "이미지",
     "eraser": "지우개",
-    "frame": "프레임"
+    "frame": "프레임",
+    "note": "메모"
   },
   "properties": {
     "label": "속성",

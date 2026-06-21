@@ -10,6 +10,7 @@
   "image": "Image",
   "eraser": "Eraser",
   "frame": "Frame",
+  "note": "Sticky note",
   "undo": "Undo",
   "redo": "Redo",
   "copy": "Copy",

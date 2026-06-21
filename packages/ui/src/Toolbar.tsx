@@ -14,6 +14,7 @@ const TOOL_ITEMS: ReadonlyArray<{ name: ToolName; shortcut: string }> = [
   { name: "image", shortcut: "9" },
   { name: "eraser", shortcut: "E" },
   { name: "frame", shortcut: "F" },
+  { name: "note", shortcut: "N" },
 ]
 
 export interface ToolbarProps {

@@ -34,6 +34,19 @@ describe("Toolbar", () => {
     expect(screen.getByTestId("toolbar-lock")).toBeInTheDocument()
   })
 
+  it("renders a note tool button", () => {
+    render(
+      <Toolbar
+        t={t}
+        activeTool="selection"
+        onSelectTool={() => {}}
+        lockActiveTool={false}
+        onToggleLock={() => {}}
+      />,
+    )
+    expect(screen.getByTestId("toolbar-note")).toBeInTheDocument()
+  })
+
   it("marks the active tool as pressed", () => {
     render(
       <Toolbar

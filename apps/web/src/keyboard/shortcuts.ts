@@ -19,6 +19,7 @@ const TOOL_KEYS: Record<string, ToolName> = {
   "9": "image",
   e: "eraser",
   f: "frame",
+  n: "note",
 }
 
 export function attachShortcuts({ scene }: Bindings): () => void {

@@ -12,7 +12,8 @@
     "text": "Text",
     "image": "Image",
     "eraser": "Eraser",
-    "frame": "Frame"
+    "frame": "Frame",
+    "note": "Sticky note"
   },
   "properties": {
     "label": "Properties",
