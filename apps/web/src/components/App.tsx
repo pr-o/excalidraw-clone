@@ -23,6 +23,7 @@ import { I18nextProvider, useTranslation } from "react-i18next"
 import { startAutoSave } from "../driver/autoSave"
 import { hydrateScene, hydrateUI } from "../driver/hydration"
 import { pickAndUploadImage } from "../driver/imageUpload"
+import { useSceneRevision } from "../hooks/useSceneRevision"
 import { openExcalidrawFromPicker } from "../driver/openFile"
 import { saveAsExcalidraw } from "../driver/saveFile"
 import { ensureI18n } from "../i18n"
@@ -104,10 +105,13 @@ function Inner(): React.ReactElement {
     void i18n.changeLanguage(locale)
   }, [locale, i18n])
 
+  // Recompute on every scene mutation: the `scene` ref is stable across edits,
+  // so without the revision the panel would only refresh on re-selection.
+  const sceneRevision = useSceneRevision(scene)
   const selectedElements = useMemo(() => {
     const ids = new Set(selectedIds)
     return scene.getElements().filter((e) => ids.has(e.id))
-  }, [selectedIds, scene])
+  }, [selectedIds, scene, sceneRevision])
 
   useEffect(() => {
     void getAllLibraryItems().then(setLibraryItems)

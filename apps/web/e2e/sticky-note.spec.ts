@@ -46,8 +46,13 @@ test("toggling stroke style to dashed updates the selected shape", async ({ page
   // Shape auto-selects after draw; the properties panel exposes the style rows.
   await page.locator('[data-testid="stroke-style-dashed"]').click()
 
-  // The edit lands in the scene (and persists); assert on the saved state rather
-  // than the panel's pressed state, which only refreshes on re-selection.
+  // The panel reflects the live edit immediately (no re-selection needed).
+  await expect(page.locator('[data-testid="stroke-style-dashed"]')).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  )
+
+  // ...and the edit lands in the scene and persists.
   await page.waitForTimeout(700)
   const sceneJson = await page.evaluate(() => localStorage.getItem("excalidraw-scene"))
   const data = JSON.parse(sceneJson!) as { elements: { type: string; strokeStyle?: string }[] }
