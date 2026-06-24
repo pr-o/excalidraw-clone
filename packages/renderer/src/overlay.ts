@@ -55,6 +55,18 @@ const midPoint = (a: Point, b: Point): Point => ({
   y: (a.y + b.y) / 2,
 })
 
+const isLinear = (e: ExcalidrawElement): boolean => e.type === "arrow" || e.type === "line"
+
+const linearEndpoints = (e: ExcalidrawElement): readonly [Point, Point] => {
+  const pts = (e as { points: readonly Point[] }).points
+  const first = pts[0] ?? { x: 0, y: 0 }
+  const last = pts[pts.length - 1] ?? first
+  return [
+    { x: e.x + first.x, y: e.y + first.y },
+    { x: e.x + last.x, y: e.y + last.y },
+  ]
+}
+
 const drawHandle = (ctx: CanvasRenderingContext2D, p: Point, theme: Theme): void => {
   ctx.fillStyle = SELECTION_FILL[theme]
   ctx.strokeStyle = SELECTION_STROKE[theme]
@@ -69,6 +81,12 @@ const drawElementChrome = (
   view: ViewTransform,
   theme: Theme,
 ): void => {
+  if (isLinear(e)) {
+    const [start, end] = linearEndpoints(e)
+    drawHandle(ctx, sceneToViewport(start, view), theme)
+    drawHandle(ctx, sceneToViewport(end, view), theme)
+    return
+  }
   const corners = elementCorners(e).map((p) => sceneToViewport(p, view))
   ctx.strokeStyle = SELECTION_STROKE[theme]
   ctx.lineWidth = 1

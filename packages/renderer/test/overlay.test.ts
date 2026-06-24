@@ -1,4 +1,4 @@
-import { Scene, newRectangle } from "@excalidraw-clone/scene"
+import { Scene, newArrow, newRectangle } from "@excalidraw-clone/scene"
 import { RoughCanvas } from "roughjs/bin/canvas"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { CanvasRenderer } from "../src"
@@ -67,6 +67,26 @@ describe("CanvasRenderer selection overlay", () => {
     const arcCalls = overlayCtx.__calls.filter((c) => c.method === "arc").length
     expect(fillRectCalls).toBe(16)
     expect(arcCalls).toBe(2)
+  })
+
+  it("single selected arrow → 2 endpoint dots, no rotation arc, no bbox stroke", () => {
+    const { canvas: main } = createMockCanvas()
+    const { canvas: overlay, ctx: overlayCtx } = createMockCanvas()
+    const arrow = {
+      ...newArrow({ x: 0, y: 0 }),
+      width: 100,
+      height: 0,
+      points: [
+        { x: 0, y: 0 },
+        { x: 100, y: 0 },
+      ],
+    }
+    const scene = new Scene([arrow])
+    const r = new CanvasRenderer(main, scene, { overlayCanvas: overlay, selection: [arrow.id] })
+    r.start()
+    flush()
+    expect(overlayCtx.__calls.filter((c) => c.method === "fillRect").length).toBe(2)
+    expect(overlayCtx.__calls.filter((c) => c.method === "arc").length).toBe(0)
   })
 
   it("marquee uses dashed stroke", () => {
