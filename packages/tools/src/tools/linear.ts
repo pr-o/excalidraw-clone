@@ -1,10 +1,18 @@
 import type { Point } from "@excalidraw-clone/geometry"
-import type { ExcalidrawElement } from "@excalidraw-clone/scene"
+import { BINDING_GAP, bindingTargetAt } from "@excalidraw-clone/scene"
+import type { ExcalidrawArrowElement, ExcalidrawElement } from "@excalidraw-clone/scene"
 import type { Modifiers, ToolEffect } from "../types"
 
 export type LinearState =
   | { phase: "idle" }
-  | { phase: "drawing"; start: Point; current: Point; elementId: string }
+  | {
+      phase: "drawing"
+      start: Point
+      current: Point
+      elementId: string
+      startBindId: string | null
+      endBindId: string | null
+    }
 
 export const LINEAR_INITIAL: LinearState = { phase: "idle" }
 
@@ -34,6 +42,20 @@ const removeElement = (draft: ExcalidrawElement[], id: string): void => {
   const i = draft.findIndex((e) => e.id === id)
   if (i >= 0) draft.splice(i, 1)
 }
+
+const addBackRef = (draft: ExcalidrawElement[], targetId: string, arrowId: string): void => {
+  const j = draft.findIndex((e) => e.id === targetId)
+  if (j < 0) return
+  const t = draft[j]!
+  const existing = t.boundElements ?? []
+  if (existing.some((b) => b.id === arrowId)) return
+  draft[j] = { ...t, boundElements: [...existing, { id: arrowId, type: "arrow" }] }
+}
+
+const bindIdAt = (
+  at: Point,
+  bindTargets: readonly ExcalidrawElement[] | undefined,
+): string | null => (bindTargets ? (bindingTargetAt(at, bindTargets)?.id ?? null) : null)
 
 interface LinearPatch {
   x: number
@@ -69,6 +91,7 @@ interface LinearReducerArgs {
     | { type: "delete" }
   modifiers: Modifiers
   factory: (start: Point) => ExcalidrawElement
+  bindTargets?: readonly ExcalidrawElement[]
 }
 
 export const linearReduce = ({
@@ -76,6 +99,7 @@ export const linearReduce = ({
   event,
   modifiers,
   factory,
+  bindTargets,
 }: LinearReducerArgs): [LinearState, readonly ToolEffect[]] => {
   if (state.phase === "idle") {
     if (event.type === "pointerDown") {
@@ -85,6 +109,8 @@ export const linearReduce = ({
         start: event.at,
         current: event.at,
         elementId: element.id,
+        startBindId: bindIdAt(event.at, bindTargets),
+        endBindId: null,
       }
       return [
         next,
@@ -107,7 +133,7 @@ export const linearReduce = ({
       const id = state.elementId
       const patch = linearPatch(state.start, end)
       return [
-        { ...state, current: end },
+        { ...state, current: end, endBindId: bindIdAt(end, bindTargets) },
         [
           {
             kind: "mutation",
@@ -135,12 +161,33 @@ export const linearReduce = ({
           ],
         ]
       }
+      const startBindId = state.startBindId
+      const endBindId = bindIdAt(end, bindTargets)
       return [
         next,
         [
           {
             kind: "mutation",
-            apply: (draft) => replaceElement(draft, id, patch),
+            apply: (draft) => {
+              const i = draft.findIndex((e) => e.id === id)
+              if (i < 0) return
+              let arrow = { ...draft[i]!, ...patch } as ExcalidrawArrowElement
+              if (startBindId) {
+                arrow = {
+                  ...arrow,
+                  startBinding: { elementId: startBindId, focus: 0, gap: BINDING_GAP },
+                }
+                addBackRef(draft, startBindId, id)
+              }
+              if (endBindId) {
+                arrow = {
+                  ...arrow,
+                  endBinding: { elementId: endBindId, focus: 0, gap: BINDING_GAP },
+                }
+                addBackRef(draft, endBindId, id)
+              }
+              draft[i] = arrow
+            },
           },
           { kind: "select", ids: [id] },
           { kind: "switchTool", tool: "selection" },

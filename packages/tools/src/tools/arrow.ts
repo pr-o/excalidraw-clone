@@ -11,6 +11,7 @@ export const arrowTool: Tool<LinearState, ToolEvent> = {
       event,
       modifiers: ctx.modifiers,
       factory: (start) => newArrow({ x: start.x, y: start.y }),
+      bindTargets: ctx.readElements(),
     })
   },
 }
