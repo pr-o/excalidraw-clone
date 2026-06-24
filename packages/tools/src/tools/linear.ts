@@ -49,7 +49,7 @@ const bindIdAt = (
   bindTargets: readonly ExcalidrawElement[] | undefined,
 ): string | null => (bindTargets ? (bindingTargetAt(at, bindTargets)?.id ?? null) : null)
 
-interface LinearPatch {
+export interface LinearPatch {
   x: number
   y: number
   width: number
@@ -57,7 +57,7 @@ interface LinearPatch {
   points: readonly Point[]
 }
 
-const linearPatch = (start: Point, end: Point): LinearPatch => {
+export const linearPatch = (start: Point, end: Point): LinearPatch => {
   const minX = Math.min(start.x, end.x)
   const minY = Math.min(start.y, end.y)
   return {
