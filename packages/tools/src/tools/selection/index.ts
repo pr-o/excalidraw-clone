@@ -1,6 +1,13 @@
 import { snapPointToGrid } from "@excalidraw-clone/geometry"
+import { bindingTargetAt } from "@excalidraw-clone/scene"
 import type { Tool, ToolContext, ToolEffect, ToolEvent } from "../../types"
 import { buildDragCommitEffect, buildDragMoveEffect, buildDragRevertEffect } from "./drag"
+import {
+  buildEndpointCommitEffect,
+  buildEndpointMoveEffect,
+  buildEndpointRevertEffect,
+  snapshotLinear,
+} from "./endpoint"
 import { findHandleAt } from "./handles"
 import { elementsInsideMarquee, marqueeBounds } from "./marquee"
 import {
@@ -56,6 +63,18 @@ const reduceIdle = (
             origin: { angle: e.angle },
             center,
             pointerAngleAtStart: pointerAngle(center, event.at),
+          },
+          [],
+        ]
+      }
+      if (e && handle.kind === "endpoint") {
+        return [
+          {
+            phase: "endpointDragging",
+            elementId: handle.elementId,
+            end: handle.end,
+            origin: snapshotLinear(e),
+            candidateBindId: null,
           },
           [],
         ]
@@ -247,6 +266,28 @@ const reduceRotating = (
   }
 }
 
+const reduceEndpoint = (
+  state: Extract<SelectionState, { phase: "endpointDragging" }>,
+  event: ToolEvent,
+  ctx: ToolContext,
+): [SelectionState, readonly ToolEffect[]] => {
+  switch (event.type) {
+    case "pointerMove": {
+      const candidate = bindingTargetAt(event.at, ctx.readElements())
+      return [
+        { ...state, candidateBindId: candidate?.id ?? null },
+        [buildEndpointMoveEffect(state.elementId, state.end, event.at)],
+      ]
+    }
+    case "pointerUp":
+      return [{ phase: "idle" }, [buildEndpointCommitEffect(state.elementId, state.end)]]
+    case "escape":
+      return [{ phase: "idle" }, [buildEndpointRevertEffect(state.elementId, state.origin)]]
+    default:
+      return [state, []]
+  }
+}
+
 export const selectionTool: Tool<SelectionState, ToolEvent> = {
   name: "selection",
   initial: SELECTION_INITIAL,
@@ -262,6 +303,8 @@ export const selectionTool: Tool<SelectionState, ToolEvent> = {
         return reduceResizing(state, event, ctx)
       case "rotating":
         return reduceRotating(state, event, ctx)
+      case "endpointDragging":
+        return reduceEndpoint(state, event, ctx)
     }
   },
 }

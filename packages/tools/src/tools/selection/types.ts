@@ -1,4 +1,5 @@
 import type { Point } from "@excalidraw-clone/geometry"
+import type { LinearSnapshot } from "./endpoint"
 
 export type ResizeHandle = "nw" | "n" | "ne" | "e" | "se" | "s" | "sw" | "w"
 
@@ -24,6 +25,13 @@ export type SelectionState =
       origin: { angle: number }
       center: Point
       pointerAngleAtStart: number
+    }
+  | {
+      phase: "endpointDragging"
+      elementId: string
+      end: "start" | "end"
+      origin: LinearSnapshot
+      candidateBindId: string | null
     }
   | { phase: "marquee"; start: Point; current: Point; baseSelection: readonly string[] }
 
