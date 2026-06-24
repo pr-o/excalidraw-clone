@@ -36,6 +36,14 @@ export type { MutateOptions } from "./scene"
 export type { LibraryItem } from "./library-item"
 export { normalizeToOrigin } from "./normalize"
 export { NOTE_PADDING, reconcileBoundText } from "./reconcile-bound-text"
+export {
+  BINDABLE_TYPES,
+  BINDING_GAP,
+  bindingTargetAt,
+  canBindTo,
+  computeBoundEndpoint,
+  reconcileBindings,
+} from "./bindings"
 export { SCENE_FORMAT_SOURCE, SCENE_FORMAT_VERSION, buildExcalidrawData } from "./json"
 
 export type {

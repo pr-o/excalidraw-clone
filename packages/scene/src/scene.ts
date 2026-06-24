@@ -1,3 +1,4 @@
+import { reconcileBindings } from "./bindings"
 import { buildExcalidrawData } from "./json"
 import { reconcileBoundText } from "./reconcile-bound-text"
 import type {
@@ -51,6 +52,7 @@ export class Scene {
     const draft = [...this.elements]
     fn(draft)
     reconcileBoundText(draft)
+    reconcileBindings(draft)
     this.setElements(draft)
     if (!opts?.skipHistory) this.pushHistory(draft)
   }

@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest"
-import { Scene, newRectangle } from "../src"
+import { Scene, newArrow, newRectangle } from "../src"
+import { BINDING_GAP } from "../src/bindings"
 
 describe("Scene.mutate — basic add/replace", () => {
   it("adds an element via push", () => {
@@ -68,6 +69,37 @@ describe("Scene.mutate — listeners", () => {
       d.push(newRectangle({ x: 0, y: 0 }))
     })
     expect(fn).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe("Scene.mutate — binding reconciliation", () => {
+  it("moving a bound target updates the arrow endpoint through mutate()", () => {
+    const scene = new Scene()
+    const target = { ...newRectangle({ x: 200, y: 0, width: 100, height: 100 }), id: "t" }
+    const arrow = {
+      ...newArrow({ x: 0, y: 50 }),
+      id: "ar",
+      points: [
+        { x: 0, y: 0 },
+        { x: 100, y: 0 },
+      ],
+      width: 100,
+      height: 0,
+      endBinding: { elementId: "t", focus: 0, gap: BINDING_GAP },
+    }
+    scene.mutate((draft) => {
+      draft.push(target, arrow)
+    })
+    const before = scene.getElements().find((e) => e.id === "ar")!
+    const beforeEndX = before.x + (before as typeof arrow).points[1]!.x
+
+    scene.mutate((draft) => {
+      const i = draft.findIndex((e) => e.id === "t")
+      draft[i] = { ...draft[i]!, x: 500 }
+    })
+    const after = scene.getElements().find((e) => e.id === "ar")!
+    const afterEndX = after.x + (after as typeof arrow).points[1]!.x
+    expect(afterEndX).toBeGreaterThan(beforeEndX)
   })
 })
 
