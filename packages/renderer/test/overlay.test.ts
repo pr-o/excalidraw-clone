@@ -94,6 +94,22 @@ describe("CanvasRenderer selection overlay", () => {
     expect(fillRects).toBe(1 + 8) // background + 8 handles
   })
 
+  it("binding highlight strokes a box for a highlighted element with no selection", () => {
+    const { canvas: main } = createMockCanvas()
+    const { canvas: overlay, ctx: overlayCtx } = createMockCanvas()
+    const rect = newRectangle({ x: 0, y: 0, width: 100, height: 100 })
+    const scene = new Scene([rect])
+    const r = new CanvasRenderer(main, scene, { overlayCanvas: overlay })
+    r.start()
+    flush()
+    expect(overlayCtx.__calls.filter((c) => c.method === "strokeRect").length).toBe(0)
+    r.setBindingHighlight([rect.id])
+    flush()
+    expect(
+      overlayCtx.__calls.filter((c) => c.method === "strokeRect").length,
+    ).toBeGreaterThanOrEqual(1)
+  })
+
   it("overlay clears its own canvas; main canvas is not cleared by chrome pass", () => {
     const { canvas: main, ctx: mainCtx } = createMockCanvas()
     const { canvas: overlay, ctx: overlayCtx } = createMockCanvas()

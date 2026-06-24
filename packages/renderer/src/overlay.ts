@@ -22,6 +22,11 @@ const SELECTION_FILL: Record<Theme, string> = {
   dark: "#121212",
 }
 
+const BINDING_HIGHLIGHT: Record<Theme, string> = {
+  light: "#6965db",
+  dark: "#a8a5ff",
+}
+
 export interface MarqueeBox {
   start: Point
   end: Point
@@ -122,10 +127,25 @@ export const drawSelectionChrome = (
   view: ViewTransform,
   theme: Theme,
   marquee: MarqueeBox | null,
+  highlightIds: readonly string[],
   options: DrawSelectionChromeOptions,
 ): void => {
   ctx.setTransform(1, 0, 0, 1, 0, 0)
   if (options.clearBackground) ctx.clearRect(0, 0, canvas.width, canvas.height)
+  if (highlightIds.length > 0) {
+    const byId = new Map(elements.map((e) => [e.id, e]))
+    for (const id of highlightIds) {
+      const e = byId.get(id)
+      if (!e) continue
+      const b = getElementBounds(e)
+      const tl = sceneToViewport({ x: b.x, y: b.y }, view)
+      const br = sceneToViewport({ x: b.x + b.width, y: b.y + b.height }, view)
+      ctx.setLineDash([])
+      ctx.strokeStyle = BINDING_HIGHLIGHT[theme]
+      ctx.lineWidth = 2
+      ctx.strokeRect(tl.x - 2, tl.y - 2, br.x - tl.x + 4, br.y - tl.y + 4)
+    }
+  }
   if (selection.length > 0) {
     const byId = new Map(elements.map((e) => [e.id, e]))
     for (const id of selection) {

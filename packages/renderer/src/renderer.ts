@@ -30,6 +30,7 @@ export class CanvasRenderer {
   private readonly overlayCanvas: HTMLCanvasElement | null
   private readonly overlayCtx: CanvasRenderingContext2D | null
   private marquee: MarqueeBox | null = null
+  private highlight: readonly string[] = []
 
   private dirty = false
   private rafId: number | null = null
@@ -89,6 +90,11 @@ export class CanvasRenderer {
 
   setSelection(ids: readonly string[]): void {
     this.selection = ids
+    this.requestRedraw()
+  }
+
+  setBindingHighlight(ids: readonly string[]): void {
+    this.highlight = ids
     this.requestRedraw()
   }
 
@@ -152,11 +158,12 @@ export class CanvasRenderer {
         this.viewTransform,
         this.theme,
         this.marquee,
+        this.highlight,
         { clearBackground: true },
       )
       return
     }
-    if (this.selection.length === 0 && !this.marquee) return
+    if (this.selection.length === 0 && !this.marquee && this.highlight.length === 0) return
     drawSelectionChrome(
       this.ctx,
       this.canvas,
@@ -165,6 +172,7 @@ export class CanvasRenderer {
       this.viewTransform,
       this.theme,
       this.marquee,
+      this.highlight,
       { clearBackground: false },
     )
   }
