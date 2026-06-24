@@ -58,6 +58,17 @@ describe("computeBoundEndpoint", () => {
     expect(p.x).toBeCloseTo(100 + BINDING_GAP)
     expect(p.y).toBeCloseTo(50)
   })
+
+  it("focus shifts the attach point perpendicular to the toward direction", () => {
+    const target = rect({ x: 0, y: 0, width: 100, height: 100 }) // center (50,50)
+    // toward far to the right → dir ≈ (1,0), perp ≈ (0,1), halfPerp = height/2 = 50
+    const centered = computeBoundEndpoint(target, { x: 1000, y: 50 }, 0, 0)
+    const shifted = computeBoundEndpoint(target, { x: 1000, y: 50 }, 0, 0.5)
+    expect(centered.y).toBeCloseTo(50)
+    // focus 0.5 → +0.5 * 50 = +25 in the perpendicular (down) direction
+    expect(shifted.y).toBeCloseTo(75)
+    expect(shifted.x).toBeCloseTo(centered.x)
+  })
 })
 
 const boundArrow = (over: Partial<ExcalidrawArrowElement>): ExcalidrawArrowElement => ({

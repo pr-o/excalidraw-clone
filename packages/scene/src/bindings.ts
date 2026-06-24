@@ -40,16 +40,23 @@ export const bindingTargetAt = (
   return null
 }
 
+const perpHalfExtent = (bounds: ReturnType<typeof getElementBounds>, perp: Point): number =>
+  (Math.abs(perp.x) * bounds.width) / 2 + (Math.abs(perp.y) * bounds.height) / 2
+
 export const computeBoundEndpoint = (
   target: ExcalidrawElement,
   toward: Point,
   gap: number,
+  focus = 0,
 ): Point => {
   const bounds = getElementBounds(target)
   const center = boundsCenter(bounds)
   const edge = edgePointToward(bounds, edgeKindFor(target.type), toward)
   const dir = normalize({ x: toward.x - center.x, y: toward.y - center.y })
-  return pointAdd(edge, pointScale(dir, gap))
+  const base = pointAdd(edge, pointScale(dir, gap))
+  if (focus === 0) return base
+  const perp: Point = { x: -dir.y, y: dir.x }
+  return pointAdd(base, pointScale(perp, focus * perpHalfExtent(bounds, perp)))
 }
 
 const liveTarget = (
@@ -90,11 +97,11 @@ export const reconcileBindings = (draft: ExcalidrawElement[]): void => {
 
     if (startTarget) {
       const toward = endTarget ? boundsCenter(getElementBounds(endTarget)) : endAbs
-      startAbs = computeBoundEndpoint(startTarget, toward, startBinding!.gap)
+      startAbs = computeBoundEndpoint(startTarget, toward, startBinding!.gap, startBinding!.focus)
     }
     if (endTarget) {
       const toward = startTarget ? boundsCenter(getElementBounds(startTarget)) : startAbs
-      endAbs = computeBoundEndpoint(endTarget, toward, endBinding!.gap)
+      endAbs = computeBoundEndpoint(endTarget, toward, endBinding!.gap, endBinding!.focus)
     }
 
     const minX = Math.min(startAbs.x, endAbs.x)
