@@ -2,6 +2,7 @@ import type { Point } from "@excalidraw-clone/geometry"
 import { BINDING_GAP, bindingTargetAt } from "@excalidraw-clone/scene"
 import type { ExcalidrawArrowElement, ExcalidrawElement } from "@excalidraw-clone/scene"
 import type { Modifiers, ToolEffect } from "../types"
+import { addBackRef } from "../binding-refs"
 
 export type LinearState =
   | { phase: "idle" }
@@ -41,15 +42,6 @@ const replaceElement = (draft: ExcalidrawElement[], id: string, patch: LinearPat
 const removeElement = (draft: ExcalidrawElement[], id: string): void => {
   const i = draft.findIndex((e) => e.id === id)
   if (i >= 0) draft.splice(i, 1)
-}
-
-const addBackRef = (draft: ExcalidrawElement[], targetId: string, arrowId: string): void => {
-  const j = draft.findIndex((e) => e.id === targetId)
-  if (j < 0) return
-  const t = draft[j]!
-  const existing = t.boundElements ?? []
-  if (existing.some((b) => b.id === arrowId)) return
-  draft[j] = { ...t, boundElements: [...existing, { id: arrowId, type: "arrow" }] }
 }
 
 const bindIdAt = (

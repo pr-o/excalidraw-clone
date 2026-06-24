@@ -1,14 +1,7 @@
 import type { Point } from "@excalidraw-clone/geometry"
 import type { ExcalidrawArrowElement, ExcalidrawElement } from "@excalidraw-clone/scene"
 import type { ToolEffect } from "../../types"
-
-const removeBackRef = (draft: ExcalidrawElement[], targetId: string, arrowId: string): void => {
-  const j = draft.findIndex((e) => e.id === targetId)
-  if (j < 0) return
-  const t = draft[j]!
-  if (!t.boundElements) return
-  draft[j] = { ...t, boundElements: t.boundElements.filter((b) => b.id !== arrowId) }
-}
+import { removeBackRef } from "../../binding-refs"
 
 const unbindMovedArrow = (
   draft: ExcalidrawElement[],
