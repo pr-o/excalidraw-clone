@@ -14,6 +14,7 @@ const ROTATION_HANDLE_HIT_RADIUS = 8
 export type HandleHit =
   | { kind: "resize"; elementId: string; handle: ResizeHandle }
   | { kind: "rotate"; elementId: string }
+  | { kind: "endpoint"; elementId: string; end: "start" | "end" }
 
 const rotatedCorners = (e: ExcalidrawElement): readonly [Point, Point, Point, Point] => {
   const corners: [Point, Point, Point, Point] = [
@@ -40,6 +41,18 @@ const midPoint = (a: Point, b: Point): Point => ({
 const within = (p: Point, target: Point, half = HANDLE_HIT_HALF): boolean =>
   Math.abs(p.x - target.x) <= half && Math.abs(p.y - target.y) <= half
 
+const isLinear = (e: ExcalidrawElement): boolean => e.type === "arrow" || e.type === "line"
+
+const linearEndpoints = (e: ExcalidrawElement): readonly [Point, Point] => {
+  const pts = (e as { points: readonly Point[] }).points
+  const first = pts[0] ?? { x: 0, y: 0 }
+  const last = pts[pts.length - 1] ?? first
+  return [
+    { x: e.x + first.x, y: e.y + first.y },
+    { x: e.x + last.x, y: e.y + last.y },
+  ]
+}
+
 export const findHandleAt = (
   at: Point,
   selectedIds: readonly string[],
@@ -50,6 +63,18 @@ export const findHandleAt = (
   const id = selectedIds[0]!
   const e = elements.find((el) => el.id === id)
   if (!e) return null
+
+  if (isLinear(e)) {
+    const atV = sceneToViewport(at, view)
+    const [startScene, endScene] = linearEndpoints(e)
+    if (within(atV, sceneToViewport(startScene, view))) {
+      return { kind: "endpoint", elementId: id, end: "start" }
+    }
+    if (within(atV, sceneToViewport(endScene, view))) {
+      return { kind: "endpoint", elementId: id, end: "end" }
+    }
+    return null
+  }
 
   const atV = sceneToViewport(at, view)
   const cornersScene = rotatedCorners(e)
