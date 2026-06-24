@@ -11,6 +11,7 @@ import {
 import {
   TOOLS,
   type ImageReadyEvent,
+  type LinearState,
   type Modifiers,
   type Tool,
   type ToolContext,
@@ -145,6 +146,12 @@ export function useDrawingDriver({
       const [next, effects] = tool.reduce(currentState, event, ctx)
       useAppStore.getState().setToolState(toolName, next)
       applyEffects(scene, effects)
+      if (toolName === "arrow" && (next as LinearState).phase === "drawing") {
+        const cand = (next as Extract<LinearState, { phase: "drawing" }>).endBindId
+        renderer.setBindingHighlight(cand ? [cand] : [])
+      } else {
+        renderer.setBindingHighlight([])
+      }
     }
 
     const dispatchPointer = (
