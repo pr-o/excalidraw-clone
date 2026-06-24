@@ -1,8 +1,9 @@
 import type { GridSnap } from "@excalidraw-clone/geometry"
-import type { ExcalidrawElement } from "@excalidraw-clone/scene"
-import { newRectangle } from "@excalidraw-clone/scene"
+import type { ExcalidrawArrowElement, ExcalidrawElement } from "@excalidraw-clone/scene"
+import { BINDING_GAP, newArrow, newRectangle } from "@excalidraw-clone/scene"
 import { describe, expect, it } from "vitest"
 import { selectionTool } from "../src"
+import { translateElements } from "../src/tools/selection/drag"
 import { applyMutation, makeCtx, point, withModifiers } from "./test-utils"
 
 describe("selection — empty space click", () => {
@@ -241,5 +242,43 @@ describe("selection — drag with grid snap", () => {
     // Pure delta: +10 x, 0 y. No snap correction.
     expect(draft[0]!.x).toBe(23)
     expect(draft[0]!.y).toBe(27)
+  })
+})
+
+const makeBoundPair = (): ExcalidrawElement[] => {
+  const target = {
+    ...newRectangle({ x: 400, y: 0, width: 100, height: 100 }),
+    id: "t",
+    boundElements: [{ id: "ar", type: "arrow" as const }],
+  }
+  const arrow: ExcalidrawArrowElement = {
+    ...newArrow({ x: 0, y: 50 }),
+    id: "ar",
+    points: [
+      { x: 0, y: 0 },
+      { x: 100, y: 0 },
+    ],
+    width: 100,
+    height: 0,
+    endBinding: { elementId: "t", focus: 0, gap: BINDING_GAP },
+  }
+  return [target, arrow]
+}
+
+describe("translateElements — binding teardown", () => {
+  it("unbinds an arrow dragged alone and clears the back-reference", () => {
+    const draft = makeBoundPair()
+    translateElements(draft, ["ar"], 10, 10)
+    const arrow = draft.find((e) => e.id === "ar") as ExcalidrawArrowElement
+    const target = draft.find((e) => e.id === "t")!
+    expect(arrow.endBinding).toBeNull()
+    expect(target.boundElements ?? []).toHaveLength(0)
+  })
+
+  it("keeps the binding when arrow and target move together", () => {
+    const draft = makeBoundPair()
+    translateElements(draft, ["ar", "t"], 10, 10)
+    const arrow = draft.find((e) => e.id === "ar") as ExcalidrawArrowElement
+    expect(arrow.endBinding?.elementId).toBe("t")
   })
 })
