@@ -59,6 +59,18 @@ export const computeBoundEndpoint = (
   return pointAdd(base, pointScale(perp, focus * perpHalfExtent(bounds, perp)))
 }
 
+export const computeFocus = (target: ExcalidrawElement, endpoint: Point, toward: Point): number => {
+  const bounds = getElementBounds(target)
+  const center = boundsCenter(bounds)
+  const dir = normalize({ x: toward.x - center.x, y: toward.y - center.y })
+  if (dir.x === 0 && dir.y === 0) return 0
+  const perp: Point = { x: -dir.y, y: dir.x }
+  const halfPerp = perpHalfExtent(bounds, perp)
+  if (halfPerp === 0) return 0
+  const perpComp = (endpoint.x - center.x) * perp.x + (endpoint.y - center.y) * perp.y
+  return Math.max(-1, Math.min(1, perpComp / halfPerp))
+}
+
 const liveTarget = (
   binding: PointBinding | null,
   byId: Map<string, ExcalidrawElement>,

@@ -7,6 +7,7 @@ import {
   bindingTargetAt,
   canBindTo,
   computeBoundEndpoint,
+  computeFocus,
   reconcileBindings,
 } from "../src/bindings"
 import type {
@@ -68,6 +69,28 @@ describe("computeBoundEndpoint", () => {
     // focus 0.5 → +0.5 * 50 = +25 in the perpendicular (down) direction
     expect(shifted.y).toBeCloseTo(75)
     expect(shifted.x).toBeCloseTo(centered.x)
+  })
+})
+
+describe("computeFocus", () => {
+  const target = rect({ x: 0, y: 0, width: 100, height: 100 }) // center (50,50)
+
+  it("returns 0 for a centered endpoint", () => {
+    expect(computeFocus(target, { x: 100, y: 50 }, { x: 1000, y: 50 })).toBeCloseTo(0)
+  })
+
+  it("round-trips: focus from a dropped point reproduces that point's offset", () => {
+    const toward = { x: 1000, y: 50 } // dir ≈ (1,0), perp ≈ (0,1)
+    const dropped = { x: 104, y: 75 } // 25 below center → focus 0.5
+    const focus = computeFocus(target, dropped, toward)
+    expect(focus).toBeCloseTo(0.5)
+    const reproduced = computeBoundEndpoint(target, toward, 4, focus)
+    expect(reproduced.y).toBeCloseTo(dropped.y)
+  })
+
+  it("clamps to [-1, 1]", () => {
+    expect(computeFocus(target, { x: 100, y: 500 }, { x: 1000, y: 50 })).toBe(1)
+    expect(computeFocus(target, { x: 100, y: -500 }, { x: 1000, y: 50 })).toBe(-1)
   })
 })
 

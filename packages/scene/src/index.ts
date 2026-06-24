@@ -42,6 +42,7 @@ export {
   bindingTargetAt,
   canBindTo,
   computeBoundEndpoint,
+  computeFocus,
   reconcileBindings,
 } from "./bindings"
 export { SCENE_FORMAT_SOURCE, SCENE_FORMAT_VERSION, buildExcalidrawData } from "./json"
