@@ -32,13 +32,56 @@ describe("findHandleAt — linear endpoints", () => {
 
   it("never returns resize/rotate handles for a linear element", () => {
     const a = horizontalArrow()
-    // mid-body point: not an endpoint, must be a miss (no resize box)
-    expect(findHandleAt({ x: 50, y: 0 }, [a.id], [a], IDENTITY_VIEW)).toBeNull()
+    // off-body point (not near any endpoint or segment midpoint): a miss, no resize box
+    expect(findHandleAt({ x: 50, y: 40 }, [a.id], [a], IDENTITY_VIEW)).toBeNull()
   })
 
   it("still returns resize handles for a rectangle", () => {
     const r: ExcalidrawElement = newRectangle({ x: 0, y: 0, width: 100, height: 100 })
     const hit = findHandleAt({ x: 100, y: 100 }, [r.id], [r], IDENTITY_VIEW)
     expect(hit?.kind).toBe("resize")
+  })
+})
+
+const bentArrow = (): ExcalidrawArrowElement => ({
+  ...newArrow({ x: 0, y: 0 }),
+  id: "ar",
+  x: 0,
+  y: 0,
+  width: 200,
+  height: 100,
+  points: [
+    { x: 0, y: 0 },
+    { x: 100, y: 100 },
+    { x: 200, y: 0 },
+  ],
+})
+
+describe("findHandleAt — bend points", () => {
+  it("hits an interior point as a bend", () => {
+    const a = bentArrow()
+    const hit = findHandleAt({ x: 100, y: 100 }, [a.id], [a], IDENTITY_VIEW)
+    expect(hit).toEqual({ kind: "bend", elementId: "ar", index: 1 })
+  })
+
+  it("endpoints still win over interior/segment hits", () => {
+    const a = bentArrow()
+    expect(findHandleAt({ x: 0, y: 0 }, [a.id], [a], IDENTITY_VIEW)).toEqual({
+      kind: "endpoint",
+      elementId: "ar",
+      end: "start",
+    })
+    expect(findHandleAt({ x: 200, y: 0 }, [a.id], [a], IDENTITY_VIEW)).toEqual({
+      kind: "endpoint",
+      elementId: "ar",
+      end: "end",
+    })
+  })
+
+  it("hits a segment midpoint as bendAdd", () => {
+    const a = bentArrow()
+    // midpoint of segment 0: between (0,0) and (100,100) => (50,50)
+    const hit = findHandleAt({ x: 50, y: 50 }, [a.id], [a], IDENTITY_VIEW)
+    expect(hit).toEqual({ kind: "bendAdd", elementId: "ar", segmentIndex: 0, at: { x: 50, y: 50 } })
   })
 })

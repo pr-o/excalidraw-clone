@@ -15,6 +15,8 @@ export type HandleHit =
   | { kind: "resize"; elementId: string; handle: ResizeHandle }
   | { kind: "rotate"; elementId: string }
   | { kind: "endpoint"; elementId: string; end: "start" | "end" }
+  | { kind: "bend"; elementId: string; index: number }
+  | { kind: "bendAdd"; elementId: string; segmentIndex: number; at: Point }
 
 const rotatedCorners = (e: ExcalidrawElement): readonly [Point, Point, Point, Point] => {
   const corners: [Point, Point, Point, Point] = [
@@ -43,16 +45,6 @@ const within = (p: Point, target: Point, half = HANDLE_HIT_HALF): boolean =>
 
 const isLinear = (e: ExcalidrawElement): boolean => e.type === "arrow" || e.type === "line"
 
-const linearEndpoints = (e: ExcalidrawElement): readonly [Point, Point] => {
-  const pts = (e as { points: readonly Point[] }).points
-  const first = pts[0] ?? { x: 0, y: 0 }
-  const last = pts[pts.length - 1] ?? first
-  return [
-    { x: e.x + first.x, y: e.y + first.y },
-    { x: e.x + last.x, y: e.y + last.y },
-  ]
-}
-
 export const findHandleAt = (
   at: Point,
   selectedIds: readonly string[],
@@ -66,12 +58,27 @@ export const findHandleAt = (
 
   if (isLinear(e)) {
     const atV = sceneToViewport(at, view)
-    const [startScene, endScene] = linearEndpoints(e)
-    if (within(atV, sceneToViewport(startScene, view))) {
+    const pts = (e as { points: readonly Point[] }).points
+    const abs = pts.map((p) => ({ x: e.x + p.x, y: e.y + p.y }))
+    // Endpoints first.
+    if (within(atV, sceneToViewport(abs[0]!, view))) {
       return { kind: "endpoint", elementId: id, end: "start" }
     }
-    if (within(atV, sceneToViewport(endScene, view))) {
+    if (within(atV, sceneToViewport(abs[abs.length - 1]!, view))) {
       return { kind: "endpoint", elementId: id, end: "end" }
+    }
+    // Interior bend points.
+    for (let k = 1; k < abs.length - 1; k += 1) {
+      if (within(atV, sceneToViewport(abs[k]!, view))) {
+        return { kind: "bend", elementId: id, index: k }
+      }
+    }
+    // Segment midpoints (add a bend).
+    for (let k = 0; k < abs.length - 1; k += 1) {
+      const mid = midPoint(abs[k]!, abs[k + 1]!)
+      if (within(atV, sceneToViewport(mid, view))) {
+        return { kind: "bendAdd", elementId: id, segmentIndex: k, at: mid }
+      }
     }
     return null
   }
