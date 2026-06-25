@@ -101,33 +101,40 @@ export const reconcileBindings = (draft: ExcalidrawElement[]): void => {
       continue
     }
 
-    let startAbs: Point = { x: arrow.x + pts[0]!.x, y: arrow.y + pts[0]!.y }
-    let endAbs: Point = {
-      x: arrow.x + pts[pts.length - 1]!.x,
-      y: arrow.y + pts[pts.length - 1]!.y,
-    }
+    const abs: Point[] = pts.map((p) => ({ x: arrow.x + p.x, y: arrow.y + p.y }))
+    const hasBends = abs.length > 2
+    let startAbs = abs[0]!
+    let endAbs = abs[abs.length - 1]!
 
     if (startTarget) {
-      const toward = endTarget ? boundsCenter(getElementBounds(endTarget)) : endAbs
+      const toward = hasBends
+        ? abs[1]!
+        : endTarget
+          ? boundsCenter(getElementBounds(endTarget))
+          : endAbs
       startAbs = computeBoundEndpoint(startTarget, toward, startBinding!.gap, startBinding!.focus)
     }
     if (endTarget) {
-      const toward = startTarget ? boundsCenter(getElementBounds(startTarget)) : startAbs
+      const toward = hasBends
+        ? abs[abs.length - 2]!
+        : startTarget
+          ? boundsCenter(getElementBounds(startTarget))
+          : startAbs
       endAbs = computeBoundEndpoint(endTarget, toward, endBinding!.gap, endBinding!.focus)
     }
 
-    const minX = Math.min(startAbs.x, endAbs.x)
-    const minY = Math.min(startAbs.y, endAbs.y)
+    const newAbs: Point[] = [startAbs, ...abs.slice(1, abs.length - 1), endAbs]
+    const xs = newAbs.map((p) => p.x)
+    const ys = newAbs.map((p) => p.y)
+    const minX = Math.min(...xs)
+    const minY = Math.min(...ys)
     draft[i] = {
       ...arrow,
       x: minX,
       y: minY,
-      width: Math.abs(endAbs.x - startAbs.x),
-      height: Math.abs(endAbs.y - startAbs.y),
-      points: [
-        { x: startAbs.x - minX, y: startAbs.y - minY },
-        { x: endAbs.x - minX, y: endAbs.y - minY },
-      ],
+      width: Math.max(...xs) - minX,
+      height: Math.max(...ys) - minY,
+      points: newAbs.map((p) => ({ x: p.x - minX, y: p.y - minY })),
       startBinding,
       endBinding,
     }

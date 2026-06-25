@@ -132,6 +132,38 @@ describe("reconcileBindings", () => {
     expect(absEnd(ar2).x).toBeGreaterThan(endX1)
   })
 
+  it("preserves interior bend points; only the bound end reflows", () => {
+    // Rectangle target on the right, center (250,50).
+    const target = rect({ id: "t", x: 200, y: 0, width: 100, height: 100 })
+    // 3-point arrow: start (0,50) -> bend (100,200) -> end (250,50) inside target.
+    const arrow: ExcalidrawArrowElement = {
+      ...newArrow({ x: 0, y: 0 }),
+      id: "ar",
+      x: 0,
+      y: 50,
+      width: 250,
+      height: 150,
+      points: [
+        { x: 0, y: 0 },
+        { x: 100, y: 150 },
+        { x: 250, y: 0 },
+      ],
+      endBinding: { elementId: "t", focus: 0, gap: BINDING_GAP },
+    }
+    const draft: ExcalidrawElement[] = [target, arrow]
+    reconcileBindings(draft)
+    const a = draft.find((e) => e.id === "ar") as ExcalidrawArrowElement
+    // still three points
+    expect(a.points.length).toBe(3)
+    // interior bend point absolute position unchanged at (100,200)
+    const bendAbs = { x: a.x + a.points[1]!.x, y: a.y + a.points[1]!.y }
+    expect(bendAbs.x).toBeCloseTo(100)
+    expect(bendAbs.y).toBeCloseTo(200)
+    // bound end now sits on the target's left edge (x ≈ 200 - gap), not 250
+    const endAbs = { x: a.x + a.points[2]!.x, y: a.y + a.points[2]!.y }
+    expect(endAbs.x).toBeLessThan(210)
+  })
+
   it("is idempotent", () => {
     const target = rect({ id: "t", x: 200, y: 0, width: 100, height: 100 })
     const arrow = boundArrow({
