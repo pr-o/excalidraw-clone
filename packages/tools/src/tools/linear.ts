@@ -57,20 +57,21 @@ export interface LinearPatch {
   points: readonly Point[]
 }
 
-export const linearPatch = (start: Point, end: Point): LinearPatch => {
-  const minX = Math.min(start.x, end.x)
-  const minY = Math.min(start.y, end.y)
+export const pointsPatch = (absPoints: readonly Point[]): LinearPatch => {
+  const xs = absPoints.map((p) => p.x)
+  const ys = absPoints.map((p) => p.y)
+  const minX = Math.min(...xs)
+  const minY = Math.min(...ys)
   return {
     x: minX,
     y: minY,
-    width: Math.abs(end.x - start.x),
-    height: Math.abs(end.y - start.y),
-    points: [
-      { x: start.x - minX, y: start.y - minY },
-      { x: end.x - minX, y: end.y - minY },
-    ],
+    width: Math.max(...xs) - minX,
+    height: Math.max(...ys) - minY,
+    points: absPoints.map((p) => ({ x: p.x - minX, y: p.y - minY })),
   }
 }
+
+export const linearPatch = (start: Point, end: Point): LinearPatch => pointsPatch([start, end])
 
 interface LinearReducerArgs {
   state: LinearState
