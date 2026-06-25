@@ -13,6 +13,7 @@ import {
   type ImageReadyEvent,
   type LinearState,
   type Modifiers,
+  type SelectionState,
   type Tool,
   type ToolContext,
   type ToolEvent,
@@ -148,6 +149,13 @@ export function useDrawingDriver({
       applyEffects(scene, effects)
       if (toolName === "arrow" && (next as LinearState).phase === "drawing") {
         const cand = (next as Extract<LinearState, { phase: "drawing" }>).endBindId
+        renderer.setBindingHighlight(cand ? [cand] : [])
+      } else if (
+        toolName === "selection" &&
+        (next as SelectionState).phase === "endpointDragging"
+      ) {
+        const cand = (next as Extract<SelectionState, { phase: "endpointDragging" }>)
+          .candidateBindId
         renderer.setBindingHighlight(cand ? [cand] : [])
       } else {
         renderer.setBindingHighlight([])
