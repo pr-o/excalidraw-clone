@@ -89,6 +89,30 @@ describe("CanvasRenderer selection overlay", () => {
     expect(overlayCtx.__calls.filter((c) => c.method === "arc").length).toBe(0)
   })
 
+  it("single selected 3-point arrow → 3 solid dots + 2 ghost dots, no arc", () => {
+    const { canvas: main } = createMockCanvas()
+    const { canvas: overlay, ctx: overlayCtx } = createMockCanvas()
+    const arrow = {
+      ...newArrow({ x: 0, y: 0 }),
+      width: 200,
+      height: 100,
+      points: [
+        { x: 0, y: 0 },
+        { x: 100, y: 100 },
+        { x: 200, y: 0 },
+      ],
+    }
+    const scene = new Scene([arrow])
+    const r = new CanvasRenderer(main, scene, { overlayCanvas: overlay, selection: [arrow.id] })
+    r.start()
+    flush()
+    // one fillRect per real point (solid handles); ghosts are stroke-only
+    expect(overlayCtx.__calls.filter((c) => c.method === "fillRect").length).toBe(3)
+    // 3 solid handle strokes + 2 segment-midpoint ghost strokes
+    expect(overlayCtx.__calls.filter((c) => c.method === "strokeRect").length).toBe(5)
+    expect(overlayCtx.__calls.filter((c) => c.method === "arc").length).toBe(0)
+  })
+
   it("marquee uses dashed stroke", () => {
     const { canvas: main } = createMockCanvas()
     const { canvas: overlay, ctx: overlayCtx } = createMockCanvas()

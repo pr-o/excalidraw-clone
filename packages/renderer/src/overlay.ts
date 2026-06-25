@@ -57,21 +57,17 @@ const midPoint = (a: Point, b: Point): Point => ({
 
 const isLinear = (e: ExcalidrawElement): boolean => e.type === "arrow" || e.type === "line"
 
-const linearEndpoints = (e: ExcalidrawElement): readonly [Point, Point] => {
-  const pts = (e as { points: readonly Point[] }).points
-  const first = pts[0] ?? { x: 0, y: 0 }
-  const last = pts[pts.length - 1] ?? first
-  return [
-    { x: e.x + first.x, y: e.y + first.y },
-    { x: e.x + last.x, y: e.y + last.y },
-  ]
-}
-
 const drawHandle = (ctx: CanvasRenderingContext2D, p: Point, theme: Theme): void => {
   ctx.fillStyle = SELECTION_FILL[theme]
   ctx.strokeStyle = SELECTION_STROKE[theme]
   ctx.lineWidth = 1
   ctx.fillRect(p.x - HANDLE_SIZE / 2, p.y - HANDLE_SIZE / 2, HANDLE_SIZE, HANDLE_SIZE)
+  ctx.strokeRect(p.x - HANDLE_SIZE / 2, p.y - HANDLE_SIZE / 2, HANDLE_SIZE, HANDLE_SIZE)
+}
+
+const drawGhostHandle = (ctx: CanvasRenderingContext2D, p: Point, theme: Theme): void => {
+  ctx.strokeStyle = SELECTION_STROKE[theme]
+  ctx.lineWidth = 1
   ctx.strokeRect(p.x - HANDLE_SIZE / 2, p.y - HANDLE_SIZE / 2, HANDLE_SIZE, HANDLE_SIZE)
 }
 
@@ -82,9 +78,13 @@ const drawElementChrome = (
   theme: Theme,
 ): void => {
   if (isLinear(e)) {
-    const [start, end] = linearEndpoints(e)
-    drawHandle(ctx, sceneToViewport(start, view), theme)
-    drawHandle(ctx, sceneToViewport(end, view), theme)
+    const pts = (e as { points: readonly Point[] }).points
+    const absV = pts.map((p) => sceneToViewport({ x: e.x + p.x, y: e.y + p.y }, view))
+    // Ghost midpoints first so solid handles paint on top.
+    for (let k = 0; k < absV.length - 1; k += 1) {
+      drawGhostHandle(ctx, midPoint(absV[k]!, absV[k + 1]!), theme)
+    }
+    for (const p of absV) drawHandle(ctx, p, theme)
     return
   }
   const corners = elementCorners(e).map((p) => sceneToViewport(p, view))
