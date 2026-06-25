@@ -1,6 +1,13 @@
 import { snapPointToGrid } from "@excalidraw-clone/geometry"
 import { bindingTargetAt } from "@excalidraw-clone/scene"
 import type { Tool, ToolContext, ToolEffect, ToolEvent } from "../../types"
+import {
+  buildBendCommitEffect,
+  buildBendInsertEffect,
+  buildBendMoveEffect,
+  buildBendRemoveEffect,
+  buildBendRevertEffect,
+} from "./bend"
 import { buildDragCommitEffect, buildDragMoveEffect, buildDragRevertEffect } from "./drag"
 import {
   buildEndpointCommitEffect,
@@ -79,6 +86,28 @@ const reduceIdle = (
           [],
         ]
       }
+      if (e && handle.kind === "bend") {
+        return [
+          {
+            phase: "bendDragging",
+            elementId: handle.elementId,
+            index: handle.index,
+            origin: snapshotLinear(e),
+          },
+          [],
+        ]
+      }
+      if (e && handle.kind === "bendAdd") {
+        return [
+          {
+            phase: "bendDragging",
+            elementId: handle.elementId,
+            index: handle.segmentIndex + 1,
+            origin: snapshotLinear(e),
+          },
+          [buildBendInsertEffect(handle.elementId, handle.segmentIndex + 1, handle.at)],
+        ]
+      }
     }
     const hit = ctx.hitTest(event.at)
     if (!hit) {
@@ -132,6 +161,15 @@ const reduceIdle = (
     return [{ phase: "idle" }, [{ kind: "select", ids: [] }]]
   }
   if (event.type === "doubleClick") {
+    const bendHandle = findHandleAt(
+      event.at,
+      ctx.selectedIds,
+      ctx.readElements(),
+      ctx.viewTransform,
+    )
+    if (bendHandle && bendHandle.kind === "bend") {
+      return [{ phase: "idle" }, [buildBendRemoveEffect(bendHandle.elementId, bendHandle.index)]]
+    }
     const hit = ctx.hitTest(event.at)
     if (hit) {
       if (hit.type === "text") {
@@ -288,6 +326,22 @@ const reduceEndpoint = (
   }
 }
 
+const reduceBend = (
+  state: Extract<SelectionState, { phase: "bendDragging" }>,
+  event: ToolEvent,
+): [SelectionState, readonly ToolEffect[]] => {
+  switch (event.type) {
+    case "pointerMove":
+      return [state, [buildBendMoveEffect(state.elementId, state.index, event.at)]]
+    case "pointerUp":
+      return [{ phase: "idle" }, [buildBendCommitEffect(state.elementId)]]
+    case "escape":
+      return [{ phase: "idle" }, [buildBendRevertEffect(state.elementId, state.origin)]]
+    default:
+      return [state, []]
+  }
+}
+
 export const selectionTool: Tool<SelectionState, ToolEvent> = {
   name: "selection",
   initial: SELECTION_INITIAL,
@@ -305,6 +359,8 @@ export const selectionTool: Tool<SelectionState, ToolEvent> = {
         return reduceRotating(state, event, ctx)
       case "endpointDragging":
         return reduceEndpoint(state, event, ctx)
+      case "bendDragging":
+        return reduceBend(state, event)
     }
   },
 }

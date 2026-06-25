@@ -33,6 +33,12 @@ export type SelectionState =
       origin: LinearSnapshot
       candidateBindId: string | null
     }
+  | {
+      phase: "bendDragging"
+      elementId: string
+      index: number
+      origin: LinearSnapshot
+    }
   | { phase: "marquee"; start: Point; current: Point; baseSelection: readonly string[] }
 
 export const SELECTION_INITIAL: SelectionState = { phase: "idle" }
