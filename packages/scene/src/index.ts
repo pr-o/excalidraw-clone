@@ -35,6 +35,7 @@ export { Scene } from "./scene"
 export type { MutateOptions } from "./scene"
 export type { LibraryItem } from "./library-item"
 export { normalizeToOrigin } from "./normalize"
+export { cloneElementsWithNewIds } from "./clone"
 export { NOTE_PADDING, reconcileBoundText } from "./reconcile-bound-text"
 export {
   BINDABLE_TYPES,
