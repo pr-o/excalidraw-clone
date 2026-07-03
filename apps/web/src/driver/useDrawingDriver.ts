@@ -3,6 +3,7 @@ import { sceneToViewport, type GridSnap } from "@excalidraw-clone/geometry"
 import { putFile } from "@excalidraw-clone/persistence"
 import { CanvasRenderer } from "@excalidraw-clone/renderer"
 import {
+  cloneElementsWithNewIds,
   hitTestElement,
   type ExcalidrawElement,
   type LibraryItem,
@@ -42,9 +43,8 @@ function placeLibraryItem(item: LibraryItem, x: number, y: number, scene: Scene)
       void putFile(bin)
     }
   }
-  const placed: ExcalidrawElement[] = item.elements.map((el) => ({
+  const placed: ExcalidrawElement[] = cloneElementsWithNewIds(item.elements).map((el) => ({
     ...el,
-    id: crypto.randomUUID(),
     x: el.x + x,
     y: el.y + y,
   }))

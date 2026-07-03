@@ -2,6 +2,7 @@
 import { renderToSVG } from "@excalidraw-clone/renderer"
 import type { CanvasRenderer } from "@excalidraw-clone/renderer"
 import {
+  BUILTIN_TEMPLATES,
   type ExcalidrawElement,
   type LibraryItem,
   normalizeToOrigin,
@@ -336,6 +337,7 @@ function Inner(): React.ReactElement {
             open={libraryOpen}
             onToggle={() => setLibraryOpen((v) => !v)}
             items={libraryItems}
+            templates={BUILTIN_TEMPLATES}
             selectedCount={selectedIds.length}
             onAddFromSelection={() => void handleAddFromSelection()}
             onItemClick={armLibraryItem}
