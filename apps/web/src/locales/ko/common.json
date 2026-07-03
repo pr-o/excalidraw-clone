@@ -39,7 +39,16 @@
     "sendToBack": "맨 뒤로",
     "sendBackward": "뒤로",
     "bringForward": "앞으로",
-    "bringToFront": "맨 앞으로"
+    "bringToFront": "맨 앞으로",
+    "arrange": "정렬",
+    "align_left": "왼쪽 정렬",
+    "align_centerX": "가로 가운데 정렬",
+    "align_right": "오른쪽 정렬",
+    "align_top": "위쪽 정렬",
+    "align_centerY": "세로 가운데 정렬",
+    "align_bottom": "아래쪽 정렬",
+    "distribute_horizontal": "가로로 분배",
+    "distribute_vertical": "세로로 분배"
   },
   "menu": {
     "label": "메뉴",

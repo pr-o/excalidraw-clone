@@ -39,7 +39,16 @@
     "sendToBack": "Send to back",
     "sendBackward": "Send backward",
     "bringForward": "Bring forward",
-    "bringToFront": "Bring to front"
+    "bringToFront": "Bring to front",
+    "arrange": "Arrange",
+    "align_left": "Align left",
+    "align_centerX": "Align center horizontal",
+    "align_right": "Align right",
+    "align_top": "Align top",
+    "align_centerY": "Align center vertical",
+    "align_bottom": "Align bottom",
+    "distribute_horizontal": "Distribute horizontally",
+    "distribute_vertical": "Distribute vertically"
   },
   "menu": {
     "label": "Menu",
