@@ -37,6 +37,8 @@ export type { LibraryItem } from "./library-item"
 export { normalizeToOrigin } from "./normalize"
 export { cloneElementsWithNewIds } from "./clone"
 export { BUILTIN_TEMPLATES } from "./templates"
+export { alignElements, distributeElements } from "./arrange"
+export type { AlignEdge, DistributeAxis, PositionPatch } from "./arrange"
 export { NOTE_PADDING, reconcileBoundText } from "./reconcile-bound-text"
 export {
   BINDABLE_TYPES,
