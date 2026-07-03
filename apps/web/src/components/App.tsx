@@ -2,7 +2,9 @@
 import { renderToSVG } from "@excalidraw-clone/renderer"
 import type { CanvasRenderer } from "@excalidraw-clone/renderer"
 import {
+  alignElements,
   BUILTIN_TEMPLATES,
+  distributeElements,
   type ExcalidrawElement,
   type LibraryItem,
   normalizeToOrigin,
@@ -327,6 +329,26 @@ function Inner(): React.ReactElement {
                   const remaining = draft.filter((e) => !selectedIds.includes(e.id))
                   draft.length = 0
                   draft.push(...remaining, ...moved)
+                })
+              }}
+              onAlign={(edge) => {
+                const byId = new Map(alignElements(selectedElements, edge).map((p) => [p.id, p]))
+                scene.mutate((draft) => {
+                  for (let i = 0; i < draft.length; i += 1) {
+                    const p = byId.get(draft[i]!.id)
+                    if (p) draft[i] = { ...draft[i]!, x: p.x, y: p.y }
+                  }
+                })
+              }}
+              onDistribute={(axis) => {
+                const byId = new Map(
+                  distributeElements(selectedElements, axis).map((p) => [p.id, p]),
+                )
+                scene.mutate((draft) => {
+                  for (let i = 0; i < draft.length; i += 1) {
+                    const p = byId.get(draft[i]!.id)
+                    if (p) draft[i] = { ...draft[i]!, x: p.x, y: p.y }
+                  }
                 })
               }}
             />

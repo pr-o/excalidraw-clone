@@ -16,6 +16,8 @@ const handlers = {
   onSendBackward: noop,
   onBringForward: noop,
   onBringToFront: noop,
+  onAlign: noop,
+  onDistribute: noop,
 }
 
 describe("PropertiesPanel", () => {
@@ -99,5 +101,53 @@ describe("PropertiesPanel", () => {
     render(<PropertiesPanel t={t} selectedElements={[a, b]} {...handlers} />)
     expect(screen.getByTestId("stroke-style-solid")).toHaveAttribute("aria-pressed", "false")
     expect(screen.getByTestId("stroke-style-dashed")).toHaveAttribute("aria-pressed", "false")
+  })
+
+  it("hides the Arrange section when fewer than 2 elements are selected", () => {
+    const el = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
+    render(<PropertiesPanel t={t} selectedElements={[el]} {...handlers} />)
+    expect(screen.queryByTestId("align-left")).toBeNull()
+  })
+
+  it("shows the Arrange section when 2+ elements are selected", () => {
+    const a = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
+    const b = newRectangle({ x: 50, y: 0, width: 10, height: 10 })
+    render(<PropertiesPanel t={t} selectedElements={[a, b]} {...handlers} />)
+    expect(screen.getByTestId("align-left")).toBeInTheDocument()
+  })
+
+  it("calls onAlign with the edge when an align button is clicked", async () => {
+    const a = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
+    const b = newRectangle({ x: 50, y: 0, width: 10, height: 10 })
+    const onAlign = vi.fn()
+    render(<PropertiesPanel t={t} selectedElements={[a, b]} {...handlers} onAlign={onAlign} />)
+    await userEvent.click(screen.getByTestId("align-centerX"))
+    expect(onAlign).toHaveBeenCalledWith("centerX")
+  })
+
+  it("disables distribute with 2 selected and enables + fires it with 3", async () => {
+    const mk = (x: number) => newRectangle({ x, y: 0, width: 10, height: 10 })
+    const onDistribute = vi.fn()
+    const { rerender } = render(
+      <PropertiesPanel
+        t={t}
+        selectedElements={[mk(0), mk(50)]}
+        {...handlers}
+        onDistribute={onDistribute}
+      />,
+    )
+    expect(screen.getByTestId("distribute-horizontal")).toBeDisabled()
+    rerender(
+      <PropertiesPanel
+        t={t}
+        selectedElements={[mk(0), mk(50), mk(100)]}
+        {...handlers}
+        onDistribute={onDistribute}
+      />,
+    )
+    const btn = screen.getByTestId("distribute-horizontal")
+    expect(btn).toBeEnabled()
+    await userEvent.click(btn)
+    expect(onDistribute).toHaveBeenCalledWith("horizontal")
   })
 })

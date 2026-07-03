@@ -1,4 +1,6 @@
 import type {
+  AlignEdge,
+  DistributeAxis,
   ExcalidrawElement,
   FillStyle,
   Roundness,
@@ -12,6 +14,14 @@ const STROKE_WIDTHS: readonly StrokeWidth[] = [1, 2, 4]
 const STROKE_STYLES: readonly StrokeStyle[] = ["solid", "dashed", "dotted"]
 const FILL_STYLES: readonly FillStyle[] = ["hachure", "cross-hatch", "solid"]
 const OPACITY_STEPS = [25, 50, 75, 100] as const
+const ALIGN_GLYPH: Record<AlignEdge, string> = {
+  left: "⇤",
+  centerX: "↔",
+  right: "⇥",
+  top: "⤒",
+  centerY: "↕",
+  bottom: "⤓",
+}
 
 export interface PropertiesPanelProps {
   t: (key: string) => string
@@ -23,6 +33,8 @@ export interface PropertiesPanelProps {
   onSendBackward: () => void
   onBringForward: () => void
   onBringToFront: () => void
+  onAlign: (edge: AlignEdge) => void
+  onDistribute: (axis: DistributeAxis) => void
   className?: string
 }
 
@@ -45,6 +57,8 @@ export function PropertiesPanel({
   onSendBackward,
   onBringForward,
   onBringToFront,
+  onAlign,
+  onDistribute,
   className,
 }: PropertiesPanelProps): React.ReactElement | null {
   if (selectedElements.length === 0) return null
@@ -202,6 +216,40 @@ export function PropertiesPanel({
           ))}
         </div>
       </Section>
+
+      {selectedElements.length >= 2 && (
+        <Section label={t("properties.arrange")}>
+          <div className="grid grid-cols-3 gap-1">
+            {(["left", "centerX", "right", "top", "centerY", "bottom"] as const).map((edge) => (
+              <button
+                key={edge}
+                type="button"
+                data-testid={`align-${edge}`}
+                aria-label={t(`properties.align_${edge}`)}
+                onClick={() => onAlign(edge)}
+                className="rounded border border-gray-300 p-1 text-xs"
+              >
+                {ALIGN_GLYPH[edge]}
+              </button>
+            ))}
+          </div>
+          <div className="mt-1 flex gap-1">
+            {(["horizontal", "vertical"] as const).map((axis) => (
+              <button
+                key={axis}
+                type="button"
+                data-testid={`distribute-${axis}`}
+                aria-label={t(`properties.distribute_${axis}`)}
+                disabled={selectedElements.length < 3}
+                onClick={() => onDistribute(axis)}
+                className="flex-1 rounded border border-gray-300 p-1 text-xs disabled:opacity-40"
+              >
+                {axis === "horizontal" ? "⇿" : "⇳"}
+              </button>
+            ))}
+          </div>
+        </Section>
+      )}
 
       <Section label={t("properties.layers")}>
         <div className="grid grid-cols-2 gap-1">
