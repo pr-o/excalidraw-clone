@@ -102,6 +102,8 @@
     "delete": "Delete",
     "imported": "{added} added, {skipped} skipped",
     "importError": "Could not read library file",
-    "placing": "Click to place • Esc to cancel"
+    "placing": "Click to place • Esc to cancel",
+    "templates": "Templates",
+    "myItems": "My items"
   }
 }

@@ -93,6 +93,8 @@
     "delete": "삭제",
     "imported": "추가 {added}, 건너뜀 {skipped}",
     "importError": "라이브러리 파일을 읽을 수 없습니다",
-    "placing": "클릭하여 배치 • Esc로 취소"
+    "placing": "클릭하여 배치 • Esc로 취소",
+    "templates": "템플릿",
+    "myItems": "내 항목"
   }
 }
