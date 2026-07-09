@@ -26,6 +26,8 @@ const EDITOR_SHORTCUTS: readonly Shortcut[] = [
   { keys: "Cmd/Ctrl+C", label: "shortcuts.copy" },
   { keys: "Cmd/Ctrl+V", label: "shortcuts.paste" },
   { keys: "Cmd/Ctrl+D", label: "shortcuts.duplicate" },
+  { keys: "Cmd/Ctrl+G", label: "shortcuts.group" },
+  { keys: "Cmd/Ctrl+Shift+G", label: "shortcuts.ungroup" },
   { keys: "Delete", label: "shortcuts.delete" },
   { keys: "Cmd/Ctrl+A", label: "shortcuts.selectAll" },
   { keys: "Esc", label: "shortcuts.deselect" },
@@ -37,7 +39,7 @@ const VIEW_SHORTCUTS: readonly Shortcut[] = [
   { keys: "Cmd/Ctrl++", label: "shortcuts.zoomIn" },
   { keys: "Cmd/Ctrl+-", label: "shortcuts.zoomOut" },
   { keys: "Space (hold)", label: "shortcuts.pan" },
-  { keys: "Cmd/Ctrl+Shift+G", label: "shortcuts.toggleGrid" },
+  { keys: "Cmd/Ctrl+'", label: "shortcuts.toggleGrid" },
   { keys: "Cmd/Ctrl+/", label: "shortcuts.commandPalette" },
   { keys: "?", label: "shortcuts.help" },
 ]

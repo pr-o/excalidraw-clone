@@ -48,7 +48,9 @@
     "align_centerY": "Align center vertical",
     "align_bottom": "Align bottom",
     "distribute_horizontal": "Distribute horizontally",
-    "distribute_vertical": "Distribute vertically"
+    "distribute_vertical": "Distribute vertically",
+    "group": "Group",
+    "ungroup": "Ungroup"
   },
   "menu": {
     "label": "Menu",

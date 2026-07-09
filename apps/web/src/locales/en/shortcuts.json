@@ -16,6 +16,8 @@
   "copy": "Copy",
   "paste": "Paste",
   "duplicate": "Duplicate",
+  "group": "Group selection",
+  "ungroup": "Ungroup",
   "delete": "Delete",
   "selectAll": "Select all",
   "deselect": "Deselect",
