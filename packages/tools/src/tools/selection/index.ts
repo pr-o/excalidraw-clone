@@ -1,5 +1,5 @@
 import { snapPointToGrid } from "@excalidraw-clone/geometry"
-import { bindingTargetAt } from "@excalidraw-clone/scene"
+import { bindingTargetAt, expandIdsToGroups } from "@excalidraw-clone/scene"
 import type { Tool, ToolContext, ToolEffect, ToolEvent } from "../../types"
 import {
   buildBendCommitEffect,
@@ -122,16 +122,17 @@ const reduceIdle = (
       ]
     }
     const alreadySelected = ctx.selectedIds.includes(hit.id)
+    const hitIds = expandIdsToGroups([hit.id], ctx.readElements())
     const movedIds = alreadySelected
       ? ctx.selectedIds
       : ctx.modifiers.shift
-        ? [...ctx.selectedIds, hit.id]
-        : [hit.id]
+        ? Array.from(new Set([...ctx.selectedIds, ...hitIds]))
+        : hitIds
     const selectionEffects: readonly ToolEffect[] = alreadySelected
       ? []
       : ctx.modifiers.shift
-        ? [{ kind: "addToSelection", ids: [hit.id] }]
-        : [{ kind: "select", ids: [hit.id] }]
+        ? [{ kind: "addToSelection", ids: hitIds }]
+        : [{ kind: "select", ids: hitIds }]
     return [
       { phase: "dragging", start: event.at, last: event.at, movedIds, firstMove: true },
       selectionEffects,
@@ -172,6 +173,10 @@ const reduceIdle = (
     }
     const hit = ctx.hitTest(event.at)
     if (hit) {
+      const soleSelection = ctx.selectedIds.length === 1 && ctx.selectedIds[0] === hit.id
+      if (hit.groupIds.length > 0 && !soleSelection) {
+        return [{ phase: "idle" }, [{ kind: "select", ids: [hit.id] }]]
+      }
       if (hit.type === "text") {
         return [{ phase: "idle" }, [{ kind: "startTextEdit", elementId: hit.id }]]
       }
@@ -236,7 +241,10 @@ const reduceMarquee = (
   }
   if (event.type === "pointerUp") {
     const bounds = marqueeBounds(state.start, event.at)
-    const enclosed = elementsInsideMarquee(bounds, ctx.readElements())
+    const enclosed = expandIdsToGroups(
+      elementsInsideMarquee(bounds, ctx.readElements()),
+      ctx.readElements(),
+    )
     if (state.baseSelection.length > 0) {
       const merged = Array.from(new Set([...state.baseSelection, ...enclosed]))
       return [{ phase: "idle" }, [{ kind: "select", ids: merged }]]
