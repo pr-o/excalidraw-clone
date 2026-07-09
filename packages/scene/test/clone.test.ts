@@ -63,4 +63,26 @@ describe("cloneElementsWithNewIds", () => {
     const [carrow] = cloneElementsWithNewIds([arrow]) as [ExcalidrawArrowElement]
     expect(carrow.startBinding?.elementId).toBe("external-id-not-in-set")
   })
+
+  it("remaps groupIds to a fresh id shared within the clone set", () => {
+    const a = { ...newRectangle({ x: 0, y: 0, width: 10, height: 10 }), groupIds: ["g1"] }
+    const b = { ...newRectangle({ x: 20, y: 0, width: 10, height: 10 }), groupIds: ["g1"] }
+    const [ca, cb] = cloneElementsWithNewIds([a, b]) as [ExcalidrawElement, ExcalidrawElement]
+    expect(ca.groupIds).toHaveLength(1)
+    expect(ca.groupIds[0]).toBe(cb.groupIds[0])
+    expect(ca.groupIds[0]).not.toBe("g1")
+  })
+
+  it("gives distinct clone sets distinct group ids", () => {
+    const a = { ...newRectangle({ x: 0, y: 0, width: 10, height: 10 }), groupIds: ["g1"] }
+    const [first] = cloneElementsWithNewIds([a]) as [ExcalidrawElement]
+    const [second] = cloneElementsWithNewIds([a]) as [ExcalidrawElement]
+    expect(first.groupIds[0]).not.toBe(second.groupIds[0])
+  })
+
+  it("leaves empty groupIds empty", () => {
+    const a = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
+    const [ca] = cloneElementsWithNewIds([a]) as [ExcalidrawElement]
+    expect(ca.groupIds).toEqual([])
+  })
 })
