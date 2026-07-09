@@ -1,5 +1,10 @@
 "use client"
-import type { Scene } from "@excalidraw-clone/scene"
+import {
+  type ExcalidrawElement,
+  groupElements,
+  type Scene,
+  ungroupElements,
+} from "@excalidraw-clone/scene"
 import type { ToolName } from "@excalidraw-clone/tools"
 import { useAppStore } from "../store"
 
@@ -20,6 +25,17 @@ const TOOL_KEYS: Record<string, ToolName> = {
   e: "eraser",
   f: "frame",
   n: "note",
+}
+
+const patchScene = (scene: Scene, patches: readonly ExcalidrawElement[]): void => {
+  if (patches.length === 0) return
+  const byId = new Map(patches.map((p) => [p.id, p]))
+  scene.mutate((draft) => {
+    for (let i = 0; i < draft.length; i += 1) {
+      const p = byId.get(draft[i]!.id)
+      if (p) draft[i] = p
+    }
+  })
 }
 
 export function attachShortcuts({ scene }: Bindings): () => void {
@@ -46,6 +62,18 @@ export function attachShortcuts({ scene }: Bindings): () => void {
       return
     }
     if (isMeta && e.shiftKey && key === "g") {
+      e.preventDefault()
+      const ids = useAppStore.getState().selectedIds
+      patchScene(scene, ungroupElements(scene.getElements(), ids))
+      return
+    }
+    if (isMeta && key === "g") {
+      e.preventDefault()
+      const ids = useAppStore.getState().selectedIds
+      patchScene(scene, groupElements(scene.getElements(), ids, crypto.randomUUID()))
+      return
+    }
+    if (isMeta && key === "'") {
       e.preventDefault()
       useAppStore.getState().toggleGrid()
       return

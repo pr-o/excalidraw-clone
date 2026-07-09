@@ -4,11 +4,14 @@ import type { CanvasRenderer } from "@excalidraw-clone/renderer"
 import {
   alignElements,
   BUILTIN_TEMPLATES,
+  cloneElementsWithNewIds,
   distributeElements,
   type ExcalidrawElement,
+  groupElements,
   type LibraryItem,
   normalizeToOrigin,
   Scene,
+  ungroupElements,
 } from "@excalidraw-clone/scene"
 import { HamburgerMenu, LibraryPanel, PropertiesPanel, Toolbar } from "@excalidraw-clone/ui"
 import {
@@ -274,22 +277,16 @@ function Inner(): React.ReactElement {
                 useAppStore.getState().setSelection([])
               }}
               onDuplicate={() => {
-                const newIds: string[] = []
+                const picked = scene.getElements().filter((e) => selectedIds.includes(e.id))
+                const copies = cloneElementsWithNewIds(picked).map((el) => ({
+                  ...el,
+                  x: el.x + 12,
+                  y: el.y + 12,
+                }))
                 scene.mutate((draft) => {
-                  for (const el of draft.slice()) {
-                    if (selectedIds.includes(el.id)) {
-                      const copy = {
-                        ...el,
-                        id: crypto.randomUUID(),
-                        x: el.x + 12,
-                        y: el.y + 12,
-                      }
-                      draft.push(copy)
-                      newIds.push(copy.id)
-                    }
-                  }
+                  draft.push(...copies)
                 })
-                useAppStore.getState().setSelection(newIds)
+                useAppStore.getState().setSelection(copies.map((c) => c.id))
               }}
               onSendToBack={() => {
                 scene.mutate((draft) => {
@@ -348,6 +345,33 @@ function Inner(): React.ReactElement {
                   for (let i = 0; i < draft.length; i += 1) {
                     const p = byId.get(draft[i]!.id)
                     if (p) draft[i] = { ...draft[i]!, x: p.x, y: p.y }
+                  }
+                })
+              }}
+              onGroup={() => {
+                const byId = new Map(
+                  groupElements(selectedElements, selectedIds, crypto.randomUUID()).map((el) => [
+                    el.id,
+                    el,
+                  ]),
+                )
+                if (byId.size === 0) return
+                scene.mutate((draft) => {
+                  for (let i = 0; i < draft.length; i += 1) {
+                    const p = byId.get(draft[i]!.id)
+                    if (p) draft[i] = p
+                  }
+                })
+              }}
+              onUngroup={() => {
+                const byId = new Map(
+                  ungroupElements(selectedElements, selectedIds).map((el) => [el.id, el]),
+                )
+                if (byId.size === 0) return
+                scene.mutate((draft) => {
+                  for (let i = 0; i < draft.length; i += 1) {
+                    const p = byId.get(draft[i]!.id)
+                    if (p) draft[i] = p
                   }
                 })
               }}

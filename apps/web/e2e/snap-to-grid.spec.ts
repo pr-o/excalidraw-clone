@@ -9,8 +9,8 @@ test("rectangle drawn with grid enabled lands on grid multiples", async ({ page 
   await page.reload()
   await page.locator('[data-testid="toolbar-rectangle"]').waitFor({ state: "visible" })
 
-  // Enable grid via Cmd/Ctrl+Shift+G. Playwright uses Control on all OS; the app accepts both.
-  await page.keyboard.press("Control+Shift+KeyG")
+  // Enable grid via Cmd/Ctrl+'. Playwright uses Control on all OS; the app accepts both.
+  await page.keyboard.press("Control+Quote")
 
   await page.locator('[data-testid="toolbar-rectangle"]').click()
 
