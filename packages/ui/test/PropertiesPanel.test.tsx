@@ -18,6 +18,8 @@ const handlers = {
   onBringToFront: noop,
   onAlign: noop,
   onDistribute: noop,
+  onGroup: vi.fn(),
+  onUngroup: vi.fn(),
 }
 
 describe("PropertiesPanel", () => {
@@ -149,5 +151,46 @@ describe("PropertiesPanel", () => {
     expect(btn).toBeEnabled()
     await userEvent.click(btn)
     expect(onDistribute).toHaveBeenCalledWith("horizontal")
+  })
+
+  it("enables Group and disables Ungroup for 2 ungrouped elements", () => {
+    const a = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
+    const b = newRectangle({ x: 20, y: 0, width: 10, height: 10 })
+    render(<PropertiesPanel t={t} selectedElements={[a, b]} {...handlers} />)
+    expect(screen.getByTestId("group-selection")).toBeEnabled()
+    expect(screen.getByTestId("ungroup-selection")).toBeDisabled()
+  })
+
+  it("hides the Group section for a single ungrouped element", () => {
+    const a = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
+    render(<PropertiesPanel t={t} selectedElements={[a]} {...handlers} />)
+    expect(screen.queryByTestId("group-selection")).toBeNull()
+  })
+
+  it("enables Ungroup when a selected element is grouped", () => {
+    const a = { ...newRectangle({ x: 0, y: 0, width: 10, height: 10 }), groupIds: ["g1"] }
+    render(<PropertiesPanel t={t} selectedElements={[a]} {...handlers} />)
+    expect(screen.getByTestId("ungroup-selection")).toBeEnabled()
+    expect(screen.getByTestId("group-selection")).toBeDisabled()
+  })
+
+  it("emits onGroup and onUngroup when clicked", async () => {
+    const a = { ...newRectangle({ x: 0, y: 0, width: 10, height: 10 }), groupIds: ["g1"] }
+    const b = { ...newRectangle({ x: 20, y: 0, width: 10, height: 10 }), groupIds: ["g1"] }
+    const onGroup = vi.fn()
+    const onUngroup = vi.fn()
+    render(
+      <PropertiesPanel
+        t={t}
+        selectedElements={[a, b]}
+        {...handlers}
+        onGroup={onGroup}
+        onUngroup={onUngroup}
+      />,
+    )
+    await userEvent.click(screen.getByTestId("group-selection"))
+    expect(onGroup).toHaveBeenCalled()
+    await userEvent.click(screen.getByTestId("ungroup-selection"))
+    expect(onUngroup).toHaveBeenCalled()
   })
 })

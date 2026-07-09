@@ -35,6 +35,8 @@ export interface PropertiesPanelProps {
   onBringToFront: () => void
   onAlign: (edge: AlignEdge) => void
   onDistribute: (axis: DistributeAxis) => void
+  onGroup: () => void
+  onUngroup: () => void
   className?: string
 }
 
@@ -59,6 +61,8 @@ export function PropertiesPanel({
   onBringToFront,
   onAlign,
   onDistribute,
+  onGroup,
+  onUngroup,
   className,
 }: PropertiesPanelProps): React.ReactElement | null {
   if (selectedElements.length === 0) return null
@@ -216,6 +220,31 @@ export function PropertiesPanel({
           ))}
         </div>
       </Section>
+
+      {(selectedElements.length >= 2 || selectedElements.some((el) => el.groupIds.length > 0)) && (
+        <Section label={t("properties.group")}>
+          <div className="flex gap-1">
+            <button
+              type="button"
+              data-testid="group-selection"
+              disabled={selectedElements.length < 2}
+              onClick={onGroup}
+              className="flex-1 rounded border border-gray-300 p-1 text-xs disabled:opacity-40"
+            >
+              {t("properties.group")}
+            </button>
+            <button
+              type="button"
+              data-testid="ungroup-selection"
+              disabled={!selectedElements.some((el) => el.groupIds.length > 0)}
+              onClick={onUngroup}
+              className="flex-1 rounded border border-gray-300 p-1 text-xs disabled:opacity-40"
+            >
+              {t("properties.ungroup")}
+            </button>
+          </div>
+        </Section>
+      )}
 
       {selectedElements.length >= 2 && (
         <Section label={t("properties.arrange")}>
