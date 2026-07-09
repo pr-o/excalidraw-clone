@@ -39,6 +39,7 @@ export { cloneElementsWithNewIds } from "./clone"
 export { BUILTIN_TEMPLATES } from "./templates"
 export { alignElements, distributeElements } from "./arrange"
 export type { AlignEdge, DistributeAxis, PositionPatch } from "./arrange"
+export { expandIdsToGroups, groupElements, ungroupElements } from "./groups"
 export { NOTE_PADDING, reconcileBoundText } from "./reconcile-bound-text"
 export {
   BINDABLE_TYPES,
