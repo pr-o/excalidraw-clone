@@ -1,6 +1,8 @@
 import type { Arrowhead } from "@excalidraw-clone/scene"
+import { newArrow, newLine } from "@excalidraw-clone/scene"
 import { RoughGenerator } from "roughjs/bin/generator"
 import { describe, expect, it, vi } from "vitest"
+import { arrowShape, lineShape } from "../src/shapes"
 import { arrowheadDrawables } from "../src/shapes/arrowheads"
 
 const TIP: [number, number] = [100, 50]
@@ -134,5 +136,78 @@ describe("arrowheadDrawables", () => {
     const spy = vi.spyOn(gen, "linearPath")
     arrowheadDrawables("arrow", TIP, PREV, gen, { ...OPTS, strokeLineDash: [8, 8] })
     expect(spy.mock.calls[0]?.[1]?.strokeLineDash).toEqual([8, 8])
+  })
+})
+
+const twoPoints = [
+  { x: 0, y: 0 },
+  { x: 100, y: 0 },
+]
+
+describe("arrowShape arrowhead kinds", () => {
+  it("endArrowhead 'triangle' → polygon at the end tip", () => {
+    const gen = new RoughGenerator()
+    const spy = vi.spyOn(gen, "polygon")
+    const e = { ...newArrow({ x: 0, y: 0 }), points: twoPoints, endArrowhead: "triangle" as const }
+    arrowShape(e, gen)
+    expect(spy).toHaveBeenCalledOnce()
+    expect(spy.mock.calls[0]?.[0]?.[0]).toEqual([100, 0])
+  })
+
+  it("startArrowhead 'dot' → circle at the start tip", () => {
+    const gen = new RoughGenerator()
+    const spy = vi.spyOn(gen, "circle")
+    const e = {
+      ...newArrow({ x: 0, y: 0 }),
+      points: twoPoints,
+      startArrowhead: "dot" as const,
+      endArrowhead: null,
+    }
+    arrowShape(e, gen)
+    expect(spy).toHaveBeenCalledOnce()
+    const [cx, cy] = spy.mock.calls[0]!
+    expect([cx, cy]).toEqual([0, 0])
+  })
+
+  it("default arrow (end 'arrow', start null) → shaft + one chevron", () => {
+    const gen = new RoughGenerator()
+    const spy = vi.spyOn(gen, "linearPath")
+    const e = { ...newArrow({ x: 0, y: 0 }), points: twoPoints }
+    arrowShape(e, gen)
+    expect(spy).toHaveBeenCalledTimes(2) // shaft + chevron
+  })
+})
+
+describe("lineShape arrowheads", () => {
+  it("no arrowheads (default) → single linearPath, nothing else", () => {
+    const gen = new RoughGenerator()
+    const lp = vi.spyOn(gen, "linearPath")
+    const l = { ...newLine({ x: 0, y: 0 }), points: twoPoints }
+    lineShape(l, gen)
+    expect(lp).toHaveBeenCalledOnce()
+  })
+
+  it("endArrowhead 'bar' → perpendicular segment at the end tip", () => {
+    const gen = new RoughGenerator()
+    const spy = vi.spyOn(gen, "line")
+    const l = { ...newLine({ x: 0, y: 0 }), points: twoPoints, endArrowhead: "bar" as const }
+    lineShape(l, gen)
+    expect(spy).toHaveBeenCalledOnce()
+    const [x1, , x2] = spy.mock.calls[0]!
+    expect(x1).toBeCloseTo(100)
+    expect(x2).toBeCloseTo(100)
+  })
+
+  it("startArrowhead 'circle_outline' → outline circle at the start tip", () => {
+    const gen = new RoughGenerator()
+    const spy = vi.spyOn(gen, "circle")
+    const l = {
+      ...newLine({ x: 0, y: 0 }),
+      points: twoPoints,
+      startArrowhead: "circle_outline" as const,
+    }
+    lineShape(l, gen)
+    expect(spy).toHaveBeenCalledOnce()
+    expect(spy.mock.calls[0]?.[3]?.fill).toBeUndefined()
   })
 })
