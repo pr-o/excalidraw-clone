@@ -59,11 +59,13 @@ export const arrowheadDrawables = (
         ),
       ]
     }
-    case "dot":
+    case "dot": {
+      return [gen.circle(tip[0], tip[1], 0.6 * L, filled(opts))]
+    }
     case "circle":
     case "circle_outline": {
-      const o = kind === "dot" ? filled(opts) : opts
-      return [gen.circle(tip[0], tip[1], 0.6 * L, o)]
+      const o = kind === "circle" ? filled(opts) : opts
+      return [gen.circle(tip[0], tip[1], 0.8 * L, o)]
     }
     case "cross": {
       const h = L / 2

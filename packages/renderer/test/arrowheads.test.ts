@@ -65,10 +65,21 @@ describe("arrowheadDrawables", () => {
     expect(opts?.fillStyle).toBe("solid")
   })
 
-  it("circle → same circle, no fill", () => {
+  it("circle → filled circle centered on the tip, diameter 16", () => {
     const { spies } = run("circle")
     expect(spies.circle).toHaveBeenCalledOnce()
-    expect(spies.circle.mock.calls[0]?.[3]?.fill).toBeUndefined()
+    const [cx, cy, d, opts] = spies.circle.mock.calls[0]!
+    expect([cx, cy, d]).toEqual([100, 50, 16])
+    expect(opts?.fill).toBe("#1e1e1e")
+    expect(opts?.fillStyle).toBe("solid")
+  })
+
+  it("circle_outline → same circle, no fill", () => {
+    const { spies } = run("circle_outline")
+    expect(spies.circle).toHaveBeenCalledOnce()
+    const [cx, cy, d, opts] = spies.circle.mock.calls[0]!
+    expect([cx, cy, d]).toEqual([100, 50, 16])
+    expect(opts?.fill).toBeUndefined()
   })
 
   it("cross → two segments crossing at the tip", () => {
@@ -93,6 +104,13 @@ describe("arrowheadDrawables", () => {
     expect(opts?.fillStyle).toBe("solid")
   })
 
+  it("diamond_outline → same 4-gon, no fill", () => {
+    const { spies } = run("diamond_outline")
+    expect(spies.polygon).toHaveBeenCalledOnce()
+    expect(spies.polygon.mock.calls[0]?.[0]).toHaveLength(4)
+    expect(spies.polygon.mock.calls[0]?.[1]?.fill).toBeUndefined()
+  })
+
   it("every kind produces at least one drawable", () => {
     const kinds: Arrowhead[] = [
       "arrow",
@@ -103,6 +121,8 @@ describe("arrowheadDrawables", () => {
       "triangle",
       "diamond",
       "triangle_outline",
+      "circle_outline",
+      "diamond_outline",
     ]
     for (const kind of kinds) {
       expect(run(kind).drawables.length).toBeGreaterThan(0)
