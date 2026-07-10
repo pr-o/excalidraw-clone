@@ -1,5 +1,6 @@
 import type {
   AlignEdge,
+  Arrowhead,
   DistributeAxis,
   ExcalidrawElement,
   FillStyle,
@@ -14,6 +15,19 @@ const STROKE_WIDTHS: readonly StrokeWidth[] = [1, 2, 4]
 const STROKE_STYLES: readonly StrokeStyle[] = ["solid", "dashed", "dotted"]
 const FILL_STYLES: readonly FillStyle[] = ["hachure", "cross-hatch", "solid"]
 const OPACITY_STEPS = [25, 50, 75, 100] as const
+const ARROWHEAD_KINDS: readonly (Arrowhead | null)[] = [
+  null,
+  "arrow",
+  "triangle",
+  "triangle_outline",
+  "bar",
+  "dot",
+  "circle",
+  "circle_outline",
+  "cross",
+  "diamond",
+  "diamond_outline",
+]
 const ALIGN_GLYPH: Record<AlignEdge, string> = {
   left: "⇤",
   centerX: "↔",
@@ -96,6 +110,17 @@ export function PropertiesPanel({
     "roundness",
   )
   const isRound = roundness !== undefined && roundness !== null
+  const allLinear =
+    selectedElements.length > 0 &&
+    selectedElements.every((e) => e.type === "arrow" || e.type === "line")
+  const startArrowhead = commonValue<Arrowhead | null>(
+    selectedElements as unknown as readonly { [k: string]: unknown }[],
+    "startArrowhead",
+  )
+  const endArrowhead = commonValue<Arrowhead | null>(
+    selectedElements as unknown as readonly { [k: string]: unknown }[],
+    "endArrowhead",
+  )
 
   return (
     <aside
@@ -180,6 +205,39 @@ export function PropertiesPanel({
           ))}
         </div>
       </Section>
+
+      {allLinear && (
+        <Section label={t("properties.arrowheads")}>
+          {(
+            [
+              ["start", "startArrowhead", startArrowhead],
+              ["end", "endArrowhead", endArrowhead],
+            ] as const
+          ).map(([end, field, value]) => (
+            <div key={end} className="mb-1 flex items-center gap-1">
+              <span className="w-8 text-[10px] text-gray-500">
+                {t(`properties.arrowhead${end === "start" ? "Start" : "End"}`)}
+              </span>
+              <div className="flex flex-1 flex-wrap gap-0.5">
+                {ARROWHEAD_KINDS.map((kind) => (
+                  <button
+                    key={kind ?? "none"}
+                    type="button"
+                    data-testid={`arrowhead-${end}-${kind ?? "none"}`}
+                    aria-pressed={value === kind}
+                    aria-label={t(`properties.arrowhead_${kind ?? "none"}`)}
+                    title={t(`properties.arrowhead_${kind ?? "none"}`)}
+                    onClick={() => onChange({ [field]: kind })}
+                    className={`flex h-6 w-6 items-center justify-center rounded border ${value === kind ? "border-violet-600 bg-violet-100" : "border-gray-300"}`}
+                  >
+                    <ArrowheadGlyph kind={kind} />
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </Section>
+      )}
 
       <Section label={t("properties.roundness")}>
         <div className="flex gap-1">
@@ -347,6 +405,49 @@ function Section({
       <div className="mb-1 text-xs font-medium text-gray-600">{label}</div>
       {children}
     </div>
+  )
+}
+
+function ArrowheadGlyph({ kind }: { kind: Arrowhead | null }): React.ReactElement {
+  const head = (() => {
+    switch (kind) {
+      case "arrow":
+        return <path d="M9 4 L14 8 L9 12" fill="none" />
+      case "triangle":
+        return <path d="M14 8 L8 4.5 L8 11.5 Z" fill="currentColor" />
+      case "triangle_outline":
+        return <path d="M14 8 L8 4.5 L8 11.5 Z" fill="none" />
+      case "bar":
+        return <path d="M13 3.5 L13 12.5" fill="none" />
+      case "dot":
+        return <circle cx="12" cy="8" r="2" fill="currentColor" stroke="none" />
+      case "circle":
+        return <circle cx="11.5" cy="8" r="3.5" fill="currentColor" stroke="none" />
+      case "circle_outline":
+        return <circle cx="11.5" cy="8" r="3.5" fill="none" />
+      case "cross":
+        return <path d="M9.5 5 L14.5 11 M14.5 5 L9.5 11" fill="none" />
+      case "diamond":
+        return <path d="M14 8 L11 5 L8 8 L11 11 Z" fill="currentColor" />
+      case "diamond_outline":
+        return <path d="M14 8 L11 5 L8 8 L11 11 Z" fill="none" />
+      default:
+        return null
+    }
+  })()
+  const shaftEnd = kind === null ? 14 : 9
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      width="16"
+      height="16"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      aria-hidden="true"
+    >
+      <path d={`M2 8 L${shaftEnd} 8`} fill="none" />
+      {head}
+    </svg>
   )
 }
 

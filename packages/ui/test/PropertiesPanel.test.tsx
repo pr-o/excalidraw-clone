@@ -1,4 +1,4 @@
-import { newRectangle } from "@excalidraw-clone/scene"
+import { newArrow, newLine, newRectangle } from "@excalidraw-clone/scene"
 import { render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { describe, expect, it, vi } from "vitest"
@@ -192,5 +192,51 @@ describe("PropertiesPanel", () => {
     expect(onGroup).toHaveBeenCalled()
     await userEvent.click(screen.getByTestId("ungroup-selection"))
     expect(onUngroup).toHaveBeenCalled()
+  })
+
+  it("shows Arrowheads section when all selected are linear", () => {
+    const arrow = newArrow({ x: 0, y: 0 })
+    const line = newLine({ x: 0, y: 0 })
+    render(<PropertiesPanel t={t} selectedElements={[arrow, line]} {...handlers} />)
+    expect(screen.getByTestId("arrowhead-end-arrow")).toBeInTheDocument()
+    expect(screen.getByTestId("arrowhead-start-none")).toBeInTheDocument()
+  })
+
+  it("hides Arrowheads section when selection includes a non-linear element", () => {
+    const arrow = newArrow({ x: 0, y: 0 })
+    const rect = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
+    render(<PropertiesPanel t={t} selectedElements={[arrow, rect]} {...handlers} />)
+    expect(screen.queryByTestId("arrowhead-end-arrow")).toBeNull()
+  })
+
+  it("marks the common end arrowhead as pressed (arrow default: end 'arrow')", () => {
+    const arrow = newArrow({ x: 0, y: 0 })
+    render(<PropertiesPanel t={t} selectedElements={[arrow]} {...handlers} />)
+    expect(screen.getByTestId("arrowhead-end-arrow")).toHaveAttribute("aria-pressed", "true")
+    expect(screen.getByTestId("arrowhead-start-none")).toHaveAttribute("aria-pressed", "true")
+  })
+
+  it("mixed values → no arrowhead button pressed", () => {
+    const a = newArrow({ x: 0, y: 0 }) // end "arrow"
+    const l = newLine({ x: 0, y: 0 }) // end null
+    render(<PropertiesPanel t={t} selectedElements={[a, l]} {...handlers} />)
+    expect(screen.getByTestId("arrowhead-end-arrow")).toHaveAttribute("aria-pressed", "false")
+    expect(screen.getByTestId("arrowhead-end-none")).toHaveAttribute("aria-pressed", "false")
+  })
+
+  it("emits onChange({ startArrowhead: 'dot' }) when a start kind is clicked", async () => {
+    const arrow = newArrow({ x: 0, y: 0 })
+    const onChange = vi.fn()
+    render(<PropertiesPanel t={t} selectedElements={[arrow]} {...handlers} onChange={onChange} />)
+    await userEvent.click(screen.getByTestId("arrowhead-start-dot"))
+    expect(onChange).toHaveBeenCalledWith({ startArrowhead: "dot" })
+  })
+
+  it("emits onChange({ endArrowhead: null }) when end None is clicked", async () => {
+    const arrow = newArrow({ x: 0, y: 0 })
+    const onChange = vi.fn()
+    render(<PropertiesPanel t={t} selectedElements={[arrow]} {...handlers} onChange={onChange} />)
+    await userEvent.click(screen.getByTestId("arrowhead-end-none"))
+    expect(onChange).toHaveBeenCalledWith({ endArrowhead: null })
   })
 })
