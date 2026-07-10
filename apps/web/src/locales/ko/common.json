@@ -50,7 +50,21 @@
     "distribute_horizontal": "가로로 분배",
     "distribute_vertical": "세로로 분배",
     "group": "그룹",
-    "ungroup": "그룹 해제"
+    "ungroup": "그룹 해제",
+    "arrowheads": "화살촉",
+    "arrowheadStart": "시작",
+    "arrowheadEnd": "끝",
+    "arrowhead_none": "없음",
+    "arrowhead_arrow": "화살표",
+    "arrowhead_triangle": "삼각형",
+    "arrowhead_triangle_outline": "삼각형(윤곽)",
+    "arrowhead_bar": "바",
+    "arrowhead_dot": "점",
+    "arrowhead_circle": "원",
+    "arrowhead_circle_outline": "원(윤곽)",
+    "arrowhead_cross": "십자",
+    "arrowhead_diamond": "마름모",
+    "arrowhead_diamond_outline": "마름모(윤곽)"
   },
   "menu": {
     "label": "메뉴",

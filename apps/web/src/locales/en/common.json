@@ -50,7 +50,21 @@
     "distribute_horizontal": "Distribute horizontally",
     "distribute_vertical": "Distribute vertically",
     "group": "Group",
-    "ungroup": "Ungroup"
+    "ungroup": "Ungroup",
+    "arrowheads": "Arrowheads",
+    "arrowheadStart": "Start",
+    "arrowheadEnd": "End",
+    "arrowhead_none": "None",
+    "arrowhead_arrow": "Arrow",
+    "arrowhead_triangle": "Triangle",
+    "arrowhead_triangle_outline": "Triangle (outline)",
+    "arrowhead_bar": "Bar",
+    "arrowhead_dot": "Dot",
+    "arrowhead_circle": "Circle",
+    "arrowhead_circle_outline": "Circle (outline)",
+    "arrowhead_cross": "Cross",
+    "arrowhead_diamond": "Diamond",
+    "arrowhead_diamond_outline": "Diamond (outline)"
   },
   "menu": {
     "label": "Menu",
