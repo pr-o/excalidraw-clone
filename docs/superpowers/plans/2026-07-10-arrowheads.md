@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Render all 8 schema arrowhead kinds on arrows _and_ lines, and add a Start/End arrowhead picker (incl. None) to the PropertiesPanel.
+**Goal:** Render all 10 schema arrowhead kinds on arrows _and_ lines, and add a Start/End arrowhead picker (incl. None) to the PropertiesPanel.
 
-**Architecture:** A new pure-function renderer module `packages/renderer/src/shapes/arrowheads.ts` owns all arrowhead geometry (switch over the 8 kinds); `arrow.ts` and `line.ts` call it under the existing `startArrowhead`/`endArrowhead` presence checks. The UI adds one gated `<Section>` to `PropertiesPanel.tsx` that patches elements through the existing generic `onChange` flow — no schema, factory, or App.tsx changes.
+**Architecture:** A new pure-function renderer module `packages/renderer/src/shapes/arrowheads.ts` owns all arrowhead geometry (switch over the 10 kinds); `arrow.ts` and `line.ts` call it under the existing `startArrowhead`/`endArrowhead` presence checks. The UI adds one gated `<Section>` to `PropertiesPanel.tsx` that patches elements through the existing generic `onChange` flow — no schema, factory, or App.tsx changes.
 
 **Tech Stack:** TypeScript, rough.js (`RoughGenerator`), React 19, vitest + @testing-library/react, Playwright.
 
@@ -13,7 +13,8 @@
 ## Global Constraints
 
 - pnpm monorepo with turbo; run package tests with `pnpm --filter <name> test` (vitest run), e2e with `pnpm --filter @excalidraw-clone/web e2e` (playwright test).
-- The `Arrowhead` union in `packages/scene/src/types.ts` is `"arrow" | "bar" | "dot" | "circle" | "cross" | "triangle" | "diamond" | "triangle_outline"` — **do not change the schema or factories**. Defaults stay: arrow = end `"arrow"`/start `null`; line = both `null`.
+- The `Arrowhead` union in `packages/scene/src/types.ts` has **10 values**: `"arrow" | "bar" | "dot" | "circle" | "cross" | "triangle" | "diamond" | "triangle_outline" | "circle_outline" | "diamond_outline"` — **do not change the schema or factories**. Defaults stay: arrow = end `"arrow"`/start `null`; line = both `null`.
+- Filled/outline semantics (upstream-Excalidraw-compatible): `dot` = small filled circle (d = 0.6·L), `circle` = filled circle (d = 0.8·L), `circle_outline` = outline circle (d = 0.8·L), `diamond` = filled, `diamond_outline` = outline, `triangle` = filled, `triangle_outline` = outline. No two kinds may render identically.
 - UI package convention: components take `t: (key: string) => string`; unit tests stub `const t = (key: string): string => key`.
 - All commits go on the `develop` branch, message style: `<pkg>: <imperative summary>`.
 - Full gate before merge: `pnpm typecheck && pnpm test && pnpm lint && pnpm build` (13/13 pkgs) and e2e green.
@@ -105,10 +106,21 @@ describe("arrowheadDrawables", () => {
     expect(opts?.fillStyle).toBe("solid")
   })
 
-  it("circle → same circle, no fill", () => {
+  it("circle → filled circle centered on the tip, diameter 16", () => {
     const { spies } = run("circle")
     expect(spies.circle).toHaveBeenCalledOnce()
-    expect(spies.circle.mock.calls[0]?.[3]?.fill).toBeUndefined()
+    const [cx, cy, d, opts] = spies.circle.mock.calls[0]!
+    expect([cx, cy, d]).toEqual([100, 50, 16])
+    expect(opts?.fill).toBe("#1e1e1e")
+    expect(opts?.fillStyle).toBe("solid")
+  })
+
+  it("circle_outline → same circle, no fill", () => {
+    const { spies } = run("circle_outline")
+    expect(spies.circle).toHaveBeenCalledOnce()
+    const [cx, cy, d, opts] = spies.circle.mock.calls[0]!
+    expect([cx, cy, d]).toEqual([100, 50, 16])
+    expect(opts?.fill).toBeUndefined()
   })
 
   it("cross → two segments crossing at the tip", () => {
@@ -133,6 +145,13 @@ describe("arrowheadDrawables", () => {
     expect(opts?.fillStyle).toBe("solid")
   })
 
+  it("diamond_outline → same 4-gon, no fill", () => {
+    const { spies } = run("diamond_outline")
+    expect(spies.polygon).toHaveBeenCalledOnce()
+    expect(spies.polygon.mock.calls[0]?.[0]).toHaveLength(4)
+    expect(spies.polygon.mock.calls[0]?.[1]?.fill).toBeUndefined()
+  })
+
   it("every kind produces at least one drawable", () => {
     const kinds: Arrowhead[] = [
       "arrow",
@@ -143,6 +162,8 @@ describe("arrowheadDrawables", () => {
       "triangle",
       "diamond",
       "triangle_outline",
+      "circle_outline",
+      "diamond_outline",
     ]
     for (const kind of kinds) {
       expect(run(kind).drawables.length).toBeGreaterThan(0)
@@ -176,12 +197,16 @@ import type { Point as RoughPoint } from "roughjs/bin/geometry"
 export const ARROWHEAD_LENGTH = 20
 export const ARROWHEAD_ANGLE = Math.PI / 6
 
-const filled = (opts: Options): Options => ({
-  ...opts,
-  fill: opts.stroke,
-  fillStyle: "solid",
-})
+const filled = (opts: Options): Options => {
+  const o: Options = { ...opts, fillStyle: "solid" }
+  if (opts.stroke !== undefined) o.fill = opts.stroke
+  return o
+}
+```
 
+(Note: the tsconfig uses `exactOptionalPropertyTypes`, so `fill: opts.stroke` with `stroke` possibly-undefined does not compile — hence the conditional assignment.)
+
+```ts
 /** Drawables for one arrowhead. `tip` is the endpoint; `prev` is the adjacent shaft point. */
 export const arrowheadDrawables = (
   kind: Arrowhead,
@@ -229,10 +254,13 @@ export const arrowheadDrawables = (
         ),
       ]
     }
-    case "dot":
-    case "circle": {
-      const o = kind === "dot" ? filled(opts) : opts
-      return [gen.circle(tip[0], tip[1], 0.6 * L, o)]
+    case "dot": {
+      return [gen.circle(tip[0], tip[1], 0.6 * L, filled(opts))]
+    }
+    case "circle":
+    case "circle_outline": {
+      const o = kind === "circle" ? filled(opts) : opts
+      return [gen.circle(tip[0], tip[1], 0.8 * L, o)]
     }
     case "cross": {
       const h = L / 2
@@ -247,7 +275,8 @@ export const arrowheadDrawables = (
         ),
       )
     }
-    case "diamond": {
+    case "diamond":
+    case "diamond_outline": {
       const half = L / 2
       const width = L / 3
       const mid: RoughPoint = [tip[0] - half * dir[0], tip[1] - half * dir[1]]
@@ -260,7 +289,7 @@ export const arrowheadDrawables = (
             back,
             [mid[0] - width * perp[0], mid[1] - width * perp[1]],
           ],
-          filled(opts),
+          kind === "diamond" ? filled(opts) : opts,
         ),
       ]
     }
@@ -279,7 +308,7 @@ Run: `pnpm --filter @excalidraw-clone/renderer typecheck` → exit 0.
 
 ```bash
 git add packages/renderer/src/shapes/arrowheads.ts packages/renderer/test/arrowheads.test.ts
-git commit -m "renderer: add arrowheadDrawables — geometry for all 8 arrowhead kinds"
+git commit -m "renderer: add arrowheadDrawables — geometry for all 10 arrowhead kinds"
 ```
 
 ---
@@ -364,10 +393,14 @@ describe("lineShape arrowheads", () => {
     expect(x2).toBeCloseTo(100)
   })
 
-  it("startArrowhead 'circle' → outline circle at the start tip", () => {
+  it("startArrowhead 'circle_outline' → outline circle at the start tip", () => {
     const gen = new RoughGenerator()
     const spy = vi.spyOn(gen, "circle")
-    const l = { ...newLine({ x: 0, y: 0 }), points: twoPoints, startArrowhead: "circle" as const }
+    const l = {
+      ...newLine({ x: 0, y: 0 }),
+      points: twoPoints,
+      startArrowhead: "circle_outline" as const,
+    }
     lineShape(l, gen)
     expect(spy).toHaveBeenCalledOnce()
     expect(spy.mock.calls[0]?.[3]?.fill).toBeUndefined()
@@ -573,8 +606,10 @@ const ARROWHEAD_KINDS: readonly (Arrowhead | null)[] = [
   "bar",
   "dot",
   "circle",
+  "circle_outline",
   "cross",
   "diamond",
+  "diamond_outline",
 ]
 ```
 
@@ -593,13 +628,17 @@ function ArrowheadGlyph({ kind }: { kind: Arrowhead | null }): React.ReactElemen
       case "bar":
         return <path d="M13 3.5 L13 12.5" fill="none" />
       case "dot":
-        return <circle cx="12" cy="8" r="3" fill="currentColor" stroke="none" />
+        return <circle cx="12" cy="8" r="2" fill="currentColor" stroke="none" />
       case "circle":
-        return <circle cx="12" cy="8" r="3" fill="none" />
+        return <circle cx="11.5" cy="8" r="3.5" fill="currentColor" stroke="none" />
+      case "circle_outline":
+        return <circle cx="11.5" cy="8" r="3.5" fill="none" />
       case "cross":
         return <path d="M9.5 5 L14.5 11 M14.5 5 L9.5 11" fill="none" />
       case "diamond":
         return <path d="M14 8 L11 5 L8 8 L11 11 Z" fill="currentColor" />
+      case "diamond_outline":
+        return <path d="M14 8 L11 5 L8 8 L11 11 Z" fill="none" />
       default:
         return null
     }
@@ -721,8 +760,10 @@ In `apps/web/src/locales/en/common.json`, inside the `"properties"` object (afte
 "arrowhead_bar": "Bar",
 "arrowhead_dot": "Dot",
 "arrowhead_circle": "Circle",
+"arrowhead_circle_outline": "Circle (outline)",
 "arrowhead_cross": "Cross",
-"arrowhead_diamond": "Diamond"
+"arrowhead_diamond": "Diamond",
+"arrowhead_diamond_outline": "Diamond (outline)"
 ```
 
 In `apps/web/src/locales/ko/common.json`, same position:
@@ -738,8 +779,10 @@ In `apps/web/src/locales/ko/common.json`, same position:
 "arrowhead_bar": "바",
 "arrowhead_dot": "점",
 "arrowhead_circle": "원",
+"arrowhead_circle_outline": "원(윤곽)",
 "arrowhead_cross": "십자",
-"arrowhead_diamond": "마름모"
+"arrowhead_diamond": "마름모",
+"arrowhead_diamond_outline": "마름모(윤곽)"
 ```
 
 - [ ] **Step 2: Verify web tests + typecheck still pass**
