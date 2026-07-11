@@ -1,6 +1,7 @@
-import type { ViewTransform } from "@excalidraw-clone/geometry"
+import type { Bounds, ViewTransform } from "@excalidraw-clone/geometry"
 import type { ExcalidrawElement, Scene } from "@excalidraw-clone/scene"
 import { RoughCanvas } from "roughjs/bin/canvas"
+import { isElementVisible } from "./culling"
 import { drawElement } from "./draw-element"
 import { drawGrid } from "./grid"
 import { type MarqueeBox, drawSelectionChrome } from "./overlay"
@@ -154,7 +155,14 @@ export class CanvasRenderer {
     drawGrid(ctx, canvas, this.viewTransform, this.grid, this.theme)
     const elements = this.scene.getElements()
     const getImage = (id: string): HTMLImageElement | undefined => this.imageMap.get(id)
+    const view: Bounds = {
+      x: -scrollX,
+      y: -scrollY,
+      width: canvas.width / zoom,
+      height: canvas.height / zoom,
+    }
     for (const element of elements) {
+      if (!isElementVisible(element, view)) continue
       drawElement(ctx, element, this.rough, this.shapeCache, getImage)
     }
     this.renderSelection(elements)
