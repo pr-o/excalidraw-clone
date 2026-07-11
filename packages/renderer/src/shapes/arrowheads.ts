@@ -21,7 +21,6 @@ export const arrowheadDrawables = (
   opts: Options,
 ): readonly Drawable[] => {
   const angle = Math.atan2(tip[1] - prev[1], tip[0] - prev[0])
-  const dir: RoughPoint = [Math.cos(angle), Math.sin(angle)]
   const perp: RoughPoint = [-Math.sin(angle), Math.cos(angle)]
   const L = ARROWHEAD_LENGTH
 
@@ -82,6 +81,7 @@ export const arrowheadDrawables = (
     }
     case "diamond":
     case "diamond_outline": {
+      const dir: RoughPoint = [Math.cos(angle), Math.sin(angle)]
       const half = L / 2
       const width = L / 3
       const mid: RoughPoint = [tip[0] - half * dir[0], tip[1] - half * dir[1]]
