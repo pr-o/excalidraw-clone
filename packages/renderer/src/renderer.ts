@@ -142,8 +142,9 @@ export class CanvasRenderer {
     ctx.setTransform(zoom, 0, 0, zoom, scrollX * zoom, scrollY * zoom)
     drawGrid(ctx, canvas, this.viewTransform, this.grid, this.theme)
     const elements = this.scene.getElements()
+    const getImage = (id: string): HTMLImageElement | undefined => this.imageMap.get(id)
     for (const element of elements) {
-      drawElement(ctx, element, this.rough, this.shapeCache)
+      drawElement(ctx, element, this.rough, this.shapeCache, getImage)
     }
     this.renderSelection(elements)
   }

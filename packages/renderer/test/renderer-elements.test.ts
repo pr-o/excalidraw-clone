@@ -42,7 +42,7 @@ describe("renderer elements", () => {
     expect(drawSpy).toHaveBeenCalledTimes(1)
   })
 
-  it("skips image elements (deferred)", () => {
+  it("image elements without a loaded file record no rough draw", () => {
     const drawSpy = vi.spyOn(RoughCanvas.prototype, "draw").mockImplementation(() => undefined)
     const { canvas } = createMockCanvas()
     const scene = new Scene([
