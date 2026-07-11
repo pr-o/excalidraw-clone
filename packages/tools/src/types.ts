@@ -39,6 +39,17 @@ export type ToolEvent =
   | { type: "escape" }
   | { type: "delete" }
 
+export type ImageReadyEvent = {
+  type: "imageReady"
+  fileId: string
+  mimeType: string
+  width: number
+  height: number
+  at: Point
+}
+
+export type AnyToolEvent = ToolEvent | ImageReadyEvent
+
 export type SceneMutation = (draft: ExcalidrawElement[]) => void
 
 export type ToolEffect =

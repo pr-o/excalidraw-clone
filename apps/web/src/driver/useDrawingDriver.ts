@@ -11,13 +11,11 @@ import {
 } from "@excalidraw-clone/scene"
 import {
   TOOLS,
-  type ImageReadyEvent,
+  type AnyToolEvent,
   type LinearState,
   type Modifiers,
   type SelectionState,
-  type Tool,
   type ToolContext,
-  type ToolEvent,
 } from "@excalidraw-clone/tools"
 import { useEffect, useRef, type RefObject } from "react"
 import { useAppStore } from "../store"
@@ -123,10 +121,10 @@ export function useDrawingDriver({
       }
     }
 
-    const dispatch = (event: ToolEvent | ImageReadyEvent, modifiers: Modifiers): void => {
+    const dispatch = (event: AnyToolEvent, modifiers: Modifiers): void => {
       const store = useAppStore.getState()
       const toolName = store.activeTool
-      const tool: Tool<unknown, ToolEvent | ImageReadyEvent> = TOOLS[toolName]
+      const tool = TOOLS[toolName]
       const currentState = store.toolStates[toolName] ?? tool.initial
       const ctx: ToolContext = {
         readElements: () => scene.getElements(),

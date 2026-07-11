@@ -10,9 +10,9 @@ import { noteTool } from "./tools/note"
 import { rectangleTool } from "./tools/rectangle"
 import { selectionTool } from "./tools/selection"
 import { textTool } from "./tools/text"
-import type { Tool, ToolEvent, ToolName } from "./types"
+import type { AnyToolEvent, Tool, ToolName } from "./types"
 
-export const TOOLS: Record<ToolName, Tool<unknown, ToolEvent>> = {
+export const TOOLS: Record<ToolName, Tool<unknown, AnyToolEvent>> = {
   selection: selectionTool,
   rectangle: rectangleTool,
   ellipse: ellipseTool,

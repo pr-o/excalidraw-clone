@@ -1,7 +1,7 @@
-import type { ImageReadyEvent, ToolEvent } from "@excalidraw-clone/tools"
+import type { AnyToolEvent } from "@excalidraw-clone/tools"
 import type { StateCreator } from "zustand"
 
-export type ToolEventDispatcher = (event: ToolEvent | ImageReadyEvent) => void
+export type ToolEventDispatcher = (event: AnyToolEvent) => void
 
 export interface DispatchSlice {
   dispatchToolEvent: ToolEventDispatcher | null

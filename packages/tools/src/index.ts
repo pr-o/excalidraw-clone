@@ -20,12 +20,14 @@ export { eraserTool } from "./tools/eraser"
 export type { EraserState } from "./tools/eraser"
 export { frameTool } from "./tools/frame"
 export { imageTool } from "./tools/image"
-export type { ImageEvent, ImageReadyEvent, ImageState } from "./tools/image"
+export type { ImageEvent, ImageState } from "./tools/image"
 export { noteTool } from "./tools/note"
 export type { NoteState } from "./tools/note"
 export { SELECTION_INITIAL, findHandleAt, selectionTool } from "./tools/selection"
 export type { HandleHit, ResizeHandle, SelectionState } from "./tools/selection"
 export type {
+  AnyToolEvent,
+  ImageReadyEvent,
   Modifiers,
   SceneMutation,
   Tool,

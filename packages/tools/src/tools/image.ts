@@ -1,17 +1,13 @@
-import type { Point } from "@excalidraw-clone/geometry"
 import { newImage } from "@excalidraw-clone/scene"
-import { NO_EFFECTS, type Tool, type ToolContext, type ToolEffect, type ToolEvent } from "../types"
+import {
+  NO_EFFECTS,
+  type AnyToolEvent,
+  type Tool,
+  type ToolContext,
+  type ToolEffect,
+} from "../types"
 
-export type ImageReadyEvent = {
-  type: "imageReady"
-  fileId: string
-  mimeType: string
-  width: number
-  height: number
-  at: Point
-}
-
-export type ImageEvent = ToolEvent | ImageReadyEvent
+export type ImageEvent = AnyToolEvent
 
 export type ImageState =
   | { phase: "idle" }
