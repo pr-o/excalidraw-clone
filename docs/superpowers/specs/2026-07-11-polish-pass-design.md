@@ -54,6 +54,15 @@ waits only one animation frame — insufficient for async image decode. Changes:
   persistence `getFile(id)`, awaits all `preloadImage` promises, then renders.
   Missing files (id not in store) are skipped.
 
+### Fresh-upload preload (`apps/web/src/components/App.tsx`)
+
+Discovered during planning: `preloadImage` is called only from hydration
+(`preloadFiles`) and `openFile.ts` — a **freshly uploaded** image is never
+loaded into the on-screen renderer, so it would stay invisible until reload
+even with §1 fixed. The image-tool effect in `App.tsx` therefore fetches the
+new file (`getFile`) and calls `renderer.preloadImage` before dispatching
+`imageReady`.
+
 ### SVG (`packages/renderer/src/svg.ts`)
 
 - `SVGRenderOptions` gains `files?: ReadonlyMap<string, string>` (fileId →
