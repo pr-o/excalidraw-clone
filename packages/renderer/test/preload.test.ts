@@ -3,19 +3,24 @@ import { describe, expect, it } from "vitest"
 import { CanvasRenderer } from "../src/renderer"
 import { createMockCanvas } from "../src/test-utils/mock-canvas"
 
+const DATA = "data:image/png;base64,iVBORw0KGgo="
+
 describe("CanvasRenderer.preloadImage", () => {
-  it("accepts an id + dataURL without throwing", () => {
+  it("returns a promise and is idempotent per fileId", () => {
     const { canvas } = createMockCanvas()
-    const scene = new Scene()
-    const renderer = new CanvasRenderer(canvas, scene)
-    expect(() => renderer.preloadImage("abc", "data:image/png;base64,iVBORw0KGgo=")).not.toThrow()
+    const renderer = new CanvasRenderer(canvas, new Scene())
+    const p1 = renderer.preloadImage("abc", DATA)
+    const p2 = renderer.preloadImage("abc", DATA)
+    expect(p1).toBeInstanceOf(Promise)
+    expect(p2).toBe(p1)
   })
 
-  it("unloadImage forgets a previously preloaded image", () => {
+  it("unloadImage forgets the image so preloadImage starts a fresh load", () => {
     const { canvas } = createMockCanvas()
-    const scene = new Scene()
-    const renderer = new CanvasRenderer(canvas, scene)
-    renderer.preloadImage("abc", "data:image/png;base64,iVBORw0KGgo=")
-    expect(() => renderer.unloadImage("abc")).not.toThrow()
+    const renderer = new CanvasRenderer(canvas, new Scene())
+    const p1 = renderer.preloadImage("abc", DATA)
+    renderer.unloadImage("abc")
+    const p2 = renderer.preloadImage("abc", DATA)
+    expect(p2).not.toBe(p1)
   })
 })

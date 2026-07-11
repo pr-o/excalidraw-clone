@@ -1,5 +1,5 @@
 "use client"
-import { clearAllFiles, clearLocal, download } from "@excalidraw-clone/persistence"
+import { clearAllFiles, clearLocal, download, getFile } from "@excalidraw-clone/persistence"
 import { renderToSVG } from "@excalidraw-clone/renderer"
 import type { Scene } from "@excalidraw-clone/scene"
 import {
@@ -69,7 +69,14 @@ const BG_FOR_SVG: Record<ExportOptions["background"], string> = {
 
 async function exportScene(scene: Scene, opts: ExportOptions): Promise<void> {
   if (opts.format === "svg") {
-    const svg = renderToSVG(scene, { background: BG_FOR_SVG[opts.background] })
+    const files = new Map<string, string>()
+    for (const el of scene.getElements()) {
+      if (el.type === "image" && el.fileId !== null && !files.has(el.fileId)) {
+        const bin = await getFile(el.fileId)
+        if (bin) files.set(el.fileId, bin.dataURL)
+      }
+    }
+    const svg = renderToSVG(scene, { background: BG_FOR_SVG[opts.background], files })
     const blob = new Blob([svg], { type: "image/svg+xml" })
     download(blob, "drawing.svg")
     return

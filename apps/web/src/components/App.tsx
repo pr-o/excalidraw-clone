@@ -91,12 +91,14 @@ function Inner(): React.ReactElement {
     void (async () => {
       const event = await pickAndUploadImage({ x: 100, y: 100 })
       if (cancelled || !event) return
+      const bin = await getFile(event.fileId)
+      if (bin && renderer) void renderer.preloadImage(bin.id, bin.dataURL)
       useAppStore.getState().dispatchToolEvent?.(event)
     })()
     return () => {
       cancelled = true
     }
-  }, [activeTool])
+  }, [activeTool, renderer])
 
   useEffect(() => {
     document.documentElement.dataset.theme =

@@ -27,6 +27,7 @@ export class CanvasRenderer {
   private readonly rough: RoughCanvas
   private readonly shapeCache = new ShapeCache()
   private readonly imageMap = new Map<string, HTMLImageElement>()
+  private readonly imageLoads = new Map<string, Promise<void>>()
   private readonly overlayCanvas: HTMLCanvasElement | null
   private readonly overlayCtx: CanvasRenderingContext2D | null
   private marquee: MarqueeBox | null = null
@@ -103,16 +104,26 @@ export class CanvasRenderer {
     this.requestRedraw()
   }
 
-  preloadImage(fileId: string, dataURL: string): void {
-    if (this.imageMap.has(fileId)) return
+  preloadImage(fileId: string, dataURL: string): Promise<void> {
+    const pending = this.imageLoads.get(fileId)
+    if (pending) return pending
     const img = new Image()
-    img.onload = () => this.requestRedraw()
+    const load = new Promise<void>((resolve) => {
+      img.onload = () => {
+        this.requestRedraw()
+        resolve()
+      }
+      img.onerror = () => resolve()
+    })
     img.src = dataURL
     this.imageMap.set(fileId, img)
+    this.imageLoads.set(fileId, load)
+    return load
   }
 
   unloadImage(fileId: string): void {
     this.imageMap.delete(fileId)
+    this.imageLoads.delete(fileId)
     this.requestRedraw()
   }
 

@@ -7,6 +7,7 @@ export interface SVGRenderOptions {
   background?: string
   embedScene?: boolean
   padding?: number
+  files?: ReadonlyMap<string, string>
 }
 
 const SVG_NS = "http://www.w3.org/2000/svg"
@@ -37,20 +38,31 @@ export function renderToSVG(scene: Scene, opts: SVGRenderOptions = {}): string {
   const rsvg = new RoughSVG(root as unknown as SVGSVGElement)
 
   for (const el of elements) {
-    const node = renderElement(doc, el, rsvg)
+    const node = renderElement(doc, el, rsvg, opts.files)
     if (node) root.appendChild(node)
   }
 
   return new XMLSerializer().serializeToString(root)
 }
 
-function renderElement(doc: Document, el: ExcalidrawElement, rsvg: RoughSVG): SVGGElement | null {
-  if (el.type === "image") return null
-  const group = doc.createElementNS(SVG_NS, "g")
-  group.setAttribute("transform", elementTransform(el))
-  if (el.opacity !== 100) {
-    group.setAttribute("opacity", String(el.opacity / 100))
+function renderElement(
+  doc: Document,
+  el: ExcalidrawElement,
+  rsvg: RoughSVG,
+  files?: ReadonlyMap<string, string>,
+): SVGGElement | null {
+  if (el.type === "image") {
+    const href = el.fileId === null ? undefined : files?.get(el.fileId)
+    if (href === undefined) return null
+    const group = createGroup(doc, el)
+    const image = doc.createElementNS(SVG_NS, "image")
+    image.setAttribute("href", href)
+    image.setAttribute("width", String(el.width))
+    image.setAttribute("height", String(el.height))
+    group.appendChild(image)
+    return group
   }
+  const group = createGroup(doc, el)
 
   if (el.type === "text") {
     group.appendChild(textNode(doc, el))
@@ -60,6 +72,15 @@ function renderElement(doc: Document, el: ExcalidrawElement, rsvg: RoughSVG): SV
   const drawables = generateShape(el, rsvg.generator)
   for (const d of drawables) {
     group.appendChild(rsvg.draw(d))
+  }
+  return group
+}
+
+function createGroup(doc: Document, el: ExcalidrawElement): SVGGElement {
+  const group = doc.createElementNS(SVG_NS, "g")
+  group.setAttribute("transform", elementTransform(el))
+  if (el.opacity !== 100) {
+    group.setAttribute("opacity", String(el.opacity / 100))
   }
   return group
 }

@@ -31,8 +31,6 @@ export async function preloadFiles(renderer: CanvasRenderer | null): Promise<voi
   if (!renderer) return
   const files = await getAllFiles()
   for (const f of files) {
-    const fn = (renderer as unknown as { preloadImage?: (id: string, url: string) => void })
-      .preloadImage
-    fn?.call(renderer, f.id, f.dataURL)
+    void renderer.preloadImage(f.id, f.dataURL)
   }
 }
