@@ -22,7 +22,7 @@ export async function openExcalidrawFromPicker(
     for (const id of Object.keys(data.files)) {
       const f = data.files[id]!
       await putFile(f)
-      renderer?.preloadImage(id, f.dataURL)
+      void renderer?.preloadImage(id, f.dataURL)
     }
   }
 }
