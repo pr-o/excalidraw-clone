@@ -128,10 +128,6 @@ export class CanvasRenderer {
     this.requestRedraw()
   }
 
-  getImage(fileId: string): HTMLImageElement | undefined {
-    return this.imageMap.get(fileId)
-  }
-
   requestRedraw(): void {
     if (!this.running) return
     this.dirty = true

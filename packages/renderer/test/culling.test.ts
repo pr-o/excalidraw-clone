@@ -51,6 +51,21 @@ describe("isElementVisible", () => {
     }
     expect(isElementVisible(arrow, VIEW)).toBe(true)
   })
+
+  it("rotates linear-element points when computing visibility", () => {
+    const base = {
+      ...newArrow({ x: 900, y: 300, width: 10, height: 10 }),
+      points: [
+        { x: 0, y: 0 },
+        { x: 300, y: 0 },
+      ],
+    }
+    // Unrotated point-bounds [900,1200]×[300,300] sit right of the view.
+    expect(isElementVisible(base, VIEW)).toBe(false)
+    // Rotated 180° about the element center (905,305), the points map to
+    // (910,310) and (610,310) — the bounds reach back into the view.
+    expect(isElementVisible({ ...base, angle: Math.PI }, VIEW)).toBe(true)
+  })
 })
 
 describe("CanvasRenderer culling", () => {
@@ -70,6 +85,23 @@ describe("CanvasRenderer culling", () => {
       newRectangle({ x: 5000, y: 5000, width: 20, height: 20 }),
     ])
     const r = new CanvasRenderer(canvas, scene)
+    r.start()
+    vi.advanceTimersByTime(20)
+    expect(drawSpy).toHaveBeenCalledTimes(1)
+  })
+
+  it("culls against the scrolled/zoomed view, not the default one", () => {
+    const drawSpy = vi.spyOn(RoughCanvas.prototype, "draw").mockImplementation(() => undefined)
+    const { canvas } = createMockCanvas() // 800×600
+    const scene = new Scene([
+      // In world view [900,1300]×[450,750] at scroll(-900,-450), zoom 2 → drawn.
+      newRectangle({ x: 1000, y: 500, width: 50, height: 50 }),
+      // At the default identity view this one WOULD be drawn — but not here.
+      newRectangle({ x: 100, y: 100, width: 50, height: 50 }),
+    ])
+    const r = new CanvasRenderer(canvas, scene, {
+      viewTransform: { scrollX: -900, scrollY: -450, zoom: 2 },
+    })
     r.start()
     vi.advanceTimersByTime(20)
     expect(drawSpy).toHaveBeenCalledTimes(1)
