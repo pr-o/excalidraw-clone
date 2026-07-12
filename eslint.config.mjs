@@ -49,6 +49,7 @@ export default tseslint.config(
       "**/node_modules/**",
       "**/coverage/**",
       "**/*.config.{ts,mjs,js}",
+      "vitest.workspace.ts",
       "**/next-env.d.ts",
     ],
   },
