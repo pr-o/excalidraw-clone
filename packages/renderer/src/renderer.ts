@@ -87,6 +87,7 @@ export class CanvasRenderer {
 
   setTheme(theme: Theme): void {
     this.theme = theme
+    this.shapeCache.clear()
     this.requestRedraw()
   }
 
@@ -159,7 +160,7 @@ export class CanvasRenderer {
     }
     for (const element of elements) {
       if (!isElementVisible(element, view)) continue
-      drawElement(ctx, element, this.rough, this.shapeCache, getImage)
+      drawElement(ctx, element, this.rough, this.shapeCache, getImage, this.theme)
     }
     this.renderSelection(elements)
   }

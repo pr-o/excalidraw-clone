@@ -26,7 +26,11 @@ const verticalOffset = (e: ExcalidrawTextElement, totalHeight: number): number =
   }
 }
 
-export const drawText = (ctx: CanvasRenderingContext2D, e: ExcalidrawTextElement): void => {
+export const drawText = (
+  ctx: CanvasRenderingContext2D,
+  e: ExcalidrawTextElement,
+  fillColor?: string,
+): void => {
   if (e.text.length === 0) return
   const lines = e.text.split("\n")
   const lineHeightPx = e.fontSize * e.lineHeight
@@ -34,7 +38,7 @@ export const drawText = (ctx: CanvasRenderingContext2D, e: ExcalidrawTextElement
 
   ctx.save()
   ctx.font = fontSpec(e.fontSize, e.fontFamily)
-  ctx.fillStyle = e.strokeColor
+  ctx.fillStyle = fillColor ?? e.strokeColor
   ctx.textBaseline = "top"
   ctx.textAlign = e.textAlign
 

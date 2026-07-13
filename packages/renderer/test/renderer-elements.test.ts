@@ -1,4 +1,4 @@
-import { Scene, newImage, newRectangle } from "@excalidraw-clone/scene"
+import { Scene, newImage, newRectangle, newText } from "@excalidraw-clone/scene"
 import { RoughCanvas } from "roughjs/bin/canvas"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { CanvasRenderer } from "../src"
@@ -86,5 +86,31 @@ describe("renderer elements", () => {
     expect(saves).toBe(1)
     expect(restores).toBe(1)
     expect(translates[0]?.args).toEqual([7, 9])
+  })
+
+  it("draws elements with dark-resolved colors when theme is dark", () => {
+    const drawSpy = vi.spyOn(RoughCanvas.prototype, "draw").mockImplementation(() => undefined)
+    const { canvas } = createMockCanvas()
+    const scene = new Scene([
+      { ...newRectangle({ x: 10, y: 10, width: 50, height: 50 }), strokeColor: "#1e1e1e" },
+    ])
+    const r = new CanvasRenderer(canvas, scene, { theme: "dark" })
+    r.start()
+    flush()
+    expect(drawSpy).toHaveBeenCalledTimes(1)
+    const drawable = drawSpy.mock.calls[0]![0] as { options: { stroke: string } }
+    expect(drawable.options.stroke).toBe("#ececec")
+    r.stop()
+  })
+
+  it("draws text with the dark-resolved fill", () => {
+    const { canvas, ctx } = createMockCanvas()
+    const scene = new Scene([{ ...newText({ x: 10, y: 10, text: "hi" }), strokeColor: "#1e1e1e" }])
+    const r = new CanvasRenderer(canvas, scene, { theme: "dark" })
+    r.start()
+    flush()
+    const fills = ctx.__calls.filter((c) => c.method === "set:fillStyle").map((c) => c.args[0])
+    expect(fills).toContain("#ececec")
+    r.stop()
   })
 })

@@ -45,3 +45,31 @@ describe("ShapeCache", () => {
     expect(spy).toHaveBeenCalledTimes(2)
   })
 })
+
+describe("ShapeCache theming", () => {
+  it("generates dark drawables with resolved colors", () => {
+    const cache = new ShapeCache()
+    const gen = new RoughGenerator()
+    const el = {
+      ...newRectangle({ x: 0, y: 0, width: 10, height: 10 }),
+      strokeColor: "#1e1e1e",
+    }
+    const [dark] = cache.get(el, gen, "dark")
+    expect(dark!.options.stroke).toBe("#ececec")
+  })
+
+  it("invalidates when the theme changes for the same element", () => {
+    const cache = new ShapeCache()
+    const gen = new RoughGenerator()
+    const el = {
+      ...newRectangle({ x: 0, y: 0, width: 10, height: 10 }),
+      strokeColor: "#1e1e1e",
+    }
+    const [light] = cache.get(el, gen, "light")
+    expect(light!.options.stroke).toBe("#1e1e1e")
+    const [dark] = cache.get(el, gen, "dark")
+    expect(dark!.options.stroke).toBe("#ececec")
+    const [lightAgain] = cache.get(el, gen, "light")
+    expect(lightAgain!.options.stroke).toBe("#1e1e1e")
+  })
+})

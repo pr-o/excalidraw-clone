@@ -2,6 +2,8 @@ import type { ExcalidrawElement } from "@excalidraw-clone/scene"
 import type { RoughCanvas } from "roughjs/bin/canvas"
 import type { ShapeCache } from "./shape-cache"
 import { drawText } from "./shapes/text"
+import { resolveColor } from "./theme-colors"
+import type { Theme } from "./types"
 
 export type ImageLookup = (fileId: string) => HTMLImageElement | undefined
 
@@ -11,6 +13,7 @@ export const drawElement = (
   rough: RoughCanvas,
   cache: ShapeCache,
   getImage: ImageLookup,
+  theme: Theme = "light",
 ): void => {
   if (element.isDeleted) return
   ctx.save()
@@ -29,11 +32,11 @@ export const drawElement = (
     return
   }
   if (element.type === "text") {
-    drawText(ctx, element)
+    drawText(ctx, element, resolveColor(element.strokeColor, theme))
     ctx.restore()
     return
   }
-  const drawables = cache.get(element, rough.generator)
+  const drawables = cache.get(element, rough.generator, theme)
   for (const d of drawables) rough.draw(d)
   ctx.restore()
 }
