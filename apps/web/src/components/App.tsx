@@ -35,6 +35,7 @@ import { saveAsExcalidraw } from "../driver/saveFile"
 import { ensureI18n } from "../i18n"
 import { attachShortcuts } from "../keyboard/shortcuts"
 import { useAppStore } from "../store"
+import { computeResolvedTheme } from "../store/slices/theme"
 import { CanvasShell } from "./CanvasShell"
 import { Dialogs } from "./Dialogs"
 import { PaletteHost } from "./PaletteHost"
@@ -101,12 +102,16 @@ function Inner(): React.ReactElement {
   }, [activeTool, renderer])
 
   useEffect(() => {
-    document.documentElement.dataset.theme =
-      theme === "system"
-        ? window.matchMedia("(prefers-color-scheme: dark)").matches
-          ? "dark"
-          : "light"
-        : theme
+    const mql = window.matchMedia("(prefers-color-scheme: dark)")
+    const apply = (): void => {
+      const resolved = computeResolvedTheme(theme, mql.matches)
+      document.documentElement.dataset.theme = resolved
+      useAppStore.getState().setResolvedTheme(resolved)
+    }
+    apply()
+    if (theme !== "system") return
+    mql.addEventListener("change", apply)
+    return () => mql.removeEventListener("change", apply)
   }, [theme])
 
   useEffect(() => {

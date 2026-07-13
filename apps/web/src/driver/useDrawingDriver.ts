@@ -97,13 +97,19 @@ export function useDrawingDriver({
     const overlay = overlayRef.current
     if (!canvas || !overlay) return
 
-    const renderer = new CanvasRenderer(canvas, scene, { overlayCanvas: overlay })
+    const initial = useAppStore.getState()
+    const renderer = new CanvasRenderer(canvas, scene, {
+      overlayCanvas: overlay,
+      theme: initial.resolvedTheme,
+      canvasBg: initial.canvasBg,
+    })
     rendererRef.current = renderer
     renderer.start()
     onReady?.(renderer)
 
     const unsubStore = useAppStore.subscribe((s, prev) => {
-      if (s.theme !== prev.theme) renderer.setTheme(s.theme === "dark" ? "dark" : "light")
+      if (s.resolvedTheme !== prev.resolvedTheme) renderer.setTheme(s.resolvedTheme)
+      if (s.canvasBg !== prev.canvasBg) renderer.setCanvasBg(s.canvasBg)
       if (s.scrollX !== prev.scrollX || s.scrollY !== prev.scrollY || s.zoom !== prev.zoom) {
         renderer.setViewTransform({ scrollX: s.scrollX, scrollY: s.scrollY, zoom: s.zoom })
       }
