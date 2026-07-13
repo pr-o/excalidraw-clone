@@ -1,3 +1,4 @@
+import { useEffect } from "react"
 import { iconHTML } from "./shared/icons"
 
 export type Theme = "light" | "dark" | "system"
@@ -27,6 +28,16 @@ export function HamburgerMenu(props: HamburgerMenuProps): React.ReactElement {
     fn()
     close()
   }
+
+  const { open, onOpenChange } = props
+  useEffect(() => {
+    if (!open) return
+    const onKeyDown = (e: KeyboardEvent): void => {
+      if (e.key === "Escape") onOpenChange(false)
+    }
+    document.addEventListener("keydown", onKeyDown)
+    return () => document.removeEventListener("keydown", onKeyDown)
+  }, [open, onOpenChange])
 
   return (
     <div className={`relative ${props.className ?? ""}`}>
@@ -62,7 +73,10 @@ export function HamburgerMenu(props: HamburgerMenuProps): React.ReactElement {
               { value: "system", label: props.t("menu.themeSystem"), testId: "theme-system" },
             ]}
             value={props.theme}
-            onChange={(v) => props.onThemeChange(v as Theme)}
+            onChange={(v) => {
+              props.onThemeChange(v as Theme)
+              close()
+            }}
           />
           <MenuLabel>{props.t("menu.language")}</MenuLabel>
           <ChoiceRow
@@ -71,7 +85,10 @@ export function HamburgerMenu(props: HamburgerMenuProps): React.ReactElement {
               { value: "ko", label: "KO", testId: "locale-ko" },
             ]}
             value={props.locale}
-            onChange={(v) => props.onLocaleChange(v as Locale)}
+            onChange={(v) => {
+              props.onLocaleChange(v as Locale)
+              close()
+            }}
           />
           <Separator />
           <MenuItem onClick={wrap(props.onHelp)}>{props.t("menu.help")}</MenuItem>

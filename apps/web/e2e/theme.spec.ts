@@ -9,6 +9,7 @@ test("theme toggle changes data-theme attr", async ({ page }) => {
   await page.getByRole("button", { name: /menu/i }).click()
   await page.locator('[data-testid="theme-dark"]').click()
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark")
+  await expect(page.locator('[role="menu"]')).toBeHidden() // selection closes the menu
 })
 
 const bgPixel = async (page: Page): Promise<[number, number, number]> =>
@@ -40,13 +41,9 @@ const maxChannelIn = async (
     [x, y, w, h],
   )
 
-// Theme choice buttons don't auto-close the menu, so toggle it shut via the
-// hamburger button (Escape has no close handler).
 const setThemeVia = async (page: Page, testId: string): Promise<void> => {
-  const menuButton = page.getByRole("button", { name: /menu/i })
-  await menuButton.click()
+  await page.getByRole("button", { name: /menu/i }).click()
   await page.locator(`[data-testid="${testId}"]`).click()
-  await menuButton.click()
   await page.waitForTimeout(300)
 }
 

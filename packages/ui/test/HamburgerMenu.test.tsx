@@ -70,4 +70,32 @@ describe("HamburgerMenu", () => {
     await userEvent.click(screen.getByTestId("locale-ko"))
     expect(onLocaleChange).toHaveBeenCalledWith("ko")
   })
+
+  it("selecting a theme closes the menu", async () => {
+    const onOpenChange = vi.fn()
+    render(<HamburgerMenu {...baseProps()} open onOpenChange={onOpenChange} />)
+    await userEvent.click(screen.getByTestId("theme-dark"))
+    expect(onOpenChange).toHaveBeenCalledWith(false)
+  })
+
+  it("selecting a locale closes the menu", async () => {
+    const onOpenChange = vi.fn()
+    render(<HamburgerMenu {...baseProps()} open onOpenChange={onOpenChange} />)
+    await userEvent.click(screen.getByTestId("locale-ko"))
+    expect(onOpenChange).toHaveBeenCalledWith(false)
+  })
+
+  it("Escape closes the menu when open", async () => {
+    const onOpenChange = vi.fn()
+    render(<HamburgerMenu {...baseProps()} open onOpenChange={onOpenChange} />)
+    await userEvent.keyboard("{Escape}")
+    expect(onOpenChange).toHaveBeenCalledWith(false)
+  })
+
+  it("Escape does nothing when the menu is closed", async () => {
+    const onOpenChange = vi.fn()
+    render(<HamburgerMenu {...baseProps()} onOpenChange={onOpenChange} />)
+    await userEvent.keyboard("{Escape}")
+    expect(onOpenChange).not.toHaveBeenCalled()
+  })
 })
