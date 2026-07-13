@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Dialog } from "./shared/Dialog"
 
 export interface ExportOptions {
@@ -13,6 +13,7 @@ export interface ExportDialogProps {
   open: boolean
   onClose: () => void
   onExport: (opts: ExportOptions) => void
+  defaultBackground?: ExportOptions["background"]
   className?: string
 }
 
@@ -23,12 +24,19 @@ export function ExportDialog({
   open,
   onClose,
   onExport,
+  defaultBackground,
   className,
 }: ExportDialogProps): React.ReactElement | null {
   const [format, setFormat] = useState<ExportOptions["format"]>("png")
   const [scale, setScale] = useState<ExportOptions["scale"]>(1)
-  const [background, setBackground] = useState<ExportOptions["background"]>("white")
+  const [background, setBackground] = useState<ExportOptions["background"]>(
+    defaultBackground ?? "white",
+  )
   const [embedScene, setEmbedScene] = useState(false)
+
+  useEffect(() => {
+    if (open) setBackground(defaultBackground ?? "white")
+  }, [open, defaultBackground])
 
   if (!open) return null
 

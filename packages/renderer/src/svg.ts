@@ -2,18 +2,23 @@ import type { ExcalidrawElement, ExcalidrawTextElement, Scene } from "@excalidra
 import { RoughSVG } from "roughjs/bin/svg"
 import { generateShape } from "./shapes"
 import { fontFamilyName } from "./text-metrics"
+import { resolveColor, themedElement } from "./theme-colors"
+import type { Theme } from "./types"
 
 export interface SVGRenderOptions {
   background?: string
   embedScene?: boolean
   padding?: number
   files?: ReadonlyMap<string, string>
+  /** Resolve all colors for this theme; default "light" (identity). */
+  theme?: Theme
 }
 
 const SVG_NS = "http://www.w3.org/2000/svg"
 
 export function renderToSVG(scene: Scene, opts: SVGRenderOptions = {}): string {
   const padding = opts.padding ?? 20
+  const theme = opts.theme ?? "light"
   const elements = scene.getElements().filter((e) => !e.isDeleted)
   const bbox = computeBBox(elements, padding)
   const width = Math.max(1, bbox.width)
@@ -31,14 +36,14 @@ export function renderToSVG(scene: Scene, opts: SVGRenderOptions = {}): string {
     rect.setAttribute("y", String(bbox.y))
     rect.setAttribute("width", String(width))
     rect.setAttribute("height", String(height))
-    rect.setAttribute("fill", opts.background)
+    rect.setAttribute("fill", resolveColor(opts.background, theme))
     root.appendChild(rect)
   }
 
   const rsvg = new RoughSVG(root as unknown as SVGSVGElement)
 
   for (const el of elements) {
-    const node = renderElement(doc, el, rsvg, opts.files)
+    const node = renderElement(doc, el, rsvg, opts.files, theme)
     if (node) root.appendChild(node)
   }
 
@@ -49,7 +54,8 @@ function renderElement(
   doc: Document,
   el: ExcalidrawElement,
   rsvg: RoughSVG,
-  files?: ReadonlyMap<string, string>,
+  files: ReadonlyMap<string, string> | undefined,
+  theme: Theme,
 ): SVGGElement | null {
   if (el.type === "image") {
     const href = el.fileId === null ? undefined : files?.get(el.fileId)
@@ -65,11 +71,11 @@ function renderElement(
   const group = createGroup(doc, el)
 
   if (el.type === "text") {
-    group.appendChild(textNode(doc, el))
+    group.appendChild(textNode(doc, el, theme))
     return group
   }
 
-  const drawables = generateShape(el, rsvg.generator)
+  const drawables = generateShape(themedElement(el, theme), rsvg.generator)
   for (const d of drawables) {
     group.appendChild(rsvg.draw(d))
   }
@@ -95,11 +101,11 @@ function elementTransform(el: ExcalidrawElement): string {
   return `translate(${tx} ${ty}) rotate(${deg} ${cx} ${cy})`
 }
 
-function textNode(doc: Document, el: ExcalidrawTextElement): SVGTextElement {
+function textNode(doc: Document, el: ExcalidrawTextElement, theme: Theme): SVGTextElement {
   const text = doc.createElementNS(SVG_NS, "text")
   text.setAttribute("font-family", fontFamilyName(el.fontFamily))
   text.setAttribute("font-size", String(el.fontSize))
-  text.setAttribute("fill", el.strokeColor)
+  text.setAttribute("fill", resolveColor(el.strokeColor, theme))
   text.setAttribute("text-anchor", anchorFor(el.textAlign))
   text.setAttribute("dominant-baseline", "text-before-edge")
 

@@ -19,9 +19,10 @@ export function Dialogs({ scene }: { scene: Scene }): React.ReactElement {
   const setOpenDialog = useAppStore((s) => s.setOpenDialog)
   const canvasBg = useAppStore((s) => s.canvasBg)
   const setCanvasBg = useAppStore((s) => s.setCanvasBg)
+  const resolvedTheme = useAppStore((s) => s.resolvedTheme)
 
   const onExport = (opts: ExportOptions): void => {
-    void exportScene(scene, opts)
+    void exportScene(scene, opts, canvasBg)
     setOpenDialog(null)
   }
 
@@ -43,6 +44,7 @@ export function Dialogs({ scene }: { scene: Scene }): React.ReactElement {
         open={openDialog === "export"}
         onClose={() => setOpenDialog(null)}
         onExport={onExport}
+        defaultBackground={resolvedTheme === "dark" ? "dark" : "white"}
       />
       <ResetCanvasDialog
         t={t}
@@ -61,13 +63,9 @@ export function Dialogs({ scene }: { scene: Scene }): React.ReactElement {
   )
 }
 
-const BG_FOR_SVG: Record<ExportOptions["background"], string> = {
-  white: "#ffffff",
-  dark: "#1e1e1e",
-  transparent: "transparent",
-}
-
-async function exportScene(scene: Scene, opts: ExportOptions): Promise<void> {
+async function exportScene(scene: Scene, opts: ExportOptions, canvasBg: string): Promise<void> {
+  const theme = opts.background === "dark" ? "dark" : "light"
+  const background = opts.background === "transparent" ? "transparent" : canvasBg
   if (opts.format === "svg") {
     const files = new Map<string, string>()
     for (const el of scene.getElements()) {
@@ -76,11 +74,11 @@ async function exportScene(scene: Scene, opts: ExportOptions): Promise<void> {
         if (bin) files.set(el.fileId, bin.dataURL)
       }
     }
-    const svg = renderToSVG(scene, { background: BG_FOR_SVG[opts.background], files })
+    const svg = renderToSVG(scene, { background, theme, files })
     const blob = new Blob([svg], { type: "image/svg+xml" })
     download(blob, "drawing.svg")
     return
   }
-  const blob = await exportToPNG(scene, opts)
+  const blob = await exportToPNG(scene, opts, canvasBg)
   download(blob, "drawing.png")
 }

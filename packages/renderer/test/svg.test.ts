@@ -1,4 +1,4 @@
-import { Scene, newImage } from "@excalidraw-clone/scene"
+import { Scene, newImage, newRectangle, newText } from "@excalidraw-clone/scene"
 import { describe, expect, it } from "vitest"
 import { renderToSVG } from "../src/svg"
 
@@ -27,5 +27,32 @@ describe("renderToSVG", () => {
     const el = newImage({ x: 5, y: 6, width: 80, height: 40, fileId: "f1" })
     const svg = renderToSVG(new Scene([el]))
     expect(svg).not.toContain("<image")
+  })
+})
+
+describe("renderToSVG theming", () => {
+  it("resolves element and background colors in dark theme", () => {
+    const scene = new Scene([
+      { ...newRectangle({ x: 0, y: 0, width: 10, height: 10 }), strokeColor: "#1e1e1e" },
+    ])
+    const svg = renderToSVG(scene, { background: "#ffffff", theme: "dark" })
+    expect(svg).toContain("#ececec") // inverted stroke
+    expect(svg).toContain('fill="#1e1e1e"') // inverted background rect
+    expect(svg).not.toContain('stroke="#1e1e1e"')
+  })
+
+  it("keeps light output unchanged", () => {
+    const scene = new Scene([
+      { ...newRectangle({ x: 0, y: 0, width: 10, height: 10 }), strokeColor: "#1e1e1e" },
+    ])
+    expect(renderToSVG(scene, { background: "#ffffff" })).toBe(
+      renderToSVG(scene, { background: "#ffffff", theme: "light" }),
+    )
+  })
+
+  it("resolves text fill in dark theme", () => {
+    const scene = new Scene([{ ...newText({ x: 0, y: 0, text: "hi" }), strokeColor: "#1e1e1e" }])
+    const svg = renderToSVG(scene, { theme: "dark" })
+    expect(svg).toContain('fill="#ececec"')
   })
 })

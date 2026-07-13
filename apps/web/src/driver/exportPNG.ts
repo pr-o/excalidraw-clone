@@ -11,13 +11,11 @@ import type { ExportOptions } from "@excalidraw-clone/ui"
 
 const PADDING = 20
 
-const BG_FOR: Record<ExportOptions["background"], string> = {
-  white: "#ffffff",
-  dark: "#1e1e1e",
-  transparent: "transparent",
-}
-
-export async function exportToPNG(scene: Scene, opts: ExportOptions): Promise<Blob> {
+export async function exportToPNG(
+  scene: Scene,
+  opts: ExportOptions,
+  canvasBg = "#ffffff",
+): Promise<Blob> {
   const elements = scene.getElements()
   const bbox = computeBBox(elements)
   const w = Math.max(1, bbox.width + PADDING * 2)
@@ -28,6 +26,7 @@ export async function exportToPNG(scene: Scene, opts: ExportOptions): Promise<Bl
 
   const renderer = new CanvasRenderer(canvas, scene, {
     theme: opts.background === "dark" ? "dark" : "light",
+    canvasBg: opts.background === "transparent" ? "transparent" : canvasBg,
     viewTransform: { scrollX: -bbox.x + PADDING, scrollY: -bbox.y + PADDING, zoom: opts.scale },
   })
 
@@ -41,15 +40,6 @@ export async function exportToPNG(scene: Scene, opts: ExportOptions): Promise<Bl
     if (file) loads.push(renderer.preloadImage(id, file.dataURL))
   }
   await Promise.all(loads)
-
-  const ctx = canvas.getContext("2d")
-  if (!ctx) throw new Error("exportToPNG: failed to acquire 2D context")
-  if (opts.background === "transparent") {
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
-  } else {
-    ctx.fillStyle = BG_FOR[opts.background]
-    ctx.fillRect(0, 0, canvas.width, canvas.height)
-  }
 
   renderer.start()
   await new Promise<void>((r) => requestAnimationFrame(() => r()))
