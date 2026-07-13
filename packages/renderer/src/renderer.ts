@@ -6,14 +6,10 @@ import { drawElement } from "./draw-element"
 import { drawGrid } from "./grid"
 import { type MarqueeBox, drawSelectionChrome } from "./overlay"
 import { ShapeCache } from "./shape-cache"
+import { resolveColor } from "./theme-colors"
 import type { CanvasRendererOptions, GridOptions, Theme } from "./types"
 
 const IDENTITY: ViewTransform = { scrollX: 0, scrollY: 0, zoom: 1 }
-
-const BACKGROUND: Record<Theme, string> = {
-  light: "#ffffff",
-  dark: "#121212",
-}
 
 export class CanvasRenderer {
   private readonly canvas: HTMLCanvasElement
@@ -22,6 +18,7 @@ export class CanvasRenderer {
 
   private viewTransform: ViewTransform
   private theme: Theme
+  private canvasBg: string
   private selection: readonly string[]
   private grid: GridOptions
 
@@ -48,6 +45,7 @@ export class CanvasRenderer {
     this.rough = new RoughCanvas(canvas)
     this.viewTransform = options.viewTransform ?? IDENTITY
     this.theme = options.theme ?? "light"
+    this.canvasBg = options.canvasBg ?? "#ffffff"
     this.selection = options.selection ?? []
     this.grid = options.grid ?? { enabled: false, size: 20 }
     this.overlayCanvas = options.overlayCanvas ?? null
@@ -88,6 +86,11 @@ export class CanvasRenderer {
   setTheme(theme: Theme): void {
     this.theme = theme
     this.shapeCache.clear()
+    this.requestRedraw()
+  }
+
+  setCanvasBg(color: string): void {
+    this.canvasBg = color
     this.requestRedraw()
   }
 
@@ -145,8 +148,10 @@ export class CanvasRenderer {
     const { canvas, ctx } = this
     ctx.setTransform(1, 0, 0, 1, 0, 0)
     ctx.clearRect(0, 0, canvas.width, canvas.height)
-    ctx.fillStyle = BACKGROUND[this.theme]
-    ctx.fillRect(0, 0, canvas.width, canvas.height)
+    if (this.canvasBg !== "transparent") {
+      ctx.fillStyle = resolveColor(this.canvasBg, this.theme)
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
+    }
     const { scrollX, scrollY, zoom } = this.viewTransform
     ctx.setTransform(zoom, 0, 0, zoom, scrollX * zoom, scrollY * zoom)
     drawGrid(ctx, canvas, this.viewTransform, this.grid, this.theme)

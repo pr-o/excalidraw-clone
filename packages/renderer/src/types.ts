@@ -11,6 +11,8 @@ export interface CanvasRendererOptions {
   overlayCanvas?: HTMLCanvasElement
   viewTransform?: ViewTransform
   theme?: Theme
+  /** Canvas background color; "transparent" clears without filling. Dark theme inverts it. */
+  canvasBg?: string
   selection?: readonly string[]
   grid?: GridOptions
 }
