@@ -6,10 +6,13 @@ import type {
   ExcalidrawEllipseElement,
   ExcalidrawFrameElement,
   ExcalidrawFreedrawElement,
+  ExcalidrawHexagonElement,
   ExcalidrawImageElement,
   ExcalidrawLineElement,
+  ExcalidrawParallelogramElement,
   ExcalidrawRectangleElement,
   ExcalidrawTextElement,
+  ExcalidrawTriangleElement,
   FontFamily,
   TextAlign,
   VerticalAlign,
@@ -80,6 +83,21 @@ export const newDiamond = (input: NewElementInput): ExcalidrawDiamondElement => 
 export const newEllipse = (input: NewElementInput): ExcalidrawEllipseElement => ({
   ...baseElement(input),
   type: "ellipse",
+})
+
+export const newTriangle = (input: NewElementInput): ExcalidrawTriangleElement => ({
+  ...baseElement(input),
+  type: "triangle",
+})
+
+export const newParallelogram = (input: NewElementInput): ExcalidrawParallelogramElement => ({
+  ...baseElement(input),
+  type: "parallelogram",
+})
+
+export const newHexagon = (input: NewElementInput): ExcalidrawHexagonElement => ({
+  ...baseElement(input),
+  type: "hexagon",
 })
 
 export const newLine = (input: NewElementInput): ExcalidrawLineElement => ({

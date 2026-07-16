@@ -4,6 +4,9 @@ export type ElementType =
   | "rectangle"
   | "diamond"
   | "ellipse"
+  | "triangle"
+  | "parallelogram"
+  | "hexagon"
   | "arrow"
   | "line"
   | "freedraw"
@@ -86,6 +89,18 @@ export interface ExcalidrawEllipseElement extends ExcalidrawElementBase {
   type: "ellipse"
 }
 
+export interface ExcalidrawTriangleElement extends ExcalidrawElementBase {
+  type: "triangle"
+}
+
+export interface ExcalidrawParallelogramElement extends ExcalidrawElementBase {
+  type: "parallelogram"
+}
+
+export interface ExcalidrawHexagonElement extends ExcalidrawElementBase {
+  type: "hexagon"
+}
+
 export interface ExcalidrawLinearBase extends ExcalidrawElementBase {
   points: readonly Point[]
   lastCommittedPoint: Point | null
@@ -143,6 +158,9 @@ export type ExcalidrawElement =
   | ExcalidrawRectangleElement
   | ExcalidrawDiamondElement
   | ExcalidrawEllipseElement
+  | ExcalidrawTriangleElement
+  | ExcalidrawParallelogramElement
+  | ExcalidrawHexagonElement
   | ExcalidrawLineElement
   | ExcalidrawArrowElement
   | ExcalidrawFreedrawElement

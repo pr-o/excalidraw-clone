@@ -14,10 +14,13 @@ import {
   newEllipse,
   newFrame,
   newFreedraw,
+  newHexagon,
   newImage,
   newLine,
+  newParallelogram,
   newRectangle,
   newText,
+  newTriangle,
 } from "../src"
 
 describe("baseElement defaults via newRectangle", () => {
@@ -185,5 +188,19 @@ describe("newNote", () => {
     expect(text.containerId).toBe(container.id)
     expect(text.textAlign).toBe("center")
     expect(text.verticalAlign).toBe("middle")
+  })
+})
+
+describe("flowchart shape factories", () => {
+  it("newTriangle/newParallelogram/newHexagon create their types with base defaults", () => {
+    const t = newTriangle({ x: 1, y: 2, width: 30, height: 40 })
+    const p = newParallelogram({ x: 0, y: 0 })
+    const h = newHexagon({ x: 0, y: 0 })
+    expect(t.type).toBe("triangle")
+    expect(p.type).toBe("parallelogram")
+    expect(h.type).toBe("hexagon")
+    expect(t.width).toBe(30)
+    expect(t.locked).toBe(false)
+    expect(h.roundness).toBeNull()
   })
 })

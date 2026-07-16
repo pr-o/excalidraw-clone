@@ -27,6 +27,12 @@ export const generateShape = (
       return freedrawShape(element, gen)
     case "frame":
       return rectangleShape({ ...element, type: "rectangle" }, gen)
+    // Temporary passthrough — real polygon drawables land in the
+    // flowchart-shapes Task 4.
+    case "triangle":
+    case "parallelogram":
+    case "hexagon":
+      return []
     case "text":
     case "image":
       return []
