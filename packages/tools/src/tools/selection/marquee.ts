@@ -18,6 +18,7 @@ export const elementsInsideMarquee = (
   const ids: string[] = []
   for (const e of elements) {
     if (e.isDeleted) continue
+    if (e.locked) continue
     const b = getElementBounds(e)
     if (boundsContains(marquee, b)) ids.push(e.id)
   }

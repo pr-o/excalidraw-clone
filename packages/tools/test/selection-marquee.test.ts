@@ -60,6 +60,21 @@ describe("selection — marquee selection", () => {
     }
   })
 
+  it("locked elements inside the marquee are not selected", () => {
+    const a = newRectangle({ x: 10, y: 10, width: 30, height: 30 })
+    const b = { ...newRectangle({ x: 60, y: 60, width: 30, height: 30 }), locked: true }
+    const ctx = makeCtx({ readElements: () => [a, b], hitTest: () => null })
+    let s = selectionTool.reduce(
+      selectionTool.initial,
+      { type: "pointerDown", at: point(0, 0) },
+      ctx,
+    )
+    s = selectionTool.reduce(s[0], { type: "pointerUp", at: point(150, 150) }, ctx)
+    const sel = s[1].find((e) => e.kind === "select")
+    expect(sel).toBeDefined()
+    if (sel?.kind === "select") expect(sel.ids).toEqual([a.id])
+  })
+
   it("marquee fully outside any element selects nothing", () => {
     const a = newRectangle({ x: 500, y: 500, width: 30, height: 30 })
     const ctx = makeCtx({ readElements: () => [a], hitTest: () => null })

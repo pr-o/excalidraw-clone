@@ -88,6 +88,23 @@ describe("eraser tool", () => {
     expect(draft[0]?.isDeleted).toBe(false)
   })
 
+  it("does not erase locked elements when hitTest honors locked (mirrors the driver)", () => {
+    const r = { ...newRectangle({ x: 0, y: 0, width: 10, height: 10 }), locked: true }
+    const draft: ExcalidrawElement[] = [r]
+    const ctx = makeCtx({
+      readElements: () => [r],
+      hitTest: () => (r.locked ? null : r),
+    })
+    const [state, effects] = eraserTool.reduce(
+      eraserTool.initial,
+      { type: "pointerDown", at: point(5, 5) },
+      ctx,
+    )
+    applyMutation(effects, draft)
+    expect(state.phase).toBe("erasing")
+    expect(draft[0]?.isDeleted).toBe(false)
+  })
+
   it("does not erase the same element twice", () => {
     const r = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
     const draft: ExcalidrawElement[] = [r]
