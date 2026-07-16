@@ -1,6 +1,14 @@
 import type { ExcalidrawElement } from "@excalidraw-clone/scene"
 import { describe, expect, it } from "vitest"
-import { diamondTool, ellipseTool, rectangleTool } from "../src"
+import {
+  diamondTool,
+  ellipseTool,
+  hexagonTool,
+  parallelogramTool,
+  rectangleTool,
+  TOOLS as TOOL_REGISTRY,
+  triangleTool,
+} from "../src"
 import type { ShapeState } from "../src"
 import {
   IDENTITY_VIEW,
@@ -15,6 +23,9 @@ const TOOLS = [
   { name: "rectangle", tool: rectangleTool, type: "rectangle" as const },
   { name: "ellipse", tool: ellipseTool, type: "ellipse" as const },
   { name: "diamond", tool: diamondTool, type: "diamond" as const },
+  { name: "triangle", tool: triangleTool, type: "triangle" as const },
+  { name: "parallelogram", tool: parallelogramTool, type: "parallelogram" as const },
+  { name: "hexagon", tool: hexagonTool, type: "hexagon" as const },
 ]
 
 describe.each(TOOLS)("$name tool: creation flow", ({ tool, type }) => {
@@ -181,5 +192,13 @@ describe("shape tool — receives snapped input", () => {
     expect(r.y % 20).toBe(0)
     expect(r.width % 20).toBe(0)
     expect(r.height % 20).toBe(0)
+  })
+})
+
+describe("flowchart shape tools registry", () => {
+  it("TOOLS registry contains the three new tools", () => {
+    expect(TOOL_REGISTRY.triangle).toBe(triangleTool)
+    expect(TOOL_REGISTRY.parallelogram).toBe(parallelogramTool)
+    expect(TOOL_REGISTRY.hexagon).toBe(hexagonTool)
   })
 })
