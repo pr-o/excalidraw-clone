@@ -33,7 +33,7 @@ export const bindingTargetAt = (
 ): ExcalidrawElement | null => {
   for (let i = elements.length - 1; i >= 0; i -= 1) {
     const el = elements[i]!
-    if (!canBindTo(el)) continue
+    if (!canBindTo(el) || el.locked) continue
     if (el.type === "text" && el.containerId !== null) continue
     if (hitTestElement(el, point)) return el
   }

@@ -36,6 +36,31 @@ describe("canBindTo", () => {
   })
 })
 
+describe("locking × bindings", () => {
+  it("bindingTargetAt skips locked elements (no new bindings)", () => {
+    const r = rect({ locked: true })
+    expect(bindingTargetAt({ x: 50, y: 50 }, [r])).toBeNull()
+  })
+
+  it("reconcileBindings keeps existing bindings to locked elements", () => {
+    const target = rect({ x: 100, y: 0, locked: true })
+    const arrow = {
+      ...newArrow({ x: 0, y: 0 }),
+      points: [
+        { x: 0, y: 0 },
+        { x: 96, y: 50 },
+      ],
+      width: 96,
+      height: 50,
+      endBinding: { elementId: target.id, focus: 0, gap: BINDING_GAP },
+    } as ExcalidrawArrowElement
+    const draft: ExcalidrawElement[] = [target, arrow]
+    reconcileBindings(draft)
+    const after = draft[1] as ExcalidrawArrowElement
+    expect(after.endBinding?.elementId).toBe(target.id)
+  })
+})
+
 describe("bindingTargetAt", () => {
   it("returns the topmost bindable element under the point", () => {
     const a = rect({ id: "a", x: 0, y: 0, width: 100, height: 100 })
