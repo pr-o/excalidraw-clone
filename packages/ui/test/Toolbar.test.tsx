@@ -47,6 +47,21 @@ describe("Toolbar", () => {
     expect(screen.getByTestId("toolbar-note")).toBeInTheDocument()
   })
 
+  it("renders the flowchart shape buttons", () => {
+    render(
+      <Toolbar
+        t={t}
+        activeTool="selection"
+        onSelectTool={() => {}}
+        lockActiveTool={false}
+        onToggleLock={() => {}}
+      />,
+    )
+    expect(screen.getByTestId("toolbar-triangle")).toBeInTheDocument()
+    expect(screen.getByTestId("toolbar-parallelogram")).toBeInTheDocument()
+    expect(screen.getByTestId("toolbar-hexagon")).toBeInTheDocument()
+  })
+
   it("marks the active tool as pressed", () => {
     render(
       <Toolbar
