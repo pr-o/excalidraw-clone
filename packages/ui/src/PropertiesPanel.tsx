@@ -51,6 +51,7 @@ export interface PropertiesPanelProps {
   onDistribute: (axis: DistributeAxis) => void
   onGroup: () => void
   onUngroup: () => void
+  onLock: () => void
   className?: string
 }
 
@@ -77,6 +78,7 @@ export function PropertiesPanel({
   onDistribute,
   onGroup,
   onUngroup,
+  onLock,
   className,
 }: PropertiesPanelProps): React.ReactElement | null {
   if (selectedElements.length === 0) return null
@@ -337,6 +339,15 @@ export function PropertiesPanel({
           </div>
         </Section>
       )}
+
+      <button
+        type="button"
+        data-testid="panel-lock"
+        onClick={onLock}
+        className="w-full rounded border border-gray-300 p-1 text-xs"
+      >
+        {t("properties.lock")}
+      </button>
 
       <Section label={t("properties.layers")}>
         <div className="grid grid-cols-2 gap-1">

@@ -20,6 +20,7 @@ const handlers = {
   onDistribute: noop,
   onGroup: vi.fn(),
   onUngroup: vi.fn(),
+  onLock: vi.fn(),
 }
 
 describe("PropertiesPanel", () => {
@@ -192,6 +193,20 @@ describe("PropertiesPanel", () => {
     expect(onGroup).toHaveBeenCalled()
     await userEvent.click(screen.getByTestId("ungroup-selection"))
     expect(onUngroup).toHaveBeenCalled()
+  })
+
+  it("renders the Lock button whenever a selection exists", () => {
+    const el = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
+    render(<PropertiesPanel t={t} selectedElements={[el]} {...handlers} />)
+    expect(screen.getByTestId("panel-lock")).toBeInTheDocument()
+  })
+
+  it("fires onLock when the Lock button is clicked", async () => {
+    const el = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
+    const onLock = vi.fn()
+    render(<PropertiesPanel t={t} selectedElements={[el]} {...handlers} onLock={onLock} />)
+    await userEvent.click(screen.getByTestId("panel-lock"))
+    expect(onLock).toHaveBeenCalled()
   })
 
   it("shows Arrowheads section when all selected are linear", () => {

@@ -382,6 +382,7 @@ function Inner(): React.ReactElement {
                   }
                 })
               }}
+              onLock={() => {}}
             />
           </div>
 
