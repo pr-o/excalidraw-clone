@@ -1,11 +1,14 @@
 import {
   type EdgeKind,
   type Point,
+  type PolygonShapeKind,
   boundsCenter,
   edgePointToward,
   normalize,
   pointAdd,
   pointScale,
+  polygonEdgePointToward,
+  shapeVertices,
 } from "@excalidraw-clone/geometry"
 import { getElementBounds } from "./bounds"
 import { hitTestElement } from "./hit-test"
@@ -17,6 +20,9 @@ export const BINDABLE_TYPES: ReadonlySet<ElementType> = new Set<ElementType>([
   "rectangle",
   "diamond",
   "ellipse",
+  "triangle",
+  "parallelogram",
+  "hexagon",
   "image",
   "text",
 ])
@@ -26,6 +32,9 @@ export const canBindTo = (el: ExcalidrawElement): boolean =>
 
 const edgeKindFor = (type: ElementType): EdgeKind =>
   type === "ellipse" ? "ellipse" : type === "diamond" ? "diamond" : "rect"
+
+const polygonKindFor = (type: ElementType): PolygonShapeKind | null =>
+  type === "triangle" || type === "parallelogram" || type === "hexagon" ? type : null
 
 export const bindingTargetAt = (
   point: Point,
@@ -51,7 +60,10 @@ export const computeBoundEndpoint = (
 ): Point => {
   const bounds = getElementBounds(target)
   const center = boundsCenter(bounds)
-  const edge = edgePointToward(bounds, edgeKindFor(target.type), toward)
+  const polyKind = polygonKindFor(target.type)
+  const edge = polyKind
+    ? polygonEdgePointToward(shapeVertices(polyKind, bounds), bounds, toward)
+    : edgePointToward(bounds, edgeKindFor(target.type), toward)
   const dir = normalize({ x: toward.x - center.x, y: toward.y - center.y })
   const base = pointAdd(edge, pointScale(dir, gap))
   if (focus === 0) return base

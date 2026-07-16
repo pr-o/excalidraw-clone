@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import type { Point } from "@excalidraw-clone/geometry"
-import { newArrow, newEllipse, newRectangle, newText } from "../src/factories"
+import { newArrow, newEllipse, newHexagon, newRectangle, newText } from "../src/factories"
 import {
   BINDABLE_TYPES,
   BINDING_GAP,
@@ -31,8 +31,17 @@ describe("canBindTo", () => {
     expect(canBindTo(newArrow({ x: 0, y: 0 }))).toBe(false)
     expect(canBindTo(rect({ isDeleted: true }))).toBe(false)
   })
-  it("BINDABLE_TYPES has the five expected types", () => {
-    expect([...BINDABLE_TYPES].sort()).toEqual(["diamond", "ellipse", "image", "rectangle", "text"])
+  it("BINDABLE_TYPES has the eight expected types", () => {
+    expect([...BINDABLE_TYPES].sort()).toEqual([
+      "diamond",
+      "ellipse",
+      "hexagon",
+      "image",
+      "parallelogram",
+      "rectangle",
+      "text",
+      "triangle",
+    ])
   })
 })
 
@@ -244,5 +253,30 @@ describe("reconcileBindings", () => {
     // start sits just right of rect A's right edge (x=100), end just left of B (x=400)
     expect(start.x).toBeCloseTo(100 + BINDING_GAP)
     expect(absEnd(ar).x).toBeCloseTo(400 - BINDING_GAP)
+  })
+})
+
+describe("polygon shape binding", () => {
+  it("BINDABLE_TYPES includes the flowchart shapes", () => {
+    expect(BINDABLE_TYPES.has("triangle")).toBe(true)
+    expect(BINDABLE_TYPES.has("parallelogram")).toBe(true)
+    expect(BINDABLE_TYPES.has("hexagon")).toBe(true)
+  })
+
+  it("computeBoundEndpoint lands on the hexagon's right point, not the bbox corner", () => {
+    const hex = newHexagon({ x: 0, y: 0, width: 100, height: 60 })
+    const p = computeBoundEndpoint(hex, { x: 500, y: 30 }, 0)
+    expect(p.x).toBeCloseTo(100)
+    expect(p.y).toBeCloseTo(30)
+  })
+
+  it("computeBoundEndpoint respects the slanted hexagon top-right edge", () => {
+    const hex = newHexagon({ x: 0, y: 0, width: 100, height: 60 })
+    // ray up-right exits through the top-right slanted edge
+    const p = computeBoundEndpoint(hex, { x: 150, y: -70 }, 0)
+    expect(p.x).toBeLessThan(100)
+    expect(p.y).toBeGreaterThan(0)
+    // on segment (75,0)→(100,30): y = (x - 75) * 30/25
+    expect(p.y).toBeCloseTo(((p.x - 75) * 30) / 25, 5)
   })
 })

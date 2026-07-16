@@ -1,11 +1,14 @@
 import {
   type Bounds,
   type Point,
+  boundsCenter,
   distancePointToSegment,
+  pointInConvexPolygon,
   pointInDiamond,
   pointInEllipse,
   pointInRectangle,
   rotatePoint,
+  shapeVertices,
 } from "@excalidraw-clone/geometry"
 import type { ExcalidrawElement } from "./types"
 
@@ -68,12 +71,15 @@ export const hitTestElement = (
       return pointInRectangle(point, b, element.angle)
     case "ellipse":
       return pointInEllipse(point, b, element.angle)
-    // Temporary bbox approximation — replaced with exact polygon hit-testing
-    // in the flowchart-shapes Task 3.
     case "triangle":
     case "parallelogram":
     case "hexagon":
-      return pointInRectangle(point, b, element.angle)
+      return pointInConvexPolygon(
+        point,
+        shapeVertices(element.type, b),
+        boundsCenter(b),
+        element.angle,
+      )
     case "diamond":
       return pointInDiamond(point, b, element.angle)
     case "line":

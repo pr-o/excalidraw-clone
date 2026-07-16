@@ -9,6 +9,7 @@ import {
   newLine,
   newRectangle,
   newText,
+  newTriangle,
 } from "../src"
 import type { ExcalidrawFreedrawElement, ExcalidrawLineElement } from "../src"
 
@@ -122,5 +123,19 @@ describe("hitTestElement — deleted elements", () => {
   it("never hits a deleted element", () => {
     const r = { ...newRectangle({ x: 0, y: 0, width: 100, height: 100 }), isDeleted: true }
     expect(hitTestElement(r, { x: 50, y: 50 })).toBe(false)
+  })
+})
+
+describe("polygon shapes", () => {
+  it("triangle: hits inside, misses the empty bbox corner", () => {
+    const t = newTriangle({ x: 0, y: 0, width: 100, height: 60 })
+    expect(hitTestElement(t, { x: 50, y: 40 })).toBe(true)
+    expect(hitTestElement(t, { x: 5, y: 5 })).toBe(false)
+  })
+
+  it("triangle: rotation moves the empty corner", () => {
+    const t = { ...newTriangle({ x: 0, y: 0, width: 100, height: 60 }), angle: Math.PI }
+    expect(hitTestElement(t, { x: 5, y: 5 })).toBe(true)
+    expect(hitTestElement(t, { x: 5, y: 55 })).toBe(false)
   })
 })
