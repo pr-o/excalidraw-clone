@@ -17,7 +17,13 @@ export function PaletteHost({ scene }: { scene: Scene }): React.ReactElement {
       id: "select-all",
       label: t("shortcuts.selectAll"),
       hint: "Cmd+A",
-      perform: () => useAppStore.getState().setSelection(scene.getElements().map((e) => e.id)),
+      perform: () =>
+        useAppStore.getState().setSelection(
+          scene
+            .getElements()
+            .filter((e) => !e.locked)
+            .map((e) => e.id),
+        ),
     },
     {
       id: "deselect",

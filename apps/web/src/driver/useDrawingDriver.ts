@@ -139,6 +139,7 @@ export function useDrawingDriver({
           for (let i = elements.length - 1; i >= 0; i -= 1) {
             const el = elements[i] as ExcalidrawElement
             if (el.type === "text" && el.containerId !== null) continue
+            if (el.locked) continue
             if (hitTestElement(el, at)) return el
           }
           return null
