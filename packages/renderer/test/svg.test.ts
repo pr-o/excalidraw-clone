@@ -1,4 +1,4 @@
-import { Scene, newImage, newRectangle, newText } from "@excalidraw-clone/scene"
+import { Scene, newImage, newRectangle, newText, newTriangle } from "@excalidraw-clone/scene"
 import { describe, expect, it } from "vitest"
 import { renderToSVG } from "../src/svg"
 
@@ -54,5 +54,14 @@ describe("renderToSVG theming", () => {
     const scene = new Scene([{ ...newText({ x: 0, y: 0, text: "hi" }), strokeColor: "#1e1e1e" }])
     const svg = renderToSVG(scene, { theme: "dark" })
     expect(svg).toContain('fill="#ececec"')
+  })
+})
+
+describe("renderToSVG flowchart shapes", () => {
+  it("renders a triangle as rough path markup inside a positioned group", () => {
+    const scene = new Scene([newTriangle({ x: 3, y: 4, width: 40, height: 30 })])
+    const svg = renderToSVG(scene)
+    expect(svg).toContain('transform="translate(3 4)"')
+    expect(svg).toContain("path")
   })
 })

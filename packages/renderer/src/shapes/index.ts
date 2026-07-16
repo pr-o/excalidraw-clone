@@ -6,6 +6,7 @@ import { diamondShape } from "./diamond"
 import { ellipseShape } from "./ellipse"
 import { freedrawShape } from "./freedraw"
 import { lineShape } from "./line"
+import { polygonShape } from "./polygon"
 import { rectangleShape } from "./rectangle"
 
 export const generateShape = (
@@ -27,12 +28,10 @@ export const generateShape = (
       return freedrawShape(element, gen)
     case "frame":
       return rectangleShape({ ...element, type: "rectangle" }, gen)
-    // Temporary passthrough — real polygon drawables land in the
-    // flowchart-shapes Task 4.
     case "triangle":
     case "parallelogram":
     case "hexagon":
-      return []
+      return polygonShape(element, gen)
     case "text":
     case "image":
       return []
@@ -42,6 +41,7 @@ export const generateShape = (
 export { rectangleShape, rectangleOptions } from "./rectangle"
 export { ellipseShape } from "./ellipse"
 export { diamondShape } from "./diamond"
+export { polygonShape } from "./polygon"
 export { lineShape } from "./line"
 export { arrowShape } from "./arrow"
 export { freedrawShape } from "./freedraw"

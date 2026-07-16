@@ -1,7 +1,14 @@
-import { newArrow, newDiamond, newEllipse, newLine } from "@excalidraw-clone/scene"
+import {
+  newArrow,
+  newDiamond,
+  newEllipse,
+  newHexagon,
+  newLine,
+  newTriangle,
+} from "@excalidraw-clone/scene"
 import { RoughGenerator } from "roughjs/bin/generator"
 import { describe, expect, it, vi } from "vitest"
-import { arrowShape, diamondShape, ellipseShape, lineShape } from "../src/shapes"
+import { arrowShape, diamondShape, ellipseShape, lineShape, polygonShape } from "../src/shapes"
 
 describe("ellipseShape", () => {
   it("calls gen.ellipse with center + size + seed", () => {
@@ -123,5 +130,44 @@ describe("arrowShape", () => {
     const gen = new RoughGenerator()
     const a = { ...newArrow({ x: 0, y: 0 }) }
     expect(arrowShape(a, gen)).toEqual([])
+  })
+})
+
+describe("polygonShape", () => {
+  it("triangle: gen.polygon with apex + base corners, seeded", () => {
+    const gen = new RoughGenerator()
+    const spy = vi.spyOn(gen, "polygon")
+    const t = newTriangle({ x: 0, y: 0, width: 40, height: 30 })
+    polygonShape(t, gen)
+    expect(spy).toHaveBeenCalledOnce()
+    const [points, opts] = spy.mock.calls[0]!
+    expect(points).toEqual([
+      [20, 0],
+      [40, 30],
+      [0, 30],
+    ])
+    expect(opts?.seed).toBe(t.seed)
+  })
+
+  it("hexagon: 6 points, vertices relative to the element origin", () => {
+    const gen = new RoughGenerator()
+    const spy = vi.spyOn(gen, "polygon")
+    polygonShape(newHexagon({ x: 5, y: 7, width: 40, height: 30 }), gen)
+    const [points] = spy.mock.calls[0]!
+    expect(points).toEqual([
+      [10, 0],
+      [30, 0],
+      [40, 15],
+      [30, 30],
+      [10, 30],
+      [0, 15],
+    ])
+  })
+
+  it("transparent backgroundColor → no fill option", () => {
+    const gen = new RoughGenerator()
+    const spy = vi.spyOn(gen, "polygon")
+    polygonShape(newTriangle({ x: 0, y: 0, width: 10, height: 10 }), gen)
+    expect(spy.mock.calls[0]?.[1]?.fill).toBeUndefined()
   })
 })
