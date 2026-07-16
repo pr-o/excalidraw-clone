@@ -9,9 +9,11 @@ import {
   type ExcalidrawElement,
   groupElements,
   type LibraryItem,
+  lockElements,
   normalizeToOrigin,
   Scene,
   ungroupElements,
+  unlockAll,
 } from "@excalidraw-clone/scene"
 import { HamburgerMenu, LibraryPanel, PropertiesPanel, Toolbar } from "@excalidraw-clone/ui"
 import {
@@ -31,6 +33,7 @@ import { hydrateScene, hydrateUI } from "../driver/hydration"
 import { pickAndUploadImage } from "../driver/imageUpload"
 import { useSceneRevision } from "../hooks/useSceneRevision"
 import { openExcalidrawFromPicker } from "../driver/openFile"
+import { patchScene } from "../driver/patchScene"
 import { saveAsExcalidraw } from "../driver/saveFile"
 import { ensureI18n } from "../i18n"
 import { attachShortcuts } from "../keyboard/shortcuts"
@@ -125,6 +128,10 @@ function Inner(): React.ReactElement {
     const ids = new Set(selectedIds)
     return scene.getElements().filter((e) => ids.has(e.id))
   }, [selectedIds, scene, sceneRevision])
+  const hasLockedElements = useMemo(
+    () => scene.getElements().some((e) => e.locked),
+    [scene, sceneRevision],
+  )
 
   useEffect(() => {
     void getAllLibraryItems().then(setLibraryItems)
@@ -382,7 +389,10 @@ function Inner(): React.ReactElement {
                   }
                 })
               }}
-              onLock={() => {}}
+              onLock={() => {
+                patchScene(scene, lockElements(scene.getElements(), selectedIds))
+                useAppStore.getState().setSelection([])
+              }}
             />
           </div>
 
@@ -401,6 +411,18 @@ function Inner(): React.ReactElement {
             onDelete={(id) => void handleDelete(id)}
             renderThumbnail={renderThumbnail}
           />
+
+          {hasLockedElements && (
+            <button
+              type="button"
+              data-testid="unlock-all"
+              aria-label={t("canvas.unlockAll")}
+              onClick={() => patchScene(scene, unlockAll(scene.getElements()))}
+              className="absolute bottom-3 left-3 z-30 rounded-lg bg-white px-3 py-2 text-xs shadow"
+            >
+              🔓 {t("canvas.unlockAll")}
+            </button>
+          )}
         </>
       )}
 

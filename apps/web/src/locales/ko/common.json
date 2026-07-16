@@ -64,7 +64,8 @@
     "arrowhead_circle_outline": "원(윤곽)",
     "arrowhead_cross": "십자",
     "arrowhead_diamond": "마름모",
-    "arrowhead_diamond_outline": "마름모(윤곽)"
+    "arrowhead_diamond_outline": "마름모(윤곽)",
+    "lock": "잠금"
   },
   "menu": {
     "label": "메뉴",
@@ -85,7 +86,9 @@
   "palette": {
     "title": "명령어 팔레트",
     "placeholder": "명령어 입력…",
-    "empty": "일치하는 명령어가 없습니다"
+    "empty": "일치하는 명령어가 없습니다",
+    "lockSelection": "선택 요소 잠금",
+    "unlockAll": "모든 잠금 해제"
   },
   "export": {
     "title": "이미지 내보내기",
@@ -106,6 +109,7 @@
     "confirm": "초기화"
   },
   "canvasBg": { "title": "캔버스 배경" },
+  "canvas": { "unlockAll": "모두 잠금 해제" },
   "shortcuts": { "title": "키보드 단축키", "tools": "도구", "editor": "편집", "view": "보기" },
   "library": {
     "title": "라이브러리",

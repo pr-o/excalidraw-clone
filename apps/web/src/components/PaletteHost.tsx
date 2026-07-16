@@ -1,7 +1,8 @@
 "use client"
-import type { Scene } from "@excalidraw-clone/scene"
+import { lockElements, type Scene, unlockAll } from "@excalidraw-clone/scene"
 import { CommandPalette, type PaletteCommand } from "@excalidraw-clone/ui"
 import { useTranslation } from "react-i18next"
+import { patchScene } from "../driver/patchScene"
 import { useAppStore } from "../store"
 
 export function PaletteHost({ scene }: { scene: Scene }): React.ReactElement {
@@ -42,6 +43,22 @@ export function PaletteHost({ scene }: { scene: Scene }): React.ReactElement {
       id: "grid",
       label: t("shortcuts.toggleGrid"),
       perform: () => useAppStore.getState().toggleGrid(),
+    },
+    {
+      id: "lock-selection",
+      label: t("palette.lockSelection"),
+      hint: "Ctrl+Shift+L",
+      perform: () => {
+        const { selectedIds, setSelection } = useAppStore.getState()
+        if (selectedIds.length === 0) return
+        patchScene(scene, lockElements(scene.getElements(), selectedIds))
+        setSelection([])
+      },
+    },
+    {
+      id: "unlock-all",
+      label: t("palette.unlockAll"),
+      perform: () => patchScene(scene, unlockAll(scene.getElements())),
     },
   ]
 

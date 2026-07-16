@@ -64,7 +64,8 @@
     "arrowhead_circle_outline": "Circle (outline)",
     "arrowhead_cross": "Cross",
     "arrowhead_diamond": "Diamond",
-    "arrowhead_diamond_outline": "Diamond (outline)"
+    "arrowhead_diamond_outline": "Diamond (outline)",
+    "lock": "Lock"
   },
   "menu": {
     "label": "Menu",
@@ -87,7 +88,9 @@
   "palette": {
     "title": "Command palette",
     "placeholder": "Type a command…",
-    "empty": "No matching commands"
+    "empty": "No matching commands",
+    "lockSelection": "Lock selection",
+    "unlockAll": "Unlock all elements"
   },
   "export": {
     "title": "Export image",
@@ -109,6 +112,9 @@
   },
   "canvasBg": {
     "title": "Canvas background"
+  },
+  "canvas": {
+    "unlockAll": "Unlock all"
   },
   "shortcuts": {
     "title": "Keyboard shortcuts",
