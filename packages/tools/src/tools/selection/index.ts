@@ -1,5 +1,10 @@
 import { snapPointToGrid } from "@excalidraw-clone/geometry"
-import { bindingTargetAt, expandIdsToGroups } from "@excalidraw-clone/scene"
+import {
+  bindingTargetAt,
+  expandIdsToGroups,
+  LABELABLE_TYPES,
+  newLabelFor,
+} from "@excalidraw-clone/scene"
 import type { Tool, ToolContext, ToolEffect, ToolEvent } from "../../types"
 import {
   buildBendCommitEffect,
@@ -183,6 +188,30 @@ const reduceIdle = (
       const textRef = hit.boundElements?.find((b) => b.type === "text")
       if (textRef) {
         return [{ phase: "idle" }, [{ kind: "startTextEdit", elementId: textRef.id }]]
+      }
+      if (LABELABLE_TYPES.has(hit.type)) {
+        const label = newLabelFor(hit)
+        return [
+          { phase: "idle" },
+          [
+            {
+              kind: "mutation",
+              apply: (draft) => {
+                const i = draft.findIndex((e) => e.id === hit.id)
+                if (i < 0) return
+                const c = draft[i]!
+                draft[i] = {
+                  ...c,
+                  boundElements: [...(c.boundElements ?? []), { id: label.id, type: "text" }],
+                }
+                draft.push(label)
+              },
+              skipHistory: true,
+            },
+            { kind: "select", ids: [hit.id] },
+            { kind: "startTextEdit", elementId: label.id },
+          ],
+        ]
       }
     }
     return [{ phase: "idle" }, []]
