@@ -31,6 +31,7 @@ const EDITOR_SHORTCUTS: readonly Shortcut[] = [
   { keys: "Cmd/Ctrl+D", label: "shortcuts.duplicate" },
   { keys: "Cmd/Ctrl+G", label: "shortcuts.group" },
   { keys: "Cmd/Ctrl+Shift+G", label: "shortcuts.ungroup" },
+  { keys: "Double-click", label: "shortcuts.addLabel" },
   { keys: "Delete", label: "shortcuts.delete" },
   { keys: "Cmd/Ctrl+A", label: "shortcuts.selectAll" },
   { keys: "Esc", label: "shortcuts.deselect" },

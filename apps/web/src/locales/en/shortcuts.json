@@ -21,6 +21,7 @@
   "duplicate": "Duplicate",
   "group": "Group selection",
   "ungroup": "Ungroup",
+  "addLabel": "Add label to shape",
   "delete": "Delete",
   "selectAll": "Select all",
   "deselect": "Deselect",

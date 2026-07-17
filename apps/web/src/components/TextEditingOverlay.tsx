@@ -1,6 +1,7 @@
 "use client"
 import type { ExcalidrawTextElement, Scene } from "@excalidraw-clone/scene"
 import { useEffect, useRef, useState } from "react"
+import { commitTextEdit } from "../driver/commitTextEdit"
 import { useAppStore } from "../store"
 
 export function TextEditingOverlay({ scene }: { scene: Scene }): React.ReactElement | null {
@@ -32,13 +33,11 @@ export function TextEditingOverlay({ scene }: { scene: Scene }): React.ReactElem
   const fontSize = el.fontSize * zoom
 
   const commit = (): void => {
-    scene.mutate((draft) => {
-      for (let i = 0; i < draft.length; i += 1) {
-        if (draft[i]!.id === id) {
-          draft[i] = { ...(draft[i] as ExcalidrawTextElement), text: value }
-        }
-      }
-    })
+    const noVisibleChange = value === "" && (el?.text ?? "") === ""
+    scene.mutate(
+      (draft) => commitTextEdit(draft, id, value),
+      noVisibleChange ? { skipHistory: true } : undefined,
+    )
     setId(null)
   }
 
@@ -51,6 +50,9 @@ export function TextEditingOverlay({ scene }: { scene: Scene }): React.ReactElem
       onKeyDown={(e) => {
         if (e.key === "Escape") {
           e.preventDefault()
+          if ((el?.text ?? "") === "") {
+            scene.mutate((draft) => commitTextEdit(draft, id, ""), { skipHistory: true })
+          }
           setId(null)
         }
       }}

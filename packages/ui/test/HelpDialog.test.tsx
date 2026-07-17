@@ -18,6 +18,7 @@ describe("HelpDialog", () => {
     expect(screen.getByText("V")).toBeInTheDocument()
     expect(screen.getByText("R")).toBeInTheDocument()
     expect(screen.getByText("Cmd/Ctrl+Z")).toBeInTheDocument()
+    expect(screen.getByText("Double-click")).toBeInTheDocument()
   })
 
   it("emits onClose when the close button is clicked", async () => {
