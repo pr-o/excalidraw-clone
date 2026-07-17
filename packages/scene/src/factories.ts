@@ -1,3 +1,4 @@
+import { labelInnerBox, type LabelShapeKind } from "@excalidraw-clone/geometry"
 import { nanoid } from "nanoid"
 import type {
   ExcalidrawArrowElement,
@@ -217,4 +218,28 @@ export const newNote = (
     boundElements: [{ id: text.id, type: "text" }],
   }
   return { container, text: { ...text, containerId: container.id } }
+}
+
+/** Empty centered label text bound to `container`, sized to the shape-aware
+ *  inner box. Caller must add `{ id, type: "text" }` to the container's
+ *  boundElements. `container.type` must be in LABELABLE_TYPES. */
+export const newLabelFor = (container: {
+  id: string
+  type: string
+  x: number
+  y: number
+  width: number
+  height: number
+}): ExcalidrawTextElement => {
+  const box = labelInnerBox(container.type as LabelShapeKind, container, NOTE_PADDING)
+  return newText({
+    x: box.x,
+    y: box.y,
+    width: box.width,
+    height: box.height,
+    text: "",
+    textAlign: "center",
+    verticalAlign: "middle",
+    containerId: container.id,
+  })
 }
