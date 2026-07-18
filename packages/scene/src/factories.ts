@@ -1,4 +1,9 @@
-import { labelInnerBox, type LabelShapeKind } from "@excalidraw-clone/geometry"
+import {
+  labelInnerBox,
+  polylineMidpoint,
+  type LabelShapeKind,
+  type Point,
+} from "@excalidraw-clone/geometry"
 import { nanoid } from "nanoid"
 import type {
   ExcalidrawArrowElement,
@@ -237,6 +242,29 @@ export const newLabelFor = (container: {
     y: box.y,
     width: box.width,
     height: box.height,
+    text: "",
+    textAlign: "center",
+    verticalAlign: "middle",
+    containerId: container.id,
+  })
+}
+
+/** Empty centered label text bound to a linear `container` (arrow/line),
+ *  its zero-width box centered on the midpoint of the container's path.
+ *  Caller must add `{ id, type: "text" }` to the container's boundElements. */
+export const newLabelForLinear = (container: {
+  id: string
+  x: number
+  y: number
+  points: readonly Point[]
+}): ExcalidrawTextElement => {
+  const mid = polylineMidpoint(container.points)
+  const height = DEFAULT_FONT_SIZE * DEFAULT_LINE_HEIGHT
+  return newText({
+    x: container.x + mid.x,
+    y: container.y + mid.y - height / 2,
+    width: 0,
+    height,
     text: "",
     textAlign: "center",
     verticalAlign: "middle",

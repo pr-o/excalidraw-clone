@@ -1,4 +1,4 @@
-import { labelInnerBox, type LabelShapeKind } from "@excalidraw-clone/geometry"
+import { labelInnerBox, polylineMidpoint, type LabelShapeKind } from "@excalidraw-clone/geometry"
 import type { ElementType, ExcalidrawElement } from "./types"
 
 /** Padding (px) between a note container's box and its bound text box. */
@@ -12,6 +12,12 @@ export const LABELABLE_TYPES: ReadonlySet<ElementType> = new Set<ElementType>([
   "triangle",
   "parallelogram",
   "hexagon",
+])
+
+/** Linear elements that can carry a midpoint-pinned bound text label. */
+export const LINEAR_LABELABLE_TYPES: ReadonlySet<ElementType> = new Set<ElementType>([
+  "arrow",
+  "line",
 ])
 
 const innerBoxFor = (
@@ -30,10 +36,12 @@ const innerBoxFor = (
 
 /**
  * Enforce the container↔bound-text invariant in place on a mutation draft:
- * each non-deleted container with a bound text child keeps that text sized to
- * the shape-aware inner label box and center/middle aligned; a deleted
- * container cascades isDeleted to its text. Text content is never modified.
- * Idempotent and O(n). Safe to run after every mutation.
+ * each non-deleted shape container keeps its bound text sized to the
+ * shape-aware inner label box and center/middle aligned; a linear
+ * (arrow/line) container keeps its bound text recentered on the path
+ * midpoint without resizing. A deleted container cascades isDeleted to its
+ * text. Text content is never modified. Idempotent and O(n). Safe to run
+ * after every mutation.
  */
 export function reconcileBoundText(draft: ExcalidrawElement[]): void {
   for (let i = 0; i < draft.length; i += 1) {
@@ -48,6 +56,21 @@ export function reconcileBoundText(draft: ExcalidrawElement[]): void {
 
     if (container.isDeleted) {
       if (!text.isDeleted) draft[ti] = { ...text, isDeleted: true }
+      continue
+    }
+
+    if (container.type === "arrow" || container.type === "line") {
+      const mid = polylineMidpoint(container.points)
+      const x = container.x + mid.x - text.width / 2
+      const y = container.y + mid.y - text.height / 2
+      if (
+        text.x !== x ||
+        text.y !== y ||
+        text.textAlign !== "center" ||
+        text.verticalAlign !== "middle"
+      ) {
+        draft[ti] = { ...text, x, y, textAlign: "center", verticalAlign: "middle" }
+      }
       continue
     }
 

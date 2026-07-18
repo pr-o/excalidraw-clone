@@ -23,6 +23,7 @@ export {
   newHexagon,
   newImage,
   newLabelFor,
+  newLabelForLinear,
   newLine,
   newNote,
   NOTE_BG_COLOR,
@@ -45,7 +46,12 @@ export { alignElements, distributeElements } from "./arrange"
 export type { AlignEdge, DistributeAxis, PositionPatch } from "./arrange"
 export { expandIdsToGroups, groupElements, ungroupElements } from "./groups"
 export { lockElements, unlockAll } from "./locking"
-export { LABELABLE_TYPES, NOTE_PADDING, reconcileBoundText } from "./reconcile-bound-text"
+export {
+  LABELABLE_TYPES,
+  LINEAR_LABELABLE_TYPES,
+  NOTE_PADDING,
+  reconcileBoundText,
+} from "./reconcile-bound-text"
 export {
   BINDABLE_TYPES,
   BINDING_GAP,
