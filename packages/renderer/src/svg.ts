@@ -8,7 +8,13 @@ import type {
 import { RoughSVG } from "roughjs/bin/svg"
 import { generateShape } from "./shapes"
 import { OCCLUSION_PADDING } from "./shapes/text"
-import { fontFamilyName, measureText, type TextSize } from "./text-metrics"
+import {
+  fontFamilyName,
+  layoutLabel,
+  measureText,
+  type LabelLayout,
+  type TextSize,
+} from "./text-metrics"
 import { resolveColor, themedElement } from "./theme-colors"
 import type { Theme } from "./types"
 
@@ -25,15 +31,6 @@ const defaultMeasure = (): TextMeasure | null => {
   if (!ctx) return null
   return (text, fontSize, family, lineHeight) =>
     measureText(ctx, text, fontSize, family, lineHeight)
-}
-
-const shapeLabelScale = (el: ExcalidrawTextElement, measure: TextMeasure): number => {
-  const size = measure(el.text, el.fontSize, el.fontFamily, el.lineHeight)
-  return Math.min(
-    1,
-    size.width > 0 ? el.width / size.width : 1,
-    size.height > 0 ? el.height / size.height : 1,
-  )
 }
 
 export interface SVGRenderOptions {
@@ -89,15 +86,21 @@ export function renderToSVG(scene: Scene, opts: SVGRenderOptions = {}): string {
       measure && container && LINEAR_LABELABLE_TYPES.has(container.type)
         ? { background: labelBg, measure }
         : undefined
-    const fontScale =
+    const labelLayout =
       el.type === "text" &&
       el.text.length > 0 &&
       measure &&
       container &&
       LABELABLE_TYPES.has(container.type)
-        ? shapeLabelScale(el, measure)
-        : 1
-    const node = renderElement(doc, el, rsvg, opts.files, theme, backing, fontScale)
+        ? layoutLabel(
+            el.text,
+            { width: el.width, height: el.height },
+            el.fontSize,
+            el.lineHeight,
+            (s) => measure(s, el.fontSize, el.fontFamily, el.lineHeight).width,
+          )
+        : undefined
+    const node = renderElement(doc, el, rsvg, opts.files, theme, backing, labelLayout)
     if (node) root.appendChild(node)
   }
 
@@ -111,7 +114,7 @@ function renderElement(
   files: ReadonlyMap<string, string> | undefined,
   theme: Theme,
   backing?: { background: string; measure: TextMeasure },
-  fontScale = 1,
+  layout?: LabelLayout,
 ): SVGGElement | null {
   if (el.type === "image") {
     const href = el.fileId === null ? undefined : files?.get(el.fileId)
@@ -137,7 +140,7 @@ function renderElement(
       rect.setAttribute("fill", backing.background)
       group.appendChild(rect)
     }
-    group.appendChild(textNode(doc, el, theme, fontScale))
+    group.appendChild(textNode(doc, el, theme, layout))
     return group
   }
 
@@ -171,9 +174,9 @@ function textNode(
   doc: Document,
   el: ExcalidrawTextElement,
   theme: Theme,
-  fontScale = 1,
+  layout?: LabelLayout,
 ): SVGTextElement {
-  const fontSize = el.fontSize * fontScale
+  const fontSize = el.fontSize * (layout?.scale ?? 1)
   const text = doc.createElementNS(SVG_NS, "text")
   text.setAttribute("font-family", fontFamilyName(el.fontFamily))
   text.setAttribute("font-size", String(fontSize))
@@ -181,7 +184,7 @@ function textNode(
   text.setAttribute("text-anchor", anchorFor(el.textAlign))
   text.setAttribute("dominant-baseline", "text-before-edge")
 
-  const lines = el.text.split("\n")
+  const lines = layout?.lines ?? el.text.split("\n")
   const lineHeightPx = fontSize * el.lineHeight
   const totalHeight = lines.length * lineHeightPx
   const baseY = verticalOffset(el, totalHeight)

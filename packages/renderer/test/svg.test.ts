@@ -158,6 +158,19 @@ describe("renderToSVG shape label auto-shrink", () => {
     const svg = renderToSVG(labeledRectScene("aaaaaaaaaaaaaaaaaaaaa"))
     expect(svg).toContain('font-size="20"')
   })
+
+  it("wraps a two-word label into two tspans at natural size", () => {
+    // "hello world" → 110 wide; box 84 → wraps, both lines fit → font-size 20
+    const svg = renderToSVG(labeledRectScene("hello world"), { measure: stubMeasure })
+    expect(svg.match(/<tspan/g)).toHaveLength(2)
+    expect(svg).toContain('font-size="20"')
+  })
+
+  it("does not wrap when no measurer is available", () => {
+    const svg = renderToSVG(labeledRectScene("hello world"))
+    expect(svg.match(/<tspan/g)).toHaveLength(1)
+    expect(svg).toContain('font-size="20"')
+  })
 })
 
 describe("renderToSVG flowchart shapes", () => {
