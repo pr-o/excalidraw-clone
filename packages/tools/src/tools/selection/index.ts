@@ -4,6 +4,7 @@ import {
   expandIdsToGroups,
   LABELABLE_TYPES,
   newLabelFor,
+  newLabelForLinear,
 } from "@excalidraw-clone/scene"
 import type { Tool, ToolContext, ToolEffect, ToolEvent } from "../../types"
 import {
@@ -189,8 +190,9 @@ const reduceIdle = (
       if (textRef) {
         return [{ phase: "idle" }, [{ kind: "startTextEdit", elementId: textRef.id }]]
       }
-      if (LABELABLE_TYPES.has(hit.type)) {
-        const label = newLabelFor(hit)
+      const isLinear = hit.type === "arrow" || hit.type === "line"
+      if (LABELABLE_TYPES.has(hit.type) || isLinear) {
+        const label = isLinear ? newLabelForLinear(hit) : newLabelFor(hit)
         return [
           { phase: "idle" },
           [
