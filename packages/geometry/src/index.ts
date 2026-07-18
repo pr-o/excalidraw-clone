@@ -33,3 +33,4 @@ export { pointInConvexPolygon, polygonEdgePointToward, shapeVertices } from "./p
 export type { PolygonShapeKind } from "./polygon"
 export { labelInnerBox } from "./label-box"
 export type { LabelShapeKind } from "./label-box"
+export { polylineMidpoint } from "./polyline"
