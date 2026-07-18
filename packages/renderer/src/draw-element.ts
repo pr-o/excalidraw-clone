@@ -14,6 +14,7 @@ export const drawElement = (
   cache: ShapeCache,
   getImage: ImageLookup,
   theme: Theme = "light",
+  labelOcclusionBg?: string,
 ): void => {
   if (element.isDeleted) return
   ctx.save()
@@ -32,7 +33,12 @@ export const drawElement = (
     return
   }
   if (element.type === "text") {
-    drawText(ctx, element, resolveColor(element.strokeColor, theme))
+    drawText(
+      ctx,
+      element,
+      resolveColor(element.strokeColor, theme),
+      labelOcclusionBg === undefined ? undefined : { background: labelOcclusionBg },
+    )
     ctx.restore()
     return
   }

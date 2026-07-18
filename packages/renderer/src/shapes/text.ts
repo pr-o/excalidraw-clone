@@ -26,10 +26,18 @@ const verticalOffset = (e: ExcalidrawTextElement, totalHeight: number): number =
   }
 }
 
+/** Padding (px) around a linear-element label's occlusion backing rect. */
+export const OCCLUSION_PADDING = 4
+
+export interface TextOcclusion {
+  background: string
+}
+
 export const drawText = (
   ctx: CanvasRenderingContext2D,
   e: ExcalidrawTextElement,
   fillColor?: string,
+  occlude?: TextOcclusion,
 ): void => {
   if (e.text.length === 0) return
   const lines = e.text.split("\n")
@@ -38,6 +46,17 @@ export const drawText = (
 
   ctx.save()
   ctx.font = fontSpec(e.fontSize, e.fontFamily)
+  if (occlude) {
+    let maxWidth = 0
+    for (const line of lines) maxWidth = Math.max(maxWidth, ctx.measureText(line).width)
+    ctx.fillStyle = occlude.background
+    ctx.fillRect(
+      e.width / 2 - maxWidth / 2 - OCCLUSION_PADDING,
+      e.height / 2 - totalHeight / 2 - OCCLUSION_PADDING,
+      maxWidth + 2 * OCCLUSION_PADDING,
+      totalHeight + 2 * OCCLUSION_PADDING,
+    )
+  }
   ctx.fillStyle = fillColor ?? e.strokeColor
   ctx.textBaseline = "top"
   ctx.textAlign = e.textAlign

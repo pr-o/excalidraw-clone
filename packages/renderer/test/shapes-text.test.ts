@@ -42,4 +42,35 @@ describe("drawText", () => {
     expect(typeof ctx.__props.font).toBe("string")
     expect((ctx.__props.font as string).includes("32px")).toBe(true)
   })
+
+  it("with occlude, fills a padded backing rect before the text", () => {
+    const { ctx } = createMockCanvas()
+    // mock measureText: width = text.length * 10 → "hi" = 20
+    // default fontSize 20 × lineHeight 1.25 → line height 25; box is 0×0
+    const t = { ...newText({ x: 0, y: 0, text: "hi" }) }
+    drawText(ctx as unknown as CanvasRenderingContext2D, t, undefined, {
+      background: "#ffffff",
+    })
+    const rects = ctx.__calls.filter((c) => c.method === "fillRect")
+    expect(rects).toHaveLength(1)
+    expect(rects[0]!.args).toEqual([-14, -16.5, 28, 33])
+    const order = ctx.__calls.map((c) => c.method)
+    expect(order.indexOf("fillRect")).toBeLessThan(order.indexOf("fillText"))
+  })
+
+  it("without occlude, no backing rect is filled", () => {
+    const { ctx } = createMockCanvas()
+    const t = { ...newText({ x: 0, y: 0, text: "hi" }) }
+    drawText(ctx as unknown as CanvasRenderingContext2D, t)
+    expect(ctx.__calls.filter((c) => c.method === "fillRect")).toHaveLength(0)
+  })
+
+  it("occlude with empty text draws nothing", () => {
+    const { ctx } = createMockCanvas()
+    const t = { ...newText({ x: 0, y: 0 }) }
+    drawText(ctx as unknown as CanvasRenderingContext2D, t, undefined, {
+      background: "#ffffff",
+    })
+    expect(ctx.__calls).toHaveLength(0)
+  })
 })

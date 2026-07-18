@@ -1,4 +1,11 @@
-import { Scene, newImage, newRectangle, newText } from "@excalidraw-clone/scene"
+import {
+  Scene,
+  newArrow,
+  newImage,
+  newLabelForLinear,
+  newRectangle,
+  newText,
+} from "@excalidraw-clone/scene"
 import { RoughCanvas } from "roughjs/bin/canvas"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { CanvasRenderer } from "../src"
@@ -112,5 +119,41 @@ describe("renderer elements", () => {
     const fills = ctx.__calls.filter((c) => c.method === "set:fillStyle").map((c) => c.args[0])
     expect(fills).toContain("#ececec")
     r.stop()
+  })
+
+  it("paints an occlusion rect behind an arrow label but not behind a shape label", () => {
+    vi.spyOn(RoughCanvas.prototype, "draw").mockImplementation(() => undefined)
+    const arrow = {
+      ...newArrow({ x: 0, y: 0 }),
+      points: [
+        { x: 0, y: 0 },
+        { x: 100, y: 0 },
+      ],
+    }
+    const arrowLabel = { ...newLabelForLinear(arrow), text: "yes" }
+    const linkedArrow = { ...arrow, boundElements: [{ id: arrowLabel.id, type: "text" as const }] }
+
+    const { canvas, ctx } = createMockCanvas()
+    const scene = new Scene([linkedArrow, arrowLabel])
+    const r = new CanvasRenderer(canvas, scene)
+    r.start()
+    flush()
+    // one full-canvas background fill + one label backing rect
+    expect(ctx.__calls.filter((c) => c.method === "fillRect")).toHaveLength(2)
+    r.stop()
+
+    const rect = newRectangle({ x: 0, y: 0, width: 100, height: 80 })
+    const shapeLabel = {
+      ...newText({ x: 8, y: 8, width: 84, height: 64, text: "box", textAlign: "center" }),
+      containerId: rect.id,
+    }
+    const linkedRect = { ...rect, boundElements: [{ id: shapeLabel.id, type: "text" as const }] }
+    const { canvas: canvas2, ctx: ctx2 } = createMockCanvas()
+    const r2 = new CanvasRenderer(canvas2, new Scene([linkedRect, shapeLabel]))
+    r2.start()
+    flush()
+    // only the full-canvas background fill
+    expect(ctx2.__calls.filter((c) => c.method === "fillRect")).toHaveLength(1)
+    r2.stop()
   })
 })
