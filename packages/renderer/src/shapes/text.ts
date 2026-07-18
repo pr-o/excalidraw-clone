@@ -34,8 +34,8 @@ export interface TextOcclusion {
 }
 
 export interface TextDrawOptions {
-  occlude?: TextOcclusion
-  fit?: boolean
+  occlude?: TextOcclusion | undefined
+  fit?: boolean | undefined
 }
 
 const maxLineWidth = (ctx: CanvasRenderingContext2D, lines: readonly string[]): number => {

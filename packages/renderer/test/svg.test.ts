@@ -121,6 +121,45 @@ describe("renderToSVG linear label backing", () => {
   })
 })
 
+describe("renderToSVG shape label auto-shrink", () => {
+  const stubMeasure = (
+    text: string,
+    fontSize: number,
+    _family: number,
+    lineHeight: number,
+  ): { width: number; height: number } => ({
+    width: text.length * 10,
+    height: fontSize * lineHeight,
+  })
+
+  const labeledRectScene = (text: string): Scene => {
+    const rect = newRectangle({ x: 0, y: 0, width: 100, height: 80 })
+    const label = {
+      ...newText({ x: 8, y: 8, width: 84, height: 64, text, textAlign: "center" }),
+      containerId: rect.id,
+    }
+    return new Scene([{ ...rect, boundElements: [{ id: label.id, type: "text" as const }] }, label])
+  }
+
+  it("emits a scaled font-size for a label wider than its box", () => {
+    // 21 chars → 210 wide; box 84 → scale 0.4 → font-size 8
+    const svg = renderToSVG(labeledRectScene("aaaaaaaaaaaaaaaaaaaaa"), { measure: stubMeasure })
+    expect(svg).toContain('font-size="8"')
+    expect(svg).not.toContain('font-size="20"')
+  })
+
+  it("keeps the natural font-size when the label fits", () => {
+    const svg = renderToSVG(labeledRectScene("box"), { measure: stubMeasure })
+    expect(svg).toContain('font-size="20"')
+  })
+
+  it("keeps the natural font-size when no measurer is available", () => {
+    // jsdom's canvas.getContext returns null → default measurer unavailable
+    const svg = renderToSVG(labeledRectScene("aaaaaaaaaaaaaaaaaaaaa"))
+    expect(svg).toContain('font-size="20"')
+  })
+})
+
 describe("renderToSVG flowchart shapes", () => {
   it("renders a triangle as rough path markup inside a positioned group", () => {
     const scene = new Scene([newTriangle({ x: 3, y: 4, width: 40, height: 30 })])
