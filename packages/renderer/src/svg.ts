@@ -1,9 +1,31 @@
-import type { ExcalidrawElement, ExcalidrawTextElement, Scene } from "@excalidraw-clone/scene"
+import { LINEAR_LABELABLE_TYPES } from "@excalidraw-clone/scene"
+import type {
+  ExcalidrawElement,
+  ExcalidrawTextElement,
+  FontFamily,
+  Scene,
+} from "@excalidraw-clone/scene"
 import { RoughSVG } from "roughjs/bin/svg"
 import { generateShape } from "./shapes"
-import { fontFamilyName } from "./text-metrics"
+import { OCCLUSION_PADDING } from "./shapes/text"
+import { fontFamilyName, measureText, type TextSize } from "./text-metrics"
 import { resolveColor, themedElement } from "./theme-colors"
 import type { Theme } from "./types"
+
+export type TextMeasure = (
+  text: string,
+  fontSize: number,
+  family: FontFamily,
+  lineHeight: number,
+) => TextSize
+
+const defaultMeasure = (): TextMeasure | null => {
+  if (typeof document === "undefined") return null
+  const ctx = document.createElement("canvas").getContext("2d")
+  if (!ctx) return null
+  return (text, fontSize, family, lineHeight) =>
+    measureText(ctx, text, fontSize, family, lineHeight)
+}
 
 export interface SVGRenderOptions {
   background?: string
@@ -12,6 +34,9 @@ export interface SVGRenderOptions {
   files?: ReadonlyMap<string, string>
   /** Resolve all colors for this theme; default "light" (identity). */
   theme?: Theme
+  /** Text measurer for linear-label backing rects; defaults to a hidden
+   *  canvas context, and the backing is skipped when none is available. */
+  measure?: TextMeasure
 }
 
 const SVG_NS = "http://www.w3.org/2000/svg"
@@ -42,8 +67,20 @@ export function renderToSVG(scene: Scene, opts: SVGRenderOptions = {}): string {
 
   const rsvg = new RoughSVG(root as unknown as SVGSVGElement)
 
+  const measure = opts.measure ?? defaultMeasure()
+  const byId = new Map(elements.map((e) => [e.id, e] as const))
+  const labelBg = resolveColor(
+    opts.background && opts.background !== "transparent" ? opts.background : "#ffffff",
+    theme,
+  )
   for (const el of elements) {
-    const node = renderElement(doc, el, rsvg, opts.files, theme)
+    const container =
+      el.type === "text" && el.containerId !== null ? byId.get(el.containerId) : undefined
+    const backing =
+      measure && container && LINEAR_LABELABLE_TYPES.has(container.type)
+        ? { background: labelBg, measure }
+        : undefined
+    const node = renderElement(doc, el, rsvg, opts.files, theme, backing)
     if (node) root.appendChild(node)
   }
 
@@ -56,6 +93,7 @@ function renderElement(
   rsvg: RoughSVG,
   files: ReadonlyMap<string, string> | undefined,
   theme: Theme,
+  backing?: { background: string; measure: TextMeasure },
 ): SVGGElement | null {
   if (el.type === "image") {
     const href = el.fileId === null ? undefined : files?.get(el.fileId)
@@ -71,6 +109,16 @@ function renderElement(
   const group = createGroup(doc, el)
 
   if (el.type === "text") {
+    if (backing && el.text.length > 0) {
+      const size = backing.measure(el.text, el.fontSize, el.fontFamily, el.lineHeight)
+      const rect = doc.createElementNS(SVG_NS, "rect")
+      rect.setAttribute("x", String(el.width / 2 - size.width / 2 - OCCLUSION_PADDING))
+      rect.setAttribute("y", String(el.height / 2 - size.height / 2 - OCCLUSION_PADDING))
+      rect.setAttribute("width", String(size.width + 2 * OCCLUSION_PADDING))
+      rect.setAttribute("height", String(size.height + 2 * OCCLUSION_PADDING))
+      rect.setAttribute("fill", backing.background)
+      group.appendChild(rect)
+    }
     group.appendChild(textNode(doc, el, theme))
     return group
   }

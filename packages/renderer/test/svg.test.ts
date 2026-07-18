@@ -1,4 +1,12 @@
-import { Scene, newImage, newRectangle, newText, newTriangle } from "@excalidraw-clone/scene"
+import {
+  Scene,
+  newArrow,
+  newImage,
+  newLabelForLinear,
+  newRectangle,
+  newText,
+  newTriangle,
+} from "@excalidraw-clone/scene"
 import { describe, expect, it } from "vitest"
 import { renderToSVG } from "../src/svg"
 
@@ -54,6 +62,62 @@ describe("renderToSVG theming", () => {
     const scene = new Scene([{ ...newText({ x: 0, y: 0, text: "hi" }), strokeColor: "#1e1e1e" }])
     const svg = renderToSVG(scene, { theme: "dark" })
     expect(svg).toContain('fill="#ececec"')
+  })
+})
+
+describe("renderToSVG linear label backing", () => {
+  const stubMeasure = (
+    text: string,
+    fontSize: number,
+    _family: number,
+    lineHeight: number,
+  ): { width: number; height: number } => ({
+    width: text.length * 10,
+    height: fontSize * lineHeight,
+  })
+
+  const labeledArrowScene = (): Scene => {
+    const arrow = {
+      ...newArrow({ x: 0, y: 0 }),
+      points: [
+        { x: 0, y: 0 },
+        { x: 100, y: 0 },
+      ],
+    }
+    const label = { ...newLabelForLinear(arrow), text: "yes" }
+    return new Scene([
+      { ...arrow, boundElements: [{ id: label.id, type: "text" as const }] },
+      label,
+    ])
+  }
+
+  it("emits a backing rect behind an arrow label", () => {
+    const svg = renderToSVG(labeledArrowScene(), { measure: stubMeasure })
+    // "yes" → 30 wide; height 25; padding 4 → 38 × 33
+    expect(svg).toContain('width="38"')
+    expect(svg).toContain('height="33"')
+    expect(svg).toContain('fill="#ffffff"')
+  })
+
+  it("emits no backing rect for a shape label", () => {
+    const rect = newRectangle({ x: 0, y: 0, width: 100, height: 80 })
+    const label = {
+      ...newText({ x: 8, y: 8, width: 84, height: 64, text: "box" }),
+      containerId: rect.id,
+    }
+    const scene = new Scene([
+      { ...rect, boundElements: [{ id: label.id, type: "text" as const }] },
+      label,
+    ])
+    const svg = renderToSVG(scene, { measure: stubMeasure })
+    expect(svg).not.toContain("<rect")
+  })
+
+  it("skips the backing gracefully when no measurer is available", () => {
+    // jsdom's canvas.getContext returns null → default measurer unavailable
+    const svg = renderToSVG(labeledArrowScene())
+    expect(svg).toContain("yes")
+    expect(svg).not.toContain("<rect")
   })
 })
 
