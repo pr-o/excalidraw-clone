@@ -45,6 +45,7 @@ export { BUILTIN_TEMPLATES } from "./templates"
 export { alignElements, distributeElements } from "./arrange"
 export type { AlignEdge, DistributeAxis, PositionPatch } from "./arrange"
 export { expandIdsToGroups, groupElements, ungroupElements } from "./groups"
+export { expandIdsToFrameMembers, reconcileFrameMembership } from "./frames"
 export { lockElements, unlockAll } from "./locking"
 export {
   LABELABLE_TYPES,
