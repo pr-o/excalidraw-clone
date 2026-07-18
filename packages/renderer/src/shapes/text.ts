@@ -1,5 +1,5 @@
 import type { ExcalidrawTextElement } from "@excalidraw-clone/scene"
-import { fontSpec } from "../text-metrics"
+import { fontSpec, layoutLabel } from "../text-metrics"
 
 const horizontalOffset = (e: ExcalidrawTextElement, lineWidth: number): number => {
   switch (e.textAlign) {
@@ -51,21 +51,22 @@ export const drawText = (
   opts?: TextDrawOptions,
 ): void => {
   if (e.text.length === 0) return
-  const lines = e.text.split("\n")
 
   ctx.save()
   ctx.font = fontSpec(e.fontSize, e.fontFamily)
   let fontSize = e.fontSize
+  let lines: readonly string[] = e.text.split("\n")
   if (opts?.fit) {
-    const widest = maxLineWidth(ctx, lines)
-    const naturalHeight = lines.length * e.fontSize * e.lineHeight
-    const scale = Math.min(
-      1,
-      widest > 0 ? e.width / widest : 1,
-      naturalHeight > 0 ? e.height / naturalHeight : 1,
+    const layout = layoutLabel(
+      e.text,
+      { width: e.width, height: e.height },
+      e.fontSize,
+      e.lineHeight,
+      (s) => ctx.measureText(s).width,
     )
-    if (scale < 1) {
-      fontSize = e.fontSize * scale
+    lines = layout.lines
+    if (layout.scale < 1) {
+      fontSize = e.fontSize * layout.scale
       ctx.font = fontSpec(fontSize, e.fontFamily)
     }
   }

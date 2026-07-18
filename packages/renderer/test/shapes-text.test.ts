@@ -104,4 +104,31 @@ describe("drawText", () => {
     drawText(ctx as unknown as CanvasRenderingContext2D, t, undefined, { fit: true })
     expect(ctx.__calls).toHaveLength(0)
   })
+
+  it("fit wraps two words at the box width instead of shrinking", () => {
+    const { ctx } = createMockCanvas()
+    // "hello world" → 110 wide; box 60 → wraps to "hello" / "world", both fit → no shrink
+    const t = { ...newText({ x: 0, y: 0, width: 60, height: 100, text: "hello world" }) }
+    drawText(ctx as unknown as CanvasRenderingContext2D, t, undefined, { fit: true })
+    const fills = ctx.__calls.filter((c) => c.method === "fillText")
+    expect(fills.map((c) => c.args[0])).toEqual(["hello", "world"])
+    expect((ctx.__props.font as string).startsWith("20px")).toBe(true)
+  })
+
+  it("fit shrinks a wrapped block that is taller than the box", () => {
+    const { ctx } = createMockCanvas()
+    // wraps to 4 lines × 25 = 100; box height 50 → scale 0.5 → 10px
+    const t = { ...newText({ x: 0, y: 0, width: 10, height: 50, text: "a b c d" }) }
+    drawText(ctx as unknown as CanvasRenderingContext2D, t, undefined, { fit: true })
+    expect(ctx.__calls.filter((c) => c.method === "fillText")).toHaveLength(4)
+    expect((ctx.__props.font as string).startsWith("10px")).toBe(true)
+  })
+
+  it("without fit, text is never wrapped", () => {
+    const { ctx } = createMockCanvas()
+    const t = { ...newText({ x: 0, y: 0, width: 10, height: 10, text: "hello world" }) }
+    drawText(ctx as unknown as CanvasRenderingContext2D, t)
+    const fills = ctx.__calls.filter((c) => c.method === "fillText")
+    expect(fills.map((c) => c.args[0])).toEqual(["hello world"])
+  })
 })
