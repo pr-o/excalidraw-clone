@@ -156,4 +156,51 @@ describe("renderer elements", () => {
     expect(ctx2.__calls.filter((c) => c.method === "fillRect")).toHaveLength(1)
     r2.stop()
   })
+
+  it("shrinks a shape label to fit but leaves arrow labels and standalone text alone", () => {
+    vi.spyOn(RoughCanvas.prototype, "draw").mockImplementation(() => undefined)
+    // shape label: 21 chars → mock width 210; box width 84 → scale 0.4 → 8px
+    const rect = newRectangle({ x: 0, y: 0, width: 100, height: 80 })
+    const shapeLabel = {
+      ...newText({
+        x: 8,
+        y: 8,
+        width: 84,
+        height: 64,
+        text: "aaaaaaaaaaaaaaaaaaaaa",
+        textAlign: "center",
+      }),
+      containerId: rect.id,
+    }
+    const linkedRect = { ...rect, boundElements: [{ id: shapeLabel.id, type: "text" as const }] }
+    const { canvas, ctx } = createMockCanvas()
+    const r = new CanvasRenderer(canvas, new Scene([linkedRect, shapeLabel]))
+    r.start()
+    flush()
+    const fonts = ctx.__calls.filter((c) => c.method === "set:font").map((c) => c.args[0] as string)
+    expect(fonts.some((f) => f.startsWith("8px"))).toBe(true)
+    r.stop()
+
+    // arrow label and standalone text stay at 20px
+    const arrow = {
+      ...newArrow({ x: 0, y: 0 }),
+      points: [
+        { x: 0, y: 0 },
+        { x: 100, y: 0 },
+      ],
+    }
+    const arrowLabel = { ...newLabelForLinear(arrow), text: "aaaaaaaaaaaaaaaaaaaaa" }
+    const linkedArrow = { ...arrow, boundElements: [{ id: arrowLabel.id, type: "text" as const }] }
+    const loose = newText({ x: 0, y: 0, width: 10, height: 10, text: "aaaaaaaaaaaaaaaaaaaaa" })
+    const { canvas: canvas2, ctx: ctx2 } = createMockCanvas()
+    const r2 = new CanvasRenderer(canvas2, new Scene([linkedArrow, arrowLabel, loose]))
+    r2.start()
+    flush()
+    const fonts2 = ctx2.__calls
+      .filter((c) => c.method === "set:font")
+      .map((c) => c.args[0] as string)
+    expect(fonts2.length).toBeGreaterThan(0)
+    expect(fonts2.every((f) => f.startsWith("20px"))).toBe(true)
+    r2.stop()
+  })
 })

@@ -33,27 +33,52 @@ export interface TextOcclusion {
   background: string
 }
 
+export interface TextDrawOptions {
+  occlude?: TextOcclusion
+  fit?: boolean
+}
+
+const maxLineWidth = (ctx: CanvasRenderingContext2D, lines: readonly string[]): number => {
+  let max = 0
+  for (const line of lines) max = Math.max(max, ctx.measureText(line).width)
+  return max
+}
+
 export const drawText = (
   ctx: CanvasRenderingContext2D,
   e: ExcalidrawTextElement,
   fillColor?: string,
-  occlude?: TextOcclusion,
+  opts?: TextDrawOptions,
 ): void => {
   if (e.text.length === 0) return
   const lines = e.text.split("\n")
-  const lineHeightPx = e.fontSize * e.lineHeight
-  const totalHeight = lines.length * lineHeightPx
 
   ctx.save()
   ctx.font = fontSpec(e.fontSize, e.fontFamily)
-  if (occlude) {
-    let maxWidth = 0
-    for (const line of lines) maxWidth = Math.max(maxWidth, ctx.measureText(line).width)
-    ctx.fillStyle = occlude.background
+  let fontSize = e.fontSize
+  if (opts?.fit) {
+    const widest = maxLineWidth(ctx, lines)
+    const naturalHeight = lines.length * e.fontSize * e.lineHeight
+    const scale = Math.min(
+      1,
+      widest > 0 ? e.width / widest : 1,
+      naturalHeight > 0 ? e.height / naturalHeight : 1,
+    )
+    if (scale < 1) {
+      fontSize = e.fontSize * scale
+      ctx.font = fontSpec(fontSize, e.fontFamily)
+    }
+  }
+  const lineHeightPx = fontSize * e.lineHeight
+  const totalHeight = lines.length * lineHeightPx
+
+  if (opts?.occlude) {
+    const widest = maxLineWidth(ctx, lines)
+    ctx.fillStyle = opts.occlude.background
     ctx.fillRect(
-      e.width / 2 - maxWidth / 2 - OCCLUSION_PADDING,
+      e.width / 2 - widest / 2 - OCCLUSION_PADDING,
       e.height / 2 - totalHeight / 2 - OCCLUSION_PADDING,
-      maxWidth + 2 * OCCLUSION_PADDING,
+      widest + 2 * OCCLUSION_PADDING,
       totalHeight + 2 * OCCLUSION_PADDING,
     )
   }

@@ -49,7 +49,7 @@ describe("drawText", () => {
     // default fontSize 20 × lineHeight 1.25 → line height 25; box is 0×0
     const t = { ...newText({ x: 0, y: 0, text: "hi" }) }
     drawText(ctx as unknown as CanvasRenderingContext2D, t, undefined, {
-      background: "#ffffff",
+      occlude: { background: "#ffffff" },
     })
     const rects = ctx.__calls.filter((c) => c.method === "fillRect")
     expect(rects).toHaveLength(1)
@@ -69,8 +69,39 @@ describe("drawText", () => {
     const { ctx } = createMockCanvas()
     const t = { ...newText({ x: 0, y: 0 }) }
     drawText(ctx as unknown as CanvasRenderingContext2D, t, undefined, {
-      background: "#ffffff",
+      occlude: { background: "#ffffff" },
     })
+    expect(ctx.__calls).toHaveLength(0)
+  })
+
+  it("fit shrinks the font so a wide line fits the box width", () => {
+    const { ctx } = createMockCanvas()
+    // "hi!!" → mock width 40; box width 20 → scale 0.5 → 20px × 0.5 = 10px
+    const t = { ...newText({ x: 0, y: 0, width: 20, height: 64, text: "hi!!" }) }
+    drawText(ctx as unknown as CanvasRenderingContext2D, t, undefined, { fit: true })
+    expect((ctx.__props.font as string).startsWith("10px")).toBe(true)
+  })
+
+  it("fit leaves text that already fits at its natural size", () => {
+    const { ctx } = createMockCanvas()
+    // "hi" → width 20 ≤ 84; height 25 ≤ 64 → scale 1
+    const t = { ...newText({ x: 0, y: 0, width: 84, height: 64, text: "hi" }) }
+    drawText(ctx as unknown as CanvasRenderingContext2D, t, undefined, { fit: true })
+    expect((ctx.__props.font as string).startsWith("20px")).toBe(true)
+  })
+
+  it("fit shrinks by the height bound for tall multi-line text", () => {
+    const { ctx } = createMockCanvas()
+    // 4 lines × 25 = 100 natural height; box height 50 → scale 0.5 → 10px
+    const t = { ...newText({ x: 0, y: 0, width: 84, height: 50, text: "a\nb\nc\nd" }) }
+    drawText(ctx as unknown as CanvasRenderingContext2D, t, undefined, { fit: true })
+    expect((ctx.__props.font as string).startsWith("10px")).toBe(true)
+  })
+
+  it("fit with empty text draws nothing", () => {
+    const { ctx } = createMockCanvas()
+    const t = { ...newText({ x: 0, y: 0, width: 20, height: 20 }) }
+    drawText(ctx as unknown as CanvasRenderingContext2D, t, undefined, { fit: true })
     expect(ctx.__calls).toHaveLength(0)
   })
 })

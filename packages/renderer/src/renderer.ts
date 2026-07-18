@@ -1,5 +1,5 @@
 import type { Bounds, ViewTransform } from "@excalidraw-clone/geometry"
-import { LINEAR_LABELABLE_TYPES } from "@excalidraw-clone/scene"
+import { LABELABLE_TYPES, LINEAR_LABELABLE_TYPES } from "@excalidraw-clone/scene"
 import type { ExcalidrawElement, Scene } from "@excalidraw-clone/scene"
 import { RoughCanvas } from "roughjs/bin/canvas"
 import { isElementVisible } from "./culling"
@@ -175,9 +175,15 @@ export class CanvasRenderer {
         element.type === "text" && element.containerId !== null
           ? byId.get(element.containerId)
           : undefined
-      const labelBg =
-        container && LINEAR_LABELABLE_TYPES.has(container.type) ? occludeBg : undefined
-      drawElement(ctx, element, this.rough, this.shapeCache, getImage, this.theme, labelBg)
+      const labelOpts =
+        container === undefined
+          ? undefined
+          : LINEAR_LABELABLE_TYPES.has(container.type)
+            ? { occlusionBg: occludeBg }
+            : LABELABLE_TYPES.has(container.type)
+              ? { fit: true }
+              : undefined
+      drawElement(ctx, element, this.rough, this.shapeCache, getImage, this.theme, labelOpts)
     }
     this.renderSelection(elements)
   }

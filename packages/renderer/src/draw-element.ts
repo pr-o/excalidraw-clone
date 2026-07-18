@@ -7,6 +7,11 @@ import type { Theme } from "./types"
 
 export type ImageLookup = (fileId: string) => HTMLImageElement | undefined
 
+export interface LabelDrawOptions {
+  occlusionBg?: string
+  fit?: boolean
+}
+
 export const drawElement = (
   ctx: CanvasRenderingContext2D,
   element: ExcalidrawElement,
@@ -14,7 +19,7 @@ export const drawElement = (
   cache: ShapeCache,
   getImage: ImageLookup,
   theme: Theme = "light",
-  labelOcclusionBg?: string,
+  labelOpts?: LabelDrawOptions,
 ): void => {
   if (element.isDeleted) return
   ctx.save()
@@ -33,12 +38,11 @@ export const drawElement = (
     return
   }
   if (element.type === "text") {
-    drawText(
-      ctx,
-      element,
-      resolveColor(element.strokeColor, theme),
-      labelOcclusionBg === undefined ? undefined : { background: labelOcclusionBg },
-    )
+    drawText(ctx, element, resolveColor(element.strokeColor, theme), {
+      occlude:
+        labelOpts?.occlusionBg === undefined ? undefined : { background: labelOpts.occlusionBg },
+      fit: labelOpts?.fit,
+    })
     ctx.restore()
     return
   }
