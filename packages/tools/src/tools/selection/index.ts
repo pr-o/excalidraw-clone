@@ -1,6 +1,7 @@
 import { snapPointToGrid } from "@excalidraw-clone/geometry"
 import {
   bindingTargetAt,
+  expandIdsToFrameMembers,
   expandIdsToGroups,
   LABELABLE_TYPES,
   newLabelFor,
@@ -129,11 +130,12 @@ const reduceIdle = (
     }
     const alreadySelected = ctx.selectedIds.includes(hit.id)
     const hitIds = expandIdsToGroups([hit.id], ctx.readElements())
-    const movedIds = alreadySelected
+    const baseMovedIds = alreadySelected
       ? ctx.selectedIds
       : ctx.modifiers.shift
         ? Array.from(new Set([...ctx.selectedIds, ...hitIds]))
         : hitIds
+    const movedIds = expandIdsToFrameMembers(baseMovedIds, ctx.readElements())
     const selectionEffects: readonly ToolEffect[] = alreadySelected
       ? []
       : ctx.modifiers.shift
@@ -182,6 +184,15 @@ const reduceIdle = (
       const soleSelection = ctx.selectedIds.length === 1 && ctx.selectedIds[0] === hit.id
       if (hit.groupIds.length > 0 && !soleSelection) {
         return [{ phase: "idle" }, [{ kind: "select", ids: [hit.id] }]]
+      }
+      if (hit.type === "frame") {
+        return [
+          { phase: "idle" },
+          [
+            { kind: "select", ids: [hit.id] },
+            { kind: "startTextEdit", elementId: hit.id },
+          ],
+        ]
       }
       if (hit.type === "text") {
         return [{ phase: "idle" }, [{ kind: "startTextEdit", elementId: hit.id }]]

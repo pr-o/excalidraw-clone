@@ -1,6 +1,7 @@
 import {
   newArrow,
   newDiamond,
+  newFrame,
   newFreedraw,
   newHexagon,
   newLine,
@@ -179,6 +180,21 @@ describe("selection — double click", () => {
     )
     const edit = effects.find((e) => e.kind === "startTextEdit")
     expect(edit && edit.kind === "startTextEdit" && edit.elementId).toBe(text.id)
+    expect(effects.some((e) => e.kind === "mutation")).toBe(false)
+  })
+
+  it("double-click on a frame selects it and starts renaming (no mutation)", () => {
+    const frame = newFrame({ x: 0, y: 0, width: 100, height: 100 })
+    const ctx = makeCtx({ readElements: () => [frame], hitTest: () => frame })
+    const [, effects] = selectionTool.reduce(
+      selectionTool.initial,
+      { type: "doubleClick", at: point(50, 50) },
+      ctx,
+    )
+    const sel = effects.find((e) => e.kind === "select")
+    expect(sel && sel.kind === "select" && sel.ids).toEqual([frame.id])
+    const edit = effects.find((e) => e.kind === "startTextEdit")
+    expect(edit && edit.kind === "startTextEdit" && edit.elementId).toBe(frame.id)
     expect(effects.some((e) => e.kind === "mutation")).toBe(false)
   })
 })

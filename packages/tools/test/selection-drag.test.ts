@@ -1,6 +1,6 @@
 import type { GridSnap } from "@excalidraw-clone/geometry"
 import type { ExcalidrawArrowElement, ExcalidrawElement } from "@excalidraw-clone/scene"
-import { BINDING_GAP, newArrow, newRectangle } from "@excalidraw-clone/scene"
+import { BINDING_GAP, newArrow, newFrame, newRectangle } from "@excalidraw-clone/scene"
 import { describe, expect, it } from "vitest"
 import { selectionTool } from "../src"
 import { translateElements } from "../src/tools/selection/drag"
@@ -50,6 +50,24 @@ describe("selection — click-on-element selects + drags", () => {
     const sel = out[1].find((e) => e.kind === "select")
     expect(sel).toBeDefined()
     if (sel?.kind === "select") expect(sel.ids).toEqual([r.id])
+  })
+
+  it("clicking a frame drags its members too but selects only the frame", () => {
+    const frame = newFrame({ x: 0, y: 0, width: 100, height: 100 })
+    const member = { ...newRectangle({ x: 10, y: 10, width: 20, height: 20 }), frameId: frame.id }
+    const outside = newRectangle({ x: 300, y: 300, width: 20, height: 20 })
+    const ctx = makeCtx({ hitTest: () => frame, readElements: () => [frame, member, outside] })
+    const out = selectionTool.reduce(
+      selectionTool.initial,
+      { type: "pointerDown", at: point(50, 50) },
+      ctx,
+    )
+    expect(out[0].phase).toBe("dragging")
+    if (out[0].phase === "dragging") {
+      expect([...out[0].movedIds].sort()).toEqual([frame.id, member.id].sort())
+    }
+    const sel = out[1].find((e) => e.kind === "select")
+    expect(sel && sel.kind === "select" && sel.ids).toEqual([frame.id])
   })
 
   it("click on already-selected element enters dragging without re-selecting", () => {
