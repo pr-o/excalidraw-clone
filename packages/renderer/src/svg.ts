@@ -144,6 +144,17 @@ function renderElement(
     return group
   }
 
+  if (el.type === "frame") {
+    const name = doc.createElementNS(SVG_NS, "text")
+    name.setAttribute("font-family", fontFamilyName(2))
+    name.setAttribute("font-size", "12")
+    name.setAttribute("fill", resolveColor("#868e96", theme))
+    name.setAttribute("x", "0")
+    name.setAttribute("y", "-4")
+    name.textContent = el.name ?? "Frame"
+    group.appendChild(name)
+  }
+
   const drawables = generateShape(themedElement(el, theme), rsvg.generator)
   for (const d of drawables) {
     group.appendChild(rsvg.draw(d))

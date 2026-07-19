@@ -2,6 +2,7 @@ import type { ExcalidrawElement } from "@excalidraw-clone/scene"
 import type { RoughCanvas } from "roughjs/bin/canvas"
 import type { ShapeCache } from "./shape-cache"
 import { drawText } from "./shapes/text"
+import { fontSpec } from "./text-metrics"
 import { resolveColor } from "./theme-colors"
 import type { Theme } from "./types"
 
@@ -48,5 +49,12 @@ export const drawElement = (
   }
   const drawables = cache.get(element, rough.generator, theme)
   for (const d of drawables) rough.draw(d)
+  if (element.type === "frame") {
+    ctx.font = fontSpec(12, 2)
+    ctx.fillStyle = resolveColor("#868e96", theme)
+    ctx.textBaseline = "bottom"
+    ctx.textAlign = "left"
+    ctx.fillText(element.name ?? "Frame", 0, -4)
+  }
   ctx.restore()
 }

@@ -1,6 +1,7 @@
 import {
   Scene,
   newArrow,
+  newFrame,
   newImage,
   newLabelForLinear,
   newRectangle,
@@ -179,5 +180,22 @@ describe("renderToSVG flowchart shapes", () => {
     const svg = renderToSVG(scene)
     expect(svg).toContain('transform="translate(3 4)"')
     expect(svg).toContain("path")
+  })
+})
+
+describe("renderToSVG frame names", () => {
+  it("emits a <text> node with the default name inside the frame group", () => {
+    const scene = new Scene([newFrame({ x: 5, y: 6, width: 100, height: 80 })])
+    const svg = renderToSVG(scene)
+    expect(svg).toContain('transform="translate(5 6)"')
+    expect(svg).toContain(">Frame</text>")
+    expect(svg).toContain('font-size="12"')
+    expect(svg).toContain('fill="#868e96"')
+  })
+
+  it("emits the frame's own name when set", () => {
+    const frame = { ...newFrame({ x: 0, y: 0, width: 100, height: 80 }), name: "Login flow" }
+    const svg = renderToSVG(new Scene([frame]))
+    expect(svg).toContain(">Login flow</text>")
   })
 })

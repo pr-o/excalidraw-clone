@@ -1,6 +1,7 @@
 import {
   Scene,
   newArrow,
+  newFrame,
   newImage,
   newLabelForLinear,
   newRectangle,
@@ -202,5 +203,41 @@ describe("renderer elements", () => {
     expect(fonts2.length).toBeGreaterThan(0)
     expect(fonts2.every((f) => f.startsWith("20px"))).toBe(true)
     r2.stop()
+  })
+})
+
+describe("frame name rendering", () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.restoreAllMocks()
+  })
+
+  it('draws the default name "Frame" above the top-left corner', () => {
+    vi.spyOn(RoughCanvas.prototype, "draw").mockImplementation(() => undefined)
+    const { canvas, ctx } = createMockCanvas()
+    const scene = new Scene([newFrame({ x: 10, y: 10, width: 100, height: 80 })])
+    const r = new CanvasRenderer(canvas, scene)
+    r.start()
+    flush()
+    const fillTexts = ctx.__calls.filter((c) => c.method === "fillText")
+    expect(fillTexts.length).toBe(1)
+    expect(fillTexts[0]?.args).toEqual(["Frame", 0, -4])
+    r.stop()
+  })
+
+  it("draws a named frame's own name", () => {
+    vi.spyOn(RoughCanvas.prototype, "draw").mockImplementation(() => undefined)
+    const { canvas, ctx } = createMockCanvas()
+    const frame = { ...newFrame({ x: 0, y: 0, width: 100, height: 80 }), name: "Login flow" }
+    const r = new CanvasRenderer(canvas, new Scene([frame]))
+    r.start()
+    flush()
+    const fillTexts = ctx.__calls.filter((c) => c.method === "fillText")
+    expect(fillTexts.length).toBe(1)
+    expect(fillTexts[0]?.args[0]).toBe("Login flow")
+    r.stop()
   })
 })
