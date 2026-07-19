@@ -1,4 +1,25 @@
+import { expandIdsToFrameMembers } from "./frames"
 import type { ExcalidrawElement } from "./types"
+
+/**
+ * Expands a selection to its copyable closure: frame members of any selected
+ * frame, plus bound labels of everything included. Returns the matching
+ * non-deleted elements in scene order, without duplicates.
+ */
+export function expandIdsToCopyClosure(
+  ids: readonly string[],
+  elements: readonly ExcalidrawElement[],
+): ExcalidrawElement[] {
+  const withMembers = new Set(expandIdsToFrameMembers(ids, elements))
+  const closure = new Set(withMembers)
+  for (const el of elements) {
+    if (el.isDeleted || !withMembers.has(el.id)) continue
+    for (const b of el.boundElements ?? []) {
+      if (b.type === "text") closure.add(b.id)
+    }
+  }
+  return elements.filter((el) => !el.isDeleted && closure.has(el.id))
+}
 
 /**
  * Deep-clones elements with fresh ids, rewriting every internal reference
