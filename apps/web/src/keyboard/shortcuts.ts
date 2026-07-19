@@ -1,5 +1,11 @@
 "use client"
-import { groupElements, lockElements, type Scene, ungroupElements } from "@excalidraw-clone/scene"
+import {
+  expandIdsToFrameMembers,
+  groupElements,
+  lockElements,
+  type Scene,
+  ungroupElements,
+} from "@excalidraw-clone/scene"
 import type { ToolName } from "@excalidraw-clone/tools"
 import { patchScene } from "../driver/patchScene"
 import { useAppStore } from "../store"
@@ -97,6 +103,31 @@ export function attachShortcuts({ scene }: Bindings): () => void {
         }
       })
       useAppStore.getState().setSelection([])
+      return
+    }
+    if (isMeta && key === "a") {
+      e.preventDefault()
+      const all = scene
+        .getElements()
+        .filter((el) => !el.locked && !(el.type === "text" && el.containerId !== null))
+        .map((el) => el.id)
+      useAppStore.getState().setSelection(all)
+      return
+    }
+    if (key === "arrowup" || key === "arrowdown" || key === "arrowleft" || key === "arrowright") {
+      const ids = useAppStore.getState().selectedIds
+      if (ids.length === 0) return
+      e.preventDefault()
+      const step = e.shiftKey ? 10 : 1
+      const dx = key === "arrowleft" ? -step : key === "arrowright" ? step : 0
+      const dy = key === "arrowup" ? -step : key === "arrowdown" ? step : 0
+      const moved = new Set(expandIdsToFrameMembers(ids, scene.getElements()))
+      scene.mutate((draft) => {
+        for (let i = 0; i < draft.length; i += 1) {
+          const el = draft[i]!
+          if (moved.has(el.id)) draft[i] = { ...el, x: el.x + dx, y: el.y + dy }
+        }
+      })
       return
     }
     const tool = TOOL_KEYS[key]
