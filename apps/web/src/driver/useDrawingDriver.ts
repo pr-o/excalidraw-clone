@@ -187,6 +187,7 @@ export function useDrawingDriver({
         resolveGrid(),
         e,
       )
+      if ("at" in event) store.setLastScenePointer(event.at)
       dispatch(event, modifiersOf(e))
     }
 

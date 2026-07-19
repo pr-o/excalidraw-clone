@@ -6,6 +6,7 @@ import {
   BUILTIN_TEMPLATES,
   cloneElementsWithNewIds,
   distributeElements,
+  expandIdsToCopyClosure,
   type ExcalidrawElement,
   groupElements,
   type LibraryItem,
@@ -36,6 +37,7 @@ import { openExcalidrawFromPicker } from "../driver/openFile"
 import { patchScene } from "../driver/patchScene"
 import { saveAsExcalidraw } from "../driver/saveFile"
 import { ensureI18n } from "../i18n"
+import { attachClipboard } from "../keyboard/clipboard"
 import { attachShortcuts } from "../keyboard/shortcuts"
 import { useAppStore } from "../store"
 import { computeResolvedTheme } from "../store/slices/theme"
@@ -65,6 +67,9 @@ function Inner(): React.ReactElement {
   }, [scene])
   useEffect(() => {
     return attachShortcuts({ scene })
+  }, [scene])
+  useEffect(() => {
+    return attachClipboard({ scene })
   }, [scene])
   const activeTool = useAppStore((s) => s.activeTool)
   const setActiveTool = useAppStore((s) => s.setActiveTool)
@@ -291,7 +296,7 @@ function Inner(): React.ReactElement {
                 useAppStore.getState().setSelection([])
               }}
               onDuplicate={() => {
-                const picked = scene.getElements().filter((e) => selectedIds.includes(e.id))
+                const picked = expandIdsToCopyClosure(selectedIds, scene.getElements())
                 const copies = cloneElementsWithNewIds(picked).map((el) => ({
                   ...el,
                   x: el.x + 12,
@@ -300,7 +305,13 @@ function Inner(): React.ReactElement {
                 scene.mutate((draft) => {
                   draft.push(...copies)
                 })
-                useAppStore.getState().setSelection(copies.map((c) => c.id))
+                useAppStore
+                  .getState()
+                  .setSelection(
+                    copies
+                      .filter((c) => !(c.type === "text" && c.containerId !== null))
+                      .map((c) => c.id),
+                  )
               }}
               onSendToBack={() => {
                 scene.mutate((draft) => {
