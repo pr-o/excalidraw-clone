@@ -11,6 +11,7 @@ import {
   shapeVertices,
 } from "@excalidraw-clone/geometry"
 import { getElementBounds } from "./bounds"
+import { routeElbow, sideCenter, sideOf, type Side } from "./elbow"
 import { hitTestElement } from "./hit-test"
 import type { ElementType, ExcalidrawElement, PointBinding } from "./types"
 
@@ -98,6 +99,64 @@ export const reconcileBindings = (draft: ExcalidrawElement[]): void => {
   for (let i = 0; i < draft.length; i += 1) {
     const arrow = draft[i]!
     if (arrow.type !== "arrow") continue
+
+    if (arrow.elbowed) {
+      const startTarget = liveTarget(arrow.startBinding, byId)
+      const endTarget = liveTarget(arrow.endBinding, byId)
+      const startBinding = startTarget ? arrow.startBinding : null
+      const endBinding = endTarget ? arrow.endBinding : null
+      const pts = arrow.points
+      if (pts.length < 2) {
+        if (startBinding !== arrow.startBinding || endBinding !== arrow.endBinding) {
+          draft[i] = { ...arrow, startBinding, endBinding }
+        }
+        continue
+      }
+      const abs: Point[] = pts.map((p) => ({ x: arrow.x + p.x, y: arrow.y + p.y }))
+      let startAbs = abs[0]!
+      let endAbs = abs[abs.length - 1]!
+      const startRef = endTarget ? boundsCenter(getElementBounds(endTarget)) : endAbs
+      const endRef = startTarget ? boundsCenter(getElementBounds(startTarget)) : startAbs
+      let startSide: Side | null = null
+      let endSide: Side | null = null
+      if (startTarget) {
+        const b = getElementBounds(startTarget)
+        startSide = sideOf(boundsCenter(b), startRef)
+        startAbs = sideCenter(b, startSide, startBinding!.gap)
+      }
+      if (endTarget) {
+        const b = getElementBounds(endTarget)
+        endSide = sideOf(boundsCenter(b), endRef)
+        endAbs = sideCenter(b, endSide, endBinding!.gap)
+      }
+      const routed = routeElbow(startAbs, endAbs, startSide, endSide)
+      if (routed.length < 2) continue
+      const xs = routed.map((p) => p.x)
+      const ys = routed.map((p) => p.y)
+      const minX = Math.min(...xs)
+      const minY = Math.min(...ys)
+      const rel = routed.map((p) => ({ x: p.x - minX, y: p.y - minY }))
+      const unchanged =
+        startBinding === arrow.startBinding &&
+        endBinding === arrow.endBinding &&
+        arrow.x === minX &&
+        arrow.y === minY &&
+        rel.length === pts.length &&
+        rel.every((p, k) => p.x === pts[k]!.x && p.y === pts[k]!.y)
+      if (unchanged) continue
+      draft[i] = {
+        ...arrow,
+        x: minX,
+        y: minY,
+        width: Math.max(...xs) - minX,
+        height: Math.max(...ys) - minY,
+        points: rel,
+        startBinding,
+        endBinding,
+      }
+      continue
+    }
+
     if (!arrow.startBinding && !arrow.endBinding) continue
 
     const startTarget = liveTarget(arrow.startBinding, byId)
