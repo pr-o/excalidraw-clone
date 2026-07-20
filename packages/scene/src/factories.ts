@@ -117,7 +117,11 @@ export const newLine = (input: NewElementInput): ExcalidrawLineElement => ({
   endArrowhead: null,
 })
 
-export const newArrow = (input: NewElementInput): ExcalidrawArrowElement => ({
+export interface NewArrowInput extends NewElementInput {
+  elbowed?: boolean
+}
+
+export const newArrow = (input: NewArrowInput): ExcalidrawArrowElement => ({
   ...baseElement(input),
   type: "arrow",
   points: [],
@@ -126,6 +130,7 @@ export const newArrow = (input: NewElementInput): ExcalidrawArrowElement => ({
   endBinding: null,
   startArrowhead: null,
   endArrowhead: "arrow",
+  elbowed: input.elbowed ?? false,
 })
 
 export const newFreedraw = (input: NewElementInput): ExcalidrawFreedrawElement => ({

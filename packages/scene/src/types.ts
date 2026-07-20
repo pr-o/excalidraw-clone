@@ -116,6 +116,7 @@ export interface ExcalidrawLineElement extends ExcalidrawLinearBase {
 
 export interface ExcalidrawArrowElement extends ExcalidrawLinearBase {
   type: "arrow"
+  elbowed: boolean
 }
 
 export interface ExcalidrawFreedrawElement extends ExcalidrawElementBase {

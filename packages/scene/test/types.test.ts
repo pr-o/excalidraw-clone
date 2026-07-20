@@ -98,6 +98,7 @@ describe("element type definitions", () => {
       endBinding: null,
       startArrowhead: null,
       endArrowhead: "triangle",
+      elbowed: false,
     }
     const e: ExcalidrawElement = a
     if (e.type === "arrow") {

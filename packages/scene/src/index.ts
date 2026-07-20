@@ -32,7 +32,14 @@ export {
   newText,
   newTriangle,
 } from "./factories"
-export type { NewElementInput, NewFrameInput, NewImageInput, NewTextInput } from "./factories"
+export type {
+  NewArrowInput,
+  NewElementInput,
+  NewFrameInput,
+  NewImageInput,
+  NewTextInput,
+} from "./factories"
+export { ELBOW_STUB, routeElbow, sideCenter, sideOf, type Side } from "./elbow"
 export { getElementBounds } from "./bounds"
 export { hitTestElement } from "./hit-test"
 export type { HitTestOptions } from "./hit-test"
