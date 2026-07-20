@@ -254,4 +254,20 @@ describe("PropertiesPanel", () => {
     await userEvent.click(screen.getByTestId("arrowhead-end-none"))
     expect(onChange).toHaveBeenCalledWith({ endArrowhead: null })
   })
+
+  it("shows the Arrow type control for arrow selections and patches elbowed", async () => {
+    const arrow = newArrow({ x: 0, y: 0 })
+    const onChange = vi.fn()
+    render(<PropertiesPanel t={t} selectedElements={[arrow]} {...handlers} onChange={onChange} />)
+    await userEvent.click(screen.getByTestId("arrow-type-elbow"))
+    expect(onChange).toHaveBeenCalledWith({ elbowed: true })
+    await userEvent.click(screen.getByTestId("arrow-type-sharp"))
+    expect(onChange).toHaveBeenCalledWith({ elbowed: false })
+  })
+
+  it("hides the Arrow type control when selection has no arrow", () => {
+    const rect = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
+    render(<PropertiesPanel t={t} selectedElements={[rect]} {...handlers} />)
+    expect(screen.queryByTestId("arrow-type-elbow")).toBeNull()
+  })
 })

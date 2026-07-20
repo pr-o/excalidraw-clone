@@ -115,6 +115,11 @@ export function PropertiesPanel({
   const allLinear =
     selectedElements.length > 0 &&
     selectedElements.every((e) => e.type === "arrow" || e.type === "line")
+  const allArrow = selectedElements.length > 0 && selectedElements.every((e) => e.type === "arrow")
+  const elbowed = commonValue<boolean>(
+    selectedElements as unknown as readonly { [k: string]: unknown }[],
+    "elbowed",
+  )
   const startArrowhead = commonValue<Arrowhead | null>(
     selectedElements as unknown as readonly { [k: string]: unknown }[],
     "startArrowhead",
@@ -238,6 +243,31 @@ export function PropertiesPanel({
               </div>
             </div>
           ))}
+        </Section>
+      )}
+
+      {allArrow && (
+        <Section label={t("properties.arrowType")}>
+          <div className="flex gap-1">
+            <button
+              type="button"
+              data-testid="arrow-type-sharp"
+              aria-pressed={elbowed === false}
+              onClick={() => onChange({ elbowed: false })}
+              className={`h-8 flex-1 rounded border text-xs ${elbowed === false ? "border-violet-600 bg-violet-100" : "border-gray-300"}`}
+            >
+              {t("properties.arrowTypeSharp")}
+            </button>
+            <button
+              type="button"
+              data-testid="arrow-type-elbow"
+              aria-pressed={elbowed === true}
+              onClick={() => onChange({ elbowed: true })}
+              className={`h-8 flex-1 rounded border text-xs ${elbowed === true ? "border-violet-600 bg-violet-100" : "border-gray-300"}`}
+            >
+              {t("properties.arrowTypeElbow")}
+            </button>
+          </div>
         </Section>
       )}
 

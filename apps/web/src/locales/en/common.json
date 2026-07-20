@@ -68,6 +68,9 @@
     "arrowhead_cross": "Cross",
     "arrowhead_diamond": "Diamond",
     "arrowhead_diamond_outline": "Diamond (outline)",
+    "arrowType": "Arrow type",
+    "arrowTypeSharp": "Sharp",
+    "arrowTypeElbow": "Elbow",
     "lock": "Lock"
   },
   "menu": {

@@ -68,6 +68,9 @@
     "arrowhead_cross": "십자",
     "arrowhead_diamond": "마름모",
     "arrowhead_diamond_outline": "마름모(윤곽)",
+    "arrowType": "화살표 유형",
+    "arrowTypeSharp": "직선",
+    "arrowTypeElbow": "직각",
     "lock": "잠금"
   },
   "menu": {
