@@ -67,17 +67,20 @@ export const findHandleAt = (
     if (within(atV, sceneToViewport(abs[abs.length - 1]!, view))) {
       return { kind: "endpoint", elementId: id, end: "end" }
     }
-    // Interior bend points.
-    for (let k = 1; k < abs.length - 1; k += 1) {
-      if (within(atV, sceneToViewport(abs[k]!, view))) {
-        return { kind: "bend", elementId: id, index: k }
+    const elbowed = e.type === "arrow" && e.elbowed
+    if (!elbowed) {
+      // Interior bend points.
+      for (let k = 1; k < abs.length - 1; k += 1) {
+        if (within(atV, sceneToViewport(abs[k]!, view))) {
+          return { kind: "bend", elementId: id, index: k }
+        }
       }
-    }
-    // Segment midpoints (add a bend).
-    for (let k = 0; k < abs.length - 1; k += 1) {
-      const mid = midPoint(abs[k]!, abs[k + 1]!)
-      if (within(atV, sceneToViewport(mid, view))) {
-        return { kind: "bendAdd", elementId: id, segmentIndex: k, at: mid }
+      // Segment midpoints (add a bend).
+      for (let k = 0; k < abs.length - 1; k += 1) {
+        const mid = midPoint(abs[k]!, abs[k + 1]!)
+        if (within(atV, sceneToViewport(mid, view))) {
+          return { kind: "bendAdd", elementId: id, segmentIndex: k, at: mid }
+        }
       }
     }
     return null

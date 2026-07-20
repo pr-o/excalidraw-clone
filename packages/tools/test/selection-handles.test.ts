@@ -84,4 +84,27 @@ describe("findHandleAt — bend points", () => {
     const hit = findHandleAt({ x: 50, y: 50 }, [a.id], [a], IDENTITY_VIEW)
     expect(hit).toEqual({ kind: "bendAdd", elementId: "ar", segmentIndex: 0, at: { x: 50, y: 50 } })
   })
+
+  it("elbowed arrows expose endpoint handles but no bend/bendAdd handles", () => {
+    const arrow: ExcalidrawArrowElement = {
+      ...newArrow({ x: 0, y: 0, elbowed: true }),
+      id: "ar",
+      points: [
+        { x: 0, y: 0 },
+        { x: 100, y: 0 },
+        { x: 100, y: 80 },
+      ],
+    }
+    const view = IDENTITY_VIEW
+    // interior vertex (100,0) would be a bend handle on a sharp arrow
+    expect(findHandleAt({ x: 100, y: 0 }, [arrow.id], [arrow], view)).toBeNull()
+    // segment midpoint (50,0) would be a bendAdd handle on a sharp arrow
+    expect(findHandleAt({ x: 50, y: 0 }, [arrow.id], [arrow], view)).toBeNull()
+    // endpoints still live
+    expect(findHandleAt({ x: 0, y: 0 }, [arrow.id], [arrow], view)).toEqual({
+      kind: "endpoint",
+      elementId: arrow.id,
+      end: "start",
+    })
+  })
 })
