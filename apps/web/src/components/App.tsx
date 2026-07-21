@@ -1,4 +1,5 @@
 "use client"
+import { zoomToPoint } from "@excalidraw-clone/geometry"
 import { renderToSVG } from "@excalidraw-clone/renderer"
 import type { CanvasRenderer } from "@excalidraw-clone/renderer"
 import {
@@ -80,6 +81,7 @@ function Inner(): React.ReactElement {
   const locale = useAppStore((s) => s.locale)
   const setLocale = useAppStore((s) => s.setLocale)
   const zenMode = useAppStore((s) => s.zenMode)
+  const zoom = useAppStore((s) => s.zoom)
   const toggleZenMode = useAppStore((s) => s.toggleZenMode)
   const setOpenDialog = useAppStore((s) => s.setOpenDialog)
   const openDialog = useAppStore((s) => s.openDialog)
@@ -434,6 +436,62 @@ function Inner(): React.ReactElement {
               🔓 {t("canvas.unlockAll")}
             </button>
           )}
+
+          <div className="absolute bottom-3 right-3 z-30 flex items-center gap-1 rounded-lg bg-white px-2 py-1 text-xs shadow">
+            <button
+              type="button"
+              data-testid="zoom-out"
+              aria-label={t("shortcuts:zoomOut")}
+              onClick={() => {
+                const s = useAppStore.getState()
+                const anchor = { x: window.innerWidth / 2, y: window.innerHeight / 2 }
+                s.setView(
+                  zoomToPoint(
+                    { scrollX: s.scrollX, scrollY: s.scrollY, zoom: s.zoom },
+                    anchor,
+                    s.zoom / 1.1,
+                  ),
+                )
+              }}
+              className="rounded px-1.5 py-0.5 hover:bg-gray-100"
+            >
+              −
+            </button>
+            <button
+              type="button"
+              data-testid="zoom-reset"
+              aria-label={t("shortcuts:zoomReset")}
+              onClick={() => {
+                const s = useAppStore.getState()
+                const anchor = { x: window.innerWidth / 2, y: window.innerHeight / 2 }
+                s.setView(
+                  zoomToPoint({ scrollX: s.scrollX, scrollY: s.scrollY, zoom: s.zoom }, anchor, 1),
+                )
+              }}
+              className="min-w-[3.5rem] rounded px-1.5 py-0.5 text-center hover:bg-gray-100"
+            >
+              {Math.round(zoom * 100)}%
+            </button>
+            <button
+              type="button"
+              data-testid="zoom-in"
+              aria-label={t("shortcuts:zoomIn")}
+              onClick={() => {
+                const s = useAppStore.getState()
+                const anchor = { x: window.innerWidth / 2, y: window.innerHeight / 2 }
+                s.setView(
+                  zoomToPoint(
+                    { scrollX: s.scrollX, scrollY: s.scrollY, zoom: s.zoom },
+                    anchor,
+                    s.zoom * 1.1,
+                  ),
+                )
+              }}
+              className="rounded px-1.5 py-0.5 hover:bg-gray-100"
+            >
+              +
+            </button>
+          </div>
         </>
       )}
 
