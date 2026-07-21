@@ -247,6 +247,11 @@ export function useDrawingDriver({
     }
 
     const onPointerDown = (e: PointerEvent): void => {
+      // A fresh, real pointerDown for this id proves any lingering orphaned
+      // state is stale (e.g. the orphaned gesture's pointerUp landed on a UI
+      // sibling after capture was released, so our up handler never fired).
+      // Clear it so this new gesture is never wrongly suppressed.
+      if (orphanedPointerRef.current === e.pointerId) orphanedPointerRef.current = null
       if (spaceHeldRef.current) {
         canvas.setPointerCapture(e.pointerId)
         const store = useAppStore.getState()
