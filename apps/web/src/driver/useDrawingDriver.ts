@@ -20,7 +20,13 @@ import {
 import { useEffect, useRef, type RefObject } from "react"
 import { useAppStore } from "../store"
 import { applyEffects } from "./effects"
-import { clientToScene, modifiersOf, pointerEventToToolEvent, snapScenePoint } from "./events"
+import {
+  applyWheel,
+  clientToScene,
+  modifiersOf,
+  pointerEventToToolEvent,
+  snapScenePoint,
+} from "./events"
 
 const GHOST_STROKE = "#6b46c1"
 
@@ -91,6 +97,13 @@ export function useDrawingDriver({
   onTeardown,
 }: DriverOptions): void {
   const rendererRef = useRef<CanvasRenderer | null>(null)
+  const spaceHeldRef = useRef(false)
+  const panDragRef = useRef<{
+    startClientX: number
+    startClientY: number
+    startScrollX: number
+    startScrollY: number
+  } | null>(null)
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -191,7 +204,48 @@ export function useDrawingDriver({
       dispatch(event, modifiersOf(e))
     }
 
+    const onWheel = (e: WheelEvent): void => {
+      e.preventDefault()
+      const store = useAppStore.getState()
+      const next = applyWheel(
+        canvas,
+        { scrollX: store.scrollX, scrollY: store.scrollY, zoom: store.zoom },
+        e,
+      )
+      store.setView(next)
+    }
+
+    const isTypingTarget = (t: EventTarget | null): boolean => {
+      const el = t as HTMLElement | null
+      return !!el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable)
+    }
+
+    const onKeyDown = (e: KeyboardEvent): void => {
+      if (e.code !== "Space" || isTypingTarget(e.target) || spaceHeldRef.current) return
+      spaceHeldRef.current = true
+      if (!panDragRef.current) canvas.style.cursor = "grab"
+    }
+
+    const onKeyUp = (e: KeyboardEvent): void => {
+      if (e.code !== "Space") return
+      spaceHeldRef.current = false
+      panDragRef.current = null
+      canvas.style.cursor = ""
+    }
+
     const onPointerDown = (e: PointerEvent): void => {
+      if (spaceHeldRef.current) {
+        canvas.setPointerCapture(e.pointerId)
+        const store = useAppStore.getState()
+        panDragRef.current = {
+          startClientX: e.clientX,
+          startClientY: e.clientY,
+          startScrollX: store.scrollX,
+          startScrollY: store.scrollY,
+        }
+        canvas.style.cursor = "grabbing"
+        return
+      }
       const store = useAppStore.getState()
       const pending = store.pendingItem
       if (pending) {
@@ -210,6 +264,18 @@ export function useDrawingDriver({
       dispatchPointer("pointerDown", e)
     }
     const onPointerMove = (e: PointerEvent): void => {
+      const drag = panDragRef.current
+      if (drag) {
+        const store = useAppStore.getState()
+        const dx = (e.clientX - drag.startClientX) / store.zoom
+        const dy = (e.clientY - drag.startClientY) / store.zoom
+        store.setView({
+          scrollX: drag.startScrollX + dx,
+          scrollY: drag.startScrollY + dy,
+          zoom: store.zoom,
+        })
+        return
+      }
       const store = useAppStore.getState()
       const pending = store.pendingItem
       if (pending) {
@@ -229,6 +295,12 @@ export function useDrawingDriver({
       dispatchPointer("pointerMove", e)
     }
     const onPointerUp = (e: PointerEvent): void => {
+      if (panDragRef.current) {
+        panDragRef.current = null
+        canvas.releasePointerCapture(e.pointerId)
+        canvas.style.cursor = spaceHeldRef.current ? "grab" : ""
+        return
+      }
       if (useAppStore.getState().pendingItem) return
       canvas.releasePointerCapture(e.pointerId)
       dispatchPointer("pointerUp", e)
@@ -248,6 +320,9 @@ export function useDrawingDriver({
     canvas.addEventListener("pointermove", onPointerMove)
     canvas.addEventListener("pointerup", onPointerUp)
     canvas.addEventListener("dblclick", onDoubleClick)
+    canvas.addEventListener("wheel", onWheel, { passive: false })
+    window.addEventListener("keydown", onKeyDown)
+    window.addEventListener("keyup", onKeyUp)
 
     useAppStore
       .getState()
@@ -260,6 +335,9 @@ export function useDrawingDriver({
       canvas.removeEventListener("pointermove", onPointerMove)
       canvas.removeEventListener("pointerup", onPointerUp)
       canvas.removeEventListener("dblclick", onDoubleClick)
+      canvas.removeEventListener("wheel", onWheel)
+      window.removeEventListener("keydown", onKeyDown)
+      window.removeEventListener("keyup", onKeyUp)
       useAppStore.getState().setDispatchToolEvent(null)
       unsubStore()
       renderer.stop()
