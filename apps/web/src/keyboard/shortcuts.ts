@@ -1,4 +1,5 @@
 "use client"
+import { zoomToPoint } from "@excalidraw-clone/geometry"
 import {
   expandIdsToFrameMembers,
   groupElements,
@@ -73,6 +74,31 @@ export function attachShortcuts({ scene }: Bindings): () => void {
       if (ids.length === 0) return
       patchScene(scene, lockElements(scene.getElements(), ids))
       useAppStore.getState().setSelection([])
+      return
+    }
+    if (isMeta && key === "0") {
+      e.preventDefault()
+      const s = useAppStore.getState()
+      const anchor = { x: window.innerWidth / 2, y: window.innerHeight / 2 }
+      s.setView(zoomToPoint({ scrollX: s.scrollX, scrollY: s.scrollY, zoom: s.zoom }, anchor, 1))
+      return
+    }
+    if (isMeta && (key === "+" || key === "=")) {
+      e.preventDefault()
+      const s = useAppStore.getState()
+      const anchor = { x: window.innerWidth / 2, y: window.innerHeight / 2 }
+      s.setView(
+        zoomToPoint({ scrollX: s.scrollX, scrollY: s.scrollY, zoom: s.zoom }, anchor, s.zoom * 1.1),
+      )
+      return
+    }
+    if (isMeta && key === "-") {
+      e.preventDefault()
+      const s = useAppStore.getState()
+      const anchor = { x: window.innerWidth / 2, y: window.innerHeight / 2 }
+      s.setView(
+        zoomToPoint({ scrollX: s.scrollX, scrollY: s.scrollY, zoom: s.zoom }, anchor, s.zoom / 1.1),
+      )
       return
     }
     if (isMeta && key === "'") {

@@ -1,3 +1,9 @@
+import {
+  sceneToViewport,
+  viewportToScene,
+  ZOOM_MAX,
+  type ViewTransform,
+} from "@excalidraw-clone/geometry"
 import { newRectangle, newText, Scene } from "@excalidraw-clone/scene"
 import { afterEach, beforeEach, describe, expect, it } from "vitest"
 import { attachShortcuts } from "../src/keyboard/shortcuts"
@@ -87,5 +93,48 @@ describe("keyboard shortcuts", () => {
     })
     window.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft" }))
     expect(scene.getElements()[0]!.x).toBe(5)
+  })
+})
+
+describe("zoom keyboard shortcuts", () => {
+  let detach: () => void
+  beforeEach(() => {
+    detach = attachShortcuts({ scene: new Scene() })
+  })
+  afterEach(() => detach())
+
+  it("Ctrl+0 resets zoom to 100%, keeping the viewport-center scene point fixed", () => {
+    const before: ViewTransform = { scrollX: 40, scrollY: -20, zoom: 2 }
+    useAppStore.getState().setView(before)
+    const anchor = { x: window.innerWidth / 2, y: window.innerHeight / 2 }
+    const scenePointBefore = viewportToScene(anchor, before)
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "0", ctrlKey: true }))
+    const after = useAppStore.getState()
+    expect(after.zoom).toBe(1)
+    const back = sceneToViewport(scenePointBefore, {
+      scrollX: after.scrollX,
+      scrollY: after.scrollY,
+      zoom: after.zoom,
+    })
+    expect(back.x).toBeCloseTo(anchor.x)
+    expect(back.y).toBeCloseTo(anchor.y)
+  })
+
+  it("Ctrl++ zooms in by one step", () => {
+    useAppStore.getState().setView({ scrollX: 0, scrollY: 0, zoom: 1 })
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "+", ctrlKey: true }))
+    expect(useAppStore.getState().zoom).toBeCloseTo(1.1)
+  })
+
+  it("Ctrl+- zooms out by one step", () => {
+    useAppStore.getState().setView({ scrollX: 0, scrollY: 0, zoom: 1 })
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "-", ctrlKey: true }))
+    expect(useAppStore.getState().zoom).toBeCloseTo(1 / 1.1)
+  })
+
+  it("Ctrl++ respects ZOOM_MAX", () => {
+    useAppStore.getState().setView({ scrollX: 0, scrollY: 0, zoom: ZOOM_MAX })
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "+", ctrlKey: true }))
+    expect(useAppStore.getState().zoom).toBe(ZOOM_MAX)
   })
 })
