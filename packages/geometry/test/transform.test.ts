@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { sceneToViewport, viewportToScene } from "../src"
+import { sceneToViewport, viewportToScene, zoomToPoint, ZOOM_MIN, ZOOM_MAX } from "../src"
 import type { Point, ViewTransform } from "../src"
 
 const expectClose = (a: Point, b: Point) => {
@@ -66,5 +66,49 @@ describe("scene ↔ viewport round-trip", () => {
 
   it.each(cases)("sceneToViewport(viewportToScene(p)) ≈ p [$name]", ({ t, p }) => {
     expectClose(sceneToViewport(viewportToScene(p, t), t), p)
+  })
+})
+
+describe("zoomToPoint", () => {
+  it("keeps the anchor's scene point fixed on screen when zooming in", () => {
+    const view: ViewTransform = { scrollX: 0, scrollY: 0, zoom: 1 }
+    const anchor: Point = { x: 100, y: 50 }
+    const scenePointBefore = viewportToScene(anchor, view)
+    const next = zoomToPoint(view, anchor, 2)
+    expect(next.zoom).toBe(2)
+    expectClose(sceneToViewport(scenePointBefore, next), anchor)
+  })
+
+  it("keeps the anchor's scene point fixed on screen when zooming out", () => {
+    const view: ViewTransform = { scrollX: 7, scrollY: -3, zoom: 2 }
+    const anchor: Point = { x: 40, y: 30 }
+    const scenePointBefore = viewportToScene(anchor, view)
+    const next = zoomToPoint(view, anchor, 0.5)
+    expect(next.zoom).toBe(0.5)
+    expectClose(sceneToViewport(scenePointBefore, next), anchor)
+  })
+
+  it("is a no-op on scroll when targetZoom equals the current zoom", () => {
+    const view: ViewTransform = { scrollX: 5, scrollY: 3, zoom: 2 }
+    const anchor: Point = { x: 12, y: 8 }
+    const next = zoomToPoint(view, anchor, 2)
+    expect(next.zoom).toBe(2)
+    expectClose({ x: next.scrollX, y: next.scrollY }, { x: view.scrollX, y: view.scrollY })
+  })
+
+  it("clamps to ZOOM_MAX and still anchors at the clamped zoom", () => {
+    const view: ViewTransform = { scrollX: 0, scrollY: 0, zoom: 1 }
+    const anchor: Point = { x: 10, y: 10 }
+    const scenePointBefore = viewportToScene(anchor, view)
+    const next = zoomToPoint(view, anchor, 999)
+    expect(next.zoom).toBe(ZOOM_MAX)
+    expectClose(sceneToViewport(scenePointBefore, next), anchor)
+  })
+
+  it("clamps to ZOOM_MIN", () => {
+    const view: ViewTransform = { scrollX: 0, scrollY: 0, zoom: 1 }
+    const anchor: Point = { x: 10, y: 10 }
+    const next = zoomToPoint(view, anchor, 0.0001)
+    expect(next.zoom).toBe(ZOOM_MIN)
   })
 })

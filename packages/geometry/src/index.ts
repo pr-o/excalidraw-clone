@@ -24,7 +24,7 @@ export {
 } from "./bounds"
 export { pointInRectangle, pointInEllipse, pointInDiamond } from "./hit-test"
 export { distancePointToSegment, pointOnSegment } from "./segment"
-export { sceneToViewport, viewportToScene } from "./transform"
+export { sceneToViewport, viewportToScene, zoomToPoint, ZOOM_MIN, ZOOM_MAX } from "./transform"
 export { snapPointToGrid } from "./snap"
 export type { GridSnap, SnapModifiers } from "./snap"
 export { edgePointToward } from "./binding-edge"
