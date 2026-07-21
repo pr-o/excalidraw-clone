@@ -99,11 +99,17 @@ export function useDrawingDriver({
   const rendererRef = useRef<CanvasRenderer | null>(null)
   const spaceHeldRef = useRef(false)
   const panDragRef = useRef<{
+    pointerId: number
     startClientX: number
     startClientY: number
     startScrollX: number
     startScrollY: number
   } | null>(null)
+  // When Space is released mid-pan while the pointer is still down, the tool
+  // never received a matching pointerDown for this gesture. Mark the pointer as
+  // orphaned so its remaining move/up events are suppressed until it lifts,
+  // preventing a phantom (move + up without down) dispatch into the active tool.
+  const orphanedPointerRef = useRef<number | null>(null)
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -229,6 +235,13 @@ export function useDrawingDriver({
     const onKeyUp = (e: KeyboardEvent): void => {
       if (e.code !== "Space") return
       spaceHeldRef.current = false
+      const drag = panDragRef.current
+      if (drag) {
+        // Pointer is still down mid-pan: orphan it so the rest of this gesture
+        // never leaks into dispatchPointer as a down-less move/up pair.
+        orphanedPointerRef.current = drag.pointerId
+        canvas.releasePointerCapture(drag.pointerId)
+      }
       panDragRef.current = null
       canvas.style.cursor = ""
     }
@@ -238,6 +251,7 @@ export function useDrawingDriver({
         canvas.setPointerCapture(e.pointerId)
         const store = useAppStore.getState()
         panDragRef.current = {
+          pointerId: e.pointerId,
           startClientX: e.clientX,
           startClientY: e.clientY,
           startScrollX: store.scrollX,
@@ -264,6 +278,7 @@ export function useDrawingDriver({
       dispatchPointer("pointerDown", e)
     }
     const onPointerMove = (e: PointerEvent): void => {
+      if (orphanedPointerRef.current === e.pointerId) return
       const drag = panDragRef.current
       if (drag) {
         const store = useAppStore.getState()
@@ -295,6 +310,13 @@ export function useDrawingDriver({
       dispatchPointer("pointerMove", e)
     }
     const onPointerUp = (e: PointerEvent): void => {
+      if (orphanedPointerRef.current === e.pointerId) {
+        // End of the orphaned gesture: clear the mark so a fresh press works
+        // normally, and swallow this up so no down-less pointerUp is dispatched.
+        orphanedPointerRef.current = null
+        canvas.releasePointerCapture(e.pointerId)
+        return
+      }
       if (panDragRef.current) {
         panDragRef.current = null
         canvas.releasePointerCapture(e.pointerId)
