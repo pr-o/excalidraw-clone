@@ -1,5 +1,6 @@
 import {
   snapPointToGrid,
+  zoomToPoint,
   type GridSnap,
   type Point,
   type ViewTransform,
@@ -47,4 +48,30 @@ export function pointerEventToToolEvent(
   const raw = clientToScene(canvas, view, e)
   const at = snapScenePoint(raw, grid, e)
   return { type, at }
+}
+
+export interface WheelInput {
+  clientX: number
+  clientY: number
+  deltaX: number
+  deltaY: number
+  ctrlKey: boolean
+}
+
+export function applyWheel(
+  canvas: HTMLCanvasElement,
+  view: ViewTransform,
+  e: WheelInput,
+): ViewTransform {
+  if (e.ctrlKey) {
+    const rect = canvas.getBoundingClientRect()
+    const anchor: Point = { x: e.clientX - rect.left, y: e.clientY - rect.top }
+    const factor = 1.04 ** -e.deltaY
+    return zoomToPoint(view, anchor, view.zoom * factor)
+  }
+  return {
+    scrollX: view.scrollX - e.deltaX / view.zoom,
+    scrollY: view.scrollY - e.deltaY / view.zoom,
+    zoom: view.zoom,
+  }
 }
