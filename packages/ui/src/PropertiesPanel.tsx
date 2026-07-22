@@ -43,10 +43,6 @@ export interface PropertiesPanelProps {
   onChange: (patch: Partial<ExcalidrawElement>) => void
   onDelete: () => void
   onDuplicate: () => void
-  onSendToBack: () => void
-  onSendBackward: () => void
-  onBringForward: () => void
-  onBringToFront: () => void
   onAlign: (edge: AlignEdge) => void
   onDistribute: (axis: DistributeAxis) => void
   onGroup: () => void
@@ -70,10 +66,6 @@ export function PropertiesPanel({
   onChange,
   onDelete,
   onDuplicate,
-  onSendToBack,
-  onSendBackward,
-  onBringForward,
-  onBringToFront,
   onAlign,
   onDistribute,
   onGroup,
@@ -378,39 +370,6 @@ export function PropertiesPanel({
       >
         {t("properties.lock")}
       </button>
-
-      <Section label={t("properties.layers")}>
-        <div className="grid grid-cols-2 gap-1">
-          <button
-            type="button"
-            onClick={onSendToBack}
-            className="rounded border border-gray-300 p-1 text-xs"
-          >
-            {t("properties.sendToBack")}
-          </button>
-          <button
-            type="button"
-            onClick={onSendBackward}
-            className="rounded border border-gray-300 p-1 text-xs"
-          >
-            {t("properties.sendBackward")}
-          </button>
-          <button
-            type="button"
-            onClick={onBringForward}
-            className="rounded border border-gray-300 p-1 text-xs"
-          >
-            {t("properties.bringForward")}
-          </button>
-          <button
-            type="button"
-            onClick={onBringToFront}
-            className="rounded border border-gray-300 p-1 text-xs"
-          >
-            {t("properties.bringToFront")}
-          </button>
-        </div>
-      </Section>
 
       <Section label={t("properties.actions")}>
         <div className="flex gap-2">
