@@ -29,3 +29,6 @@ export type { CanvasBgDialogProps } from "./CanvasBgDialog"
 
 export { LibraryPanel } from "./LibraryPanel"
 export type { LibraryPanelProps } from "./LibraryPanel"
+
+export { LayersPanel } from "./LayersPanel"
+export type { LayersPanelProps } from "./LayersPanel"
