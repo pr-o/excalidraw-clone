@@ -4,20 +4,31 @@ import { renderToSVG } from "@excalidraw-clone/renderer"
 import type { CanvasRenderer } from "@excalidraw-clone/renderer"
 import {
   alignElements,
+  bringForward,
+  bringToFront,
   BUILTIN_TEMPLATES,
   cloneElementsWithNewIds,
   distributeElements,
   expandIdsToCopyClosure,
+  expandIdsToGroups,
   type ExcalidrawElement,
   groupElements,
   type LibraryItem,
   lockElements,
   normalizeToOrigin,
   Scene,
+  sendBackward,
+  sendToBack,
   ungroupElements,
   unlockAll,
 } from "@excalidraw-clone/scene"
-import { HamburgerMenu, LibraryPanel, PropertiesPanel, Toolbar } from "@excalidraw-clone/ui"
+import {
+  HamburgerMenu,
+  LayersPanel,
+  LibraryPanel,
+  PropertiesPanel,
+  Toolbar,
+} from "@excalidraw-clone/ui"
 import {
   deleteLibraryItem,
   download,
@@ -92,6 +103,7 @@ function Inner(): React.ReactElement {
   const clearPendingItem = useAppStore((s) => s.clearPendingItem)
   const [menuOpen, setMenuOpen] = useState(false)
   const [libraryOpen, setLibraryOpen] = useState(false)
+  const [layersOpen, setLayersOpen] = useState(false)
   const [renderer, setRenderer] = useState<CanvasRenderer | null>(null)
   const onRendererReady = useCallback((r: CanvasRenderer): void => setRenderer(r), [])
   const onRendererTeardown = useCallback((): void => setRenderer(null), [])
@@ -139,6 +151,7 @@ function Inner(): React.ReactElement {
     () => scene.getElements().some((e) => e.locked),
     [scene, sceneRevision],
   )
+  const layerElements = useMemo(() => scene.getElements(), [scene, sceneRevision])
 
   useEffect(() => {
     void getAllLibraryItems().then(setLibraryItems)
@@ -315,46 +328,6 @@ function Inner(): React.ReactElement {
                       .map((c) => c.id),
                   )
               }}
-              onSendToBack={() => {
-                scene.mutate((draft) => {
-                  const moved = draft.filter((e) => selectedIds.includes(e.id))
-                  const remaining = draft.filter((e) => !selectedIds.includes(e.id))
-                  draft.length = 0
-                  draft.push(...moved, ...remaining)
-                })
-              }}
-              onSendBackward={() => {
-                scene.mutate((draft) => {
-                  for (let i = 1; i < draft.length; i += 1) {
-                    if (
-                      selectedIds.includes(draft[i]!.id) &&
-                      !selectedIds.includes(draft[i - 1]!.id)
-                    ) {
-                      ;[draft[i - 1], draft[i]] = [draft[i]!, draft[i - 1]!]
-                    }
-                  }
-                })
-              }}
-              onBringForward={() => {
-                scene.mutate((draft) => {
-                  for (let i = draft.length - 2; i >= 0; i -= 1) {
-                    if (
-                      selectedIds.includes(draft[i]!.id) &&
-                      !selectedIds.includes(draft[i + 1]!.id)
-                    ) {
-                      ;[draft[i + 1], draft[i]] = [draft[i]!, draft[i + 1]!]
-                    }
-                  }
-                })
-              }}
-              onBringToFront={() => {
-                scene.mutate((draft) => {
-                  const moved = draft.filter((e) => selectedIds.includes(e.id))
-                  const remaining = draft.filter((e) => !selectedIds.includes(e.id))
-                  draft.length = 0
-                  draft.push(...remaining, ...moved)
-                })
-              }}
               onAlign={(edge) => {
                 const byId = new Map(alignElements(selectedElements, edge).map((p) => [p.id, p]))
                 scene.mutate((draft) => {
@@ -408,6 +381,50 @@ function Inner(): React.ReactElement {
               }}
             />
           </div>
+
+          <LayersPanel
+            t={t}
+            elements={layerElements}
+            selectedIds={selectedIds}
+            open={layersOpen}
+            onToggle={() => setLayersOpen((v) => !v)}
+            onSelect={(id, opts) => {
+              const hitIds = expandIdsToGroups([id], scene.getElements())
+              if (opts.additive) {
+                if (!selectedIds.includes(id)) useAppStore.getState().addToSelection(hitIds)
+              } else {
+                useAppStore.getState().setSelection(hitIds)
+              }
+            }}
+            onSendToBack={(id) => {
+              scene.mutate((draft) => {
+                const next = sendToBack(draft, [id])
+                draft.length = 0
+                draft.push(...next)
+              })
+            }}
+            onSendBackward={(id) => {
+              scene.mutate((draft) => {
+                const next = sendBackward(draft, [id])
+                draft.length = 0
+                draft.push(...next)
+              })
+            }}
+            onBringForward={(id) => {
+              scene.mutate((draft) => {
+                const next = bringForward(draft, [id])
+                draft.length = 0
+                draft.push(...next)
+              })
+            }}
+            onBringToFront={(id) => {
+              scene.mutate((draft) => {
+                const next = bringToFront(draft, [id])
+                draft.length = 0
+                draft.push(...next)
+              })
+            }}
+          />
 
           <LibraryPanel
             t={t}

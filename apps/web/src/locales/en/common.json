@@ -141,5 +141,9 @@
     "placing": "Click to place • Esc to cancel",
     "templates": "Templates",
     "myItems": "My items"
+  },
+  "layers": {
+    "title": "Layers",
+    "toggle": "Toggle layers panel"
   }
 }

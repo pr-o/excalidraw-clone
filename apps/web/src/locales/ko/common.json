@@ -130,5 +130,9 @@
     "placing": "클릭하여 배치 • Esc로 취소",
     "templates": "템플릿",
     "myItems": "내 항목"
+  },
+  "layers": {
+    "title": "레이어",
+    "toggle": "레이어 패널 열고 닫기"
   }
 }
