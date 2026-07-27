@@ -56,6 +56,24 @@ describe("labelInnerBox", () => {
     }
   })
 
+  it("octagon gets a 1/3 x-inset at full height", () => {
+    expect(labelInnerBox("octagon", b(0, 0, 120, 60))).toEqual({
+      x: 40,
+      y: 8,
+      width: 40,
+      height: 44,
+    })
+  })
+
+  it("pentagon gets the base band below the shoulders", () => {
+    expect(labelInnerBox("pentagon", b(0, 0, 100, 60))).toEqual({
+      x: 20,
+      y: 24,
+      width: 60,
+      height: 28,
+    })
+  })
+
   it("respects the minimum inset on small shapes", () => {
     // diamond factor box is {5,5,10,10}; the 8px inset ring shrinks it further
     expect(labelInnerBox("diamond", b(0, 0, 20, 20))).toEqual({ x: 8, y: 8, width: 4, height: 4 })
@@ -78,7 +96,7 @@ describe("labelInnerBox", () => {
 
   it("polygon-kind boxes stay inside the shape outline", () => {
     const bounds = b(0, 0, 200, 160)
-    for (const kind of ["triangle", "parallelogram", "hexagon"] as const) {
+    for (const kind of ["triangle", "parallelogram", "hexagon", "pentagon", "octagon"] as const) {
       const box = labelInnerBox(kind, bounds)
       const vertices = shapeVertices(kind, bounds)
       const center = boundsCenter(bounds)

@@ -7,6 +7,8 @@ export type LabelShapeKind =
   | "triangle"
   | "parallelogram"
   | "hexagon"
+  | "pentagon"
+  | "octagon"
 
 const centered = (b: Bounds, width: number, height: number): Bounds => ({
   x: b.x + (b.width - width) / 2,
@@ -32,6 +34,10 @@ const factorBox = (kind: LabelShapeKind, b: Bounds): Bounds => {
     case "hexagon":
       // interior for every y is at least the middle 50% of the width
       return { x: x + w / 4, y, width: w / 2, height: h }
+    case "octagon":
+      return { x: x + w / 3, y, width: w / 3, height: h }
+    case "pentagon":
+      return { x: x + w / 5, y: y + (2 * h) / 5, width: (3 * w) / 5, height: (3 * h) / 5 }
   }
 }
 
