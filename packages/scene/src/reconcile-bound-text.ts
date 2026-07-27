@@ -12,6 +12,8 @@ export const LABELABLE_TYPES: ReadonlySet<ElementType> = new Set<ElementType>([
   "triangle",
   "parallelogram",
   "hexagon",
+  "pentagon",
+  "octagon",
 ])
 
 /** Linear elements that can carry a midpoint-pinned bound text label. */

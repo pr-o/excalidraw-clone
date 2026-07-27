@@ -14,12 +14,14 @@ import {
 import type { ExcalidrawElement } from "../src"
 
 describe("LABELABLE_TYPES", () => {
-  it("contains exactly the six container shapes", () => {
+  it("contains exactly the eight container shapes", () => {
     expect([...LABELABLE_TYPES].sort()).toEqual([
       "diamond",
       "ellipse",
       "hexagon",
+      "octagon",
       "parallelogram",
+      "pentagon",
       "rectangle",
       "triangle",
     ])
