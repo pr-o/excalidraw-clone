@@ -2,7 +2,7 @@ import { boundsCenter } from "./bounds"
 import { rotatePoint } from "./rotation"
 import type { Bounds, Point } from "./types"
 
-export type PolygonShapeKind = "triangle" | "parallelogram" | "hexagon"
+export type PolygonShapeKind = "triangle" | "parallelogram" | "hexagon" | "pentagon" | "octagon"
 
 /** Absolute vertices for a fixed-proportion flowchart shape inside `b`. */
 export const shapeVertices = (kind: PolygonShapeKind, b: Bounds): Point[] => {
@@ -29,6 +29,27 @@ export const shapeVertices = (kind: PolygonShapeKind, b: Bounds): Point[] => {
         { x: x + (3 * w) / 4, y: y + h },
         { x: x + w / 4, y: y + h },
         { x, y: y + h / 2 },
+      ]
+    case "pentagon":
+      // apex top-center; shoulders at 2/5 height; base inset 1/5 from each side
+      return [
+        { x: x + w / 2, y },
+        { x: x + w, y: y + (2 * h) / 5 },
+        { x: x + (4 * w) / 5, y: y + h },
+        { x: x + w / 5, y: y + h },
+        { x, y: y + (2 * h) / 5 },
+      ]
+    case "octagon":
+      // flat top/right/bottom/left edges, corners cut by 1/3
+      return [
+        { x: x + w / 3, y },
+        { x: x + (2 * w) / 3, y },
+        { x: x + w, y: y + h / 3 },
+        { x: x + w, y: y + (2 * h) / 3 },
+        { x: x + (2 * w) / 3, y: y + h },
+        { x: x + w / 3, y: y + h },
+        { x, y: y + (2 * h) / 3 },
+        { x, y: y + h / 3 },
       ]
   }
 }

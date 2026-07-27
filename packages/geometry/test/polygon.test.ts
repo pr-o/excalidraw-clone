@@ -38,6 +38,45 @@ describe("shapeVertices", () => {
     const shifted = shapeVertices("triangle", { x: 10, y: 20, width: 100, height: 60 })
     expect(shifted[0]).toEqual({ x: 60, y: 20 })
   })
+
+  it("pentagon: apex top-center, base inset 1/5, shoulders at 2/5 height", () => {
+    expect(shapeVertices("pentagon", box)).toEqual([
+      { x: 50, y: 0 },
+      { x: 100, y: 24 },
+      { x: 80, y: 60 },
+      { x: 20, y: 60 },
+      { x: 0, y: 24 },
+    ])
+  })
+
+  it("octagon: flat edges, corners cut by 1/3", () => {
+    const octBox: Bounds = { x: 0, y: 0, width: 120, height: 60 }
+    expect(shapeVertices("octagon", octBox)).toEqual([
+      { x: 40, y: 0 },
+      { x: 80, y: 0 },
+      { x: 120, y: 20 },
+      { x: 120, y: 40 },
+      { x: 80, y: 60 },
+      { x: 40, y: 60 },
+      { x: 0, y: 40 },
+      { x: 0, y: 20 },
+    ])
+  })
+
+  it("pentagon and octagon have the right vertex counts and stay inside the bounding box", () => {
+    const pentBox: Bounds = { x: 10, y: 10, width: 90, height: 50 }
+    const octBox: Bounds = { x: 10, y: 10, width: 90, height: 50 }
+    const pentagon = shapeVertices("pentagon", pentBox)
+    const octagon = shapeVertices("octagon", octBox)
+    expect(pentagon).toHaveLength(5)
+    expect(octagon).toHaveLength(8)
+    for (const v of [...pentagon, ...octagon]) {
+      expect(v.x).toBeGreaterThanOrEqual(pentBox.x)
+      expect(v.x).toBeLessThanOrEqual(pentBox.x + pentBox.width)
+      expect(v.y).toBeGreaterThanOrEqual(pentBox.y)
+      expect(v.y).toBeLessThanOrEqual(pentBox.y + pentBox.height)
+    }
+  })
 })
 
 describe("pointInConvexPolygon", () => {
