@@ -15,7 +15,9 @@ import type {
   ExcalidrawHexagonElement,
   ExcalidrawImageElement,
   ExcalidrawLineElement,
+  ExcalidrawOctagonElement,
   ExcalidrawParallelogramElement,
+  ExcalidrawPentagonElement,
   ExcalidrawRectangleElement,
   ExcalidrawTextElement,
   ExcalidrawTriangleElement,
@@ -104,6 +106,16 @@ export const newParallelogram = (input: NewElementInput): ExcalidrawParallelogra
 export const newHexagon = (input: NewElementInput): ExcalidrawHexagonElement => ({
   ...baseElement(input),
   type: "hexagon",
+})
+
+export const newPentagon = (input: NewElementInput): ExcalidrawPentagonElement => ({
+  ...baseElement(input),
+  type: "pentagon",
+})
+
+export const newOctagon = (input: NewElementInput): ExcalidrawOctagonElement => ({
+  ...baseElement(input),
+  type: "octagon",
 })
 
 export const newLine = (input: NewElementInput): ExcalidrawLineElement => ({

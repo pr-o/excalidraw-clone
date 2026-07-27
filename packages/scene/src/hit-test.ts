@@ -74,6 +74,8 @@ export const hitTestElement = (
     case "triangle":
     case "parallelogram":
     case "hexagon":
+    case "pentagon":
+    case "octagon":
       return pointInConvexPolygon(
         point,
         shapeVertices(element.type, b),

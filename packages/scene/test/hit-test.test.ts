@@ -7,6 +7,8 @@ import {
   newFrame,
   newImage,
   newLine,
+  newOctagon,
+  newPentagon,
   newRectangle,
   newText,
   newTriangle,
@@ -54,6 +56,18 @@ describe("hitTestElement — shapes", () => {
 
     const fr = { ...newFrame({ x: 0, y: 0, width: 100, height: 100 }) }
     expect(hitTestElement(fr, { x: 50, y: 50 })).toBe(true)
+  })
+
+  it("pentagon: inside vs outside a cut corner", () => {
+    const p = newPentagon({ x: 0, y: 0, width: 100, height: 100 })
+    expect(hitTestElement(p, { x: 50, y: 50 })).toBe(true)
+    expect(hitTestElement(p, { x: 2, y: 2 })).toBe(false)
+  })
+
+  it("octagon: inside vs outside a cut corner", () => {
+    const o = newOctagon({ x: 0, y: 0, width: 100, height: 100 })
+    expect(hitTestElement(o, { x: 50, y: 50 })).toBe(true)
+    expect(hitTestElement(o, { x: 1, y: 1 })).toBe(false)
   })
 })
 

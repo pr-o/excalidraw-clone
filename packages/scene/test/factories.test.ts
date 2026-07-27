@@ -17,7 +17,9 @@ import {
   newHexagon,
   newImage,
   newLine,
+  newOctagon,
   newParallelogram,
+  newPentagon,
   newRectangle,
   newText,
   newTriangle,
@@ -202,5 +204,17 @@ describe("flowchart shape factories", () => {
     expect(t.width).toBe(30)
     expect(t.locked).toBe(false)
     expect(h.roundness).toBeNull()
+  })
+})
+
+describe("pentagon/octagon factories", () => {
+  it("newPentagon/newOctagon create their types with base defaults", () => {
+    const p = newPentagon({ x: 1, y: 2, width: 30, height: 40 })
+    const o = newOctagon({ x: 0, y: 0 })
+    expect(p.type).toBe("pentagon")
+    expect(o.type).toBe("octagon")
+    expect(p.width).toBe(30)
+    expect(p.locked).toBe(false)
+    expect(o.roundness).toBeNull()
   })
 })
