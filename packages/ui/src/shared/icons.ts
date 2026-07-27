@@ -28,6 +28,12 @@ export const ICONS: Record<string, string> = {
   note: '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h12v8l-4 4H4z"/><path d="M16 12h-4v4"/></svg>',
   hamburger:
     '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="4" y1="6" x2="16" y2="6"/><line x1="4" y1="10" x2="16" y2="10"/><line x1="4" y1="14" x2="16" y2="14"/></svg>',
+  pentagon:
+    '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="10,3 17,9 14,17 6,17 3,9"/></svg>',
+  octagon:
+    '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="7,2 13,2 18,7 18,13 13,18 7,18 2,13 2,7"/></svg>',
+  "more-shapes":
+    '<svg viewBox="0 0 20 20" width="16" height="16" fill="currentColor"><circle cx="4" cy="10" r="1.5"/><circle cx="10" cy="10" r="1.5"/><circle cx="16" cy="10" r="1.5"/></svg>',
   help: '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="7"/><path d="M8 8a2 2 0 1 1 3 1.7c-.5.3-1 .6-1 1.3"/><circle cx="10" cy="14" r="0.5" fill="currentColor"/></svg>',
 }
 

@@ -32,3 +32,6 @@ export type { LibraryPanelProps } from "./LibraryPanel"
 
 export { LayersPanel } from "./LayersPanel"
 export type { LayersPanelProps } from "./LayersPanel"
+
+export { MoreShapesMenu } from "./MoreShapesMenu"
+export type { MoreShapesMenuProps } from "./MoreShapesMenu"
