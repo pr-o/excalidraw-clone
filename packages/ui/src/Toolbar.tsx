@@ -1,4 +1,5 @@
 import type { ToolName } from "@excalidraw-clone/tools"
+import { MoreShapesMenu } from "./MoreShapesMenu"
 import { IconButton } from "./shared/IconButton"
 import { iconHTML } from "./shared/icons"
 
@@ -20,12 +21,16 @@ const TOOL_ITEMS: ReadonlyArray<{ name: ToolName; shortcut: string }> = [
   { name: "note", shortcut: "N" },
 ]
 
+const HEXAGON_INDEX = TOOL_ITEMS.findIndex((item) => item.name === "hexagon")
+
 export interface ToolbarProps {
   t: (key: string) => string
   activeTool: ToolName
   onSelectTool: (tool: ToolName) => void
   lockActiveTool: boolean
   onToggleLock: (locked: boolean) => void
+  moreShapesOpen: boolean
+  onMoreShapesOpenChange: (open: boolean) => void
   className?: string
 }
 
@@ -35,8 +40,23 @@ export function Toolbar({
   onSelectTool,
   lockActiveTool,
   onToggleLock,
+  moreShapesOpen,
+  onMoreShapesOpenChange,
   className,
 }: ToolbarProps): React.ReactElement {
+  const renderItem = (item: { name: ToolName; shortcut: string }): React.ReactElement => (
+    <IconButton
+      key={item.name}
+      label={t(`toolbar.${item.name}`)}
+      shortcut={item.shortcut}
+      active={activeTool === item.name}
+      onClick={() => onSelectTool(item.name)}
+      data-testid={`toolbar-${item.name}`}
+    >
+      <span aria-hidden dangerouslySetInnerHTML={{ __html: iconHTML(item.name) }} />
+    </IconButton>
+  )
+
   return (
     <div
       className={`flex items-center gap-1 rounded-lg bg-white p-1 shadow ${className ?? ""}`}
@@ -53,18 +73,15 @@ export function Toolbar({
         <span aria-hidden>{lockActiveTool ? "🔒" : "🔓"}</span>
       </IconButton>
       <span className="mx-1 h-6 w-px bg-gray-200" aria-hidden />
-      {TOOL_ITEMS.map((item) => (
-        <IconButton
-          key={item.name}
-          label={t(`toolbar.${item.name}`)}
-          shortcut={item.shortcut}
-          active={activeTool === item.name}
-          onClick={() => onSelectTool(item.name)}
-          data-testid={`toolbar-${item.name}`}
-        >
-          <span aria-hidden dangerouslySetInnerHTML={{ __html: iconHTML(item.name) }} />
-        </IconButton>
-      ))}
+      {TOOL_ITEMS.slice(0, HEXAGON_INDEX + 1).map(renderItem)}
+      <MoreShapesMenu
+        t={t}
+        activeTool={activeTool}
+        open={moreShapesOpen}
+        onOpenChange={onMoreShapesOpenChange}
+        onSelectTool={(tool) => onSelectTool(tool)}
+      />
+      {TOOL_ITEMS.slice(HEXAGON_INDEX + 1).map(renderItem)}
     </div>
   )
 }
