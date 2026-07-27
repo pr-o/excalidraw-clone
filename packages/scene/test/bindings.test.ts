@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest"
 import type { Point } from "@excalidraw-clone/geometry"
-import { newArrow, newEllipse, newHexagon, newRectangle, newText } from "../src/factories"
+import {
+  newArrow,
+  newEllipse,
+  newHexagon,
+  newOctagon,
+  newPentagon,
+  newRectangle,
+  newText,
+} from "../src/factories"
 import {
   BINDABLE_TYPES,
   BINDING_GAP,
@@ -31,13 +39,15 @@ describe("canBindTo", () => {
     expect(canBindTo(newArrow({ x: 0, y: 0 }))).toBe(false)
     expect(canBindTo(rect({ isDeleted: true }))).toBe(false)
   })
-  it("BINDABLE_TYPES has the eight expected types", () => {
+  it("BINDABLE_TYPES has the ten expected types", () => {
     expect([...BINDABLE_TYPES].sort()).toEqual([
       "diamond",
       "ellipse",
       "hexagon",
       "image",
+      "octagon",
       "parallelogram",
+      "pentagon",
       "rectangle",
       "text",
       "triangle",
@@ -103,6 +113,22 @@ describe("computeBoundEndpoint", () => {
     // focus 0.5 → +0.5 * 50 = +25 in the perpendicular (down) direction
     expect(shifted.y).toBeCloseTo(75)
     expect(shifted.x).toBeCloseTo(centered.x)
+  })
+
+  it("pentagon attaches on the sloped polygon edge, not the bounding box", () => {
+    const p = newPentagon({ x: 0, y: 0, width: 100, height: 100 }) // center (50,50)
+    // rightward ray crosses the edge (100,40)→(80,100) at x = 96.667
+    const at = computeBoundEndpoint(p, { x: 1000, y: 50 }, 0)
+    expect(at.x).toBeCloseTo(96.667, 2)
+    expect(at.y).toBeCloseTo(50)
+  })
+
+  it("octagon attaches on its cut corner, not the bounding box corner", () => {
+    const o = newOctagon({ x: 0, y: 0, width: 100, height: 100 }) // center (50,50)
+    // up-right diagonal ray crosses the cut corner (66.667,0)→(100,33.333)
+    const at = computeBoundEndpoint(o, { x: 1050, y: -950 }, 0)
+    expect(at.x).toBeCloseTo(83.333, 2)
+    expect(at.y).toBeCloseTo(16.667, 2)
   })
 })
 

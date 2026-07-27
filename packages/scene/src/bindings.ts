@@ -24,6 +24,8 @@ export const BINDABLE_TYPES: ReadonlySet<ElementType> = new Set<ElementType>([
   "triangle",
   "parallelogram",
   "hexagon",
+  "pentagon",
+  "octagon",
   "image",
   "text",
 ])
@@ -35,7 +37,13 @@ const edgeKindFor = (type: ElementType): EdgeKind =>
   type === "ellipse" ? "ellipse" : type === "diamond" ? "diamond" : "rect"
 
 const polygonKindFor = (type: ElementType): PolygonShapeKind | null =>
-  type === "triangle" || type === "parallelogram" || type === "hexagon" ? type : null
+  type === "triangle" ||
+  type === "parallelogram" ||
+  type === "hexagon" ||
+  type === "pentagon" ||
+  type === "octagon"
+    ? type
+    : null
 
 export const bindingTargetAt = (
   point: Point,
