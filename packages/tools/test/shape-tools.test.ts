@@ -4,7 +4,9 @@ import {
   diamondTool,
   ellipseTool,
   hexagonTool,
+  octagonTool,
   parallelogramTool,
+  pentagonTool,
   rectangleTool,
   TOOLS as TOOL_REGISTRY,
   triangleTool,
@@ -26,6 +28,8 @@ const TOOLS = [
   { name: "triangle", tool: triangleTool, type: "triangle" as const },
   { name: "parallelogram", tool: parallelogramTool, type: "parallelogram" as const },
   { name: "hexagon", tool: hexagonTool, type: "hexagon" as const },
+  { name: "pentagon", tool: pentagonTool, type: "pentagon" as const },
+  { name: "octagon", tool: octagonTool, type: "octagon" as const },
 ]
 
 describe.each(TOOLS)("$name tool: creation flow", ({ tool, type }) => {
@@ -196,9 +200,11 @@ describe("shape tool — receives snapped input", () => {
 })
 
 describe("flowchart shape tools registry", () => {
-  it("TOOLS registry contains the three new tools", () => {
+  it("TOOLS registry contains the five new tools", () => {
     expect(TOOL_REGISTRY.triangle).toBe(triangleTool)
     expect(TOOL_REGISTRY.parallelogram).toBe(parallelogramTool)
     expect(TOOL_REGISTRY.hexagon).toBe(hexagonTool)
+    expect(TOOL_REGISTRY.pentagon).toBe(pentagonTool)
+    expect(TOOL_REGISTRY.octagon).toBe(octagonTool)
   })
 })

@@ -8,7 +8,9 @@ import { hexagonTool } from "./tools/hexagon"
 import { imageTool } from "./tools/image"
 import { lineTool } from "./tools/line"
 import { noteTool } from "./tools/note"
+import { octagonTool } from "./tools/octagon"
 import { parallelogramTool } from "./tools/parallelogram"
+import { pentagonTool } from "./tools/pentagon"
 import { rectangleTool } from "./tools/rectangle"
 import { selectionTool } from "./tools/selection"
 import { textTool } from "./tools/text"
@@ -23,6 +25,8 @@ export const TOOLS: Record<ToolName, Tool<unknown, AnyToolEvent>> = {
   triangle: triangleTool,
   parallelogram: parallelogramTool,
   hexagon: hexagonTool,
+  pentagon: pentagonTool,
+  octagon: octagonTool,
   line: lineTool,
   arrow: arrowTool,
   freedraw: freedrawTool,

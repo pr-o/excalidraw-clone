@@ -9,6 +9,8 @@ export type ToolName =
   | "triangle"
   | "parallelogram"
   | "hexagon"
+  | "pentagon"
+  | "octagon"
   | "line"
   | "arrow"
   | "freedraw"
