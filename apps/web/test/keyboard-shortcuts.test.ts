@@ -27,6 +27,16 @@ describe("keyboard shortcuts", () => {
     expect(useAppStore.getState().activeTool).toBe("rectangle")
   })
 
+  it("'5' switches to pentagon tool", () => {
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "5" }))
+    expect(useAppStore.getState().activeTool).toBe("pentagon")
+  })
+
+  it("'8' switches to octagon tool", () => {
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "8" }))
+    expect(useAppStore.getState().activeTool).toBe("octagon")
+  })
+
   it("Cmd+/ opens command palette", () => {
     window.dispatchEvent(new KeyboardEvent("keydown", { key: "/", metaKey: true }))
     expect(useAppStore.getState().paletteOpen).toBe(true)

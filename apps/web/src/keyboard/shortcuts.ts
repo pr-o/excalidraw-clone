@@ -23,6 +23,8 @@ const TOOL_KEYS: Record<string, ToolName> = {
   "3": "triangle",
   g: "parallelogram",
   "6": "hexagon",
+  "5": "pentagon",
+  "8": "octagon",
   l: "line",
   a: "arrow",
   p: "freedraw",
