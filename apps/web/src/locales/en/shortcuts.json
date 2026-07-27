@@ -6,6 +6,8 @@
   "triangle": "Triangle",
   "parallelogram": "Parallelogram",
   "hexagon": "Hexagon",
+  "pentagon": "Pentagon",
+  "octagon": "Octagon",
   "line": "Line",
   "arrow": "Arrow",
   "freedraw": "Draw",
