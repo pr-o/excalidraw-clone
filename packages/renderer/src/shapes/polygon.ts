@@ -1,7 +1,9 @@
 import { shapeVertices } from "@excalidraw-clone/geometry"
 import type {
   ExcalidrawHexagonElement,
+  ExcalidrawOctagonElement,
   ExcalidrawParallelogramElement,
+  ExcalidrawPentagonElement,
   ExcalidrawTriangleElement,
 } from "@excalidraw-clone/scene"
 import type { Drawable, Options } from "roughjs/bin/core"
@@ -13,6 +15,8 @@ type PolygonElement =
   | ExcalidrawTriangleElement
   | ExcalidrawParallelogramElement
   | ExcalidrawHexagonElement
+  | ExcalidrawPentagonElement
+  | ExcalidrawOctagonElement
 
 const polygonOptions = (e: PolygonElement): Options => {
   const opts: Options = {

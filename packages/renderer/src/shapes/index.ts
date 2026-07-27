@@ -31,6 +31,8 @@ export const generateShape = (
     case "triangle":
     case "parallelogram":
     case "hexagon":
+    case "pentagon":
+    case "octagon":
       return polygonShape(element, gen)
     case "text":
     case "image":

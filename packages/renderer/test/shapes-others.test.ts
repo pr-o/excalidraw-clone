@@ -4,6 +4,8 @@ import {
   newEllipse,
   newHexagon,
   newLine,
+  newOctagon,
+  newPentagon,
   newTriangle,
 } from "@excalidraw-clone/scene"
 import { RoughGenerator } from "roughjs/bin/generator"
@@ -161,6 +163,37 @@ describe("polygonShape", () => {
       [30, 30],
       [10, 30],
       [0, 15],
+    ])
+  })
+
+  it("pentagon: 5 points, vertices relative to the element origin", () => {
+    const gen = new RoughGenerator()
+    const spy = vi.spyOn(gen, "polygon")
+    polygonShape(newPentagon({ x: 5, y: 7, width: 40, height: 30 }), gen)
+    const [points] = spy.mock.calls[0]!
+    expect(points).toEqual([
+      [20, 0],
+      [40, 12],
+      [32, 30],
+      [8, 30],
+      [0, 12],
+    ])
+  })
+
+  it("octagon: 8 points, vertices relative to the element origin", () => {
+    const gen = new RoughGenerator()
+    const spy = vi.spyOn(gen, "polygon")
+    polygonShape(newOctagon({ x: 5, y: 7, width: 120, height: 60 }), gen)
+    const [points] = spy.mock.calls[0]!
+    expect(points).toEqual([
+      [40, 0],
+      [80, 0],
+      [120, 20],
+      [120, 40],
+      [80, 60],
+      [40, 60],
+      [0, 40],
+      [0, 20],
     ])
   })
 
