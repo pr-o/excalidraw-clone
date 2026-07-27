@@ -104,6 +104,7 @@ function Inner(): React.ReactElement {
   const [menuOpen, setMenuOpen] = useState(false)
   const [libraryOpen, setLibraryOpen] = useState(false)
   const [layersOpen, setLayersOpen] = useState(false)
+  const [moreShapesOpen, setMoreShapesOpen] = useState(false)
   const [renderer, setRenderer] = useState<CanvasRenderer | null>(null)
   const onRendererReady = useCallback((r: CanvasRenderer): void => setRenderer(r), [])
   const onRendererTeardown = useCallback((): void => setRenderer(null), [])
@@ -284,6 +285,8 @@ function Inner(): React.ReactElement {
               onSelectTool={setActiveTool}
               lockActiveTool={lockActiveTool}
               onToggleLock={() => toggleLockActiveTool()}
+              moreShapesOpen={moreShapesOpen}
+              onMoreShapesOpenChange={setMoreShapesOpen}
             />
           </div>
 
