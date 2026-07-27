@@ -13,6 +13,8 @@ const TOOL_SHORTCUTS: readonly Shortcut[] = [
   { keys: "3", label: "shortcuts:triangle" },
   { keys: "G", label: "shortcuts:parallelogram" },
   { keys: "6", label: "shortcuts:hexagon" },
+  { keys: "5", label: "shortcuts:pentagon" },
+  { keys: "8", label: "shortcuts:octagon" },
   { keys: "L", label: "shortcuts:line" },
   { keys: "A", label: "shortcuts:arrow" },
   { keys: "P", label: "shortcuts:freedraw" },

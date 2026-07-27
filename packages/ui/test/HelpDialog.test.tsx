@@ -21,6 +21,12 @@ describe("HelpDialog", () => {
     expect(screen.getByText("Double-click")).toBeInTheDocument()
   })
 
+  it("lists the pentagon and octagon shortcuts", () => {
+    render(<HelpDialog t={t} open onClose={() => {}} />)
+    expect(screen.getByText("5")).toBeInTheDocument()
+    expect(screen.getByText("8")).toBeInTheDocument()
+  })
+
   it("emits onClose when the close button is clicked", async () => {
     const onClose = vi.fn()
     render(<HelpDialog t={t} open onClose={onClose} />)
