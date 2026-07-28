@@ -35,3 +35,6 @@ export type { LayersPanelProps } from "./LayersPanel"
 
 export { MoreShapesMenu } from "./MoreShapesMenu"
 export type { MoreShapesMenuProps } from "./MoreShapesMenu"
+
+export { PagesTabBar } from "./PagesTabBar"
+export type { PagesTabBarProps } from "./PagesTabBar"
