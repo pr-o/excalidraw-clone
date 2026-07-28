@@ -71,6 +71,24 @@ describe("MoreShapesMenu", () => {
     expect(screen.getByTestId("toolbar-more-shapes")).toHaveAttribute("aria-pressed", "true")
   })
 
+  it("marks the trigger active when the active tool is octagon", () => {
+    render(<MoreShapesMenu {...baseProps()} activeTool="octagon" />)
+    expect(screen.getByTestId("toolbar-more-shapes")).toHaveAttribute("aria-pressed", "true")
+  })
+
+  it("exposes aria-haspopup and aria-expanded on the trigger reflecting open state", () => {
+    const closed = render(<MoreShapesMenu {...baseProps()} />)
+    const trigger = screen.getByTestId("toolbar-more-shapes")
+    expect(trigger).toHaveAttribute("aria-haspopup", "true")
+    expect(trigger).toHaveAttribute("aria-expanded", "false")
+    closed.unmount()
+
+    render(<MoreShapesMenu {...baseProps()} open />)
+    const openTrigger = screen.getByTestId("toolbar-more-shapes")
+    expect(openTrigger).toHaveAttribute("aria-haspopup", "true")
+    expect(openTrigger).toHaveAttribute("aria-expanded", "true")
+  })
+
   it("Escape closes the menu when open", async () => {
     const onOpenChange = vi.fn()
     render(<MoreShapesMenu {...baseProps()} open onOpenChange={onOpenChange} />)

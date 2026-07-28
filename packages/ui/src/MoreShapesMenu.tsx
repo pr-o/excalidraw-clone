@@ -37,6 +37,8 @@ export function MoreShapesMenu(props: MoreShapesMenuProps): React.ReactElement {
         active={isActive}
         onClick={() => onOpenChange(!open)}
         data-testid="toolbar-more-shapes"
+        aria-haspopup="true"
+        aria-expanded={open}
       >
         <span aria-hidden dangerouslySetInnerHTML={{ __html: iconHTML("more-shapes") }} />
       </IconButton>
