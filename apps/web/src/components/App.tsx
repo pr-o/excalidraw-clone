@@ -26,6 +26,7 @@ import {
   HamburgerMenu,
   LayersPanel,
   LibraryPanel,
+  PagesTabBar,
   PropertiesPanel,
   Toolbar,
 } from "@excalidraw-clone/ui"
@@ -44,7 +45,18 @@ import { I18nextProvider, useTranslation } from "react-i18next"
 import { startAutoSave } from "../driver/autoSave"
 import { hydratePages, hydrateUI } from "../driver/hydration"
 import { pickAndUploadImage } from "../driver/imageUpload"
-import { pagesFromDocument, type PageRecord } from "../driver/pages"
+import {
+  addPage,
+  cyclePageId,
+  deletePage,
+  DEFAULT_VIEWPORT,
+  duplicatePage,
+  pagesFromDocument,
+  renamePage,
+  reorderPage,
+  withViewport,
+  type PageRecord,
+} from "../driver/pages"
 import { useSceneRevision } from "../hooks/useSceneRevision"
 import { openExcalidrawFromPicker } from "../driver/openFile"
 import { patchScene } from "../driver/patchScene"
@@ -78,6 +90,20 @@ function Inner(): React.ReactElement {
     () => pages.find((p) => p.id === activePageId)!.scene,
     [pages, activePageId],
   )
+  const switchToPage = useCallback(
+    (targetId: string): void => {
+      if (targetId === activePageId) return
+      const s = useAppStore.getState()
+      setPages(
+        withViewport(pages, activePageId, { scrollX: s.scrollX, scrollY: s.scrollY, zoom: s.zoom }),
+      )
+      const target = pages.find((p) => p.id === targetId)
+      s.setView(target?.viewport ?? DEFAULT_VIEWPORT)
+      setActivePageId(targetId)
+      s.setSelection([])
+    },
+    [activePageId, pages],
+  )
   useEffect(() => {
     hydrateUI()
   }, [])
@@ -85,8 +111,12 @@ function Inner(): React.ReactElement {
     return startAutoSave(pages, activePageId)
   }, [pages, activePageId])
   useEffect(() => {
-    return attachShortcuts({ scene })
-  }, [scene])
+    return attachShortcuts({
+      scene,
+      onNextPage: () => switchToPage(cyclePageId(pages, activePageId, "next")),
+      onPrevPage: () => switchToPage(cyclePageId(pages, activePageId, "prev")),
+    })
+  }, [scene, pages, activePageId, switchToPage])
   useEffect(() => {
     return attachClipboard({ scene })
   }, [scene])
@@ -456,6 +486,33 @@ function Inner(): React.ReactElement {
             onRename={(id, name) => void handleRename(id, name)}
             onDelete={(id) => void handleDelete(id)}
             renderThumbnail={renderThumbnail}
+          />
+
+          <PagesTabBar
+            t={t}
+            pages={pages}
+            activePageId={activePageId}
+            onSwitch={switchToPage}
+            onAdd={() => {
+              const updated = addPage(pages)
+              setPages(updated)
+              setActivePageId(updated[updated.length - 1]!.id)
+            }}
+            onDelete={(id) => {
+              if (id === activePageId) {
+                const fallback = pages.find((p) => p.id !== id)
+                if (fallback) switchToPage(fallback.id)
+              }
+              setPages(deletePage(pages, id))
+            }}
+            onRename={(id, name) => setPages(renamePage(pages, id, name))}
+            onDuplicate={(id) => {
+              const updated = duplicatePage(pages, id)
+              setPages(updated)
+              const index = pages.findIndex((p) => p.id === id)
+              setActivePageId(updated[index + 1]!.id)
+            }}
+            onReorder={(id, direction) => setPages(reorderPage(pages, id, direction))}
           />
 
           {hasLockedElements && (

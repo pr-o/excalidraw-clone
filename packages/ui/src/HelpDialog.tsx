@@ -48,6 +48,8 @@ const VIEW_SHORTCUTS: readonly Shortcut[] = [
   { keys: "Cmd/Ctrl+'", label: "shortcuts:toggleGrid" },
   { keys: "Cmd/Ctrl+/", label: "shortcuts:commandPalette" },
   { keys: "?", label: "shortcuts:help" },
+  { keys: "Alt+PageDown", label: "shortcuts:nextPage" },
+  { keys: "Alt+PageUp", label: "shortcuts:prevPage" },
 ]
 
 export interface HelpDialogProps {

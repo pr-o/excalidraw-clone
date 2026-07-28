@@ -5,7 +5,7 @@ import {
   type ViewTransform,
 } from "@excalidraw-clone/geometry"
 import { newRectangle, newText, Scene } from "@excalidraw-clone/scene"
-import { afterEach, beforeEach, describe, expect, it } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { attachShortcuts } from "../src/keyboard/shortcuts"
 import { useAppStore } from "../src/store"
 
@@ -103,6 +103,26 @@ describe("keyboard shortcuts", () => {
     })
     window.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft" }))
     expect(scene.getElements()[0]!.x).toBe(5)
+  })
+
+  it("Alt+PageDown calls onNextPage when provided", () => {
+    detach()
+    const onNextPage = vi.fn()
+    detach = attachShortcuts({ scene, onNextPage })
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "PageDown", altKey: true }))
+    expect(onNextPage).toHaveBeenCalledTimes(1)
+  })
+
+  it("Alt+PageUp calls onPrevPage when provided", () => {
+    detach()
+    const onPrevPage = vi.fn()
+    detach = attachShortcuts({ scene, onPrevPage })
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "PageUp", altKey: true }))
+    expect(onPrevPage).toHaveBeenCalledTimes(1)
+  })
+
+  it("Alt+PageDown without a handler does not throw", () => {
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "PageDown", altKey: true }))
   })
 })
 

@@ -148,5 +148,14 @@
   "layers": {
     "title": "Layers",
     "toggle": "Toggle layers panel"
+  },
+  "pages": {
+    "title": "Pages",
+    "add": "Add page",
+    "rename": "Rename page",
+    "delete": "Delete page",
+    "duplicate": "Duplicate page",
+    "moveLeft": "Move page left",
+    "moveRight": "Move page right"
   }
 }

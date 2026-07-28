@@ -34,5 +34,7 @@
   "pan": "Pan",
   "toggleGrid": "Toggle grid",
   "commandPalette": "Command palette",
-  "help": "Help"
+  "help": "Help",
+  "nextPage": "Next page",
+  "prevPage": "Previous page"
 }

@@ -137,5 +137,14 @@
   "layers": {
     "title": "레이어",
     "toggle": "레이어 패널 열고 닫기"
+  },
+  "pages": {
+    "title": "페이지",
+    "add": "페이지 추가",
+    "rename": "페이지 이름 변경",
+    "delete": "페이지 삭제",
+    "duplicate": "페이지 복제",
+    "moveLeft": "페이지 왼쪽으로 이동",
+    "moveRight": "페이지 오른쪽으로 이동"
   }
 }

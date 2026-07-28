@@ -13,6 +13,8 @@ import { useAppStore } from "../store"
 
 interface Bindings {
   scene: Scene
+  onNextPage?: () => void
+  onPrevPage?: () => void
 }
 
 const TOOL_KEYS: Record<string, ToolName> = {
@@ -35,7 +37,7 @@ const TOOL_KEYS: Record<string, ToolName> = {
   n: "note",
 }
 
-export function attachShortcuts({ scene }: Bindings): () => void {
+export function attachShortcuts({ scene, onNextPage, onPrevPage }: Bindings): () => void {
   const handler = (e: KeyboardEvent): void => {
     const target = e.target as HTMLElement | null
     if (
@@ -111,6 +113,16 @@ export function attachShortcuts({ scene }: Bindings): () => void {
     if (isMeta && key === "/") {
       e.preventDefault()
       useAppStore.getState().setPaletteOpen(true)
+      return
+    }
+    if (e.altKey && key === "pagedown") {
+      e.preventDefault()
+      onNextPage?.()
+      return
+    }
+    if (e.altKey && key === "pageup") {
+      e.preventDefault()
+      onPrevPage?.()
       return
     }
     if (key === "escape") {
