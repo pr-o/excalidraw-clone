@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test"
-import { dragOnCanvas } from "./_helpers"
+import { dragOnCanvas, parseStoredScene } from "./_helpers"
 
 // Brightest channel value in a region — stroke pixels are jittery (roughjs),
 // so scan a box instead of a single coordinate (same pattern as theme.spec.ts).
@@ -117,7 +117,7 @@ test("Space+drag pans the canvas without mutating scene coordinates", async ({ p
     .poll(() => page.evaluate(() => localStorage.getItem("excalidraw-scene")))
     .not.toBeNull()
   const json = await page.evaluate(() => localStorage.getItem("excalidraw-scene"))
-  const data = JSON.parse(json!) as { elements: { x: number; isDeleted?: boolean }[] }
+  const data = parseStoredScene<{ x: number; isDeleted?: boolean }>(json)
   const rect = data.elements.find((e) => !e.isDeleted)!
   expect(rect.x).toBe(200) // panning is a viewport transform, not a scene mutation
 })

@@ -34,6 +34,7 @@ export {
   newText,
   newTriangle,
 } from "./factories"
+export { newPage } from "./pages"
 export type {
   NewArrowInput,
   NewElementInput,
@@ -94,6 +95,7 @@ export type {
   ExcalidrawLineElement,
   ExcalidrawLinearBase,
   ExcalidrawOctagonElement,
+  ExcalidrawPage,
   ExcalidrawParallelogramElement,
   ExcalidrawPentagonElement,
   ExcalidrawRectangleElement,
@@ -104,6 +106,7 @@ export type {
   PointBinding,
   Roughness,
   Roundness,
+  SceneSnapshot,
   StrokeStyle,
   StrokeWidth,
   TextAlign,

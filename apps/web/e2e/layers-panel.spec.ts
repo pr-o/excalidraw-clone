@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test"
-import { dragOnCanvas } from "./_helpers"
+import { dragOnCanvas, parseStoredScene } from "./_helpers"
 
 type SceneEl = { id: string; type: string; isDeleted?: boolean }
 
@@ -8,7 +8,7 @@ type SceneEl = { id: string; type: string; isDeleted?: boolean }
 const readScene = async (page: Page): Promise<SceneEl[]> => {
   const json = await page.evaluate(() => localStorage.getItem("excalidraw-scene"))
   if (json === null) return []
-  const data = JSON.parse(json) as { elements: SceneEl[] }
+  const data = parseStoredScene<SceneEl>(json)
   return data.elements.filter((e) => !e.isDeleted)
 }
 

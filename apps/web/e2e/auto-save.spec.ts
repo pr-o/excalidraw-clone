@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test"
-import { dragOnCanvas } from "./_helpers"
+import { dragOnCanvas, parseStoredScene } from "./_helpers"
 
 test("scene survives a reload", async ({ page }) => {
   await page.goto("/")
@@ -11,8 +11,8 @@ test("scene survives a reload", async ({ page }) => {
   await page.reload()
   await page.waitForTimeout(500)
 
-  const data = JSON.parse(
-    (await page.evaluate(() => localStorage.getItem("excalidraw-scene")))!,
-  ) as { elements: { type: string }[] }
+  const data = parseStoredScene<{ type: string }>(
+    await page.evaluate(() => localStorage.getItem("excalidraw-scene")),
+  )
   expect(data.elements[0]?.type).toBe("ellipse")
 })

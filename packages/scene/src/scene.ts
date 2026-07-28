@@ -1,12 +1,11 @@
 import { reconcileBindings } from "./bindings"
 import { reconcileFrameMembership } from "./frames"
-import { buildExcalidrawData } from "./json"
 import { reconcileBoundText } from "./reconcile-bound-text"
 import type {
   ExcalidrawAppStateSnapshot,
-  ExcalidrawData,
   ExcalidrawElement,
   ExcalidrawFiles,
+  SceneSnapshot,
 } from "./types"
 
 export interface MutateOptions {
@@ -93,11 +92,15 @@ export class Scene {
     this.historyIndex = 0
   }
 
-  toJSON(appState?: ExcalidrawAppStateSnapshot, files?: ExcalidrawFiles): ExcalidrawData {
-    return buildExcalidrawData(this.elements, appState, files)
+  toJSON(appState?: ExcalidrawAppStateSnapshot, files?: ExcalidrawFiles): SceneSnapshot {
+    return {
+      elements: this.elements,
+      ...(appState ? { appState } : {}),
+      ...(files ? { files } : {}),
+    }
   }
 
-  loadFromJSON(data: ExcalidrawData): {
+  loadFromJSON(data: SceneSnapshot): {
     appState?: ExcalidrawAppStateSnapshot
     files?: ExcalidrawFiles
   } {

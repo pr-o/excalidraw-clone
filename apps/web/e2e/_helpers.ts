@@ -1,5 +1,20 @@
 import type { Page } from "@playwright/test"
 
+/**
+ * Reads the persisted document (v3: `pages[]` + `activePageId`) and exposes the
+ * active page's elements under `.elements`, which is what the specs assert on.
+ */
+export function parseStoredScene<T>(json: string | null): { elements: T[] } {
+  const data = JSON.parse(json ?? "null") as {
+    pages?: { id: string; elements: T[] }[]
+    activePageId?: string
+  } | null
+  const pages = data?.pages
+  if (!pages) return { elements: [] }
+  const active = pages.find((p) => p.id === data?.activePageId) ?? pages[0]
+  return { elements: active?.elements ?? [] }
+}
+
 export async function dragOnCanvas(
   page: Page,
   from: { x: number; y: number },

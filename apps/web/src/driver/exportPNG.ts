@@ -1,12 +1,7 @@
 "use client"
-import {
-  embedTextChunk,
-  getFile,
-  PNG_EXCALIDRAW_KEYWORD,
-  serializeScene,
-} from "@excalidraw-clone/persistence"
+import { embedTextChunk, getFile, PNG_EXCALIDRAW_KEYWORD } from "@excalidraw-clone/persistence"
 import { CanvasRenderer } from "@excalidraw-clone/renderer"
-import type { Scene } from "@excalidraw-clone/scene"
+import { buildExcalidrawData, newPage, type Scene } from "@excalidraw-clone/scene"
 import type { ExportOptions } from "@excalidraw-clone/ui"
 
 const PADDING = 20
@@ -53,7 +48,8 @@ export async function exportToPNG(
   })
 
   if (opts.embedScene) {
-    const json = JSON.stringify(serializeScene(scene))
+    const page = newPage("Page 1", scene.getElementsIncludingDeleted())
+    const json = JSON.stringify(buildExcalidrawData([page], page.id))
     return embedTextChunk(blob, PNG_EXCALIDRAW_KEYWORD, json)
   }
   return blob

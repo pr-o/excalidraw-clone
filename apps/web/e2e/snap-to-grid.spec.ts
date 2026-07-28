@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test"
-import { dragOnCanvas } from "./_helpers"
+import { dragOnCanvas, parseStoredScene } from "./_helpers"
 
 test("rectangle drawn with grid enabled lands on grid multiples", async ({ page }) => {
   await page.goto("/")
@@ -21,9 +21,13 @@ test("rectangle drawn with grid enabled lands on grid multiples", async ({ page 
 
   const sceneJson = await page.evaluate(() => localStorage.getItem("excalidraw-scene"))
   expect(sceneJson).toBeTruthy()
-  const data = JSON.parse(sceneJson!) as {
-    elements: { type: string; x: number; y: number; width: number; height: number }[]
-  }
+  const data = parseStoredScene<{
+    type: string
+    x: number
+    y: number
+    width: number
+    height: number
+  }>(sceneJson)
   const rect = data.elements.find((e) => e.type === "rectangle")
   expect(rect).toBeDefined()
   if (!rect) return

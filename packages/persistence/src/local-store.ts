@@ -1,4 +1,5 @@
-import { SCENE_FORMAT_VERSION, type ExcalidrawData } from "@excalidraw-clone/scene"
+import type { ExcalidrawData } from "@excalidraw-clone/scene"
+import { migrate } from "./migrations"
 
 const SCENE_KEY = "excalidraw-scene"
 const UI_KEY = "excalidraw-ui"
@@ -16,8 +17,7 @@ export function loadScene(): ExcalidrawData | null {
   if (raw === null) return null
   try {
     const parsed: unknown = JSON.parse(raw)
-    if (!isExcalidrawData(parsed)) return null
-    return parsed
+    return migrate(parsed)
   } catch {
     return null
   }
@@ -46,15 +46,4 @@ export function loadUI(): Record<string, unknown> | null {
 export function clearLocal(): void {
   localStorage.removeItem(SCENE_KEY)
   localStorage.removeItem(UI_KEY)
-}
-
-function isExcalidrawData(v: unknown): v is ExcalidrawData {
-  if (typeof v !== "object" || v === null) return false
-  const obj = v as Record<string, unknown>
-  return (
-    obj.type === "excalidraw" &&
-    typeof obj.version === "number" &&
-    obj.version === SCENE_FORMAT_VERSION &&
-    Array.isArray(obj.elements)
-  )
 }

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test"
-import { dragOnCanvas } from "./_helpers"
+import { dragOnCanvas, parseStoredScene } from "./_helpers"
 
 test("draw a sticky note, type into it — container + text persist", async ({ page }) => {
   await page.goto("/")
@@ -21,9 +21,7 @@ test("draw a sticky note, type into it — container + text persist", async ({ p
 
   const sceneJson = await page.evaluate(() => localStorage.getItem("excalidraw-scene"))
   expect(sceneJson).toBeTruthy()
-  const data = JSON.parse(sceneJson!) as {
-    elements: { type: string; text?: string; isDeleted?: boolean }[]
-  }
+  const data = parseStoredScene<{ type: string; text?: string; isDeleted?: boolean }>(sceneJson)
   const live = data.elements.filter((e) => !e.isDeleted)
   const container = live.find((e) => e.type === "rectangle")
   const text = live.find((e) => e.type === "text")
@@ -55,7 +53,7 @@ test("toggling stroke style to dashed updates the selected shape", async ({ page
   // ...and the edit lands in the scene and persists.
   await page.waitForTimeout(700)
   const sceneJson = await page.evaluate(() => localStorage.getItem("excalidraw-scene"))
-  const data = JSON.parse(sceneJson!) as { elements: { type: string; strokeStyle?: string }[] }
+  const data = parseStoredScene<{ type: string; strokeStyle?: string }>(sceneJson)
   const rect = data.elements.find((e) => e.type === "rectangle")
   expect(rect?.strokeStyle).toBe("dashed")
 })

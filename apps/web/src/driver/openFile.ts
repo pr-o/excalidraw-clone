@@ -7,17 +7,15 @@ import {
   putFile,
 } from "@excalidraw-clone/persistence"
 import type { CanvasRenderer } from "@excalidraw-clone/renderer"
-import type { ExcalidrawData, Scene } from "@excalidraw-clone/scene"
+import type { ExcalidrawData } from "@excalidraw-clone/scene"
 
 export async function openExcalidrawFromPicker(
-  scene: Scene,
   renderer: CanvasRenderer | null,
-): Promise<void> {
+): Promise<ExcalidrawData | null> {
   const file = await pickFile(".excalidraw,.png,application/json,image/png")
-  if (!file) return
+  if (!file) return null
   const data = await readSceneFromFile(file)
-  if (!data) return
-  scene.loadFromJSON(data)
+  if (!data) return null
   if (data.files) {
     for (const id of Object.keys(data.files)) {
       const f = data.files[id]!
@@ -25,6 +23,7 @@ export async function openExcalidrawFromPicker(
       void renderer?.preloadImage(id, f.dataURL)
     }
   }
+  return data
 }
 
 async function readSceneFromFile(file: File): Promise<ExcalidrawData | null> {

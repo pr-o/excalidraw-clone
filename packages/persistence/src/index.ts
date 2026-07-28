@@ -32,7 +32,8 @@ export {
 } from "./library-store"
 
 // File I/O
-export { download, parseExcalidrawFile, serializeScene, toExcalidrawBlob } from "./file-io"
+export { download, parseExcalidrawFile, serializeDocument, toExcalidrawBlob } from "./file-io"
+export type { DocumentPage } from "./file-io"
 
 // PNG tEXt chunk for embedScene
 export { embedTextChunk, extractTextChunk, PNG_EXCALIDRAW_KEYWORD } from "./png-text"

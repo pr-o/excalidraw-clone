@@ -1,16 +1,19 @@
 "use client"
 import { getAllFiles, loadScene, loadUI } from "@excalidraw-clone/persistence"
 import type { CanvasRenderer } from "@excalidraw-clone/renderer"
-import { Scene } from "@excalidraw-clone/scene"
 import type { ToolName } from "@excalidraw-clone/tools"
 import type { Locale } from "../store/slices/i18n"
 import type { Theme } from "../store/slices/theme"
 import { useAppStore } from "../store"
+import { createPageRecord, pagesFromDocument, type PageRecord } from "./pages"
 
-export function hydrateScene(): Scene {
+export function hydratePages(): { pages: PageRecord[]; activePageId: string } {
   const data = loadScene()
-  if (!data) return new Scene()
-  return new Scene(data.elements)
+  if (!data) {
+    const page = createPageRecord("Page 1")
+    return { pages: [page], activePageId: page.id }
+  }
+  return pagesFromDocument(data)
 }
 
 export function hydrateUI(): void {

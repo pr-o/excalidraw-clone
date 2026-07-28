@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test"
-import { dragOnCanvas } from "./_helpers"
+import { dragOnCanvas, parseStoredScene } from "./_helpers"
 
 async function resetStorage(page: Page): Promise<void> {
   await page.goto("/")
@@ -56,7 +56,7 @@ test("add selection to library and place it on the canvas", async ({ page }) => 
 
   const sceneJson = await page.evaluate(() => localStorage.getItem("excalidraw-scene"))
   expect(sceneJson).toBeTruthy()
-  const data = JSON.parse(sceneJson!) as { elements: { type: string; isDeleted?: boolean }[] }
+  const data = parseStoredScene<{ type: string; isDeleted?: boolean }>(sceneJson)
   const rects = data.elements.filter((e) => e.type === "rectangle" && !e.isDeleted)
   expect(rects.length).toBeGreaterThanOrEqual(2)
 })
@@ -78,9 +78,9 @@ test("Escape cancels pending placement", async ({ page }) => {
   await page.mouse.click(box.x + 400, box.y + 400)
   await page.waitForTimeout(800)
 
-  const data = JSON.parse(
-    (await page.evaluate(() => localStorage.getItem("excalidraw-scene")))!,
-  ) as { elements: { type: string; isDeleted?: boolean }[] }
+  const data = parseStoredScene<{ type: string; isDeleted?: boolean }>(
+    await page.evaluate(() => localStorage.getItem("excalidraw-scene")),
+  )
   const rects = data.elements.filter((e) => e.type === "rectangle" && !e.isDeleted)
   expect(rects.length).toBe(1)
 })

@@ -42,8 +42,9 @@ import {
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { I18nextProvider, useTranslation } from "react-i18next"
 import { startAutoSave } from "../driver/autoSave"
-import { hydrateScene, hydrateUI } from "../driver/hydration"
+import { hydratePages, hydrateUI } from "../driver/hydration"
 import { pickAndUploadImage } from "../driver/imageUpload"
+import { pagesFromDocument, type PageRecord } from "../driver/pages"
 import { useSceneRevision } from "../hooks/useSceneRevision"
 import { openExcalidrawFromPicker } from "../driver/openFile"
 import { patchScene } from "../driver/patchScene"
@@ -70,13 +71,19 @@ export function App(): React.ReactElement {
 
 function Inner(): React.ReactElement {
   const { t, i18n } = useTranslation()
-  const scene = useMemo(() => hydrateScene(), [])
+  const initialDoc = useMemo(() => hydratePages(), [])
+  const [pages, setPages] = useState<PageRecord[]>(initialDoc.pages)
+  const [activePageId, setActivePageId] = useState<string>(initialDoc.activePageId)
+  const scene = useMemo(
+    () => pages.find((p) => p.id === activePageId)!.scene,
+    [pages, activePageId],
+  )
   useEffect(() => {
     hydrateUI()
   }, [])
   useEffect(() => {
-    return startAutoSave(scene)
-  }, [scene])
+    return startAutoSave(pages, activePageId)
+  }, [pages, activePageId])
   useEffect(() => {
     return attachShortcuts({ scene })
   }, [scene])
@@ -267,10 +274,16 @@ function Inner(): React.ReactElement {
               zenMode={zenMode}
               onZenModeToggle={toggleZenMode}
               onOpenFile={() => {
-                void openExcalidrawFromPicker(scene, renderer)
+                void (async () => {
+                  const data = await openExcalidrawFromPicker(renderer)
+                  if (!data) return
+                  const opened = pagesFromDocument(data)
+                  setPages(opened.pages)
+                  setActivePageId(opened.activePageId)
+                })()
               }}
               onSaveFile={() => {
-                void saveAsExcalidraw(scene)
+                void saveAsExcalidraw(pages, activePageId)
               }}
               onExport={() => setOpenDialog("export")}
               onReset={() => setOpenDialog("reset")}

@@ -187,22 +187,24 @@ describe("element type definitions", () => {
     expect(be.type).toBe("arrow")
   })
 
-  it("ExcalidrawData literal with empty elements is valid", () => {
+  it("ExcalidrawData literal with a single empty page is valid", () => {
     const d: ExcalidrawData = {
       type: "excalidraw",
-      version: 2,
+      version: 3,
       source: "test",
-      elements: [],
+      pages: [{ id: "p1", name: "Page 1", elements: [] }],
+      activePageId: "p1",
     }
-    expect(d.elements.length).toBe(0)
+    expect(d.pages[0]?.elements.length).toBe(0)
   })
 
   it("ExcalidrawData accepts optional appState and files", () => {
     const d: ExcalidrawData = {
       type: "excalidraw",
-      version: 2,
+      version: 3,
       source: "test",
-      elements: [],
+      pages: [{ id: "p1", name: "Page 1", elements: [] }],
+      activePageId: "p1",
       appState: { zoom: 1 },
       files: {
         "file-1": {

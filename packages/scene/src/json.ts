@@ -1,22 +1,24 @@
 import type {
   ExcalidrawAppStateSnapshot,
   ExcalidrawData,
-  ExcalidrawElement,
   ExcalidrawFiles,
+  ExcalidrawPage,
 } from "./types"
 
-export const SCENE_FORMAT_VERSION = 2 as const
+export const SCENE_FORMAT_VERSION = 3 as const
 export const SCENE_FORMAT_SOURCE = "https://excalidraw-clone.local"
 
 export const buildExcalidrawData = (
-  elements: readonly ExcalidrawElement[],
+  pages: readonly ExcalidrawPage[],
+  activePageId: string,
   appState?: ExcalidrawAppStateSnapshot,
   files?: ExcalidrawFiles,
 ): ExcalidrawData => ({
   type: "excalidraw",
   version: SCENE_FORMAT_VERSION,
   source: SCENE_FORMAT_SOURCE,
-  elements,
+  pages,
+  activePageId,
   ...(appState ? { appState } : {}),
   ...(files ? { files } : {}),
 })

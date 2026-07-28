@@ -1,13 +1,18 @@
 "use client"
-import { createAutoSaver, saveScene, saveUI, serializeScene } from "@excalidraw-clone/persistence"
-import type { Scene } from "@excalidraw-clone/scene"
+import {
+  createAutoSaver,
+  saveScene,
+  saveUI,
+  serializeDocument,
+} from "@excalidraw-clone/persistence"
 import { useAppStore } from "../store"
+import type { PageRecord } from "./pages"
 
-export function startAutoSave(scene: Scene): () => void {
+export function startAutoSave(pages: readonly PageRecord[], activePageId: string): () => void {
   const saver = createAutoSaver({
     delayMs: 500,
     flush: () => {
-      saveScene(serializeScene(scene))
+      saveScene(serializeDocument(pages, activePageId))
       const s = useAppStore.getState()
       saveUI({
         theme: s.theme,
@@ -21,14 +26,19 @@ export function startAutoSave(scene: Scene): () => void {
     },
   })
 
-  const unsubScene = scene.subscribe(() => saver.schedule())
+  const unsubScenes = pages.map((p) => p.scene.subscribe(() => saver.schedule()))
   const unsubStore = useAppStore.subscribe(() => saver.schedule())
+
+  // Opening a file swaps in freshly-built Scenes rather than mutating the
+  // existing one, so no subscriber fires for the new document. Schedule once up
+  // front so a newly loaded document is persisted without waiting for an edit.
+  saver.schedule()
 
   const onBeforeUnload = (): void => saver.flushNow()
   window.addEventListener("beforeunload", onBeforeUnload)
 
   return () => {
-    unsubScene()
+    for (const unsub of unsubScenes) unsub()
     unsubStore()
     window.removeEventListener("beforeunload", onBeforeUnload)
     saver.dispose()

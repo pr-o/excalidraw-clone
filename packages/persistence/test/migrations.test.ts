@@ -11,15 +11,34 @@ const fixture = async (name: string): Promise<unknown> => {
 }
 
 describe("migrate", () => {
-  it("v1 → v2 adds boundElements to shape elements", async () => {
+  it("v1 input migrates all the way to v3 (through v2's boundElements fix)", async () => {
     const v1 = await fixture("v1-rect.json")
-    const expected = await fixture("v2-rect.json")
-    expect(migrate(v1)).toEqual(expected)
+    const v2Expected = (await fixture("v2-rect.json")) as { elements: unknown[] }
+    const result = migrate(v1)
+    expect(result.version).toBe(3)
+    expect(result.pages.length).toBe(1)
+    expect(result.pages[0]?.elements).toEqual(v2Expected.elements)
+    expect(result.activePageId).toBe(result.pages[0]?.id)
   })
 
-  it("v2 input is returned unchanged (already current)", async () => {
-    const v2 = await fixture("v2-rect.json")
-    expect(migrate(v2)).toEqual(v2)
+  it("v2 input wraps its flat elements into a single named page", async () => {
+    const v2 = (await fixture("v2-rect.json")) as { elements: unknown[] }
+    const result = migrate(v2)
+    expect(result.version).toBe(3)
+    expect(result.pages).toEqual([
+      { id: result.activePageId, name: "Page 1", elements: v2.elements },
+    ])
+  })
+
+  it("v3 input is returned unchanged (already current)", () => {
+    const v3 = {
+      type: "excalidraw" as const,
+      version: 3 as const,
+      source: "x",
+      pages: [{ id: "p1", name: "Page 1", elements: [] }],
+      activePageId: "p1",
+    }
+    expect(migrate(v3)).toEqual(v3)
   })
 
   it("throws on unknown payload shape", () => {
@@ -27,8 +46,8 @@ describe("migrate", () => {
   })
 
   it("throws on version newer than current", () => {
-    expect(() => migrate({ type: "excalidraw", version: 99, source: "x", elements: [] })).toThrow(
-      /newer/i,
-    )
+    expect(() =>
+      migrate({ type: "excalidraw", version: 99, source: "x", pages: [], activePageId: "x" }),
+    ).toThrow(/newer/i)
   })
 })

@@ -1,17 +1,30 @@
-import type {
-  ExcalidrawAppStateSnapshot,
-  ExcalidrawData,
-  ExcalidrawFiles,
-  Scene,
+import {
+  buildExcalidrawData,
+  type ExcalidrawAppStateSnapshot,
+  type ExcalidrawData,
+  type ExcalidrawFiles,
+  type Scene,
 } from "@excalidraw-clone/scene"
 import { migrate } from "./migrations"
 
-export function serializeScene(
-  scene: Scene,
+export interface DocumentPage {
+  id: string
+  name: string
+  scene: Scene
+}
+
+export function serializeDocument(
+  pages: readonly DocumentPage[],
+  activePageId: string,
   appState?: ExcalidrawAppStateSnapshot,
   files?: ExcalidrawFiles,
 ): ExcalidrawData {
-  return scene.toJSON(appState, files)
+  const pageData = pages.map((p) => ({
+    id: p.id,
+    name: p.name,
+    elements: p.scene.getElementsIncludingDeleted(),
+  }))
+  return buildExcalidrawData(pageData, activePageId, appState, files)
 }
 
 export function toExcalidrawBlob(data: ExcalidrawData): Blob {

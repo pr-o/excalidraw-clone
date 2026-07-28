@@ -192,11 +192,24 @@ export interface ExcalidrawBinaryFile {
 
 export type ExcalidrawFiles = Readonly<Record<string, ExcalidrawBinaryFile>>
 
+export interface ExcalidrawPage {
+  id: string
+  name: string
+  elements: readonly ExcalidrawElement[]
+}
+
+export interface SceneSnapshot {
+  elements: readonly ExcalidrawElement[]
+  appState?: ExcalidrawAppStateSnapshot
+  files?: ExcalidrawFiles
+}
+
 export interface ExcalidrawData {
   type: "excalidraw"
-  version: 2
+  version: 3
   source: string
-  elements: readonly ExcalidrawElement[]
+  pages: readonly ExcalidrawPage[]
+  activePageId: string
   appState?: ExcalidrawAppStateSnapshot
   files?: ExcalidrawFiles
 }

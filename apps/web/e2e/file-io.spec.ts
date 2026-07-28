@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test"
-import { dragOnCanvas } from "./_helpers"
+import { dragOnCanvas, parseStoredScene } from "./_helpers"
 
 test("save as → open round-trips the scene", async ({ page }) => {
   await page.goto("/")
@@ -25,8 +25,8 @@ test("save as → open round-trips the scene", async ({ page }) => {
   await chooser.setFiles(path)
 
   await page.waitForTimeout(700)
-  const data = JSON.parse(
-    (await page.evaluate(() => localStorage.getItem("excalidraw-scene")))!,
-  ) as { elements: { type: string }[] }
+  const data = parseStoredScene<{ type: string }>(
+    await page.evaluate(() => localStorage.getItem("excalidraw-scene")),
+  )
   expect(data.elements[0]?.type).toBe("diamond")
 })

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test"
-import { dragOnCanvas } from "./_helpers"
+import { dragOnCanvas, parseStoredScene } from "./_helpers"
 
 test("user can draw a rectangle", async ({ page }) => {
   await page.goto("/")
@@ -13,7 +13,7 @@ test("user can draw a rectangle", async ({ page }) => {
 
   const sceneJson = await page.evaluate(() => localStorage.getItem("excalidraw-scene"))
   expect(sceneJson).toBeTruthy()
-  const data = JSON.parse(sceneJson!) as { elements: { type: string }[] }
+  const data = parseStoredScene<{ type: string }>(sceneJson)
   expect(data.elements.length).toBeGreaterThan(0)
   expect(data.elements[0]?.type).toBe("rectangle")
 })

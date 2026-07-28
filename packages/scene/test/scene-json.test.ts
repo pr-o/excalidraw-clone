@@ -1,17 +1,12 @@
 import { describe, expect, it } from "vitest"
-import { SCENE_FORMAT_SOURCE, SCENE_FORMAT_VERSION, Scene, newRectangle } from "../src"
-import type { ExcalidrawData } from "../src"
+import { Scene, newRectangle } from "../src"
+import type { SceneSnapshot } from "../src"
 
 describe("Scene.toJSON", () => {
-  it("empty scene serializes to v2 shape with empty elements", () => {
+  it("empty scene serializes to an elements-only snapshot", () => {
     const s = new Scene()
     const data = s.toJSON()
-    expect(data).toEqual({
-      type: "excalidraw",
-      version: SCENE_FORMAT_VERSION,
-      source: SCENE_FORMAT_SOURCE,
-      elements: [],
-    })
+    expect(data).toEqual({ elements: [] })
   })
 
   it("includes appState and files when provided", () => {
@@ -41,27 +36,17 @@ describe("Scene.loadFromJSON", () => {
   it("replaces elements", () => {
     const s = new Scene()
     const r = newRectangle({ x: 0, y: 0 })
-    const data: ExcalidrawData = {
-      type: "excalidraw",
-      version: 2,
-      source: "test",
-      elements: [r],
-    }
+    const data: SceneSnapshot = { elements: [r] }
     s.loadFromJSON(data)
     expect(s.getElements()).toEqual([r])
   })
 
   it("returns embedded appState and files opaquely", () => {
     const s = new Scene()
-    const data: ExcalidrawData = {
-      type: "excalidraw",
-      version: 2,
-      source: "test",
+    const data: SceneSnapshot = {
       elements: [],
       appState: { custom: "value" },
-      files: {
-        f1: { id: "f1", mimeType: "image/png", dataURL: "x", created: 0 },
-      },
+      files: { f1: { id: "f1", mimeType: "image/png", dataURL: "x", created: 0 } },
     }
     const out = s.loadFromJSON(data)
     expect(out.appState).toEqual({ custom: "value" })
@@ -74,12 +59,7 @@ describe("Scene.loadFromJSON", () => {
       d.push(newRectangle({ x: 0, y: 0 }))
     })
     expect(s.canUndo()).toBe(true)
-    s.loadFromJSON({
-      type: "excalidraw",
-      version: 2,
-      source: "test",
-      elements: [],
-    })
+    s.loadFromJSON({ elements: [] })
     expect(s.canUndo()).toBe(false)
     expect(s.canRedo()).toBe(false)
   })
@@ -100,11 +80,8 @@ describe("Scene round-trip", () => {
     expect(s2.getElements()).toEqual([r1, r2])
   })
 
-  it("v2 file with custom appState round-trips opaquely", () => {
-    const original: ExcalidrawData = {
-      type: "excalidraw",
-      version: 2,
-      source: "external",
+  it("custom appState round-trips opaquely", () => {
+    const original: SceneSnapshot = {
       elements: [],
       appState: { theme: "dark", arbitraryUnknownKey: 42 },
     }
