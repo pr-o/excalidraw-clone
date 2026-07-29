@@ -58,3 +58,6 @@ Thumbs.db
 
 # --- Claude Code local config ---
 .claude/
+
+# --- Superpowers scratch state (SDD ledgers, brainstorm sessions) ---
+/.superpowers/
