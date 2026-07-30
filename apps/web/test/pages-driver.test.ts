@@ -7,6 +7,7 @@ import {
   DEFAULT_VIEWPORT,
   deletePage,
   duplicatePage,
+  movePage,
   pagesFromDocument,
   renamePage,
   reorderPage,
@@ -147,5 +148,43 @@ describe("cyclePageId", () => {
     const b = createPageRecord("Page 2")
     expect(cyclePageId([a, b], a.id, "prev")).toBe(b.id)
     expect(cyclePageId([a, b], b.id, "prev")).toBe(a.id)
+  })
+})
+
+describe("movePage", () => {
+  it("moves a page from its current index to an arbitrary target index", () => {
+    const a = createPageRecord("Page 1")
+    const b = createPageRecord("Page 2")
+    const c = createPageRecord("Page 3")
+    const result = movePage([a, b, c], c.id, 0)
+    expect(result.map((p) => p.id)).toEqual([c.id, a.id, b.id])
+  })
+
+  it("clamps a too-large target index to the last position", () => {
+    const a = createPageRecord("Page 1")
+    const b = createPageRecord("Page 2")
+    const result = movePage([a, b], a.id, 99)
+    expect(result.map((p) => p.id)).toEqual([b.id, a.id])
+  })
+
+  it("clamps a negative target index to the first position", () => {
+    const a = createPageRecord("Page 1")
+    const b = createPageRecord("Page 2")
+    const result = movePage([a, b], b.id, -5)
+    expect(result.map((p) => p.id)).toEqual([b.id, a.id])
+  })
+
+  it("is a no-op when the id is not found", () => {
+    const a = createPageRecord("Page 1")
+    const b = createPageRecord("Page 2")
+    const result = movePage([a, b], "missing", 0)
+    expect(result).toEqual([a, b])
+  })
+
+  it("is effectively a no-op when toIndex equals the current index", () => {
+    const a = createPageRecord("Page 1")
+    const b = createPageRecord("Page 2")
+    const result = movePage([a, b], a.id, 0)
+    expect(result.map((p) => p.id)).toEqual([a.id, b.id])
   })
 })

@@ -103,3 +103,13 @@ export function cyclePageId(
   const nextIndex = (index + delta + pages.length) % pages.length
   return pages[nextIndex]!.id
 }
+
+export function movePage(pages: readonly PageRecord[], id: string, toIndex: number): PageRecord[] {
+  const fromIndex = pages.findIndex((p) => p.id === id)
+  if (fromIndex === -1) return [...pages]
+  const clamped = Math.max(0, Math.min(toIndex, pages.length - 1))
+  const next = [...pages]
+  const [moved] = next.splice(fromIndex, 1)
+  next.splice(clamped, 0, moved!)
+  return next
+}
