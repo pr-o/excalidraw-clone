@@ -31,6 +31,7 @@ import {
   Toolbar,
 } from "@excalidraw-clone/ui"
 import {
+  createAutoSaver,
   deleteLibraryItem,
   download,
   exportLibraryFile,
@@ -51,12 +52,14 @@ import {
   deletePage,
   DEFAULT_VIEWPORT,
   duplicatePage,
+  movePage,
   pagesFromDocument,
   renamePage,
   reorderPage,
   withViewport,
   type PageRecord,
 } from "../driver/pages"
+import { renderPageThumbnail } from "../driver/pageThumbnails"
 import { useSceneRevision } from "../hooks/useSceneRevision"
 import { openExcalidrawFromPicker } from "../driver/openFile"
 import { patchScene } from "../driver/patchScene"
@@ -86,10 +89,13 @@ function Inner(): React.ReactElement {
   const initialDoc = useMemo(() => hydratePages(), [])
   const [pages, setPages] = useState<PageRecord[]>(initialDoc.pages)
   const [activePageId, setActivePageId] = useState<string>(initialDoc.activePageId)
+  const [thumbnails, setThumbnails] = useState<Record<string, string | undefined>>({})
   const scene = useMemo(
     () => pages.find((p) => p.id === activePageId)!.scene,
     [pages, activePageId],
   )
+  const canvasBg = useAppStore((s) => s.canvasBg)
+  const resolvedTheme = useAppStore((s) => s.resolvedTheme)
   const switchToPage = useCallback(
     (targetId: string): void => {
       if (targetId === activePageId) return
@@ -101,8 +107,13 @@ function Inner(): React.ReactElement {
       s.setView(target?.viewport ?? DEFAULT_VIEWPORT)
       setActivePageId(targetId)
       s.setSelection([])
+      if (target) {
+        void renderPageThumbnail(target.scene, canvasBg, resolvedTheme).then((thumb) => {
+          setThumbnails((prev) => ({ ...prev, [targetId]: thumb }))
+        })
+      }
     },
-    [activePageId, pages],
+    [activePageId, pages, canvasBg, resolvedTheme],
   )
   useEffect(() => {
     hydrateUI()
@@ -110,6 +121,36 @@ function Inner(): React.ReactElement {
   useEffect(() => {
     return startAutoSave(pages, activePageId)
   }, [pages, activePageId])
+  useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      const entries = await Promise.all(
+        initialDoc.pages.map(
+          async (p) => [p.id, await renderPageThumbnail(p.scene, canvasBg, resolvedTheme)] as const,
+        ),
+      )
+      if (cancelled) return
+      setThumbnails((prev) => ({ ...prev, ...Object.fromEntries(entries) }))
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [initialDoc, canvasBg, resolvedTheme])
+  useEffect(() => {
+    const saver = createAutoSaver({
+      delayMs: 500,
+      flush: () => {
+        void renderPageThumbnail(scene, canvasBg, resolvedTheme).then((thumb) => {
+          setThumbnails((prev) => ({ ...prev, [activePageId]: thumb }))
+        })
+      },
+    })
+    const unsub = scene.subscribe(() => saver.schedule())
+    return () => {
+      unsub()
+      saver.dispose()
+    }
+  }, [scene, activePageId, canvasBg, resolvedTheme])
   useEffect(() => {
     return attachShortcuts({
       scene,
@@ -492,11 +533,16 @@ function Inner(): React.ReactElement {
             t={t}
             pages={pages}
             activePageId={activePageId}
+            thumbnails={thumbnails}
             onSwitch={switchToPage}
             onAdd={() => {
               const updated = addPage(pages)
+              const created = updated[updated.length - 1]!
               setPages(updated)
-              setActivePageId(updated[updated.length - 1]!.id)
+              setActivePageId(created.id)
+              void renderPageThumbnail(created.scene, canvasBg, resolvedTheme).then((thumb) => {
+                setThumbnails((prev) => ({ ...prev, [created.id]: thumb }))
+              })
             }}
             onDelete={(id) => {
               if (id === activePageId) {
@@ -504,15 +550,25 @@ function Inner(): React.ReactElement {
                 if (fallback) switchToPage(fallback.id)
               }
               setPages(deletePage(pages, id))
+              setThumbnails((prev) => {
+                const next = { ...prev }
+                delete next[id]
+                return next
+              })
             }}
             onRename={(id, name) => setPages(renamePage(pages, id, name))}
             onDuplicate={(id) => {
               const updated = duplicatePage(pages, id)
-              setPages(updated)
               const index = pages.findIndex((p) => p.id === id)
-              setActivePageId(updated[index + 1]!.id)
+              const created = updated[index + 1]!
+              setPages(updated)
+              setActivePageId(created.id)
+              void renderPageThumbnail(created.scene, canvasBg, resolvedTheme).then((thumb) => {
+                setThumbnails((prev) => ({ ...prev, [created.id]: thumb }))
+              })
             }}
             onReorder={(id, direction) => setPages(reorderPage(pages, id, direction))}
+            onMove={(id, toIndex) => setPages(movePage(pages, id, toIndex))}
           />
 
           {hasLockedElements && (
