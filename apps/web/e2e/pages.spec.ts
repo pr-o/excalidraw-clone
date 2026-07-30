@@ -94,3 +94,67 @@ test("pages: add, switch, rename, delete-guard, and localStorage round-trip", as
   await expect(page.locator('[data-testid^="page-tab-"]')).toHaveCount(1)
   await expect(page.locator(`[data-testid="page-delete-${firstId}"]`)).toBeDisabled()
 })
+
+test("pages: active tab shows a live-updating thumbnail after drawing", async ({ page }) => {
+  await page.goto("/")
+  await page.evaluate(() => localStorage.clear())
+  await page.reload()
+  await page.locator('[data-testid="toolbar-rectangle"]').waitFor({ state: "visible" })
+
+  const firstTab = page.locator('[data-testid^="page-tab-"]')
+  const firstId = (await firstTab.getAttribute("data-testid"))!.replace("page-tab-", "")
+  const thumb = page.locator(`[data-testid="page-thumb-${firstId}"]`)
+
+  // Blank box before any drawing: it's a <div>, not an <img>, so it has no src.
+  expect(await thumb.getAttribute("src")).toBeNull()
+
+  await page.locator('[data-testid="toolbar-rectangle"]').click()
+  await dragOnCanvas(page, { x: 100, y: 100 }, { x: 200, y: 200 })
+  await page.locator('[data-testid="toolbar-selection"]').click()
+
+  // The thumbnail effect mirrors the 500ms autosave debounce; poll rather than
+  // assume a fixed wait has been long enough (the e2e suite's established
+  // pattern for anything gated behind that debounce).
+  await expect
+    .poll(async () => thumb.getAttribute("src"), { timeout: 3000 })
+    .toMatch(/^data:image\/png;base64,/)
+})
+
+test("pages: dragging a tab past a sibling reorders the pages array in localStorage", async ({
+  page,
+}) => {
+  await page.goto("/")
+  await page.evaluate(() => localStorage.clear())
+  await page.reload()
+  await page.locator('[data-testid="toolbar-rectangle"]').waitFor({ state: "visible" })
+
+  await page.locator('[data-testid="page-add"]').click()
+  await expect(page.locator('[data-testid^="page-tab-"]')).toHaveCount(2)
+  await expect.poll(async () => (await readDoc(page))?.pages.length).toBe(2)
+
+  const idsBefore = await page
+    .locator('[data-testid^="page-tab-"]')
+    .evaluateAll((els) => els.map((el) => el.getAttribute("data-testid")!.replace("page-tab-", "")))
+  const firstId = idsBefore[0]!
+  const secondId = idsBefore[1]!
+
+  // Grab the thumbnail, not the tab's centre: a pointerdown that lands on any
+  // button/input inside the tab (and the centre is the rename/switch button)
+  // deliberately does not start a drag, so the thumbnail is the grab surface.
+  const firstGrab = page.locator(`[data-testid="page-thumb-${firstId}"]`)
+  const secondTab = page.locator(`[data-testid="page-tab-${secondId}"]`)
+  const firstBox = await firstGrab.boundingBox()
+  const secondBox = await secondTab.boundingBox()
+  if (!firstBox || !secondBox) throw new Error("tab not found")
+
+  await page.mouse.move(firstBox.x + firstBox.width / 2, firstBox.y + firstBox.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(secondBox.x + secondBox.width + 5, secondBox.y + secondBox.height / 2, {
+    steps: 8,
+  })
+  await page.mouse.up()
+
+  await expect
+    .poll(async () => (await readDoc(page))?.pages.map((p) => p.id))
+    .toEqual([secondId, firstId])
+})
