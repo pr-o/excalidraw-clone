@@ -41,7 +41,7 @@ import {
   putLibraryItem,
   renameLibraryItem,
 } from "@excalidraw-clone/persistence"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { I18nextProvider, useTranslation } from "react-i18next"
 import { startAutoSave } from "../driver/autoSave"
 import { hydratePages, hydrateUI } from "../driver/hydration"
@@ -96,6 +96,10 @@ function Inner(): React.ReactElement {
   )
   const canvasBg = useAppStore((s) => s.canvasBg)
   const resolvedTheme = useAppStore((s) => s.resolvedTheme)
+  // Read at fire time by the re-theme-all effect below, which must see the live
+  // page list without re-running for every unrelated `pages` mutation.
+  const pagesRef = useRef<PageRecord[]>(pages)
+  pagesRef.current = pages
   const switchToPage = useCallback(
     (targetId: string): void => {
       if (targetId === activePageId) return
@@ -108,9 +112,14 @@ function Inner(): React.ReactElement {
       setActivePageId(targetId)
       s.setSelection([])
       if (target) {
-        void renderPageThumbnail(target.scene, canvasBg, resolvedTheme).then((thumb) => {
-          setThumbnails((prev) => ({ ...prev, [targetId]: thumb }))
-        })
+        void renderPageThumbnail(target.scene, canvasBg, resolvedTheme)
+          .then((thumb) => {
+            setThumbnails((prev) => ({ ...prev, [targetId]: thumb }))
+          })
+          .catch(() => {
+            // Rendering can fail (e.g. SecurityError from a tainted canvas).
+            // Leave the previous thumbnail in place rather than blanking it.
+          })
       }
     },
     [activePageId, pages, canvasBg, resolvedTheme],
@@ -121,28 +130,53 @@ function Inner(): React.ReactElement {
   useEffect(() => {
     return startAutoSave(pages, activePageId)
   }, [pages, activePageId])
+  // Hydrates every page's thumbnail on mount, and re-renders them all whenever
+  // the theme or canvas background changes. Deliberately keyed only on those two
+  // so adding/renaming/reordering a page does not re-render every thumbnail;
+  // the live page list is read from a ref at fire time instead.
   useEffect(() => {
     let cancelled = false
     void (async () => {
       const entries = await Promise.all(
-        initialDoc.pages.map(
-          async (p) => [p.id, await renderPageThumbnail(p.scene, canvasBg, resolvedTheme)] as const,
-        ),
+        pagesRef.current.map(async (p) => {
+          try {
+            return [p.id, await renderPageThumbnail(p.scene, canvasBg, resolvedTheme)] as const
+          } catch {
+            // Keep this page's existing thumbnail rather than blanking it.
+            return null
+          }
+        }),
       )
       if (cancelled) return
-      setThumbnails((prev) => ({ ...prev, ...Object.fromEntries(entries) }))
+      // Only touch pages that still exist, so a delete's cache removal is never
+      // undone and a removed page's Scene is not kept reachable.
+      const live = new Set(pagesRef.current.map((p) => p.id))
+      setThumbnails((prev) => {
+        const next: Record<string, string | undefined> = {}
+        for (const [id, thumb] of Object.entries(prev)) {
+          if (live.has(id)) next[id] = thumb
+        }
+        for (const entry of entries) {
+          if (entry && live.has(entry[0])) next[entry[0]] = entry[1]
+        }
+        return next
+      })
     })()
     return () => {
       cancelled = true
     }
-  }, [initialDoc, canvasBg, resolvedTheme])
+  }, [canvasBg, resolvedTheme])
   useEffect(() => {
     const saver = createAutoSaver({
       delayMs: 500,
       flush: () => {
-        void renderPageThumbnail(scene, canvasBg, resolvedTheme).then((thumb) => {
-          setThumbnails((prev) => ({ ...prev, [activePageId]: thumb }))
-        })
+        void renderPageThumbnail(scene, canvasBg, resolvedTheme)
+          .then((thumb) => {
+            setThumbnails((prev) => ({ ...prev, [activePageId]: thumb }))
+          })
+          .catch(() => {
+            // Keep the last good thumbnail if this render fails.
+          })
       },
     })
     const unsub = scene.subscribe(() => saver.schedule())
@@ -540,9 +574,13 @@ function Inner(): React.ReactElement {
               const created = updated[updated.length - 1]!
               setPages(updated)
               setActivePageId(created.id)
-              void renderPageThumbnail(created.scene, canvasBg, resolvedTheme).then((thumb) => {
-                setThumbnails((prev) => ({ ...prev, [created.id]: thumb }))
-              })
+              void renderPageThumbnail(created.scene, canvasBg, resolvedTheme)
+                .then((thumb) => {
+                  setThumbnails((prev) => ({ ...prev, [created.id]: thumb }))
+                })
+                .catch(() => {
+                  // Leave the cache untouched if this render fails.
+                })
             }}
             onDelete={(id) => {
               if (id === activePageId) {
@@ -563,9 +601,13 @@ function Inner(): React.ReactElement {
               const created = updated[index + 1]!
               setPages(updated)
               setActivePageId(created.id)
-              void renderPageThumbnail(created.scene, canvasBg, resolvedTheme).then((thumb) => {
-                setThumbnails((prev) => ({ ...prev, [created.id]: thumb }))
-              })
+              void renderPageThumbnail(created.scene, canvasBg, resolvedTheme)
+                .then((thumb) => {
+                  setThumbnails((prev) => ({ ...prev, [created.id]: thumb }))
+                })
+                .catch(() => {
+                  // Leave the cache untouched if this render fails.
+                })
             }}
             onReorder={(id, direction) => setPages(reorderPage(pages, id, direction))}
             onMove={(id, toIndex) => setPages(movePage(pages, id, toIndex))}
