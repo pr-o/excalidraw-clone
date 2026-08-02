@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { newRectangle } from "../src/factories"
-import { lockElements, unlockAll } from "../src/locking"
+import { lockElements, unlockAll, unlockElements } from "../src/locking"
 import type { ExcalidrawElement } from "../src/types"
 
 const rect = (x: number): ExcalidrawElement => newRectangle({ x, y: 0, width: 10, height: 10 })
@@ -59,5 +59,37 @@ describe("unlockAll", () => {
     const b = asLocked(rect(20))
     unlockAll([b])
     expect(b.locked).toBe(true)
+  })
+})
+
+describe("unlockElements", () => {
+  it("returns unlocked patches for the requested ids only", () => {
+    const a = asLocked(rect(0))
+    const b = asLocked(rect(20))
+    const patches = unlockElements([a, b], [a.id])
+    expect(patches).toHaveLength(1)
+    expect(patches[0]!.id).toBe(a.id)
+    expect(patches[0]!.locked).toBe(false)
+  })
+
+  it("bumps versionNonce and updated on each patch", () => {
+    const a = asLocked(rect(0))
+    const before = a.updated
+    const patches = unlockElements([a], [a.id])
+    expect(patches[0]!.versionNonce).not.toBe(a.versionNonce)
+    expect(patches[0]!.updated).toBeGreaterThanOrEqual(before)
+  })
+
+  it("skips ids that are already unlocked or deleted", () => {
+    const a = rect(0)
+    const dead = { ...asLocked(rect(20)), isDeleted: true }
+    expect(unlockElements([a, dead], [a.id, dead.id])).toEqual([])
+  })
+
+  it("ignores unknown ids and does not mutate inputs", () => {
+    const a = asLocked(rect(0))
+    expect(unlockElements([a], ["ghost"])).toEqual([])
+    unlockElements([a], [a.id])
+    expect(a.locked).toBe(true)
   })
 })

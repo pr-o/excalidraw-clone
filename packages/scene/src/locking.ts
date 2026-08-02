@@ -14,6 +14,18 @@ export function lockElements(
     .map((el) => ({ ...el, locked: true, versionNonce: newNonce(), updated: Date.now() }))
 }
 
+/** Returns unlocked patches (fresh versionNonce, bumped updated) for the matched
+ *  ids. Skips ids not currently locked, deleted, or unknown. */
+export function unlockElements(
+  elements: readonly ExcalidrawElement[],
+  ids: readonly string[],
+): ExcalidrawElement[] {
+  const idSet = new Set(ids)
+  return elements
+    .filter((el) => idSet.has(el.id) && !el.isDeleted && el.locked)
+    .map((el) => ({ ...el, locked: false, versionNonce: newNonce(), updated: Date.now() }))
+}
+
 /** Returns unlocked patches for every non-deleted locked element. */
 export function unlockAll(elements: readonly ExcalidrawElement[]): ExcalidrawElement[] {
   return elements
