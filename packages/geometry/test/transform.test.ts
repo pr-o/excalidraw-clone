@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest"
-import { sceneToViewport, viewportToScene, zoomToPoint, ZOOM_MIN, ZOOM_MAX } from "../src"
-import type { Point, ViewTransform } from "../src"
+import {
+  fitToContent,
+  sceneToViewport,
+  viewportToScene,
+  zoomToPoint,
+  ZOOM_MIN,
+  ZOOM_MAX,
+} from "../src"
+import type { Bounds, Point, ViewTransform } from "../src"
 
 const expectClose = (a: Point, b: Point) => {
   expect(a.x).toBeCloseTo(b.x)
@@ -110,5 +117,43 @@ describe("zoomToPoint", () => {
     const anchor: Point = { x: 10, y: 10 }
     const next = zoomToPoint(view, anchor, 0.0001)
     expect(next.zoom).toBe(ZOOM_MIN)
+  })
+})
+
+describe("fitToContent", () => {
+  it("centers the content bounds in the viewport", () => {
+    const bounds: Bounds = { x: 0, y: 0, width: 100, height: 100 }
+    const view = fitToContent(bounds, 1000, 1000)
+    const centerScene = { x: 50, y: 50 }
+    const centerViewport = sceneToViewport(centerScene, view)
+    expect(centerViewport.x).toBeCloseTo(500, 0)
+    expect(centerViewport.y).toBeCloseTo(500, 0)
+  })
+
+  it("picks a zoom that fits the wider dimension when the viewport is narrower than it is tall", () => {
+    const bounds: Bounds = { x: 0, y: 0, width: 200, height: 100 }
+    const view = fitToContent(bounds, 1000, 1000)
+    // width is the constraining dimension: zoom * width * 1.1(padding) <= viewportWidth
+    expect(view.zoom).toBeLessThanOrEqual(1000 / (200 * 1.1) + 1e-9)
+  })
+
+  it("clamps zoom to ZOOM_MAX for very small content", () => {
+    const bounds: Bounds = { x: 0, y: 0, width: 1, height: 1 }
+    const view = fitToContent(bounds, 1000, 1000)
+    expect(view.zoom).toBe(ZOOM_MAX)
+  })
+
+  it("clamps zoom to ZOOM_MIN for very large content", () => {
+    const bounds: Bounds = { x: 0, y: 0, width: 1_000_000, height: 1_000_000 }
+    const view = fitToContent(bounds, 1000, 1000)
+    expect(view.zoom).toBe(ZOOM_MIN)
+  })
+
+  it("handles a zero-size bounds (single point) without producing NaN/Infinity", () => {
+    const bounds: Bounds = { x: 5, y: 5, width: 0, height: 0 }
+    const view = fitToContent(bounds, 1000, 1000)
+    expect(Number.isFinite(view.zoom)).toBe(true)
+    expect(Number.isFinite(view.scrollX)).toBe(true)
+    expect(Number.isFinite(view.scrollY)).toBe(true)
   })
 })

@@ -1,4 +1,5 @@
-import type { Point, ViewTransform } from "./types"
+import { clamp } from "./scalar"
+import type { Bounds, Point, ViewTransform } from "./types"
 
 export const sceneToViewport = (p: Point, t: ViewTransform): Point => ({
   x: (p.x + t.scrollX) * t.zoom,
@@ -24,5 +25,28 @@ export const zoomToPoint = (
     zoom,
     scrollX: anchor.x / zoom - scenePoint.x,
     scrollY: anchor.y / zoom - scenePoint.y,
+  }
+}
+
+const FIT_PADDING = 1.1
+
+export const fitToContent = (
+  bounds: Bounds,
+  viewportWidth: number,
+  viewportHeight: number,
+): ViewTransform => {
+  const width = Math.max(bounds.width, 1)
+  const height = Math.max(bounds.height, 1)
+  const zoom = clamp(
+    Math.min(viewportWidth / (width * FIT_PADDING), viewportHeight / (height * FIT_PADDING)),
+    ZOOM_MIN,
+    ZOOM_MAX,
+  )
+  const centerX = bounds.x + bounds.width / 2
+  const centerY = bounds.y + bounds.height / 2
+  return {
+    zoom,
+    scrollX: viewportWidth / 2 / zoom - centerX,
+    scrollY: viewportHeight / 2 / zoom - centerY,
   }
 }
