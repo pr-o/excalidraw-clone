@@ -4,7 +4,6 @@ import { putFile } from "@excalidraw-clone/persistence"
 import { CanvasRenderer } from "@excalidraw-clone/renderer"
 import {
   cloneElementsWithNewIds,
-  hitTestElement,
   type ExcalidrawElement,
   type LibraryItem,
   type Scene,
@@ -20,6 +19,7 @@ import {
 import { useEffect, useRef, type RefObject } from "react"
 import { useAppStore } from "../store"
 import { applyEffects } from "./effects"
+import { pickElementAtPoint } from "./hitTest"
 import {
   applyWheel,
   clientToScene,
@@ -153,24 +153,7 @@ export function useDrawingDriver({
       const currentState = store.toolStates[toolName] ?? tool.initial
       const ctx: ToolContext = {
         readElements: () => scene.getElements(),
-        hitTest: (at) => {
-          // Frames are lowest-priority: members inside a frame win, the frame
-          // itself only catches clicks on its empty interior.
-          const elements = scene.getElements()
-          let frameHit: ExcalidrawElement | null = null
-          for (let i = elements.length - 1; i >= 0; i -= 1) {
-            const el = elements[i] as ExcalidrawElement
-            if (el.type === "text" && el.containerId !== null) continue
-            if (el.locked) continue
-            if (!hitTestElement(el, at)) continue
-            if (el.type === "frame") {
-              frameHit = frameHit ?? el
-              continue
-            }
-            return el
-          }
-          return frameHit
-        },
+        hitTest: (at) => pickElementAtPoint(scene.getElements(), at),
         viewTransform: { scrollX: store.scrollX, scrollY: store.scrollY, zoom: store.zoom },
         modifiers,
         selectedIds: store.selectedIds,
