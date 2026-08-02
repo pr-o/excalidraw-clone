@@ -4,6 +4,7 @@ import { putFile } from "@excalidraw-clone/persistence"
 import { CanvasRenderer } from "@excalidraw-clone/renderer"
 import {
   cloneElementsWithNewIds,
+  expandIdsToGroups,
   type ExcalidrawElement,
   type LibraryItem,
   type Scene,
@@ -230,6 +231,11 @@ export function useDrawingDriver({
     }
 
     const onPointerDown = (e: PointerEvent): void => {
+      if (e.button !== 0) return
+      if (useAppStore.getState().contextMenu) {
+        useAppStore.getState().setContextMenu(null)
+        return
+      }
       // A fresh, real pointerDown for this id proves any lingering orphaned
       // state is stale (e.g. the orphaned gesture's pointerUp landed on a UI
       // sibling after capture was released, so our up handler never fired).
@@ -326,10 +332,50 @@ export function useDrawingDriver({
       dispatch({ type: "doubleClick", at }, modifiersOf(e))
     }
 
+    const onContextMenu = (e: MouseEvent): void => {
+      e.preventDefault()
+      const store = useAppStore.getState()
+      const scenePoint = clientToScene(
+        canvas,
+        { scrollX: store.scrollX, scrollY: store.scrollY, zoom: store.zoom },
+        e,
+      )
+      const hit = pickElementAtPoint(scene.getElements(), scenePoint, { includeLocked: true })
+      if (!hit) {
+        store.setContextMenu({ x: e.clientX, y: e.clientY, scenePoint, target: "canvas" })
+        return
+      }
+      if (hit.locked) {
+        store.setContextMenu({
+          x: e.clientX,
+          y: e.clientY,
+          scenePoint,
+          target: "element",
+          elementIds: [hit.id],
+          locked: true,
+        })
+        return
+      }
+      const alreadySelected = store.selectedIds.includes(hit.id)
+      const elementIds = alreadySelected
+        ? [...store.selectedIds]
+        : expandIdsToGroups([hit.id], scene.getElements())
+      if (!alreadySelected) store.setSelection(elementIds)
+      store.setContextMenu({
+        x: e.clientX,
+        y: e.clientY,
+        scenePoint,
+        target: "element",
+        elementIds,
+        locked: false,
+      })
+    }
+
     canvas.addEventListener("pointerdown", onPointerDown)
     canvas.addEventListener("pointermove", onPointerMove)
     canvas.addEventListener("pointerup", onPointerUp)
     canvas.addEventListener("dblclick", onDoubleClick)
+    canvas.addEventListener("contextmenu", onContextMenu)
     canvas.addEventListener("wheel", onWheel, { passive: false })
     window.addEventListener("keydown", onKeyDown)
     window.addEventListener("keyup", onKeyUp)
@@ -345,6 +391,7 @@ export function useDrawingDriver({
       canvas.removeEventListener("pointermove", onPointerMove)
       canvas.removeEventListener("pointerup", onPointerUp)
       canvas.removeEventListener("dblclick", onDoubleClick)
+      canvas.removeEventListener("contextmenu", onContextMenu)
       canvas.removeEventListener("wheel", onWheel)
       window.removeEventListener("keydown", onKeyDown)
       window.removeEventListener("keyup", onKeyUp)
