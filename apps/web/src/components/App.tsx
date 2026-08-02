@@ -7,9 +7,8 @@ import {
   bringForward,
   bringToFront,
   BUILTIN_TEMPLATES,
-  cloneElementsWithNewIds,
   distributeElements,
-  expandIdsToCopyClosure,
+  duplicateElements,
   expandIdsToGroups,
   type ExcalidrawElement,
   groupElements,
@@ -432,12 +431,7 @@ function Inner(): React.ReactElement {
                 useAppStore.getState().setSelection([])
               }}
               onDuplicate={() => {
-                const picked = expandIdsToCopyClosure(selectedIds, scene.getElements())
-                const copies = cloneElementsWithNewIds(picked).map((el) => ({
-                  ...el,
-                  x: el.x + 12,
-                  y: el.y + 12,
-                }))
+                const copies = duplicateElements(scene.getElements(), selectedIds)
                 scene.mutate((draft) => {
                   draft.push(...copies)
                 })
