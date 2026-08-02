@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest"
-import { getElementBounds, newFrame, newFreedraw, newLine, newRectangle } from "../src"
+import {
+  getElementBounds,
+  getElementsBounds,
+  newFrame,
+  newFreedraw,
+  newLine,
+  newRectangle,
+} from "../src"
 import type { ExcalidrawLineElement, ExcalidrawRectangleElement } from "../src"
 
 describe("getElementBounds — rectangular shapes", () => {
@@ -79,5 +86,34 @@ describe("getElementBounds — linear elements", () => {
     const b = getElementBounds(l)
     expect(b.width).toBeCloseTo(0)
     expect(b.height).toBeCloseTo(10)
+  })
+})
+
+describe("getElementsBounds", () => {
+  it("returns null for an empty element list", () => {
+    expect(getElementsBounds([])).toBeNull()
+  })
+
+  it("returns null when every element is deleted", () => {
+    const a = { ...newRectangle({ x: 0, y: 0, width: 10, height: 10 }), isDeleted: true }
+    expect(getElementsBounds([a])).toBeNull()
+  })
+
+  it("returns a single element's own bounds when there's only one", () => {
+    const a = newRectangle({ x: 10, y: 20, width: 30, height: 40 })
+    expect(getElementsBounds([a])).toEqual({ x: 10, y: 20, width: 30, height: 40 })
+  })
+
+  it("returns the union bounding box across multiple elements", () => {
+    const a = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
+    const b = newRectangle({ x: 50, y: 40, width: 10, height: 10 })
+    const bounds = getElementsBounds([a, b])
+    expect(bounds).toEqual({ x: 0, y: 0, width: 60, height: 50 })
+  })
+
+  it("ignores deleted elements when computing the union", () => {
+    const a = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
+    const dead = { ...newRectangle({ x: 500, y: 500, width: 10, height: 10 }), isDeleted: true }
+    expect(getElementsBounds([a, dead])).toEqual({ x: 0, y: 0, width: 10, height: 10 })
   })
 })

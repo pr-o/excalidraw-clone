@@ -43,7 +43,7 @@ export type {
   NewTextInput,
 } from "./factories"
 export { ELBOW_STUB, routeElbow, sideCenter, sideOf, type Side } from "./elbow"
-export { getElementBounds } from "./bounds"
+export { getElementBounds, getElementsBounds } from "./bounds"
 export { hitTestElement } from "./hit-test"
 export type { HitTestOptions } from "./hit-test"
 export { Scene } from "./scene"

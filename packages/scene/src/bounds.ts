@@ -41,3 +41,14 @@ export const getElementBounds = (element: ExcalidrawElement): Bounds => {
       return boundsFromPoints(rotatedCorners(element))
   }
 }
+
+export function getElementsBounds(elements: readonly ExcalidrawElement[]): Bounds | null {
+  const visible = elements.filter((el) => !el.isDeleted)
+  if (visible.length === 0) return null
+  const corners: Point[] = []
+  for (const el of visible) {
+    const b = getElementBounds(el)
+    corners.push({ x: b.x, y: b.y }, { x: b.x + b.width, y: b.y + b.height })
+  }
+  return boundsFromPoints(corners)
+}
