@@ -69,6 +69,7 @@ import { attachShortcuts } from "../keyboard/shortcuts"
 import { useAppStore } from "../store"
 import { computeResolvedTheme } from "../store/slices/theme"
 import { CanvasShell } from "./CanvasShell"
+import { ContextMenuHost } from "./ContextMenuHost"
 import { Dialogs } from "./Dialogs"
 import { PaletteHost } from "./PaletteHost"
 import { TextEditingOverlay } from "./TextEditingOverlay"
@@ -679,6 +680,7 @@ function Inner(): React.ReactElement {
 
       <Dialogs scene={scene} />
       <PaletteHost scene={scene} />
+      <ContextMenuHost scene={scene} />
       <TextEditingOverlay scene={scene} />
     </main>
   )

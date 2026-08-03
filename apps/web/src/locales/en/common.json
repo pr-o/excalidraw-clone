@@ -149,6 +149,14 @@
     "title": "Layers",
     "toggle": "Toggle layers panel"
   },
+  "contextMenu": {
+    "copy": "Copy",
+    "cut": "Cut",
+    "paste": "Paste",
+    "selectAll": "Select all",
+    "zoomToFit": "Zoom to fit",
+    "unlock": "Unlock"
+  },
   "pages": {
     "title": "Pages",
     "add": "Add page",
