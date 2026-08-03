@@ -18,6 +18,9 @@ export type { HelpDialogProps } from "./HelpDialog"
 export { CommandPalette } from "./CommandPalette"
 export type { CommandPaletteProps, PaletteCommand } from "./CommandPalette"
 
+export { ContextMenu } from "./ContextMenu"
+export type { ContextMenuItem, ContextMenuProps } from "./ContextMenu"
+
 export { ExportDialog } from "./ExportDialog"
 export type { ExportDialogProps, ExportOptions } from "./ExportDialog"
 
