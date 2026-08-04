@@ -62,12 +62,9 @@ export function ContextMenuHost({ scene }: { scene: Scene }): React.ReactElement
       id: "select-all",
       label: t("contextMenu.selectAll"),
       perform: () => {
-        useAppStore.getState().setSelection(
-          scene
-            .getElements()
-            .filter((el) => !el.locked)
-            .map((el) => el.id),
-        )
+        useAppStore
+          .getState()
+          .setSelection(selectableIds(scene.getElements().filter((el) => !el.locked)))
       },
     })
     const bounds = getElementsBounds(scene.getElements())
