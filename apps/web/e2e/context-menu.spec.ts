@@ -1,6 +1,8 @@
 import { expect, test, type Page } from "@playwright/test"
 import { dragOnCanvas, parseStoredScene } from "./_helpers"
 
+test.use({ permissions: ["clipboard-read", "clipboard-write"] })
+
 type SceneEl = {
   id: string
   type: string
@@ -132,4 +134,30 @@ test("right-clicking an already-selected element keeps the whole multi-selection
     (e) => !e.isDeleted && e.type === "rectangle",
   )
   expect(rects.length).toBe(0)
+})
+
+test("menu Copy then menu Paste duplicates the element at the paste point", async ({ page }) => {
+  // drawRect draws (150,150)-(250,220) — a 100x70 rect centred at (200,185).
+  await drawRect(page)
+  const canvas = page.locator("canvas").first()
+  const box = await canvas.boundingBox()
+  if (!box) throw new Error("canvas not found")
+
+  await page.mouse.click(box.x + 200, box.y + 185, { button: "right" })
+  await page.locator('[data-testid="context-menu-item-copy"]').click()
+  await expect(page.locator('[data-testid="context-menu"]')).toHaveCount(0)
+
+  // Right-click empty canvas well clear of the rect, then paste there.
+  await page.mouse.click(box.x + 500, box.y + 350, { button: "right" })
+  await page.locator('[data-testid="context-menu-item-paste"]').click()
+  await page.waitForTimeout(900)
+
+  const json = await page.evaluate(() => localStorage.getItem("excalidraw-scene"))
+  const rects = parseStoredScene<SceneEl>(json).elements.filter(
+    (e) => !e.isDeleted && e.type === "rectangle",
+  )
+  expect(rects.length).toBe(2)
+  // The copy's bbox centre lands on the paste point (500,350) → origin (450,315).
+  const xs = rects.map((r) => Math.round(r.x)).sort((a, b) => a - b)
+  expect(xs).toEqual([150, 450])
 })
