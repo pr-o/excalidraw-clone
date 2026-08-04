@@ -1,0 +1,56 @@
+# Dark Mode for `packages/ui` — Design
+
+**Date:** 2026-08-04
+**Status:** Approved
+**Scope:** Bring every component in `packages/ui/src/` onto the app's existing dark-mode mechanism by replacing hardcoded light-mode Tailwind color classes with semantic CSS-custom-property-backed utility classes. Pure styling substitution — no component logic, props, or interfaces change.
+
+## Problem
+
+Every component in `packages/ui/src/` (15 files: `Toolbar.tsx`, `PropertiesPanel.tsx`, `CommandPalette.tsx`, `LayersPanel.tsx`, `HamburgerMenu.tsx`, `PagesTabBar.tsx`, `ContextMenu.tsx`, `CanvasBgDialog.tsx`, `ExportDialog.tsx`, `HelpDialog.tsx`, `LibraryPanel.tsx`, `MoreShapesMenu.tsx`, `ResetCanvasDialog.tsx`, plus shared `shared/IconButton.tsx` and `shared/Dialog.tsx`) hardcodes light-mode Tailwind color classes with zero `dark:` variants — confirmed via `grep -rn "dark:" packages/ui/src` returning 0 matches. A color-class inventory (`grep -rohE` for bg/text/border/ring/divide Tailwind color utilities with a numeric shade) found 71 occurrences across these values: `border-gray-300` (23×), `bg-violet-100` (15×), `bg-gray-100` (14×), `text-gray-500` (8×), `bg-gray-50` (5×), `text-red-600` (3×), `text-gray-700` (3×), `border-gray-200` (3×), `bg-red-50` (3×), `bg-violet-600` (2×), `bg-gray-200` (2×), plus single occurrences of `text-gray-600`, `border-violet-500`, `border-violet-300`, `border-red-300`, `bg-violet-500`, `bg-red-600`. A follow-up pass for shade-less white/black classes (missed by the numeric-shade grep) found three more patterns: `bg-white` (12×, explicit panel background across every panel/dialog/menu — `ContextMenu.tsx`, `Toolbar.tsx`, `CommandPalette.tsx`, `PagesTabBar.tsx`, `HamburgerMenu.tsx` ×2, `LayersPanel.tsx`, `LibraryPanel.tsx` ×2, `MoreShapesMenu.tsx`, `PropertiesPanel.tsx`), `text-white` (3×, always paired with a solid accent/danger background — `ExportDialog.tsx:99`, `ResetCanvasDialog.tsx:39`, `shared/IconButton.tsx:31`), and `bg-black/40` / `backdrop:bg-black/40` (2×, modal-overlay scrim in `CommandPalette.tsx` and `shared/Dialog.tsx`). (Two more matches, `testId: "bg-white"` / `testId: "bg-dark"` in `ExportDialog.tsx`, are string literals for an export-background-color picker's test ids, not CSS classes — not part of this inventory.)
+
+Meanwhile the app already has working theme infrastructure one layer up: `apps/web/src/store/slices/theme.ts` (`Theme = "light"|"dark"|"system"`, resolved via `computeResolvedTheme`), `App.tsx` sets `document.documentElement.dataset.theme = resolved` reactively (watches `prefers-color-scheme` when `theme === "system"`), and `apps/web/src/app/globals.css` already defines `--bg-app`/`--bg-canvas`/`--fg-app`/`--shadow-app` CSS custom properties under `:root` and `[data-theme="dark"]` — but only `html`/`body` consume them. Every floating panel, dialog, toolbar, and menu in `packages/ui` was built without ever touching this mechanism, so toggling dark mode currently does nothing for any of them: white panels and gray-500 text sit on a dark canvas, inconsistently, some near-invisible depending on the exact panel.
+
+## Decisions
+
+- **Extend the existing CSS-custom-property mechanism** rather than introduce Tailwind's `dark:` variant as a second, parallel theming mechanism. This repo's dark mode already works this way for the app shell (`--bg-app` et al.), so panels should plug into the same system instead of duplicating it. Two approaches were considered and this one was chosen specifically because it centralizes the palette in one file (avoiding drift where e.g. one component picks `neutral-900` for dark backgrounds and another picks `gray-900`) and requires no new indirection concept beyond what `globals.css` already establishes.
+
+- **New semantic tokens**, added to `apps/web/src/app/globals.css` alongside the existing `--bg-app`/`--bg-canvas`/`--fg-app`/`--shadow-app` vars, under both `:root` and `[data-theme="dark"]`:
+
+  | Token                     | Light     | Dark                     | Replaces                                                |
+  | ------------------------- | --------- | ------------------------ | ------------------------------------------------------- |
+  | `--color-panel-bg`        | `#ffffff` | `#2a2a2a`                | `bg-white`                                              |
+  | `--color-panel-bg-subtle` | `#f9fafb` | `#242424`                | `bg-gray-50`                                            |
+  | `--color-panel-hover`     | `#f3f4f6` | `#3a3a3a`                | `bg-gray-100`, `hover:bg-gray-100`                      |
+  | `--color-panel-active`    | `#e5e7eb` | `#454545`                | `bg-gray-200`                                           |
+  | `--color-border`          | `#d1d5db` | `#4d4d4d`                | `border-gray-300`                                       |
+  | `--color-border-subtle`   | `#e5e7eb` | `#3a3a3a`                | `border-gray-200`, divider bars                         |
+  | `--color-text-muted`      | `#6b7280` | `#a3a3a3`                | `text-gray-500`/`600`/`700`                             |
+  | `--color-accent`          | `#7c3aed` | `#8b5cf6`                | `bg-violet-600`/`border-violet-600`/`border-violet-500` |
+  | `--color-accent-soft`     | `#ede9fe` | `rgb(139 92 246 / .18)`  | `bg-violet-100`, `bg-violet-500`, `border-violet-300`   |
+  | `--color-danger`          | `#dc2626` | `#f87171`                | `text-red-600`, `bg-red-600`                            |
+  | `--color-danger-soft`     | `#fef2f2` | `rgb(248 113 113 / .15)` | `bg-red-50`                                             |
+  | `--color-danger-border`   | `#fca5a5` | `rgb(248 113 113 / .4)`  | `border-red-300`                                        |
+
+- **Register the tokens as real Tailwind utility classes**, not arbitrary-value syntax: use a Tailwind v4 `@theme` block in `globals.css` so each `--color-*` var becomes a first-class utility — `bg-panel`, `bg-panel-subtle`, `hover:bg-panel-hover`, `bg-panel-active`, `border-panel` (do **not** name this bare `border` — Tailwind v4's unsuffixed `border` utility reads a separate `--default-border-color` theme key, not an arbitrary `--color-*` var, so an explicit `border-panel` avoids that collision), `border-panel-subtle`, `text-muted`, `bg-accent`/`border-accent`, `bg-accent-soft`, `text-danger`/`bg-danger`, `bg-danger-soft`, `border-danger`. Because `@theme` values are just named CSS custom properties under the hood, and `[data-theme="dark"]` overrides the same custom property names, the utility classes repaint automatically when `data-theme` flips — no `dark:` prefix needed anywhere in `packages/ui`. Note for the implementer: this repo already needs `@source "../../../../packages/ui/src/**/*.tsx";` in `globals.css` for Tailwind to scan that package's classes at all (established prior art, not new to this change) — the `@theme` block lives in the same file.
+
+- **Migration is mechanical, one file at a time**: swap each hardcoded Tailwind color class for its semantic equivalent per the table above. No component logic, props, or interfaces change — this is a pure styling substitution. Fix `shared/IconButton.tsx` and `shared/Dialog.tsx` first: 6 of the other 13 components (`Toolbar.tsx`, `CanvasBgDialog.tsx`, `HelpDialog.tsx`, `ResetCanvasDialog.tsx`, `ExportDialog.tsx`, `MoreShapesMenu.tsx`) render through one or both, so fixing the shared pair first de-risks that portion of the migration — those 6 inherit correct hover/active/dialog-chrome theming for free once `IconButton`/`Dialog` are fixed, leaving only their own component-level classes to migrate. The remaining 7 components (`PropertiesPanel.tsx`, `CommandPalette.tsx`, `LayersPanel.tsx`, `HamburgerMenu.tsx`, `PagesTabBar.tsx`, `ContextMenu.tsx`, `LibraryPanel.tsx`) don't depend on the shared pair and can be migrated in any order.
+
+- **`bg-white` maps to `--color-panel-bg`** exactly like the shaded-color occurrences — it was omitted from the numeric-shade grep, not from the migration; all 12 occurrences get the same `bg-panel` treatment as every other panel background.
+
+- **`text-white` and `bg-black/40` are intentionally not tokenized.** `text-white` only appears paired with a solid accent or danger background (`bg-violet-600`/`bg-red-600`, both becoming `bg-accent`/`bg-danger`) — white text stays legible against both the light and dark values chosen for those tokens, so it stays a literal `text-white` in both themes. `bg-black/40` (`CommandPalette.tsx`) and `backdrop:bg-black/40` (`shared/Dialog.tsx`) are modal-overlay scrims dimming whatever is behind them — a translucent black overlay reads correctly over both light and dark content, so it also stays literal, unchanged by this migration.
+
+- **No other color value needs inventing** — every remaining occurrence (the 71 shaded ones, plus `bg-white`) maps onto exactly one row of the table above. If the implementer finds an occurrence during migration that doesn't fit the table and isn't one of the two literal exceptions just described, that's new information versus this spec's inventory and should be flagged, not silently invented.
+
+## Testing
+
+No new automated tests are introduced by this change — the existing Testing Library unit suite in `packages/ui` (115 tests across the 15 test files) exercises component behavior, not exact class strings, so it should stay green as a pure regression guard through the whole migration; typecheck/lint/format must also stay green (no new TypeScript surface, no new lint categories). This repo has no automated visual/pixel testing, and dark-mode color correctness isn't meaningfully assertable via Testing Library's DOM queries beyond checking class-string presence (which would be brittle and low-value — testing that a `<div>` has literally the string `"bg-panel"` doesn't verify it renders correctly).
+
+Verification is a manual dev-server pass: run `npm run dev` from `apps/web`, cycle `theme` through all three states (light / dark / system, via whatever UI/store path already exists — check `HamburgerMenu.tsx` or wherever the existing theme toggle lives) and visually inspect every panel, dialog, toolbar, and menu in `packages/ui` for legible contrast and no near-invisible text, then stop the dev server. This mirrors the "manual smoke-check" step already used elsewhere in this repo's implementation plans for UI-only changes with no meaningful unit-test surface.
+
+## Out of scope (follow-up candidates)
+
+- The context-menu-specific a11y keyboard-navigation gap (no arrow-key nav between menu items) — a separate, already-identified follow-up, unrelated to color theming.
+- Any other Minor findings from the context-menu feature's final whole-branch review (shortcut-hint population, close-on-wheel, symmetric pointer-button guards) — unrelated to this pass.
+- Introducing a third theme beyond light/dark/system, or any user-configurable custom-color/branding system.
+- Retrofitting `dark:` Tailwind variants anywhere — this spec deliberately chose the CSS-variable approach instead, so no file in this change should introduce a `dark:` class.
+- Touching `apps/web`'s own components (this app already partially handles dark mode outside `packages/ui`) — scope is strictly the `packages/ui` package.
