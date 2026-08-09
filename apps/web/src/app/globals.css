@@ -6,6 +6,19 @@
   --bg-canvas: #ffffff;
   --fg-app: #1e1e1e;
   --shadow-app: 0 1px 3px rgba(0, 0, 0, 0.08);
+
+  --color-panel-bg: #ffffff;
+  --color-panel-bg-subtle: #f9fafb;
+  --color-panel-hover: #f3f4f6;
+  --color-panel-active: #e5e7eb;
+  --color-border: #d1d5db;
+  --color-border-subtle: #e5e7eb;
+  --color-text-muted: #6b7280;
+  --color-accent: #7c3aed;
+  --color-accent-soft: #ede9fe;
+  --color-danger: #dc2626;
+  --color-danger-soft: #fef2f2;
+  --color-danger-border: #fca5a5;
 }
 
 [data-theme="dark"] {
@@ -13,6 +26,79 @@
   --bg-canvas: #1e1e1e;
   --fg-app: #ececec;
   --shadow-app: 0 1px 3px rgba(0, 0, 0, 0.4);
+
+  --color-panel-bg: #2a2a2a;
+  --color-panel-bg-subtle: #242424;
+  --color-panel-hover: #3a3a3a;
+  --color-panel-active: #454545;
+  --color-border: #4d4d4d;
+  --color-border-subtle: #3a3a3a;
+  --color-text-muted: #a3a3a3;
+  --color-accent: #8b5cf6;
+  --color-accent-soft: rgb(139 92 246 / 0.18);
+  --color-danger: #f87171;
+  --color-danger-soft: rgb(248 113 113 / 0.15);
+  --color-danger-border: rgb(248 113 113 / 0.4);
+}
+
+@utility bg-panel {
+  background-color: var(--color-panel-bg);
+}
+
+@utility bg-panel-subtle {
+  background-color: var(--color-panel-bg-subtle);
+}
+
+@utility bg-panel-hover {
+  background-color: var(--color-panel-hover);
+}
+
+@utility bg-panel-active {
+  background-color: var(--color-panel-active);
+}
+
+@utility border-panel {
+  border-color: var(--color-border);
+}
+
+@utility border-panel-subtle {
+  border-color: var(--color-border-subtle);
+}
+
+@utility text-muted {
+  color: var(--color-text-muted);
+}
+
+@utility bg-accent {
+  background-color: var(--color-accent);
+}
+
+@utility border-accent {
+  border-color: var(--color-accent);
+}
+
+@utility bg-accent-soft {
+  background-color: var(--color-accent-soft);
+}
+
+@utility border-accent-soft {
+  border-color: var(--color-accent-soft);
+}
+
+@utility text-danger {
+  color: var(--color-danger);
+}
+
+@utility bg-danger {
+  background-color: var(--color-danger);
+}
+
+@utility bg-danger-soft {
+  background-color: var(--color-danger-soft);
+}
+
+@utility border-danger {
+  border-color: var(--color-danger-border);
 }
 
 html,
