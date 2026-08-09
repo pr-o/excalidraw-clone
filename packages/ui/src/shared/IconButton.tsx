@@ -28,7 +28,7 @@ export function IconButton({
       aria-expanded={rest["aria-expanded"]}
       data-testid={rest["data-testid"]}
       className={`flex h-9 w-9 items-center justify-center rounded transition-colors ${
-        active ? "bg-violet-600 text-white" : "hover:bg-gray-100"
+        active ? "bg-accent text-white" : "hover:bg-panel-hover"
       }`}
     >
       {children}

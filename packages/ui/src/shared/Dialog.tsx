@@ -47,7 +47,7 @@ export function Dialog({
         <button
           type="button"
           onClick={onClose}
-          className="rounded p-1 text-xl leading-none hover:bg-gray-100"
+          className="rounded p-1 text-xl leading-none hover:bg-panel-hover"
           aria-label={t("common.close")}
         >
           ×
