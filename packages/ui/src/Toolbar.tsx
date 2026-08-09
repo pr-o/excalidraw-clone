@@ -59,7 +59,7 @@ export function Toolbar({
 
   return (
     <div
-      className={`flex items-center gap-1 rounded-lg bg-white p-1 shadow ${className ?? ""}`}
+      className={`flex items-center gap-1 rounded-lg bg-panel p-1 shadow ${className ?? ""}`}
       role="toolbar"
       aria-label={t("toolbar.label")}
     >
@@ -72,7 +72,7 @@ export function Toolbar({
       >
         <span aria-hidden>{lockActiveTool ? "🔒" : "🔓"}</span>
       </IconButton>
-      <span className="mx-1 h-6 w-px bg-gray-200" aria-hidden />
+      <span className="mx-1 h-6 w-px bg-panel-active" aria-hidden />
       {TOOL_ITEMS.slice(0, HEXAGON_INDEX + 1).map(renderItem)}
       <MoreShapesMenu
         t={t}

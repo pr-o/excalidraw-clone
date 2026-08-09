@@ -46,7 +46,7 @@ export function MoreShapesMenu(props: MoreShapesMenuProps): React.ReactElement {
       {open && (
         <div
           role="menu"
-          className="absolute left-0 top-11 z-50 flex gap-1 rounded-lg bg-white p-2 shadow-lg"
+          className="absolute left-0 top-11 z-50 flex gap-1 rounded-lg bg-panel p-2 shadow-lg"
         >
           <IconButton
             label={props.t("toolbar.pentagon")}
