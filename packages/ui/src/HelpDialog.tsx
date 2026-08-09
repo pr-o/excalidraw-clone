@@ -92,9 +92,9 @@ function Group({
       <dl className="space-y-1 text-sm">
         {items.map((s) => (
           <div key={`${s.keys}-${s.label}`} className="flex items-center justify-between">
-            <dt className="text-gray-700">{t(s.label)}</dt>
+            <dt className="text-muted">{t(s.label)}</dt>
             <dd>
-              <kbd className="rounded border border-gray-300 bg-gray-50 px-1.5 py-0.5 font-mono text-xs">
+              <kbd className="rounded border border-panel bg-panel-subtle px-1.5 py-0.5 font-mono text-xs">
                 {s.keys}
               </kbd>
             </dd>

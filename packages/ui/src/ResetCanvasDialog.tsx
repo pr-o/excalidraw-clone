@@ -24,19 +24,19 @@ export function ResetCanvasDialog({
       title={t("reset.title")}
       {...(className !== undefined ? { className } : {})}
     >
-      <p className="mb-4 text-sm text-gray-700">{t("reset.body")}</p>
+      <p className="mb-4 text-sm text-muted">{t("reset.body")}</p>
       <div className="flex justify-end gap-2">
         <button
           type="button"
           onClick={onClose}
-          className="rounded border border-gray-300 px-3 py-1 text-sm"
+          className="rounded border border-panel px-3 py-1 text-sm"
         >
           {t("reset.cancel")}
         </button>
         <button
           type="button"
           onClick={onConfirm}
-          className="rounded bg-red-600 px-3 py-1 text-sm text-white"
+          className="rounded bg-danger px-3 py-1 text-sm text-white"
         >
           {t("reset.confirm")}
         </button>

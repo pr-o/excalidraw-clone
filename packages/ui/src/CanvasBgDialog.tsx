@@ -40,7 +40,7 @@ export function CanvasBgDialog({
               onChange(c)
               onClose()
             }}
-            className={`h-10 w-10 rounded border-2 ${value === c ? "border-violet-600" : "border-gray-300"}`}
+            className={`h-10 w-10 rounded border-2 ${value === c ? "border-accent" : "border-panel"}`}
             style={{ backgroundColor: c }}
           />
         ))}
