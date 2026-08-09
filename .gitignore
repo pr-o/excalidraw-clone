@@ -61,3 +61,6 @@ Thumbs.db
 
 # --- Superpowers scratch state (SDD ledgers, brainstorm sessions) ---
 /.superpowers/
+
+# --- Git worktrees ---
+/.worktrees/
