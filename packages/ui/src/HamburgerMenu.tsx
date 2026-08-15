@@ -47,7 +47,7 @@ export function HamburgerMenu(props: HamburgerMenuProps): React.ReactElement {
         aria-haspopup="menu"
         aria-expanded={props.open}
         aria-label={props.t("menu.label")}
-        className="flex h-9 w-9 items-center justify-center rounded bg-white shadow hover:bg-gray-100"
+        className="flex h-9 w-9 items-center justify-center rounded bg-panel shadow hover:bg-panel-hover"
       >
         <span aria-hidden dangerouslySetInnerHTML={{ __html: iconHTML("hamburger") }} />
       </button>
@@ -55,7 +55,7 @@ export function HamburgerMenu(props: HamburgerMenuProps): React.ReactElement {
       {props.open && (
         <div
           role="menu"
-          className="absolute left-0 top-11 z-50 w-56 rounded-lg bg-white p-2 shadow-lg"
+          className="absolute left-0 top-11 z-50 w-56 rounded-lg bg-panel p-2 shadow-lg"
         >
           <MenuItem onClick={wrap(props.onOpenFile)}>{props.t("menu.open")}</MenuItem>
           <MenuItem onClick={wrap(props.onSaveFile)}>{props.t("menu.saveAs")}</MenuItem>
@@ -115,7 +115,7 @@ function MenuItem({
       type="button"
       role="menuitem"
       onClick={onClick}
-      className={`block w-full rounded px-3 py-2 text-left text-sm ${variant === "danger" ? "text-red-600 hover:bg-red-50" : "hover:bg-gray-100"}`}
+      className={`block w-full rounded px-3 py-2 text-left text-sm ${variant === "danger" ? "text-danger hover:bg-danger-soft" : "hover:bg-panel-hover"}`}
     >
       {children}
     </button>
@@ -123,11 +123,11 @@ function MenuItem({
 }
 
 function MenuLabel({ children }: { children: React.ReactNode }): React.ReactElement {
-  return <div className="mt-2 px-3 py-1 text-xs font-medium text-gray-500">{children}</div>
+  return <div className="mt-2 px-3 py-1 text-xs font-medium text-muted">{children}</div>
 }
 
 function Separator(): React.ReactElement {
-  return <div className="my-1 h-px bg-gray-200" aria-hidden />
+  return <div className="my-1 h-px bg-panel-active" aria-hidden />
 }
 
 function ChoiceRow({
@@ -148,7 +148,7 @@ function ChoiceRow({
           data-testid={opt.testId}
           aria-pressed={value === opt.value}
           onClick={() => onChange(opt.value)}
-          className={`flex-1 rounded border px-2 py-1 text-xs ${value === opt.value ? "border-violet-600 bg-violet-100" : "border-gray-300"}`}
+          className={`flex-1 rounded border px-2 py-1 text-xs ${value === opt.value ? "border-accent bg-accent-soft" : "border-panel"}`}
         >
           {opt.label}
         </button>
