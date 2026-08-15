@@ -77,7 +77,7 @@ export function CommandPalette({
       <div
         role="dialog"
         aria-label={t("palette.title")}
-        className="w-[480px] rounded-lg bg-white shadow-xl"
+        className="w-[480px] rounded-lg bg-panel shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <input
@@ -87,11 +87,11 @@ export function CommandPalette({
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={onKeyDown}
           placeholder={t("palette.placeholder")}
-          className="w-full border-b border-gray-200 px-4 py-3 text-sm outline-none"
+          className="w-full border-b border-panel-subtle px-4 py-3 text-sm outline-none"
         />
         <ul role="listbox" className="max-h-80 overflow-auto py-1">
           {filtered.length === 0 && (
-            <li className="px-4 py-2 text-sm text-gray-500">{t("palette.empty")}</li>
+            <li className="px-4 py-2 text-sm text-muted">{t("palette.empty")}</li>
           )}
           {filtered.map((c, i) => (
             <li
@@ -103,10 +103,10 @@ export function CommandPalette({
                 c.perform()
                 onClose()
               }}
-              className={`flex cursor-pointer items-center justify-between px-4 py-2 text-sm ${i === highlight ? "bg-violet-100" : ""}`}
+              className={`flex cursor-pointer items-center justify-between px-4 py-2 text-sm ${i === highlight ? "bg-accent-soft" : ""}`}
             >
               <span>{c.label}</span>
-              {c.hint && <kbd className="font-mono text-xs text-gray-500">{c.hint}</kbd>}
+              {c.hint && <kbd className="font-mono text-xs text-muted">{c.hint}</kbd>}
             </li>
           ))}
         </ul>
