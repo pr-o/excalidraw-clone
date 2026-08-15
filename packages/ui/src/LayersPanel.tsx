@@ -35,7 +35,7 @@ export function LayersPanel({
     <aside
       aria-label={t("layers.title")}
       data-testid="layers-panel"
-      className={`fixed left-0 top-16 z-30 flex h-[calc(100%-5rem)] flex-col bg-white shadow-lg transition-all ${
+      className={`fixed left-0 top-16 z-30 flex h-[calc(100%-5rem)] flex-col bg-panel shadow-lg transition-all ${
         open ? "w-64" : "w-10"
       }`}
     >
@@ -65,8 +65,8 @@ export function LayersPanel({
                   key={element.id}
                   data-testid={`layer-row-${element.id}`}
                   className={`mb-0.5 flex items-center gap-1 rounded px-1 py-1 text-xs ${
-                    selected ? "bg-violet-100" : "hover:bg-gray-50"
-                  } ${element.groupIds.length > 0 ? "border-l-2 border-violet-300 pl-1" : ""}`}
+                    selected ? "bg-accent-soft" : "hover:bg-panel-subtle"
+                  } ${element.groupIds.length > 0 ? "border-l-2 border-accent-soft pl-1" : ""}`}
                 >
                   <button
                     type="button"
@@ -94,7 +94,7 @@ export function LayersPanel({
                       aria-label={t("properties.sendToBack")}
                       title={t("properties.sendToBack")}
                       onClick={() => onSendToBack(element.id)}
-                      className="rounded px-0.5 hover:bg-gray-100"
+                      className="rounded px-0.5 hover:bg-panel-hover"
                     >
                       ⏮
                     </button>
@@ -104,7 +104,7 @@ export function LayersPanel({
                       aria-label={t("properties.sendBackward")}
                       title={t("properties.sendBackward")}
                       onClick={() => onSendBackward(element.id)}
-                      className="rounded px-0.5 hover:bg-gray-100"
+                      className="rounded px-0.5 hover:bg-panel-hover"
                     >
                       ◀
                     </button>
@@ -114,7 +114,7 @@ export function LayersPanel({
                       aria-label={t("properties.bringForward")}
                       title={t("properties.bringForward")}
                       onClick={() => onBringForward(element.id)}
-                      className="rounded px-0.5 hover:bg-gray-100"
+                      className="rounded px-0.5 hover:bg-panel-hover"
                     >
                       ▶
                     </button>
@@ -124,7 +124,7 @@ export function LayersPanel({
                       aria-label={t("properties.bringToFront")}
                       title={t("properties.bringToFront")}
                       onClick={() => onBringToFront(element.id)}
-                      className="rounded px-0.5 hover:bg-gray-100"
+                      className="rounded px-0.5 hover:bg-panel-hover"
                     >
                       ⏭
                     </button>

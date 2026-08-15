@@ -41,7 +41,7 @@ describe("LayersPanel", () => {
   it("highlights rows present in selectedIds", () => {
     const a = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
     render(<LayersPanel t={t} elements={[a]} selectedIds={[a.id]} open {...handlers} />)
-    expect(screen.getByTestId(`layer-row-${a.id}`).className).toContain("bg-violet-100")
+    expect(screen.getByTestId(`layer-row-${a.id}`).className).toContain("bg-accent-soft")
   })
 
   it("calls onSelect with additive:false on a plain click", async () => {
