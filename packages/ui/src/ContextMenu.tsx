@@ -49,7 +49,7 @@ export function ContextMenu({ x, y, items, onClose }: ContextMenuProps): React.R
       role="menu"
       data-testid="context-menu"
       style={{ position: "fixed", left: pos.left, top: pos.top }}
-      className="z-50 min-w-[180px] rounded-lg bg-white py-1 shadow-xl"
+      className="z-50 min-w-[180px] rounded-lg bg-panel py-1 shadow-xl"
     >
       {items.map((item) => (
         <button
@@ -61,10 +61,10 @@ export function ContextMenu({ x, y, items, onClose }: ContextMenuProps): React.R
             item.perform()
             onClose()
           }}
-          className="flex w-full items-center justify-between gap-4 px-3 py-1.5 text-left text-sm hover:bg-violet-100"
+          className="flex w-full items-center justify-between gap-4 px-3 py-1.5 text-left text-sm hover:bg-accent-soft"
         >
           <span>{item.label}</span>
-          {item.hint && <kbd className="font-mono text-xs text-gray-500">{item.hint}</kbd>}
+          {item.hint && <kbd className="font-mono text-xs text-muted">{item.hint}</kbd>}
         </button>
       ))}
     </div>
