@@ -123,7 +123,7 @@ export function PropertiesPanel({
 
   return (
     <aside
-      className={`flex w-56 flex-col gap-3 rounded-lg bg-white p-3 shadow ${className ?? ""}`}
+      className={`flex w-56 flex-col gap-3 rounded-lg bg-panel p-3 shadow ${className ?? ""}`}
       aria-label={t("properties.label")}
     >
       <Section label={t("properties.stroke")}>
@@ -163,7 +163,7 @@ export function PropertiesPanel({
               data-testid={`stroke-width-${w}`}
               aria-pressed={strokeWidth === w}
               onClick={() => onChange({ strokeWidth: w })}
-              className={`h-8 w-8 rounded border ${strokeWidth === w ? "border-violet-600 bg-violet-100" : "border-gray-300"}`}
+              className={`h-8 w-8 rounded border ${strokeWidth === w ? "border-accent bg-accent-soft" : "border-panel"}`}
             >
               <div style={{ height: `${w}px` }} className="mx-auto w-5 bg-current" aria-hidden />
             </button>
@@ -180,7 +180,7 @@ export function PropertiesPanel({
               data-testid={`stroke-style-${s}`}
               aria-pressed={strokeStyle === s}
               onClick={() => onChange({ strokeStyle: s })}
-              className={`h-8 flex-1 rounded border text-xs ${strokeStyle === s ? "border-violet-600 bg-violet-100" : "border-gray-300"}`}
+              className={`h-8 flex-1 rounded border text-xs ${strokeStyle === s ? "border-accent bg-accent-soft" : "border-panel"}`}
             >
               {t(`properties.strokeStyle_${s}`)}
             </button>
@@ -197,7 +197,7 @@ export function PropertiesPanel({
               data-testid={`fill-style-${s}`}
               aria-pressed={fillStyle === s}
               onClick={() => onChange({ fillStyle: s })}
-              className={`h-8 flex-1 rounded border text-xs ${fillStyle === s ? "border-violet-600 bg-violet-100" : "border-gray-300"}`}
+              className={`h-8 flex-1 rounded border text-xs ${fillStyle === s ? "border-accent bg-accent-soft" : "border-panel"}`}
             >
               {t(`properties.fillStyle_${s}`)}
             </button>
@@ -214,7 +214,7 @@ export function PropertiesPanel({
             ] as const
           ).map(([end, field, value]) => (
             <div key={end} className="mb-1 flex items-center gap-1">
-              <span className="w-8 text-[10px] text-gray-500">
+              <span className="w-8 text-[10px] text-muted">
                 {t(`properties.arrowhead${end === "start" ? "Start" : "End"}`)}
               </span>
               <div className="flex flex-1 flex-wrap gap-0.5">
@@ -227,7 +227,7 @@ export function PropertiesPanel({
                     aria-label={t(`properties.arrowhead_${kind ?? "none"}`)}
                     title={t(`properties.arrowhead_${kind ?? "none"}`)}
                     onClick={() => onChange({ [field]: kind })}
-                    className={`flex h-6 w-6 items-center justify-center rounded border ${value === kind ? "border-violet-600 bg-violet-100" : "border-gray-300"}`}
+                    className={`flex h-6 w-6 items-center justify-center rounded border ${value === kind ? "border-accent bg-accent-soft" : "border-panel"}`}
                   >
                     <ArrowheadGlyph kind={kind} />
                   </button>
@@ -246,7 +246,7 @@ export function PropertiesPanel({
               data-testid="arrow-type-sharp"
               aria-pressed={elbowed === false}
               onClick={() => onChange({ elbowed: false })}
-              className={`h-8 flex-1 rounded border text-xs ${elbowed === false ? "border-violet-600 bg-violet-100" : "border-gray-300"}`}
+              className={`h-8 flex-1 rounded border text-xs ${elbowed === false ? "border-accent bg-accent-soft" : "border-panel"}`}
             >
               {t("properties.arrowTypeSharp")}
             </button>
@@ -255,7 +255,7 @@ export function PropertiesPanel({
               data-testid="arrow-type-elbow"
               aria-pressed={elbowed === true}
               onClick={() => onChange({ elbowed: true })}
-              className={`h-8 flex-1 rounded border text-xs ${elbowed === true ? "border-violet-600 bg-violet-100" : "border-gray-300"}`}
+              className={`h-8 flex-1 rounded border text-xs ${elbowed === true ? "border-accent bg-accent-soft" : "border-panel"}`}
             >
               {t("properties.arrowTypeElbow")}
             </button>
@@ -270,7 +270,7 @@ export function PropertiesPanel({
             data-testid="roundness-sharp"
             aria-pressed={roundness !== undefined && !isRound}
             onClick={() => onChange({ roundness: null })}
-            className={`h-8 flex-1 rounded border text-xs ${roundness !== undefined && !isRound ? "border-violet-600 bg-violet-100" : "border-gray-300"}`}
+            className={`h-8 flex-1 rounded border text-xs ${roundness !== undefined && !isRound ? "border-accent bg-accent-soft" : "border-panel"}`}
           >
             {t("properties.roundness_sharp")}
           </button>
@@ -279,7 +279,7 @@ export function PropertiesPanel({
             data-testid="roundness-round"
             aria-pressed={isRound}
             onClick={() => onChange({ roundness: { type: 1 } })}
-            className={`h-8 flex-1 rounded border text-xs ${isRound ? "border-violet-600 bg-violet-100" : "border-gray-300"}`}
+            className={`h-8 flex-1 rounded border text-xs ${isRound ? "border-accent bg-accent-soft" : "border-panel"}`}
           >
             {t("properties.roundness_round")}
           </button>
@@ -295,7 +295,7 @@ export function PropertiesPanel({
               data-testid={`opacity-${o}`}
               aria-pressed={opacity === o}
               onClick={() => onChange({ opacity: o })}
-              className={`h-8 flex-1 rounded border text-xs ${opacity === o ? "border-violet-600 bg-violet-100" : "border-gray-300"}`}
+              className={`h-8 flex-1 rounded border text-xs ${opacity === o ? "border-accent bg-accent-soft" : "border-panel"}`}
             >
               {o}%
             </button>
@@ -311,7 +311,7 @@ export function PropertiesPanel({
               data-testid="group-selection"
               disabled={selectedElements.length < 2}
               onClick={onGroup}
-              className="flex-1 rounded border border-gray-300 p-1 text-xs disabled:opacity-40"
+              className="flex-1 rounded border border-panel p-1 text-xs disabled:opacity-40"
             >
               {t("properties.group")}
             </button>
@@ -320,7 +320,7 @@ export function PropertiesPanel({
               data-testid="ungroup-selection"
               disabled={!selectedElements.some((el) => el.groupIds.length > 0)}
               onClick={onUngroup}
-              className="flex-1 rounded border border-gray-300 p-1 text-xs disabled:opacity-40"
+              className="flex-1 rounded border border-panel p-1 text-xs disabled:opacity-40"
             >
               {t("properties.ungroup")}
             </button>
@@ -338,7 +338,7 @@ export function PropertiesPanel({
                 data-testid={`align-${edge}`}
                 aria-label={t(`properties.align_${edge}`)}
                 onClick={() => onAlign(edge)}
-                className="rounded border border-gray-300 p-1 text-xs"
+                className="rounded border border-panel p-1 text-xs"
               >
                 {ALIGN_GLYPH[edge]}
               </button>
@@ -353,7 +353,7 @@ export function PropertiesPanel({
                 aria-label={t(`properties.distribute_${axis}`)}
                 disabled={selectedElements.length < 3}
                 onClick={() => onDistribute(axis)}
-                className="flex-1 rounded border border-gray-300 p-1 text-xs disabled:opacity-40"
+                className="flex-1 rounded border border-panel p-1 text-xs disabled:opacity-40"
               >
                 {axis === "horizontal" ? "⇿" : "⇳"}
               </button>
@@ -366,7 +366,7 @@ export function PropertiesPanel({
         type="button"
         data-testid="panel-lock"
         onClick={onLock}
-        className="w-full rounded border border-gray-300 p-1 text-xs"
+        className="w-full rounded border border-panel p-1 text-xs"
       >
         {t("properties.lock")}
       </button>
@@ -376,14 +376,14 @@ export function PropertiesPanel({
           <button
             type="button"
             onClick={onDuplicate}
-            className="flex-1 rounded border border-gray-300 p-1 text-xs"
+            className="flex-1 rounded border border-panel p-1 text-xs"
           >
             {t("properties.duplicate")}
           </button>
           <button
             type="button"
             onClick={onDelete}
-            className="flex-1 rounded border border-red-300 p-1 text-xs text-red-600 hover:bg-red-50"
+            className="flex-1 rounded border border-danger p-1 text-xs text-danger hover:bg-danger-soft"
           >
             {t("properties.delete")}
           </button>
@@ -402,7 +402,7 @@ function Section({
 }): React.ReactElement {
   return (
     <div>
-      <div className="mb-1 text-xs font-medium text-gray-600">{label}</div>
+      <div className="mb-1 text-xs font-medium text-muted">{label}</div>
       {children}
     </div>
   )
@@ -469,7 +469,7 @@ function Swatch({
       data-testid={testId}
       aria-pressed={active}
       aria-label={color}
-      className={`h-7 w-7 rounded border-2 ${active ? "border-violet-600" : "border-gray-300"}`}
+      className={`h-7 w-7 rounded border-2 ${active ? "border-accent" : "border-panel"}`}
       style={{
         backgroundColor: color === "transparent" ? "white" : color,
         backgroundImage:
