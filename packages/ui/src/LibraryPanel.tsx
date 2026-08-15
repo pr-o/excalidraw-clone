@@ -44,7 +44,7 @@ function ItemTile(props: ItemTileProps): React.ReactElement {
         type="button"
         onClick={() => props.onItemClick(item)}
         aria-label={item.name}
-        className="flex h-20 w-full items-center justify-center rounded border bg-gray-50 p-1 hover:border-violet-500"
+        className="flex h-20 w-full items-center justify-center rounded border bg-panel-subtle p-1 hover:border-accent"
         // biome-ignore lint/security/noDangerouslySetInnerHtml: renderer-controlled SVG
         dangerouslySetInnerHTML={{ __html: props.renderThumbnail(item) }}
       />
@@ -82,13 +82,13 @@ function ItemTile(props: ItemTileProps): React.ReactElement {
           {props.menuOpenId === item.id && (
             <div
               role="menu"
-              className="absolute right-0 top-5 z-10 rounded bg-white p-1 text-xs shadow"
+              className="absolute right-0 top-5 z-10 rounded bg-panel p-1 text-xs shadow"
             >
               <button
                 type="button"
                 role="menuitem"
                 onClick={() => props.startRename(item)}
-                className="block w-full rounded px-2 py-1 text-left hover:bg-gray-100"
+                className="block w-full rounded px-2 py-1 text-left hover:bg-panel-hover"
               >
                 {props.t("library.rename")}
               </button>
@@ -99,7 +99,7 @@ function ItemTile(props: ItemTileProps): React.ReactElement {
                   props.onDelete(item.id)
                   props.setMenuOpenId(null)
                 }}
-                className="block w-full rounded px-2 py-1 text-left text-red-600 hover:bg-red-50"
+                className="block w-full rounded px-2 py-1 text-left text-danger hover:bg-danger-soft"
               >
                 {props.t("library.delete")}
               </button>
@@ -147,7 +147,7 @@ export function LibraryPanel(props: LibraryPanelProps): React.ReactElement {
     <aside
       aria-label={props.t("library.title")}
       data-testid="library-panel"
-      className={`fixed right-0 top-16 z-30 flex h-[calc(100%-5rem)] flex-col bg-white shadow-lg transition-all ${
+      className={`fixed right-0 top-16 z-30 flex h-[calc(100%-5rem)] flex-col bg-panel shadow-lg transition-all ${
         props.open ? "w-72" : "w-10"
       }`}
     >
@@ -171,7 +171,7 @@ export function LibraryPanel(props: LibraryPanelProps): React.ReactElement {
                 type="button"
                 onClick={props.onImport}
                 data-testid="library-import"
-                className="rounded px-2 py-1 text-xs hover:bg-gray-100"
+                className="rounded px-2 py-1 text-xs hover:bg-panel-hover"
               >
                 {props.t("library.import")}
               </button>
@@ -179,7 +179,7 @@ export function LibraryPanel(props: LibraryPanelProps): React.ReactElement {
                 type="button"
                 onClick={props.onExport}
                 data-testid="library-export"
-                className="rounded px-2 py-1 text-xs hover:bg-gray-100"
+                className="rounded px-2 py-1 text-xs hover:bg-panel-hover"
               >
                 {props.t("library.export")}
               </button>
@@ -199,7 +199,7 @@ export function LibraryPanel(props: LibraryPanelProps): React.ReactElement {
           <div className="flex-1 overflow-y-auto px-3 pb-3">
             {props.templates.length > 0 && (
               <>
-                <p className="px-1 pb-1 pt-2 text-xs font-medium uppercase text-gray-500">
+                <p className="px-1 pb-1 pt-2 text-xs font-medium uppercase text-muted">
                   {props.t("library.templates")}
                 </p>
                 <ul className="grid grid-cols-3 gap-2">
@@ -216,13 +216,11 @@ export function LibraryPanel(props: LibraryPanelProps): React.ReactElement {
               </>
             )}
 
-            <p className="px-1 pb-1 pt-3 text-xs font-medium uppercase text-gray-500">
+            <p className="px-1 pb-1 pt-3 text-xs font-medium uppercase text-muted">
               {props.t("library.myItems")}
             </p>
             {props.items.length === 0 ? (
-              <p className="px-2 py-4 text-center text-sm text-gray-500">
-                {props.t("library.empty")}
-              </p>
+              <p className="px-2 py-4 text-center text-sm text-muted">{props.t("library.empty")}</p>
             ) : (
               <ul className="grid grid-cols-3 gap-2">
                 {props.items.map((item) => (
