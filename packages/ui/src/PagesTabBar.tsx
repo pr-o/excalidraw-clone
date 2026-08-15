@@ -102,7 +102,7 @@ export function PagesTabBar({
         <div
           data-testid="page-drop-line"
           aria-hidden="true"
-          className="pointer-events-none absolute bottom-0 top-0 z-10 w-0.5 bg-accent-soft"
+          className="pointer-events-none absolute bottom-0 top-0 z-10 w-0.5 bg-accent"
           style={{ left: drag.dropLineLeft }}
         />
       )}
