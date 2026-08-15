@@ -96,13 +96,13 @@ export function PagesTabBar({
       data-testid="pages-tab-bar"
       onPointerMove={handleBarPointerMove}
       onPointerUp={handleBarPointerUp}
-      className={`fixed bottom-0 left-0 right-0 z-30 flex items-center gap-1 overflow-x-auto bg-white px-2 py-1 shadow-lg ${className ?? ""}`}
+      className={`fixed bottom-0 left-0 right-0 z-30 flex items-center gap-1 overflow-x-auto bg-panel px-2 py-1 shadow-lg ${className ?? ""}`}
     >
       {drag && drag.overIndex !== null && (
         <div
           data-testid="page-drop-line"
           aria-hidden="true"
-          className="pointer-events-none absolute bottom-0 top-0 z-10 w-0.5 bg-violet-500"
+          className="pointer-events-none absolute bottom-0 top-0 z-10 w-0.5 bg-accent-soft"
           style={{ left: drag.dropLineLeft }}
         />
       )}
@@ -118,7 +118,7 @@ export function PagesTabBar({
             data-page-tab-index={index}
             onPointerDown={handleTabPointerDown(page.id)}
             className={`flex shrink-0 items-center gap-1 rounded px-2 py-1 text-xs ${
-              active ? "bg-violet-100" : "hover:bg-gray-50"
+              active ? "bg-accent-soft" : "hover:bg-panel-subtle"
             }`}
           >
             <button
@@ -137,13 +137,13 @@ export function PagesTabBar({
                 src={thumb}
                 alt=""
                 data-testid={`page-thumb-${page.id}`}
-                className="h-[33px] w-[46px] shrink-0 rounded-sm border border-gray-200 object-contain"
+                className="h-[33px] w-[46px] shrink-0 rounded-sm border border-panel-subtle object-contain"
               />
             ) : (
               <div
                 data-testid={`page-thumb-${page.id}`}
                 aria-hidden="true"
-                className="h-[33px] w-[46px] shrink-0 rounded-sm border border-gray-200 bg-gray-50"
+                className="h-[33px] w-[46px] shrink-0 rounded-sm border border-panel-subtle bg-panel-subtle"
               />
             )}
 
@@ -158,7 +158,7 @@ export function PagesTabBar({
                   if (e.key === "Enter") commitRename(page.id)
                   if (e.key === "Escape") setEditingId(null)
                 }}
-                className="w-24 rounded border border-gray-300 px-1"
+                className="w-24 rounded border border-panel px-1"
               />
             ) : (
               <button
@@ -189,7 +189,7 @@ export function PagesTabBar({
               aria-label={t("pages.duplicate")}
               title={t("pages.duplicate")}
               onClick={() => onDuplicate(page.id)}
-              className="rounded px-0.5 hover:bg-gray-100"
+              className="rounded px-0.5 hover:bg-panel-hover"
             >
               ⧉
             </button>
@@ -201,7 +201,7 @@ export function PagesTabBar({
               title={t("pages.delete")}
               disabled={pages.length === 1}
               onClick={() => onDelete(page.id)}
-              className="rounded px-0.5 hover:bg-gray-100 disabled:opacity-30"
+              className="rounded px-0.5 hover:bg-panel-hover disabled:opacity-30"
             >
               ✕
             </button>
@@ -215,7 +215,7 @@ export function PagesTabBar({
         aria-label={t("pages.add")}
         title={t("pages.add")}
         onClick={onAdd}
-        className="shrink-0 rounded px-2 py-1 text-xs hover:bg-gray-100"
+        className="shrink-0 rounded px-2 py-1 text-xs hover:bg-panel-hover"
       >
         +
       </button>
