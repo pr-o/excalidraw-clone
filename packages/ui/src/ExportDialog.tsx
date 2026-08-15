@@ -89,14 +89,14 @@ export function ExportDialog({
           <button
             type="button"
             onClick={onClose}
-            className="rounded border border-gray-300 px-3 py-1 text-sm"
+            className="rounded border border-panel px-3 py-1 text-sm"
           >
             {t("export.cancel")}
           </button>
           <button
             type="button"
             onClick={() => onExport({ format, scale, background, embedScene })}
-            className="rounded bg-violet-600 px-3 py-1 text-sm text-white"
+            className="rounded bg-accent px-3 py-1 text-sm text-white"
           >
             {t("export.confirm")}
           </button>
@@ -115,7 +115,7 @@ function Row({
 }): React.ReactElement {
   return (
     <div className="flex items-center justify-between gap-4">
-      <span className="text-sm font-medium text-gray-700">{label}</span>
+      <span className="text-sm font-medium text-muted">{label}</span>
       <div>{children}</div>
     </div>
   )
@@ -139,7 +139,7 @@ function Toggle<T extends string | number>({
           data-testid={opt.testId}
           aria-pressed={value === opt.value}
           onClick={() => setValue(opt.value)}
-          className={`rounded border px-2 py-1 text-xs ${value === opt.value ? "border-violet-600 bg-violet-100" : "border-gray-300"}`}
+          className={`rounded border px-2 py-1 text-xs ${value === opt.value ? "border-accent bg-accent-soft" : "border-panel"}`}
         >
           {opt.label}
         </button>
