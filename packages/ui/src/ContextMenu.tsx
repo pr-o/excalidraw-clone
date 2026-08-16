@@ -29,8 +29,34 @@ export function ContextMenu({ x, y, items, onClose }: ContextMenuProps): React.R
   }, [x, y])
 
   useEffect(() => {
+    menuRef.current?.querySelector<HTMLButtonElement>('[role="menuitem"]')?.focus()
+  }, [])
+
+  useEffect(() => {
+    const moveFocus = (next: (current: number, count: number) => number): void => {
+      const buttons = Array.from(
+        menuRef.current?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]') ?? [],
+      )
+      if (buttons.length === 0) return
+      const current = buttons.indexOf(document.activeElement as HTMLButtonElement)
+      buttons[next(current, buttons.length)]?.focus()
+    }
     const onKeyDown = (e: KeyboardEvent): void => {
-      if (e.key === "Escape") onClose()
+      if (e.key === "Escape") {
+        onClose()
+      } else if (e.key === "ArrowDown") {
+        e.preventDefault()
+        moveFocus((i, n) => (i + 1) % n)
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault()
+        moveFocus((i, n) => (i <= 0 ? n - 1 : i - 1))
+      } else if (e.key === "Home") {
+        e.preventDefault()
+        moveFocus(() => 0)
+      } else if (e.key === "End") {
+        e.preventDefault()
+        moveFocus((_, n) => n - 1)
+      }
     }
     const onPointerDown = (e: PointerEvent): void => {
       if (!menuRef.current?.contains(e.target as Node)) onClose()
