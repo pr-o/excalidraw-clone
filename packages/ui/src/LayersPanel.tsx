@@ -66,7 +66,7 @@ export function LayersPanel({
                   data-testid={`layer-row-${element.id}`}
                   className={`mb-0.5 flex items-center gap-1 rounded px-1 py-1 text-xs ${
                     selected ? "bg-accent-soft" : "hover:bg-panel-subtle"
-                  } ${element.groupIds.length > 0 ? "border-l-2 border-accent-soft pl-1" : ""}`}
+                  } ${element.groupIds.length > 0 ? "border-l-2 border-accent pl-1" : ""}`}
                 >
                   <button
                     type="button"

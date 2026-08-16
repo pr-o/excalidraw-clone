@@ -69,6 +69,10 @@
   color: var(--color-text-muted);
 }
 
+@utility text-app {
+  color: var(--fg-app);
+}
+
 @utility bg-accent {
   background-color: var(--color-accent);
 }
@@ -79,10 +83,6 @@
 
 @utility bg-accent-soft {
   background-color: var(--color-accent-soft);
-}
-
-@utility border-accent-soft {
-  border-color: var(--color-accent-soft);
 }
 
 @utility text-danger {

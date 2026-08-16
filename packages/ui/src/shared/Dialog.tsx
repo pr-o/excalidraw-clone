@@ -37,10 +37,10 @@ export function Dialog({
   return (
     <dialog
       ref={ref}
-      className={`rounded-lg p-0 backdrop:bg-black/40 ${className ?? ""}`}
+      className={`rounded-lg bg-panel p-0 text-app backdrop:bg-black/40 ${className ?? ""}`}
       aria-labelledby="dialog-title"
     >
-      <div className="flex items-center justify-between border-b px-4 py-3">
+      <div className="flex items-center justify-between border-b border-panel-subtle px-4 py-3">
         <h2 id="dialog-title" className="text-lg font-semibold">
           {title}
         </h2>
