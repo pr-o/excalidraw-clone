@@ -144,7 +144,8 @@
     "paste": "붙여넣기",
     "selectAll": "전체 선택",
     "zoomToFit": "화면에 맞추기",
-    "unlock": "잠금 해제"
+    "unlock": "잠금 해제",
+    "moveToPage": "페이지로 이동"
   },
   "pages": {
     "title": "페이지",

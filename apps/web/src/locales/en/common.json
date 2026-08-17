@@ -155,7 +155,8 @@
     "paste": "Paste",
     "selectAll": "Select all",
     "zoomToFit": "Zoom to fit",
-    "unlock": "Unlock"
+    "unlock": "Unlock",
+    "moveToPage": "Move to page"
   },
   "pages": {
     "title": "Pages",
