@@ -357,6 +357,38 @@ function Inner(): React.ReactElement {
     return renderToSVG(tempScene, { padding: 4 })
   }, [])
 
+  const moveElementToPage = useCallback(
+    (elementId: string, targetPageId: string): void => {
+      const element = scene.getElements().find((el) => el.id === elementId)
+      const target = pages.find((p) => p.id === targetPageId)
+      if (!element || !target) return
+      scene.mutate((draft) => {
+        for (let i = 0; i < draft.length; i += 1) {
+          if (draft[i]!.id === elementId) draft[i] = { ...draft[i]!, isDeleted: true }
+        }
+      })
+      target.scene.mutate((draft) => {
+        draft.push(element)
+      })
+      // The per-active-page thumbnail-flush effect below is subscribed to the
+      // *source* scene at this point (we haven't switched pages yet) but gets
+      // torn down by switchToPage's setActivePageId before its 500ms debounce
+      // fires, so it never runs for this mutation. Refresh the source page's
+      // thumbnail explicitly, the same way onAdd/onDuplicate below refresh a
+      // freshly created page's.
+      void renderPageThumbnail(scene, canvasBg, resolvedTheme)
+        .then((thumb) => {
+          setThumbnails((prev) => ({ ...prev, [activePageId]: thumb }))
+        })
+        .catch(() => {
+          // Leave the source page's last-good thumbnail in place if this render fails.
+        })
+      switchToPage(targetPageId)
+      useAppStore.getState().setSelection([elementId])
+    },
+    [scene, pages, activePageId, canvasBg, resolvedTheme, switchToPage],
+  )
+
   return (
     <main className="relative h-screen w-screen overflow-hidden">
       <CanvasShell
@@ -680,7 +712,11 @@ function Inner(): React.ReactElement {
 
       <Dialogs scene={scene} />
       <PaletteHost scene={scene} />
-      <ContextMenuHost scene={scene} />
+      <ContextMenuHost
+        scene={scene}
+        pages={pages.filter((p) => p.id !== activePageId).map((p) => ({ id: p.id, name: p.name }))}
+        onMoveElementToPage={moveElementToPage}
+      />
       <TextEditingOverlay scene={scene} />
     </main>
   )
