@@ -21,6 +21,9 @@ export type { CommandPaletteProps, PaletteCommand } from "./CommandPalette"
 export { ContextMenu } from "./ContextMenu"
 export type { ContextMenuItem, ContextMenuProps } from "./ContextMenu"
 
+export { PagePickerFlyout } from "./PagePickerFlyout"
+export type { PagePickerFlyoutProps, PagePickerPage } from "./PagePickerFlyout"
+
 export { ExportDialog } from "./ExportDialog"
 export type { ExportDialogProps, ExportOptions } from "./ExportDialog"
 
