@@ -27,6 +27,14 @@ describe("HelpDialog", () => {
     expect(screen.getByText("8")).toBeInTheDocument()
   })
 
+  it("lists the element-link shortcuts", () => {
+    render(<HelpDialog t={t} open onClose={() => {}} />)
+    expect(screen.getByText("Cmd/Ctrl+K")).toBeInTheDocument()
+    expect(screen.getByText("Cmd/Ctrl+click")).toBeInTheDocument()
+    expect(screen.getByText("shortcuts:link")).toBeInTheDocument()
+    expect(screen.getByText("shortcuts:openLink")).toBeInTheDocument()
+  })
+
   it("emits onClose when the close button is clicked", async () => {
     const onClose = vi.fn()
     render(<HelpDialog t={t} open onClose={onClose} />)

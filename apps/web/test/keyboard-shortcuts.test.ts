@@ -53,6 +53,20 @@ describe("keyboard shortcuts", () => {
     expect(useAppStore.getState().openDialog).toBe("help")
   })
 
+  it("Cmd+K opens the link editor for a single selected element", () => {
+    useAppStore.getState().setLinkEditorElementId(null)
+    useAppStore.getState().setSelection(["el-1"])
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }))
+    expect(useAppStore.getState().linkEditorElementId).toBe("el-1")
+  })
+
+  it("Cmd+K with a multi-selection is a no-op", () => {
+    useAppStore.getState().setLinkEditorElementId(null)
+    useAppStore.getState().setSelection(["el-1", "el-2"])
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }))
+    expect(useAppStore.getState().linkEditorElementId).toBeNull()
+  })
+
   it("Ctrl+Shift+L locks the selection and clears it", () => {
     const r = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
     scene.mutate((draft) => {

@@ -115,6 +115,12 @@ export function attachShortcuts({ scene, onNextPage, onPrevPage }: Bindings): ()
       useAppStore.getState().setPaletteOpen(true)
       return
     }
+    if (isMeta && key === "k") {
+      e.preventDefault()
+      const ids = useAppStore.getState().selectedIds
+      if (ids.length === 1) useAppStore.getState().setLinkEditorElementId(ids[0]!)
+      return
+    }
     if (e.altKey && key === "pagedown") {
       e.preventDefault()
       onNextPage?.()
