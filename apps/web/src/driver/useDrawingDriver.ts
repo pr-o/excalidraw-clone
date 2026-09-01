@@ -21,6 +21,7 @@ import { useEffect, useRef, type RefObject } from "react"
 import { useAppStore } from "../store"
 import { applyEffects } from "./effects"
 import { pickElementAtPoint } from "./hitTest"
+import { openLink } from "./link"
 import {
   applyWheel,
   clientToScene,
@@ -267,6 +268,21 @@ export function useDrawingDriver({
         store.clearPendingItem()
         overlay.getContext("2d")?.clearRect(0, 0, overlay.width, overlay.height)
         return
+      }
+      // Cmd/Ctrl-click on a linked element opens its link (selection tool only,
+      // so drawing-tool modifier behavior is untouched; Cmd/Ctrl is otherwise
+      // just "bypass snap" at drag time and does not change a plain click).
+      if (store.activeTool === "selection" && (e.metaKey || e.ctrlKey)) {
+        const at = clientToScene(
+          canvas,
+          { scrollX: store.scrollX, scrollY: store.scrollY, zoom: store.zoom },
+          e,
+        )
+        const hit = pickElementAtPoint(scene.getElements(), at)
+        if (hit && hit.link) {
+          openLink(hit.link)
+          return
+        }
       }
       canvas.setPointerCapture(e.pointerId)
       dispatchPointer("pointerDown", e)
