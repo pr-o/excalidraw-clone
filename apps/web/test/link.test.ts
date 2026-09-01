@@ -119,4 +119,28 @@ describe("pickLinkIndicatorTarget", () => {
     const rect = newRectangle({ x: 0, y: 0, width: 100, height: 100 })
     expect(pickLinkIndicatorTarget([rect], [], { x: 50, y: 50 })).toBeNull()
   })
+
+  it("returns null when the sole selected element's link is unparseable", () => {
+    const rect = {
+      ...newRectangle({ x: 0, y: 0, width: 10, height: 10 }),
+      link: "https://hello world",
+    }
+    expect(pickLinkIndicatorTarget([rect], [rect.id], null)).toBeNull()
+  })
+
+  it("returns null when the sole selected element's link uses a rejected scheme", () => {
+    const rect = {
+      ...newRectangle({ x: 0, y: 0, width: 10, height: 10 }),
+      link: "javascript:alert(1)",
+    }
+    expect(pickLinkIndicatorTarget([rect], [rect.id], null)).toBeNull()
+  })
+
+  it("returns null when the element under the pointer has an unopenable link", () => {
+    const rect = {
+      ...newRectangle({ x: 0, y: 0, width: 100, height: 100 }),
+      link: "javascript:alert(1)",
+    }
+    expect(pickLinkIndicatorTarget([rect], [], { x: 50, y: 50 })).toBeNull()
+  })
 })

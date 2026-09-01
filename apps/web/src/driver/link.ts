@@ -47,9 +47,13 @@ export function openLink(link: string | null | undefined): void {
 }
 
 /** Which element (if any) the corner link indicator should point at:
- *  1. the sole selected element, when it has a truthy link; else
- *  2. the topmost element under `pointer`, when it has a truthy link; else
- *  3. none. */
+ *  1. the sole selected element, when it has an openable link (passes
+ *     `sanitizeLinkHref`); else
+ *  2. the topmost element under `pointer`, when it has an openable link (passes
+ *     `sanitizeLinkHref`); else
+ *  3. none.
+ *  Gating on openability rather than truthiness keeps a stored-but-unopenable
+ *  link (a typo, or a rejected scheme) from rendering a dead indicator. */
 export function pickLinkIndicatorTarget(
   elements: readonly ExcalidrawElement[],
   selectedIds: readonly string[],
@@ -57,11 +61,11 @@ export function pickLinkIndicatorTarget(
 ): ExcalidrawElement | null {
   if (selectedIds.length === 1) {
     const sole = elements.find((e) => e.id === selectedIds[0])
-    if (sole && sole.link) return sole
+    if (sole && sanitizeLinkHref(sole.link)) return sole
   }
   if (pointer) {
     const hit = pickElementAtPoint(elements, pointer)
-    if (hit && hit.link) return hit
+    if (hit && sanitizeLinkHref(hit.link)) return hit
   }
   return null
 }

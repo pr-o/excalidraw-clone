@@ -21,7 +21,7 @@ import { useEffect, useRef, type RefObject } from "react"
 import { useAppStore } from "../store"
 import { applyEffects } from "./effects"
 import { pickElementAtPoint } from "./hitTest"
-import { openLink } from "./link"
+import { openLink, sanitizeLinkHref } from "./link"
 import {
   applyWheel,
   clientToScene,
@@ -279,7 +279,10 @@ export function useDrawingDriver({
           e,
         )
         const hit = pickElementAtPoint(scene.getElements(), at)
-        if (hit && hit.link) {
+        // Only an *openable* link swallows the click; a present-but-unopenable
+        // one (typo, rejected scheme) falls through to normal selection rather
+        // than making the element unclickable.
+        if (hit && sanitizeLinkHref(hit.link)) {
           openLink(hit.link)
           return
         }
