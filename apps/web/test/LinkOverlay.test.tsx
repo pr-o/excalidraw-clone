@@ -57,3 +57,52 @@ describe("LinkOverlay — editor mode", () => {
     expect(container.querySelector('[data-testid="link-editor"]')).toBeNull()
   })
 })
+
+describe("LinkOverlay — indicator mode", () => {
+  it("shows the link indicator for a single selected linked element", () => {
+    const scene = new Scene()
+    const rect = { ...newRectangle({ x: 0, y: 0, width: 10, height: 10 }), link: "https://a.com" }
+    scene.mutate((d) => d.push(rect))
+    useAppStore.getState().setSelection([rect.id])
+
+    renderOverlay(scene)
+
+    const indicator = screen.getByTestId("link-indicator")
+    expect(indicator).toBeDefined()
+    expect(indicator.getAttribute("title")).toBe("https://a.com/")
+  })
+
+  it("shows no indicator when the sole selected element has no link", () => {
+    const scene = new Scene()
+    const rect = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
+    scene.mutate((d) => d.push(rect))
+    useAppStore.getState().setSelection([rect.id])
+
+    const { container } = renderOverlay(scene)
+
+    expect(container.querySelector('[data-testid="link-indicator"]')).toBeNull()
+  })
+
+  it("shows no indicator for a multi-selection even when both are linked", () => {
+    const scene = new Scene()
+    const a = { ...newRectangle({ x: 0, y: 0, width: 10, height: 10 }), link: "https://a.com" }
+    const b = { ...newRectangle({ x: 40, y: 0, width: 10, height: 10 }), link: "https://b.com" }
+    scene.mutate((d) => d.push(a, b))
+    useAppStore.getState().setSelection([a.id, b.id])
+
+    const { container } = renderOverlay(scene)
+
+    expect(container.querySelector('[data-testid="link-indicator"]')).toBeNull()
+  })
+
+  it("falls back to the linked element under the last scene pointer", () => {
+    const scene = new Scene()
+    const rect = { ...newRectangle({ x: 0, y: 0, width: 100, height: 100 }), link: "https://a.com" }
+    scene.mutate((d) => d.push(rect))
+    useAppStore.setState({ lastScenePointer: { x: 50, y: 50 } })
+
+    renderOverlay(scene)
+
+    expect(screen.getByTestId("link-indicator")).toBeDefined()
+  })
+})
