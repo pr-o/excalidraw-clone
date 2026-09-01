@@ -1,5 +1,5 @@
 import { newRectangle, Scene } from "@excalidraw-clone/scene"
-import { cleanup, render, screen } from "@testing-library/react"
+import { cleanup, fireEvent, render, screen } from "@testing-library/react"
 import React from "react"
 import { afterEach, beforeEach, describe, expect, it } from "vitest"
 import { I18nextProvider } from "react-i18next"
@@ -46,6 +46,39 @@ describe("LinkOverlay — editor mode", () => {
 
     expect(screen.getByTestId("link-editor-input")).toBeDefined()
     expect(container.querySelector('[data-testid="link-editor-remove"]')).toBeNull()
+  })
+
+  it("commits the normalized link on click-away blur and closes the editor", () => {
+    const scene = new Scene()
+    const rect = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
+    scene.mutate((d) => d.push(rect))
+    useAppStore.getState().setLinkEditorElementId(rect.id)
+
+    renderOverlay(scene)
+
+    fireEvent.change(screen.getByTestId("link-editor-input"), {
+      target: { value: "example.com" },
+    })
+    fireEvent.blur(screen.getByTestId("link-editor"), { relatedTarget: null })
+
+    expect(scene.getElements().find((e) => e.id === rect.id)?.link).toBe("https://example.com")
+    expect(useAppStore.getState().linkEditorElementId).toBeNull()
+  })
+
+  it("closes the editor on blur without changing an untouched link", () => {
+    const scene = new Scene()
+    const rect = { ...newRectangle({ x: 0, y: 0, width: 10, height: 10 }), link: "https://a.com" }
+    scene.mutate((d) => d.push(rect))
+    useAppStore.getState().setLinkEditorElementId(rect.id)
+
+    renderOverlay(scene)
+
+    expect(() =>
+      fireEvent.blur(screen.getByTestId("link-editor"), { relatedTarget: null }),
+    ).not.toThrow()
+
+    expect(scene.getElements().find((e) => e.id === rect.id)?.link).toBe("https://a.com")
+    expect(useAppStore.getState().linkEditorElementId).toBeNull()
   })
 
   it("renders nothing when the editor id is not an element in the scene", () => {
