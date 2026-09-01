@@ -145,7 +145,15 @@
     "selectAll": "전체 선택",
     "zoomToFit": "화면에 맞추기",
     "unlock": "잠금 해제",
-    "moveToPage": "페이지로 이동"
+    "moveToPage": "페이지로 이동",
+    "createLink": "링크 만들기",
+    "editLink": "링크 편집",
+    "removeLink": "링크 제거"
+  },
+  "linkEditor": {
+    "placeholder": "링크를 붙여넣거나 입력하세요",
+    "open": "링크 열기",
+    "remove": "링크 제거"
   },
   "pages": {
     "title": "페이지",

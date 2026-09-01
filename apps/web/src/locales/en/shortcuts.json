@@ -36,5 +36,7 @@
   "commandPalette": "Command palette",
   "help": "Help",
   "nextPage": "Next page",
-  "prevPage": "Previous page"
+  "prevPage": "Previous page",
+  "link": "Add or edit link",
+  "openLink": "Open element link"
 }

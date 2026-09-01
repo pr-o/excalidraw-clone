@@ -156,7 +156,15 @@
     "selectAll": "Select all",
     "zoomToFit": "Zoom to fit",
     "unlock": "Unlock",
-    "moveToPage": "Move to page"
+    "moveToPage": "Move to page",
+    "createLink": "Create link",
+    "editLink": "Edit link",
+    "removeLink": "Remove link"
+  },
+  "linkEditor": {
+    "placeholder": "Paste or type a link",
+    "open": "Open link",
+    "remove": "Remove link"
   },
   "pages": {
     "title": "Pages",
