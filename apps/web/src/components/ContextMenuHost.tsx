@@ -18,6 +18,7 @@ import { ContextMenu, type ContextMenuItem, PagePickerFlyout } from "@excalidraw
 import { useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { buildPaste, copyPayload } from "../driver/clipboard"
+import { commitElementLink } from "../driver/link"
 import { canMoveElementToPage } from "../driver/moveToPage"
 import { patchScene } from "../driver/patchScene"
 import { useAppStore } from "../store"
@@ -170,6 +171,27 @@ export function ContextMenuHost({
               perform: () => {
                 setFlyout({ elementId: el.id, x: contextMenu.x, y: contextMenu.y })
               },
+            })
+          }
+        }
+        if (elementIds.length === 1) {
+          const linkEl = selectedElements[0]
+          if (linkEl && !linkEl.link) {
+            items.push({
+              id: "create-link",
+              label: t("contextMenu.createLink"),
+              perform: () => useAppStore.getState().setLinkEditorElementId(linkEl.id),
+            })
+          } else if (linkEl) {
+            items.push({
+              id: "edit-link",
+              label: t("contextMenu.editLink"),
+              perform: () => useAppStore.getState().setLinkEditorElementId(linkEl.id),
+            })
+            items.push({
+              id: "remove-link",
+              label: t("contextMenu.removeLink"),
+              perform: () => scene.mutate((draft) => commitElementLink(draft, linkEl.id, null)),
             })
           }
         }
