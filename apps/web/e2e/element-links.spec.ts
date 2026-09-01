@@ -117,6 +117,16 @@ test("no link editor opens for a multi-selection", async ({ page }) => {
   await dragOnCanvas(page, { x: 90, y: 90 }, { x: 350, y: 210 })
   await page.waitForTimeout(150)
 
+  // Prove the multi-selection really exists first, so the assertion below can't
+  // pass vacuously on a broken/empty selection: "Group" is only offered for 2+
+  // selected elements (same idiom as context-menu.spec.ts).
+  const box = await page.locator("canvas").first().boundingBox()
+  if (!box) throw new Error("canvas not found")
+  await page.mouse.click(box.x + 150, box.y + 150, { button: "right" })
+  await expect(page.locator('[data-testid="context-menu-item-group"]')).toBeVisible()
+  await page.keyboard.press("Escape")
+  await expect(page.locator('[data-testid="context-menu"]')).toHaveCount(0)
+
   await page.keyboard.press("ControlOrMeta+k")
   await expect(page.locator('[data-testid="link-editor-input"]')).toHaveCount(0)
 })
