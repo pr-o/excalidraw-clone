@@ -71,6 +71,7 @@ import { computeResolvedTheme } from "../store/slices/theme"
 import { CanvasShell } from "./CanvasShell"
 import { ContextMenuHost } from "./ContextMenuHost"
 import { Dialogs } from "./Dialogs"
+import { LinkOverlay } from "./LinkOverlay"
 import { PaletteHost } from "./PaletteHost"
 import { TextEditingOverlay } from "./TextEditingOverlay"
 
@@ -195,6 +196,12 @@ function Inner(): React.ReactElement {
   useEffect(() => {
     return attachClipboard({ scene })
   }, [scene])
+  // Any page change (tab switch, Alt+PageUp/Down, opening a file) must drop a
+  // stale editor id from the previous page — same reasoning the codebase applies
+  // to textEditElementId. Keyed on activePageId so every path is covered.
+  useEffect(() => {
+    useAppStore.getState().setLinkEditorElementId(null)
+  }, [activePageId])
   const activeTool = useAppStore((s) => s.activeTool)
   const setActiveTool = useAppStore((s) => s.setActiveTool)
   const lockActiveTool = useAppStore((s) => s.lockActiveTool)
@@ -718,6 +725,7 @@ function Inner(): React.ReactElement {
         onMoveElementToPage={moveElementToPage}
       />
       <TextEditingOverlay scene={scene} />
+      <LinkOverlay scene={scene} />
     </main>
   )
 }
