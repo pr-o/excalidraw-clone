@@ -422,6 +422,7 @@ export function useDrawingDriver({
       canvas.removeEventListener("contextmenu", onContextMenu)
       canvas.removeEventListener("pointerenter", onPointerEnter)
       canvas.removeEventListener("pointerleave", onPointerLeave)
+      useAppStore.getState().setPointerOverCanvas(false)
       canvas.removeEventListener("wheel", onWheel)
       window.removeEventListener("keydown", onKeyDown)
       window.removeEventListener("keyup", onKeyUp)

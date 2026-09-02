@@ -71,7 +71,8 @@ export function pickLinkIndicatorTarget(
 }
 
 /** Layout constants for the link overlay (editor popover + corner indicator). */
-export const LINK_EDITOR_WIDTH = 280
+// w-56 input (224) + px-1.5 (12) + border + up to 2 ~24px buttons
+export const LINK_EDITOR_WIDTH = 300
 export const LINK_INDICATOR_WIDTH = 32
 export const LINK_EDITOR_OFFSET = 40
 export const LINK_INDICATOR_OFFSET = 22
