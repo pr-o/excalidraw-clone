@@ -390,11 +390,16 @@ export function useDrawingDriver({
       })
     }
 
+    const onPointerEnter = (): void => useAppStore.getState().setPointerOverCanvas(true)
+    const onPointerLeave = (): void => useAppStore.getState().setPointerOverCanvas(false)
+
     canvas.addEventListener("pointerdown", onPointerDown)
     canvas.addEventListener("pointermove", onPointerMove)
     canvas.addEventListener("pointerup", onPointerUp)
     canvas.addEventListener("dblclick", onDoubleClick)
     canvas.addEventListener("contextmenu", onContextMenu)
+    canvas.addEventListener("pointerenter", onPointerEnter)
+    canvas.addEventListener("pointerleave", onPointerLeave)
     canvas.addEventListener("wheel", onWheel, { passive: false })
     window.addEventListener("keydown", onKeyDown)
     window.addEventListener("keyup", onKeyUp)
@@ -411,6 +416,8 @@ export function useDrawingDriver({
       canvas.removeEventListener("pointerup", onPointerUp)
       canvas.removeEventListener("dblclick", onDoubleClick)
       canvas.removeEventListener("contextmenu", onContextMenu)
+      canvas.removeEventListener("pointerenter", onPointerEnter)
+      canvas.removeEventListener("pointerleave", onPointerLeave)
       canvas.removeEventListener("wheel", onWheel)
       window.removeEventListener("keydown", onKeyDown)
       window.removeEventListener("keyup", onKeyUp)

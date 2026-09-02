@@ -23,6 +23,7 @@ export function LinkOverlay({ scene }: { scene: Scene }): React.ReactElement | n
   const setEditorId = useAppStore((s) => s.setLinkEditorElementId)
   const selectedIds = useAppStore((s) => s.selectedIds)
   const lastScenePointer = useAppStore((s) => s.lastScenePointer)
+  const pointerOverCanvas = useAppStore((s) => s.pointerOverCanvas)
   const scrollX = useAppStore((s) => s.scrollX)
   const scrollY = useAppStore((s) => s.scrollY)
   const zoom = useAppStore((s) => s.zoom)
@@ -124,7 +125,11 @@ export function LinkOverlay({ scene }: { scene: Scene }): React.ReactElement | n
     )
   }
 
-  const target = pickLinkIndicatorTarget(scene.getElements(), selectedIds, lastScenePointer)
+  const target = pickLinkIndicatorTarget(
+    scene.getElements(),
+    selectedIds,
+    pointerOverCanvas ? lastScenePointer : null,
+  )
   if (!target) return null
 
   const anchorLeft = (target.x + scrollX) * zoom
