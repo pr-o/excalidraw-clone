@@ -53,16 +53,36 @@ describe("keyboard shortcuts", () => {
     expect(useAppStore.getState().openDialog).toBe("help")
   })
 
-  it("Cmd+K opens the link editor for a single selected element", () => {
+  it("Cmd+K opens the link editor for a single selected unlocked element", () => {
     useAppStore.getState().setLinkEditorElementId(null)
-    useAppStore.getState().setSelection(["el-1"])
+    const r = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
+    scene.mutate((draft) => {
+      draft.push(r)
+    })
+    useAppStore.getState().setSelection([r.id])
     window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }))
-    expect(useAppStore.getState().linkEditorElementId).toBe("el-1")
+    expect(useAppStore.getState().linkEditorElementId).toBe(r.id)
   })
 
   it("Cmd+K with a multi-selection is a no-op", () => {
     useAppStore.getState().setLinkEditorElementId(null)
-    useAppStore.getState().setSelection(["el-1", "el-2"])
+    const a = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
+    const b = newRectangle({ x: 20, y: 0, width: 10, height: 10 })
+    scene.mutate((draft) => {
+      draft.push(a, b)
+    })
+    useAppStore.getState().setSelection([a.id, b.id])
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }))
+    expect(useAppStore.getState().linkEditorElementId).toBeNull()
+  })
+
+  it("Cmd+K on a locked element is a no-op", () => {
+    useAppStore.getState().setLinkEditorElementId(null)
+    const r = { ...newRectangle({ x: 0, y: 0, width: 10, height: 10 }), locked: true }
+    scene.mutate((draft) => {
+      draft.push(r)
+    })
+    useAppStore.getState().setSelection([r.id])
     window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }))
     expect(useAppStore.getState().linkEditorElementId).toBeNull()
   })
