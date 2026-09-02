@@ -1,6 +1,7 @@
 import { newRectangle } from "@excalidraw-clone/scene"
 import { describe, expect, it, vi } from "vitest"
 import {
+  clampLinkOverlayPos,
   commitElementLink,
   normalizeLinkInput,
   openLink,
@@ -142,5 +143,40 @@ describe("pickLinkIndicatorTarget", () => {
       link: "javascript:alert(1)",
     }
     expect(pickLinkIndicatorTarget([rect], [], { x: 50, y: 50 })).toBeNull()
+  })
+})
+
+describe("clampLinkOverlayPos", () => {
+  it("keeps a natural position that already fits", () => {
+    expect(clampLinkOverlayPos({ left: 100, aboveTop: 60, belowTop: 140 }, 280, 1024)).toEqual({
+      left: 100,
+      top: 60,
+    })
+  })
+
+  it("clamps left into the viewport near the right edge", () => {
+    expect(clampLinkOverlayPos({ left: 1000, aboveTop: 60, belowTop: 140 }, 280, 1024)).toEqual({
+      left: 744,
+      top: 60,
+    })
+  })
+
+  it("never returns a negative left", () => {
+    expect(clampLinkOverlayPos({ left: -50, aboveTop: 60, belowTop: 140 }, 280, 1024).left).toBe(0)
+  })
+
+  it("pins left to 0 when the box is wider than the viewport", () => {
+    expect(clampLinkOverlayPos({ left: 30, aboveTop: 60, belowTop: 140 }, 400, 320).left).toBe(0)
+  })
+
+  it("flips below the anchor when the position above is off the top edge", () => {
+    expect(clampLinkOverlayPos({ left: 100, aboveTop: -12, belowTop: 74 }, 32, 1024)).toEqual({
+      left: 100,
+      top: 74,
+    })
+  })
+
+  it("clamps the flipped-below top to 0 as a last resort", () => {
+    expect(clampLinkOverlayPos({ left: 100, aboveTop: -12, belowTop: -4 }, 32, 1024).top).toBe(0)
   })
 })
