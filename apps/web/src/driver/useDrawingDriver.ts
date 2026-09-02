@@ -272,7 +272,11 @@ export function useDrawingDriver({
       // Cmd/Ctrl-click on a linked element opens its link (selection tool only,
       // so drawing-tool modifier behavior is untouched; Cmd/Ctrl is otherwise
       // just "bypass snap" at drag time and does not change a plain click).
-      if (store.activeTool === "selection" && (e.metaKey || e.ctrlKey)) {
+      // Apple: Ctrl-click is the system secondary click, so require Cmd there;
+      // elsewhere require Ctrl.
+      const isApple = /Mac|iPhone|iPad|iPod/.test(navigator.platform)
+      const openModifier = isApple ? e.metaKey : e.ctrlKey
+      if (store.activeTool === "selection" && openModifier) {
         const at = clientToScene(
           canvas,
           { scrollX: store.scrollX, scrollY: store.scrollY, zoom: store.zoom },
