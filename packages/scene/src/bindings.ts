@@ -4,14 +4,15 @@ import {
   type PolygonShapeKind,
   boundsCenter,
   edgePointToward,
+  mirroredShapeVertices,
   normalize,
   pointAdd,
   pointScale,
   polygonEdgePointToward,
-  shapeVertices,
 } from "@excalidraw-clone/geometry"
 import { getElementBounds } from "./bounds"
 import { routeElbow, sideCenter, sideOf, type Side } from "./elbow"
+import { mirrorOf } from "./flip"
 import { hitTestElement } from "./hit-test"
 import type { ElementType, ExcalidrawElement, PointBinding } from "./types"
 
@@ -71,7 +72,11 @@ export const computeBoundEndpoint = (
   const center = boundsCenter(bounds)
   const polyKind = polygonKindFor(target.type)
   const edge = polyKind
-    ? polygonEdgePointToward(shapeVertices(polyKind, bounds), bounds, toward)
+    ? polygonEdgePointToward(
+        mirroredShapeVertices(polyKind, bounds, mirrorOf(target)),
+        bounds,
+        toward,
+      )
     : edgePointToward(bounds, edgeKindFor(target.type), toward)
   const dir = normalize({ x: toward.x - center.x, y: toward.y - center.y })
   const base = pointAdd(edge, pointScale(dir, gap))
