@@ -272,7 +272,11 @@ export function useDrawingDriver({
       // Cmd/Ctrl-click on a linked element opens its link (selection tool only,
       // so drawing-tool modifier behavior is untouched; Cmd/Ctrl is otherwise
       // just "bypass snap" at drag time and does not change a plain click).
-      if (store.activeTool === "selection" && (e.metaKey || e.ctrlKey)) {
+      // Apple: Ctrl-click is the system secondary click, so require Cmd there;
+      // elsewhere require Ctrl.
+      const isApple = /Mac|iPhone|iPad|iPod/.test(navigator.platform)
+      const openModifier = isApple ? e.metaKey : e.ctrlKey
+      if (store.activeTool === "selection" && openModifier) {
         const at = clientToScene(
           canvas,
           { scrollX: store.scrollX, scrollY: store.scrollY, zoom: store.zoom },
@@ -390,11 +394,16 @@ export function useDrawingDriver({
       })
     }
 
+    const onPointerEnter = (): void => useAppStore.getState().setPointerOverCanvas(true)
+    const onPointerLeave = (): void => useAppStore.getState().setPointerOverCanvas(false)
+
     canvas.addEventListener("pointerdown", onPointerDown)
     canvas.addEventListener("pointermove", onPointerMove)
     canvas.addEventListener("pointerup", onPointerUp)
     canvas.addEventListener("dblclick", onDoubleClick)
     canvas.addEventListener("contextmenu", onContextMenu)
+    canvas.addEventListener("pointerenter", onPointerEnter)
+    canvas.addEventListener("pointerleave", onPointerLeave)
     canvas.addEventListener("wheel", onWheel, { passive: false })
     window.addEventListener("keydown", onKeyDown)
     window.addEventListener("keyup", onKeyUp)
@@ -411,6 +420,9 @@ export function useDrawingDriver({
       canvas.removeEventListener("pointerup", onPointerUp)
       canvas.removeEventListener("dblclick", onDoubleClick)
       canvas.removeEventListener("contextmenu", onContextMenu)
+      canvas.removeEventListener("pointerenter", onPointerEnter)
+      canvas.removeEventListener("pointerleave", onPointerLeave)
+      useAppStore.getState().setPointerOverCanvas(false)
       canvas.removeEventListener("wheel", onWheel)
       window.removeEventListener("keydown", onKeyDown)
       window.removeEventListener("keyup", onKeyUp)

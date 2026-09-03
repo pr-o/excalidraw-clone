@@ -18,6 +18,7 @@ beforeEach(() => {
   useAppStore.getState().setLinkEditorElementId(null)
   useAppStore.getState().setSelection([])
   useAppStore.setState({ lastScenePointer: null })
+  useAppStore.getState().setPointerOverCanvas(false)
   useAppStore.getState().setView({ scrollX: 0, scrollY: 0, zoom: 1 })
 })
 afterEach(() => cleanup())
@@ -81,6 +82,31 @@ describe("LinkOverlay — editor mode", () => {
     expect(useAppStore.getState().linkEditorElementId).toBeNull()
   })
 
+  it("clamps the editor popover to a non-negative top for an element at the canvas top", () => {
+    const scene = new Scene()
+    const rect = newRectangle({ x: 0, y: 0, width: 40, height: 30 })
+    scene.mutate((d) => d.push(rect))
+    useAppStore.getState().setLinkEditorElementId(rect.id)
+
+    renderOverlay(scene)
+
+    const top = parseFloat(screen.getByTestId("link-editor").style.top)
+    expect(top).toBeGreaterThanOrEqual(0)
+  })
+
+  it("clamps the editor popover left within the viewport near the right edge", () => {
+    const scene = new Scene()
+    const rect = newRectangle({ x: 5000, y: 200, width: 40, height: 30 })
+    scene.mutate((d) => d.push(rect))
+    useAppStore.getState().setLinkEditorElementId(rect.id)
+
+    renderOverlay(scene)
+
+    const left = parseFloat(screen.getByTestId("link-editor").style.left)
+    expect(left).toBeGreaterThanOrEqual(0)
+    expect(left).toBeLessThanOrEqual(window.innerWidth)
+  })
+
   it("renders nothing when the editor id is not an element in the scene", () => {
     const scene = new Scene()
     useAppStore.getState().setLinkEditorElementId("missing")
@@ -133,9 +159,46 @@ describe("LinkOverlay — indicator mode", () => {
     const rect = { ...newRectangle({ x: 0, y: 0, width: 100, height: 100 }), link: "https://a.com" }
     scene.mutate((d) => d.push(rect))
     useAppStore.setState({ lastScenePointer: { x: 50, y: 50 } })
+    useAppStore.getState().setPointerOverCanvas(true)
 
     renderOverlay(scene)
 
     expect(screen.getByTestId("link-indicator")).toBeDefined()
+  })
+
+  it("hides the pointer-fallback indicator once the pointer has left the canvas", () => {
+    const scene = new Scene()
+    const rect = { ...newRectangle({ x: 0, y: 0, width: 100, height: 100 }), link: "https://a.com" }
+    scene.mutate((d) => d.push(rect))
+    useAppStore.setState({ lastScenePointer: { x: 50, y: 50 } })
+    useAppStore.getState().setPointerOverCanvas(false)
+
+    const { container } = renderOverlay(scene)
+
+    expect(container.querySelector('[data-testid="link-indicator"]')).toBeNull()
+  })
+
+  it("shows the pointer-fallback indicator while the pointer is over the canvas", () => {
+    const scene = new Scene()
+    const rect = { ...newRectangle({ x: 0, y: 0, width: 100, height: 100 }), link: "https://a.com" }
+    scene.mutate((d) => d.push(rect))
+    useAppStore.setState({ lastScenePointer: { x: 50, y: 50 } })
+    useAppStore.getState().setPointerOverCanvas(true)
+
+    renderOverlay(scene)
+
+    expect(screen.getByTestId("link-indicator")).toBeDefined()
+  })
+
+  it("clamps the indicator to a non-negative top for an element at the canvas top", () => {
+    const scene = new Scene()
+    const rect = { ...newRectangle({ x: 0, y: 0, width: 10, height: 10 }), link: "https://a.com" }
+    scene.mutate((d) => d.push(rect))
+    useAppStore.getState().setSelection([rect.id])
+
+    renderOverlay(scene)
+
+    const top = parseFloat(screen.getByTestId("link-indicator").style.top)
+    expect(top).toBeGreaterThanOrEqual(0)
   })
 })

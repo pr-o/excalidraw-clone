@@ -118,7 +118,10 @@ export function attachShortcuts({ scene, onNextPage, onPrevPage }: Bindings): ()
     if (isMeta && key === "k") {
       e.preventDefault()
       const ids = useAppStore.getState().selectedIds
-      if (ids.length === 1) useAppStore.getState().setLinkEditorElementId(ids[0]!)
+      if (ids.length === 1) {
+        const el = scene.getElements().find((x) => x.id === ids[0])
+        if (el && !el.locked) useAppStore.getState().setLinkEditorElementId(el.id)
+      }
       return
     }
     if (e.altKey && key === "pagedown") {

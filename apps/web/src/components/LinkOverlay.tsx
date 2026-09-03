@@ -3,7 +3,13 @@ import type { Scene } from "@excalidraw-clone/scene"
 import React, { useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import {
+  clampLinkOverlayPos,
   commitElementLink,
+  LINK_EDITOR_OFFSET,
+  LINK_EDITOR_WIDTH,
+  LINK_FLIP_GAP,
+  LINK_INDICATOR_OFFSET,
+  LINK_INDICATOR_WIDTH,
   normalizeLinkInput,
   openLink,
   pickLinkIndicatorTarget,
@@ -17,6 +23,7 @@ export function LinkOverlay({ scene }: { scene: Scene }): React.ReactElement | n
   const setEditorId = useAppStore((s) => s.setLinkEditorElementId)
   const selectedIds = useAppStore((s) => s.selectedIds)
   const lastScenePointer = useAppStore((s) => s.lastScenePointer)
+  const pointerOverCanvas = useAppStore((s) => s.pointerOverCanvas)
   const scrollX = useAppStore((s) => s.scrollX)
   const scrollY = useAppStore((s) => s.scrollY)
   const zoom = useAppStore((s) => s.zoom)
@@ -34,8 +41,17 @@ export function LinkOverlay({ scene }: { scene: Scene }): React.ReactElement | n
     const el = scene.getElements().find((e) => e.id === editorId)
     if (!el) return null
 
-    const left = (el.x + scrollX) * zoom
-    const top = (el.y + scrollY) * zoom
+    const anchorLeft = (el.x + scrollX) * zoom
+    const anchorTop = (el.y + scrollY) * zoom
+    const { left, top } = clampLinkOverlayPos(
+      {
+        left: anchorLeft,
+        aboveTop: anchorTop - LINK_EDITOR_OFFSET,
+        belowTop: anchorTop + el.height * zoom + LINK_FLIP_GAP,
+      },
+      LINK_EDITOR_WIDTH,
+      window.innerWidth,
+    )
 
     const commit = (): void => {
       const next = normalizeLinkInput(value)
@@ -54,7 +70,7 @@ export function LinkOverlay({ scene }: { scene: Scene }): React.ReactElement | n
           if (e.currentTarget.contains(e.relatedTarget)) return
           commit()
         }}
-        style={{ position: "absolute", left: `${left}px`, top: `${top - 40}px` }}
+        style={{ position: "absolute", left: `${left}px`, top: `${top}px` }}
         className="z-40 flex items-center gap-1 rounded-md border border-panel bg-panel px-1.5 py-1 shadow-lg"
       >
         <input
@@ -109,19 +125,32 @@ export function LinkOverlay({ scene }: { scene: Scene }): React.ReactElement | n
     )
   }
 
-  const target = pickLinkIndicatorTarget(scene.getElements(), selectedIds, lastScenePointer)
+  const target = pickLinkIndicatorTarget(
+    scene.getElements(),
+    selectedIds,
+    pointerOverCanvas ? lastScenePointer : null,
+  )
   if (!target) return null
 
-  const left = (target.x + scrollX) * zoom
-  const top = (target.y + scrollY) * zoom
+  const anchorLeft = (target.x + scrollX) * zoom
+  const anchorTop = (target.y + scrollY) * zoom
+  const { left, top } = clampLinkOverlayPos(
+    {
+      left: anchorLeft,
+      aboveTop: anchorTop - LINK_INDICATOR_OFFSET,
+      belowTop: anchorTop + LINK_FLIP_GAP,
+    },
+    LINK_INDICATOR_WIDTH,
+    window.innerWidth,
+  )
 
   return (
     <button
       type="button"
       data-testid="link-indicator"
-      title={sanitizeLinkHref(target.link) ?? target.link ?? ""}
+      title={sanitizeLinkHref(target.link) ?? ""}
       onClick={() => openLink(target.link)}
-      style={{ position: "absolute", left: `${left}px`, top: `${top - 22}px` }}
+      style={{ position: "absolute", left: `${left}px`, top: `${top}px` }}
       className="z-40 rounded border border-panel bg-panel px-1 py-0.5 text-xs leading-none shadow hover:bg-accent-soft"
     >
       &#128279;

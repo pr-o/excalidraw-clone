@@ -69,3 +69,27 @@ export function pickLinkIndicatorTarget(
   }
   return null
 }
+
+/** Layout constants for the link overlay (editor popover + corner indicator). */
+// w-56 input (224) + px-1.5 (12) + border + up to 2 ~24px buttons
+export const LINK_EDITOR_WIDTH = 300
+export const LINK_INDICATOR_WIDTH = 32
+export const LINK_EDITOR_OFFSET = 40
+export const LINK_INDICATOR_OFFSET = 22
+export const LINK_FLIP_GAP = 4
+
+/** Clamp an absolutely-positioned overlay box into the viewport. `<main>` is
+ *  `overflow-hidden`, so a box at a negative offset is clipped rather than
+ *  scrolled to. `left` is clamped to `[0, viewportW - width]`. `top` uses the
+ *  natural position above the anchor (`aboveTop`) when that is on-screen; when
+ *  it is negative the box flips to `belowTop` (just under the anchor), itself
+ *  clamped to `>= 0`. This is clamp-only — no true scroll-into-view. */
+export function clampLinkOverlayPos(
+  natural: { left: number; aboveTop: number; belowTop: number },
+  width: number,
+  viewportW: number,
+): { left: number; top: number } {
+  const left = Math.max(0, Math.min(natural.left, Math.max(0, viewportW - width)))
+  const top = natural.aboveTop >= 0 ? natural.aboveTop : Math.max(0, natural.belowTop)
+  return { left, top }
+}
