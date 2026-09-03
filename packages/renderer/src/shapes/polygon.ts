@@ -1,4 +1,4 @@
-import { shapeVertices } from "@excalidraw-clone/geometry"
+import { mirroredShapeVertices } from "@excalidraw-clone/geometry"
 import type {
   ExcalidrawHexagonElement,
   ExcalidrawOctagonElement,
@@ -32,11 +32,10 @@ const polygonOptions = (e: PolygonElement): Options => {
 }
 
 export const polygonShape = (e: PolygonElement, gen: RoughGenerator): readonly Drawable[] => {
-  const points: RoughPoint[] = shapeVertices(e.type, {
-    x: 0,
-    y: 0,
-    width: e.width,
-    height: e.height,
-  }).map((p) => [p.x, p.y])
+  const points: RoughPoint[] = mirroredShapeVertices(
+    e.type,
+    { x: 0, y: 0, width: e.width, height: e.height },
+    e.mirror ?? [1, 1],
+  ).map((p) => [p.x, p.y])
   return [gen.polygon(points, polygonOptions(e))]
 }
