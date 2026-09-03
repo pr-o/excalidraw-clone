@@ -35,6 +35,14 @@ describe("HelpDialog", () => {
     expect(screen.getByText("shortcuts:openLink")).toBeInTheDocument()
   })
 
+  it("lists the flip shortcuts", () => {
+    render(<HelpDialog t={t} open onClose={() => {}} />)
+    expect(screen.getByText("Shift+H")).toBeInTheDocument()
+    expect(screen.getByText("Shift+V")).toBeInTheDocument()
+    expect(screen.getByText("shortcuts:flipHorizontal")).toBeInTheDocument()
+    expect(screen.getByText("shortcuts:flipVertical")).toBeInTheDocument()
+  })
+
   it("emits onClose when the close button is clicked", async () => {
     const onClose = vi.fn()
     render(<HelpDialog t={t} open onClose={onClose} />)

@@ -38,5 +38,7 @@
   "nextPage": "Next page",
   "prevPage": "Previous page",
   "link": "Add or edit link",
-  "openLink": "Open element link"
+  "openLink": "Open element link",
+  "flipHorizontal": "Flip horizontal",
+  "flipVertical": "Flip vertical"
 }

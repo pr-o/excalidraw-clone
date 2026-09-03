@@ -4,7 +4,7 @@ import {
   ZOOM_MAX,
   type ViewTransform,
 } from "@excalidraw-clone/geometry"
-import { newRectangle, newText, Scene } from "@excalidraw-clone/scene"
+import { newRectangle, newText, newTriangle, Scene } from "@excalidraw-clone/scene"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { attachShortcuts } from "../src/keyboard/shortcuts"
 import { useAppStore } from "../src/store"
@@ -137,6 +137,53 @@ describe("keyboard shortcuts", () => {
     })
     window.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft" }))
     expect(scene.getElements()[0]!.x).toBe(5)
+  })
+
+  it("Shift+H flips the selection across the x-axis", () => {
+    const tri = newTriangle({ x: 0, y: 0, width: 40, height: 30 })
+    scene.mutate((draft) => {
+      draft.push(tri)
+    })
+    useAppStore.getState().setSelection([tri.id])
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "H", shiftKey: true }))
+    expect(scene.getElements()[0]!.mirror).toEqual([-1, 1])
+  })
+
+  it("Shift+V with a non-empty selection flips and does NOT switch to the selection tool", () => {
+    const tri = newTriangle({ x: 0, y: 0, width: 40, height: 30 })
+    scene.mutate((draft) => {
+      draft.push(tri)
+    })
+    useAppStore.getState().setSelection([tri.id])
+    useAppStore.getState().setActiveTool("rectangle")
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "V", shiftKey: true }))
+    expect(scene.getElements()[0]!.mirror).toEqual([1, -1])
+    expect(useAppStore.getState().activeTool).toBe("rectangle")
+  })
+
+  it("Shift+V with an empty selection is a no-op", () => {
+    const tri = newTriangle({ x: 0, y: 0, width: 40, height: 30 })
+    scene.mutate((draft) => {
+      draft.push(tri)
+    })
+    useAppStore.getState().setActiveTool("rectangle")
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "V", shiftKey: true }))
+    expect(scene.getElements()[0]!.mirror).toBeUndefined()
+    expect(useAppStore.getState().activeTool).toBe("rectangle")
+  })
+
+  it("Shift+H over a multi-selection reflects each member across the combined bounds", () => {
+    const a = newTriangle({ x: 0, y: 0, width: 10, height: 10 })
+    const b = newTriangle({ x: 90, y: 0, width: 10, height: 10 })
+    scene.mutate((draft) => {
+      draft.push(a, b)
+    })
+    useAppStore.getState().setSelection([a.id, b.id])
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "H", shiftKey: true }))
+    const els = scene.getElements()
+    expect(els.find((e) => e.id === a.id)!.x).toBe(90)
+    expect(els.find((e) => e.id === b.id)!.x).toBe(0)
+    expect(els[0]!.mirror).toEqual([-1, 1])
   })
 
   it("Alt+PageDown calls onNextPage when provided", () => {

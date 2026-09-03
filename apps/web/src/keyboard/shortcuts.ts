@@ -2,6 +2,7 @@
 import { zoomToPoint } from "@excalidraw-clone/geometry"
 import {
   expandIdsToFrameMembers,
+  flipElements,
   groupElements,
   lockElements,
   type Scene,
@@ -177,6 +178,15 @@ export function attachShortcuts({ scene, onNextPage, onPrevPage }: Bindings): ()
           if (moved.has(el.id)) draft[i] = { ...el, x: el.x + dx, y: el.y + dy }
         }
       })
+      return
+    }
+    // Must precede the TOOL_KEYS dispatch: Shift+V would otherwise fall through
+    // to the selection tool.
+    if (!isMeta && e.shiftKey && (key === "h" || key === "v")) {
+      const ids = useAppStore.getState().selectedIds
+      if (ids.length === 0) return
+      e.preventDefault()
+      patchScene(scene, flipElements(scene.getElements(), ids, key === "h" ? "x" : "y"))
       return
     }
     const tool = TOOL_KEYS[key]

@@ -38,5 +38,7 @@
   "nextPage": "다음 페이지",
   "prevPage": "이전 페이지",
   "link": "링크 추가/편집",
-  "openLink": "요소 링크 열기"
+  "openLink": "요소 링크 열기",
+  "flipHorizontal": "좌우 반전",
+  "flipVertical": "상하 반전"
 }

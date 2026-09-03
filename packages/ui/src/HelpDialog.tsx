@@ -39,6 +39,8 @@ const EDITOR_SHORTCUTS: readonly Shortcut[] = [
   { keys: "Esc", label: "shortcuts:deselect" },
   { keys: "Cmd/Ctrl+K", label: "shortcuts:link" },
   { keys: "Cmd/Ctrl+click", label: "shortcuts:openLink" },
+  { keys: "Shift+H", label: "shortcuts:flipHorizontal" },
+  { keys: "Shift+V", label: "shortcuts:flipVertical" },
   { keys: "Hold Cmd/Ctrl", label: "shortcuts:bypassSnap" },
 ]
 
