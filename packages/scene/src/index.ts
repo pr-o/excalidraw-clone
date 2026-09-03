@@ -58,6 +58,8 @@ export type { AlignEdge, DistributeAxis, PositionPatch } from "./arrange"
 export { expandIdsToGroups, groupElements, ungroupElements } from "./groups"
 export { expandIdsToFrameMembers, reconcileFrameMembership } from "./frames"
 export { lockElements, unlockAll, unlockElements } from "./locking"
+export { mirrorOf } from "./flip"
+export type { FlipAxis } from "./flip"
 export { bringForward, bringToFront, sendBackward, sendToBack } from "./z-order"
 export {
   LABELABLE_TYPES,
