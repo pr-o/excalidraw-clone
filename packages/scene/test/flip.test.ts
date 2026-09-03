@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest"
-import { newArrow, newFreedraw, newParallelogram, newTriangle } from "../src/factories"
+import {
+  newArrow,
+  newFrame,
+  newFreedraw,
+  newParallelogram,
+  newRectangle,
+  newTriangle,
+} from "../src/factories"
 import { flipElements } from "../src/flip"
 
 describe("flipElements — single element", () => {
@@ -74,8 +81,104 @@ describe("flipElements — single element", () => {
     expect(flipElements([t], ["ghost"], "x")).toEqual([])
   })
 
+  it("freedraw, y-axis: point y's mirrored across the local centre, x's untouched", () => {
+    const f = {
+      ...newFreedraw({ x: 0, y: 0, width: 100, height: 40 }),
+      points: [
+        { x: 0, y: 0 },
+        { x: 30, y: 10 },
+        { x: 70, y: 25 },
+        { x: 100, y: 40 },
+      ],
+    }
+    const [out] = flipElements([f], [f.id], "y")
+    expect((out as typeof f).points).toEqual(f.points.map((p) => ({ x: p.x, y: f.height - p.y })))
+    expect([out!.x, out!.y, out!.width, out!.height]).toEqual([0, 0, 100, 40])
+  })
+
+  it("flip∘flip on an arrow restores points, angle and binding focus exactly", () => {
+    const a = {
+      ...newArrow({ x: 3, y: 4, width: 50, height: 20, angle: 0.4 }),
+      points: [
+        { x: 0, y: 0 },
+        { x: 20, y: 20 },
+        { x: 50, y: 5 },
+      ],
+      startBinding: { elementId: "s", focus: 0.3, gap: 4 },
+      endBinding: { elementId: "e", focus: -0.1, gap: 4 },
+    }
+    const [once] = flipElements([a], [a.id], "x") as [typeof a]
+    const [twice] = flipElements([once], [once.id], "x") as [typeof a]
+    expect(twice.points).toEqual(a.points)
+    expect(twice.angle).toBe(a.angle)
+    expect(twice.startBinding.focus).toBe(a.startBinding.focus)
+    expect(twice.endBinding.focus).toBe(a.endBinding.focus)
+  })
+
   it("returns [] for an empty id list", () => {
     const t = newTriangle({ x: 0, y: 0, width: 10, height: 10 })
     expect(flipElements([t], [], "x")).toEqual([])
+  })
+})
+
+describe("flipElements — multi-selection", () => {
+  it("two rects: centres reflected across the combined-bounds mid-axis, x-axis", () => {
+    const a = newRectangle({ x: 0, y: 0, width: 20, height: 20 }) // centre x 10
+    const b = newRectangle({ x: 100, y: 0, width: 40, height: 20 }) // centre x 120
+    // combined bounds x 0..140 -> centre 70
+    const out = flipElements([a, b], [a.id, b.id], "x")
+    const byId = new Map(out.map((e) => [e.id, e]))
+    expect(byId.get(a.id)!.x).toBe(2 * 70 - 10 - 10) // 120
+    expect(byId.get(b.id)!.x).toBe(2 * 70 - 120 - 20) // 0
+    expect(byId.get(a.id)!.y).toBe(0)
+  })
+
+  it("mixed shapes: each is repositioned AND individually flipped", () => {
+    const tri = newTriangle({ x: 0, y: 0, width: 20, height: 20 })
+    const par = { ...newParallelogram({ x: 60, y: 0, width: 20, height: 20 }) }
+    const out = flipElements([tri, par], [tri.id, par.id], "x")
+    const byId = new Map(out.map((e) => [e.id, e]))
+    expect(byId.get(tri.id)!.mirror).toEqual([-1, 1])
+    expect(byId.get(par.id)!.mirror).toEqual([-1, 1])
+    // combined bounds x 0..80 -> centre 40; tri centre 10 -> 70 -> x 60
+    expect(byId.get(tri.id)!.x).toBe(60)
+    expect(byId.get(par.id)!.x).toBe(0)
+  })
+
+  it("excludes a locked element from the result", () => {
+    const a = newRectangle({ x: 0, y: 0, width: 20, height: 20 })
+    const locked = { ...newRectangle({ x: 100, y: 0, width: 20, height: 20 }), locked: true }
+    const out = flipElements([a, locked], [a.id, locked.id], "x")
+    expect(out.map((e) => e.id)).toEqual([a.id])
+  })
+
+  it("expands to frame members: flipping a frame + one loose rect reflects the frame's member too", () => {
+    const frame = newFrame({ x: 0, y: 0, width: 100, height: 100 })
+    const member = { ...newRectangle({ x: 10, y: 10, width: 20, height: 20 }), frameId: frame.id }
+    const loose = newRectangle({ x: 200, y: 0, width: 20, height: 20 })
+    const out = flipElements([frame, member, loose], [frame.id, loose.id], "x")
+    expect(out.map((e) => e.id).sort()).toEqual([frame.id, loose.id, member.id].sort())
+  })
+
+  it("a lone selected frame takes the group path and reflects its members", () => {
+    const frame = newFrame({ x: 0, y: 0, width: 100, height: 100 })
+    const member = { ...newRectangle({ x: 10, y: 10, width: 20, height: 20 }), frameId: frame.id }
+    const out = flipElements([frame, member], [frame.id], "x")
+    const byId = new Map(out.map((e) => [e.id, e]))
+    // member centre 20 -> reflected across frame-closure combined-bounds centre 50 -> 80 -> x 70
+    expect(byId.get(member.id)!.x).toBe(70)
+    expect(byId.has(frame.id)).toBe(true)
+  })
+
+  it("multi-flip is an involution for closed shapes", () => {
+    const a = newRectangle({ x: 0, y: 0, width: 20, height: 20 })
+    const b = newTriangle({ x: 100, y: 40, width: 40, height: 20 })
+    const once = flipElements([a, b], [a.id, b.id], "y")
+    const twice = flipElements(once, [a.id, b.id], "y")
+    const byId = new Map(twice.map((e) => [e.id, e]))
+    expect(byId.get(a.id)!.x).toBe(a.x)
+    expect(byId.get(a.id)!.y).toBe(a.y)
+    expect(byId.get(b.id)!.mirror).toBeUndefined()
+    expect(byId.get(b.id)!.y).toBe(b.y)
   })
 })

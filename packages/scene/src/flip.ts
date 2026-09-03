@@ -1,4 +1,6 @@
 import type { Point } from "@excalidraw-clone/geometry"
+import { getElementsBounds } from "./bounds"
+import { expandIdsToFrameMembers } from "./frames"
 import type { ExcalidrawElement, PointBinding } from "./types"
 
 export type FlipAxis = "x" | "y"
@@ -79,6 +81,21 @@ export function flipElements(
     return [flipOne(solo, axis)]
   }
 
-  // group path (also taken for a lone selected frame) — implemented in Task 3
-  return []
+  // Group path (also taken for a lone selected frame): each closure member is
+  // flipped in place and its centre reflected across the combined-bounds
+  // mid-axis. `groupIds` / frame membership are untouched.
+  const closureIds = new Set(expandIdsToFrameMembers(ids, elements))
+  const closure = elements.filter((e) => closureIds.has(e.id) && !e.isDeleted && !e.locked)
+  if (closure.length === 0) return []
+  const bounds = getElementsBounds(closure)
+  if (!bounds) return []
+  const boundsCenter = axis === "x" ? bounds.x + bounds.width / 2 : bounds.y + bounds.height / 2
+
+  return closure.map((el) => {
+    const extent = axis === "x" ? el.width : el.height
+    const oldCenter = (axis === "x" ? el.x : el.y) + extent / 2
+    const coord = 2 * boundsCenter - oldCenter - extent / 2
+    const next = flipOne(el, axis)
+    return axis === "x" ? { ...next, x: coord } : { ...next, y: coord }
+  })
 }
