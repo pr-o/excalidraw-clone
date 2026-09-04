@@ -5,6 +5,7 @@ import {
   type Point,
 } from "@excalidraw-clone/geometry"
 import { nanoid } from "nanoid"
+import { mirrorOf } from "./flip"
 import type {
   ExcalidrawArrowElement,
   ExcalidrawDiamondElement,
@@ -252,8 +253,14 @@ export const newLabelFor = (container: {
   y: number
   width: number
   height: number
+  mirror?: readonly [1 | -1, 1 | -1]
 }): ExcalidrawTextElement => {
-  const box = labelInnerBox(container.type as LabelShapeKind, container, NOTE_PADDING)
+  const box = labelInnerBox(
+    container.type as LabelShapeKind,
+    container,
+    NOTE_PADDING,
+    mirrorOf(container),
+  )
   return newText({
     x: box.x,
     y: box.y,

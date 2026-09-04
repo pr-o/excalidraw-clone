@@ -3,11 +3,28 @@ import {
   newArrow,
   newFrame,
   newFreedraw,
+  newLabelFor,
   newParallelogram,
   newRectangle,
   newTriangle,
 } from "../src/factories"
 import { flipElements } from "../src/flip"
+import type { ExcalidrawElement } from "../src/types"
+
+/** A labelled triangle: container carrying a bound text child. */
+const labelledTriangle = (box: {
+  x: number
+  y: number
+  width: number
+  height: number
+}): { container: ExcalidrawElement; label: ExcalidrawElement } => {
+  const base = newTriangle(box)
+  const label = { ...newLabelFor(base), text: "hi" }
+  return {
+    container: { ...base, boundElements: [{ id: label.id, type: "text" as const }] },
+    label,
+  }
+}
 
 describe("flipElements — single element", () => {
   it("triangle, x-axis: mirror becomes [-1,1], angle negated, box unchanged", () => {
@@ -168,6 +185,50 @@ describe("flipElements — multi-selection", () => {
     // member centre 20 -> reflected across frame-closure combined-bounds centre 50 -> 80 -> x 70
     expect(byId.get(member.id)!.x).toBe(70)
     expect(byId.has(frame.id)).toBe(true)
+  })
+
+  it("does not flip a bound label dragged in by a marquee alongside its container", () => {
+    // marquee around a labelled shape necessarily encloses the label too
+    const { container, label } = labelledTriangle({ x: 0, y: 0, width: 100, height: 100 })
+    const out = flipElements([container, label], [container.id, label.id], "y")
+    const byId = new Map(out.map((e) => [e.id, e]))
+    expect(byId.get(container.id)!.mirror).toEqual([1, -1])
+    expect(byId.has(label.id)).toBe(false)
+  })
+
+  it("keeps the container's own box when only it and its label are selected", () => {
+    const { container, label } = labelledTriangle({ x: 10, y: 20, width: 100, height: 100 })
+    const out = flipElements([container, label], [container.id, label.id], "x")
+    const c = out.find((e) => e.id === container.id)!
+    expect([c.x, c.y, c.width, c.height]).toEqual([10, 20, 100, 100])
+    expect(c.mirror).toEqual([-1, 1])
+  })
+
+  it("still flips a bound label selected on its own (spec §2: directly selected)", () => {
+    const { container, label } = labelledTriangle({ x: 0, y: 0, width: 100, height: 100 })
+    const [out] = flipElements([container, label], [label.id], "y")
+    expect(out!.id).toBe(label.id)
+    expect(out!.mirror).toEqual([1, -1])
+  })
+
+  it("the excluded label still counts toward the group's combined bounds", () => {
+    // container at 0..100, plus a far rect: bounds unchanged by the contained label
+    const { container, label } = labelledTriangle({ x: 0, y: 0, width: 100, height: 100 })
+    const far = newRectangle({ x: 300, y: 0, width: 20, height: 20 })
+    const out = flipElements([container, label, far], [container.id, label.id, far.id], "x")
+    const byId = new Map(out.map((e) => [e.id, e]))
+    // combined bounds x 0..320 -> centre 160; container centre 50 -> 270 -> x 220
+    expect(byId.get(container.id)!.x).toBe(220)
+    expect(byId.get(far.id)!.x).toBe(0)
+    expect(byId.has(label.id)).toBe(false)
+  })
+
+  it("flips a bound label whose own container is not in the selection", () => {
+    const { container, label } = labelledTriangle({ x: 0, y: 0, width: 100, height: 100 })
+    const other = newRectangle({ x: 300, y: 0, width: 20, height: 20 })
+    const out = flipElements([container, label, other], [label.id, other.id], "y")
+    const byId = new Map(out.map((e) => [e.id, e]))
+    expect(byId.get(label.id)!.mirror).toEqual([1, -1])
   })
 
   it("multi-flip is an involution for closed shapes", () => {

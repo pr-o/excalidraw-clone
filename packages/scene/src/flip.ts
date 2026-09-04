@@ -60,6 +60,16 @@ const flipOne = (el: ExcalidrawElement, axis: FlipAxis): ExcalidrawElement => {
   }
 }
 
+/** A bound-text label pulled into the set only because its container is there.
+ *  Spec §2: a label is never flipped as a side-effect of its container being
+ *  flipped — it stays readable, and `reconcileBoundText` re-lays it against the
+ *  flipped container. It still flips when selected on its own (then its
+ *  container is not in the set, so this is false). Marquee selection
+ *  necessarily encloses a label along with its container, which is why this
+ *  guard lives here rather than in the selection layer. */
+const isPassengerLabel = (el: ExcalidrawElement, inSet: ReadonlySet<string>): boolean =>
+  el.type === "text" && el.containerId !== null && inSet.has(el.containerId)
+
 /** Full replacement elements for a flip of `ids` across `axis`. Single vs.
  *  group behaviour is chosen by `ids.length`. Locked / deleted / unknown ids
  *  are dropped. Returns [] when nothing flippable is selected. */
@@ -91,11 +101,15 @@ export function flipElements(
   if (!bounds) return []
   const boundsCenter = axis === "x" ? bounds.x + bounds.width / 2 : bounds.y + bounds.height / 2
 
-  return closure.map((el) => {
-    const extent = axis === "x" ? el.width : el.height
-    const oldCenter = (axis === "x" ? el.x : el.y) + extent / 2
-    const coord = 2 * boundsCenter - oldCenter - extent / 2
-    const next = flipOne(el, axis)
-    return axis === "x" ? { ...next, x: coord } : { ...next, y: coord }
-  })
+  // Passenger labels count toward the combined bounds above (they are part of
+  // the selection's visual extent) but are not transformed here.
+  return closure
+    .filter((el) => !isPassengerLabel(el, closureIds))
+    .map((el) => {
+      const extent = axis === "x" ? el.width : el.height
+      const oldCenter = (axis === "x" ? el.x : el.y) + extent / 2
+      const coord = 2 * boundsCenter - oldCenter - extent / 2
+      const next = flipOne(el, axis)
+      return axis === "x" ? { ...next, x: coord } : { ...next, y: coord }
+    })
 }
