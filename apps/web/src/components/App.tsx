@@ -11,6 +11,7 @@ import {
   duplicateElements,
   expandIdsToGroups,
   type ExcalidrawElement,
+  flipElements,
   groupElements,
   type LibraryItem,
   lockElements,
@@ -533,6 +534,9 @@ function Inner(): React.ReactElement {
               onLock={() => {
                 patchScene(scene, lockElements(scene.getElements(), selectedIds))
                 useAppStore.getState().setSelection([])
+              }}
+              onFlip={(axis) => {
+                patchScene(scene, flipElements(scene.getElements(), selectedIds, axis))
               }}
             />
           </div>

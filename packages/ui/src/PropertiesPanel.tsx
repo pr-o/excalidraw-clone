@@ -48,6 +48,7 @@ export interface PropertiesPanelProps {
   onGroup: () => void
   onUngroup: () => void
   onLock: () => void
+  onFlip: (axis: "x" | "y") => void
   className?: string
 }
 
@@ -71,6 +72,7 @@ export function PropertiesPanel({
   onGroup,
   onUngroup,
   onLock,
+  onFlip,
   className,
 }: PropertiesPanelProps): React.ReactElement | null {
   if (selectedElements.length === 0) return null
@@ -360,6 +362,29 @@ export function PropertiesPanel({
             ))}
           </div>
         </Section>
+      )}
+
+      {!selectedElements.every((el) => el.locked) && (
+        <div className="flex gap-1">
+          <button
+            type="button"
+            data-testid="flip-x"
+            aria-label={t("properties.flip_horizontal")}
+            onClick={() => onFlip("x")}
+            className="flex-1 rounded border border-panel p-1 text-xs"
+          >
+            ⇋
+          </button>
+          <button
+            type="button"
+            data-testid="flip-y"
+            aria-label={t("properties.flip_vertical")}
+            onClick={() => onFlip("y")}
+            className="flex-1 rounded border border-panel p-1 text-xs"
+          >
+            ⥯
+          </button>
+        </div>
       )}
 
       <button

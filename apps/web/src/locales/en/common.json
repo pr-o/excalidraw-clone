@@ -73,7 +73,9 @@
     "arrowType": "Arrow type",
     "arrowTypeSharp": "Sharp",
     "arrowTypeElbow": "Elbow",
-    "lock": "Lock"
+    "lock": "Lock",
+    "flip_horizontal": "Flip horizontal",
+    "flip_vertical": "Flip vertical"
   },
   "menu": {
     "label": "Menu",
