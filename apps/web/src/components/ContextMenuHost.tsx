@@ -5,6 +5,7 @@ import {
   bringToFront,
   duplicateElements,
   type ExcalidrawElement,
+  flipElements,
   getElementsBounds,
   groupElements,
   lockElements,
@@ -161,6 +162,16 @@ export function ContextMenuHost({
             })
             useAppStore.getState().setSelection(selectableIds(copies))
           },
+        })
+        items.push({
+          id: "flip-horizontal",
+          label: t("properties.flip_horizontal"),
+          perform: () => patchScene(scene, flipElements(scene.getElements(), elementIds, "x")),
+        })
+        items.push({
+          id: "flip-vertical",
+          label: t("properties.flip_vertical"),
+          perform: () => patchScene(scene, flipElements(scene.getElements(), elementIds, "y")),
         })
         if (elementIds.length === 1 && pages.length > 0) {
           const el = selectedElements[0]

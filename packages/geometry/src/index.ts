@@ -36,7 +36,12 @@ export { snapPointToGrid } from "./snap"
 export type { GridSnap, SnapModifiers } from "./snap"
 export { edgePointToward } from "./binding-edge"
 export type { EdgeKind } from "./binding-edge"
-export { pointInConvexPolygon, polygonEdgePointToward, shapeVertices } from "./polygon"
+export {
+  mirroredShapeVertices,
+  pointInConvexPolygon,
+  polygonEdgePointToward,
+  shapeVertices,
+} from "./polygon"
 export type { PolygonShapeKind } from "./polygon"
 export { labelInnerBox } from "./label-box"
 export type { LabelShapeKind } from "./label-box"

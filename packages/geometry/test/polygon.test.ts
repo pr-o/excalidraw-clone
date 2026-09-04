@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest"
 import { boundsCenter } from "../src/bounds"
-import { pointInConvexPolygon, polygonEdgePointToward, shapeVertices } from "../src/polygon"
+import {
+  mirroredShapeVertices,
+  pointInConvexPolygon,
+  polygonEdgePointToward,
+  shapeVertices,
+} from "../src/polygon"
 import type { Bounds } from "../src/types"
 
 const box: Bounds = { x: 0, y: 0, width: 100, height: 60 }
@@ -76,6 +81,46 @@ describe("shapeVertices", () => {
       expect(v.y).toBeGreaterThanOrEqual(pentBox.y)
       expect(v.y).toBeLessThanOrEqual(pentBox.y + pentBox.height)
     }
+  })
+})
+
+describe("mirroredShapeVertices", () => {
+  const b: Bounds = { x: 0, y: 0, width: 100, height: 60 }
+
+  it("[1,1] returns the same vertices as shapeVertices", () => {
+    expect(mirroredShapeVertices("triangle", b, [1, 1])).toEqual(shapeVertices("triangle", b))
+  })
+
+  it("[-1,1] reflects x around the bounds centre", () => {
+    // parallelogram top edge: (25,0),(100,0) -> (75,0),(0,0)
+    expect(mirroredShapeVertices("parallelogram", b, [-1, 1])).toEqual([
+      { x: 75, y: 0 },
+      { x: 0, y: 0 },
+      { x: 25, y: 60 },
+      { x: 100, y: 60 },
+    ])
+  })
+
+  it("[1,-1] reflects y — triangle apex moves top -> bottom", () => {
+    expect(mirroredShapeVertices("triangle", b, [1, -1])).toEqual([
+      { x: 50, y: 60 },
+      { x: 100, y: 0 },
+      { x: 0, y: 0 },
+    ])
+  })
+
+  it("[-1,-1] reflects both axes", () => {
+    expect(mirroredShapeVertices("triangle", b, [-1, -1])).toEqual([
+      { x: 50, y: 60 },
+      { x: 0, y: 0 },
+      { x: 100, y: 0 },
+    ])
+  })
+
+  it("is an involution — mirroring twice on the same axis restores the vertices", () => {
+    const once = mirroredShapeVertices("hexagon", b, [-1, 1])
+    const twice = once.map((v) => ({ x: 2 * 50 - v.x, y: v.y }))
+    expect(twice).toEqual(shapeVertices("hexagon", b))
   })
 })
 

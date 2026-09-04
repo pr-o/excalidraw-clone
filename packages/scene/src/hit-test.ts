@@ -3,13 +3,14 @@ import {
   type Point,
   boundsCenter,
   distancePointToSegment,
+  mirroredShapeVertices,
   pointInConvexPolygon,
   pointInDiamond,
   pointInEllipse,
   pointInRectangle,
   rotatePoint,
-  shapeVertices,
 } from "@excalidraw-clone/geometry"
+import { mirrorOf } from "./flip"
 import type { ExcalidrawElement } from "./types"
 
 export interface HitTestOptions {
@@ -78,7 +79,7 @@ export const hitTestElement = (
     case "octagon":
       return pointInConvexPolygon(
         point,
-        shapeVertices(element.type, b),
+        mirroredShapeVertices(element.type, b, mirrorOf(element)),
         boundsCenter(b),
         element.angle,
       )

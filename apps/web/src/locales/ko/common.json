@@ -73,7 +73,9 @@
     "arrowType": "화살표 유형",
     "arrowTypeSharp": "직선",
     "arrowTypeElbow": "직각",
-    "lock": "잠금"
+    "lock": "잠금",
+    "flip_horizontal": "좌우 반전",
+    "flip_vertical": "상하 반전"
   },
   "menu": {
     "label": "메뉴",

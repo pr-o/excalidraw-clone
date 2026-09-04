@@ -8,6 +8,7 @@ import {
   newImage,
   newLine,
   newOctagon,
+  newParallelogram,
   newPentagon,
   newRectangle,
   newText,
@@ -151,5 +152,27 @@ describe("polygon shapes", () => {
     const t = { ...newTriangle({ x: 0, y: 0, width: 100, height: 60 }), angle: Math.PI }
     expect(hitTestElement(t, { x: 5, y: 5 })).toBe(true)
     expect(hitTestElement(t, { x: 5, y: 55 })).toBe(false)
+  })
+
+  it("parallelogram x-flip: the region emptied by the flip now misses", () => {
+    const base = newParallelogram({ x: 0, y: 0, width: 100, height: 60 })
+    const flipped = { ...base, mirror: [-1, 1] as const }
+    // unflipped: the top-left is the empty inset, the top-right is filled
+    expect(hitTestElement(base, { x: 5, y: 5 })).toBe(false)
+    expect(hitTestElement(base, { x: 95, y: 5 })).toBe(true)
+    // the x-flip swaps which top corner is empty
+    expect(hitTestElement(flipped, { x: 5, y: 5 })).toBe(true)
+    expect(hitTestElement(flipped, { x: 95, y: 5 })).toBe(false)
+  })
+
+  it("triangle y-flip: apex region moves top -> bottom", () => {
+    const base = newTriangle({ x: 0, y: 0, width: 100, height: 60 })
+    const flipped = { ...base, mirror: [1, -1] as const }
+    // unflipped: apex at the top, so the top-left corner is empty
+    expect(hitTestElement(base, { x: 5, y: 5 })).toBe(false)
+    expect(hitTestElement(base, { x: 5, y: 55 })).toBe(true)
+    // y-flip puts the apex at the bottom: the bottom-left corner empties out
+    expect(hitTestElement(flipped, { x: 5, y: 5 })).toBe(true)
+    expect(hitTestElement(flipped, { x: 5, y: 55 })).toBe(false)
   })
 })

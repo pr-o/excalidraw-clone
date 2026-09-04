@@ -37,6 +37,8 @@ describe("HelpDialog — real i18n resolution", () => {
     expect(screen.getByText("Octagon")).toBeDefined()
     expect(screen.getByText("Add or edit link")).toBeDefined()
     expect(screen.getByText("Open element link")).toBeDefined()
+    expect(screen.getByText("Flip horizontal")).toBeDefined()
+    expect(screen.getByText("Flip vertical")).toBeDefined()
     expect(screen.queryByText(/^shortcuts\./)).toBeNull()
   })
 })

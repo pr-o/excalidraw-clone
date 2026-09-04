@@ -5,6 +5,7 @@ import {
   newEllipse,
   newHexagon,
   newOctagon,
+  newParallelogram,
   newPentagon,
   newRectangle,
   newText,
@@ -304,5 +305,35 @@ describe("polygon shape binding", () => {
     expect(p.y).toBeGreaterThan(0)
     // on segment (75,0)→(100,30): y = (x - 75) * 30/25
     expect(p.y).toBeCloseTo(((p.x - 75) * 30) / 25, 5)
+  })
+})
+
+describe("computeBoundEndpoint — mirrored polygon", () => {
+  // parallelogram 100×60 at the origin: verts (25,0) (100,0) (75,60) (0,60);
+  // the x-mirror about the centre (50,30) is (75,0) (0,0) (25,60) (100,60).
+  const base = newParallelogram({ x: 0, y: 0, width: 100, height: 60 })
+  const flipped = { ...base, mirror: [-1, 1] as const }
+
+  it("retracts to the mirrored slanted edge of an x-flipped parallelogram", () => {
+    // up-and-left from the centre, exiting through the left slanted edge —
+    // the one edge the x-mirror actually moves for this ray
+    const toward = { x: 0, y: 20 }
+    const unflippedPt = computeBoundEndpoint(base, toward, 0)
+    const flippedPt = computeBoundEndpoint(flipped, toward, 0)
+    // unflipped left edge (0,60)→(25,0); mirrored left edge (0,0)→(25,60)
+    expect(unflippedPt.x).toBeCloseTo(15.3846, 3)
+    expect(unflippedPt.y).toBeCloseTo(23.0769, 3)
+    expect(flippedPt.x).toBeCloseTo(9.0909, 3)
+    expect(flippedPt.y).toBeCloseTo(21.8182, 3)
+    expect(flippedPt.x).not.toBeCloseTo(unflippedPt.x)
+  })
+
+  it("mirroring the shape is the same as mirroring the ray", () => {
+    // edgePoint(mirror(S), t) === mirror(edgePoint(S, mirror(t))), about x = 50
+    const toward = { x: 0, y: 20 }
+    const flippedPt = computeBoundEndpoint(flipped, toward, 0)
+    const viaRay = computeBoundEndpoint(base, { x: 100 - toward.x, y: toward.y }, 0)
+    expect(flippedPt.x).toBeCloseTo(100 - viaRay.x, 6)
+    expect(flippedPt.y).toBeCloseTo(viaRay.y, 6)
   })
 })

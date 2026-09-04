@@ -63,6 +63,23 @@ describe("drawElement image branch", () => {
     expect(callsOf(ctx, "drawImage")).toHaveLength(0)
   })
 
+  it("applies a centre-anchored scale for a mirrored image", () => {
+    const { ctx, draw } = setup()
+    const el = {
+      ...newImage({ x: 0, y: 0, width: 100, height: 50, fileId: "f1" }),
+      mirror: [-1, 1] as const,
+    }
+    draw(el, () => loadedImage())
+    expect(callsOf(ctx, "scale").map((c) => c.args)).toContainEqual([-1, 1])
+    expect(callsOf(ctx, "drawImage")).toHaveLength(1)
+  })
+
+  it("no scale call for an unflipped image", () => {
+    const { ctx, draw } = setup()
+    draw(newImage({ x: 0, y: 0, width: 100, height: 50, fileId: "f1" }), () => loadedImage())
+    expect(callsOf(ctx, "scale")).toHaveLength(0)
+  })
+
   it("balances save/restore even when the image is skipped", () => {
     const { ctx, draw } = setup()
     draw(newImage({ x: 0, y: 0, width: 100, height: 100, fileId: "f1" }), () => undefined)

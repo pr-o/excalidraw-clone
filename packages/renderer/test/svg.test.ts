@@ -183,6 +183,24 @@ describe("renderToSVG flowchart shapes", () => {
   })
 })
 
+describe("renderToSVG mirror transform", () => {
+  it("emits a scale term for a mirrored image", () => {
+    const el = {
+      ...newImage({ x: 5, y: 6, width: 80, height: 40, fileId: "f1" }),
+      mirror: [-1, 1] as const,
+    }
+    const files = new Map([["f1", "data:image/png;base64,AAAA"]])
+    const svg = renderToSVG(new Scene([el]), { files })
+    expect(svg).toContain("scale(-1 1)")
+  })
+
+  it("emits no scale term for a mirrored rectangle (symmetric)", () => {
+    const el = { ...newRectangle({ x: 0, y: 0, width: 10, height: 10 }), mirror: [-1, 1] as const }
+    const svg = renderToSVG(new Scene([el]))
+    expect(svg).not.toContain("scale(")
+  })
+})
+
 describe("renderToSVG frame names", () => {
   it("emits a <text> node with the default name inside the frame group", () => {
     const scene = new Scene([newFrame({ x: 5, y: 6, width: 100, height: 80 })])

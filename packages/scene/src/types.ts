@@ -77,6 +77,12 @@ export interface ExcalidrawElementBase {
   updated: number
   link: string | null
   locked: boolean
+
+  /** Per-axis mirror sign; absent ⟺ [1, 1] (unflipped). Set only on closed
+   *  shapes (polygons toggle it visibly; rect/ellipse/diamond/frame toggle it
+   *  for uniformity but render symmetric). Never set on line/arrow/freedraw —
+   *  those bake the flip into `points`. */
+  mirror?: readonly [1 | -1, 1 | -1]
 }
 
 export interface ExcalidrawRectangleElement extends ExcalidrawElementBase {

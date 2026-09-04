@@ -1,4 +1,4 @@
-import { newRectangle } from "@excalidraw-clone/scene"
+import { newRectangle, newTriangle } from "@excalidraw-clone/scene"
 import { RoughGenerator } from "roughjs/bin/generator"
 import { describe, expect, it, vi } from "vitest"
 import { ShapeCache } from "../src/shape-cache"
@@ -32,6 +32,16 @@ describe("ShapeCache", () => {
     const a = cache.get(r2, gen)
     const b = cache.get(r2, gen)
     expect(b).toBe(a)
+  })
+
+  it("a flipped polygon and its unflipped twin produce different drawables", () => {
+    const cache = new ShapeCache()
+    const gen = new RoughGenerator()
+    const base = { ...newTriangle({ x: 0, y: 0, width: 40, height: 30 }) }
+    const flipped = { ...base, mirror: [1, -1] as const, versionNonce: base.versionNonce + 1 }
+    const [d1] = cache.get(base, gen)
+    const [d2] = cache.get(flipped, gen)
+    expect(JSON.stringify(d1!.sets)).not.toBe(JSON.stringify(d2!.sets))
   })
 
   it("clear() drops cached entries", () => {

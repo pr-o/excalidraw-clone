@@ -197,6 +197,31 @@ describe("polygonShape", () => {
     ])
   })
 
+  it("triangle with mirror [1,-1]: vertices reflected on y around the local centre", () => {
+    const gen = new RoughGenerator()
+    const spy = vi.spyOn(gen, "polygon")
+    const t = { ...newTriangle({ x: 0, y: 0, width: 40, height: 30 }), mirror: [1, -1] as const }
+    polygonShape(t, gen)
+    const [points] = spy.mock.calls[0]!
+    // shapeVertices: (20,0),(40,30),(0,30) -> y around 15 -> (20,30),(40,0),(0,0)
+    expect(points).toEqual([
+      [20, 30],
+      [40, 0],
+      [0, 0],
+    ])
+  })
+
+  it("unflipped triangle is unchanged (identity path)", () => {
+    const gen = new RoughGenerator()
+    const spy = vi.spyOn(gen, "polygon")
+    polygonShape(newTriangle({ x: 0, y: 0, width: 40, height: 30 }), gen)
+    expect(spy.mock.calls[0]![0]).toEqual([
+      [20, 0],
+      [40, 30],
+      [0, 30],
+    ])
+  })
+
   it("transparent backgroundColor → no fill option", () => {
     const gen = new RoughGenerator()
     const spy = vi.spyOn(gen, "polygon")

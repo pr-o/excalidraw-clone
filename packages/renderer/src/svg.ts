@@ -1,4 +1,4 @@
-import { LABELABLE_TYPES, LINEAR_LABELABLE_TYPES } from "@excalidraw-clone/scene"
+import { LABELABLE_TYPES, LINEAR_LABELABLE_TYPES, mirrorOf } from "@excalidraw-clone/scene"
 import type {
   ExcalidrawElement,
   ExcalidrawTextElement,
@@ -172,13 +172,19 @@ function createGroup(doc: Document, el: ExcalidrawElement): SVGGElement {
 }
 
 function elementTransform(el: ExcalidrawElement): string {
-  const tx = el.x
-  const ty = el.y
-  if (el.angle === 0) return `translate(${tx} ${ty})`
   const cx = el.width / 2
   const cy = el.height / 2
-  const deg = (el.angle * 180) / Math.PI
-  return `translate(${tx} ${ty}) rotate(${deg} ${cx} ${cy})`
+  const parts = [`translate(${el.x} ${el.y})`]
+  if (el.angle !== 0) {
+    parts.push(`rotate(${(el.angle * 180) / Math.PI} ${cx} ${cy})`)
+  }
+  if (el.type === "image" || el.type === "text") {
+    const [mx, my] = mirrorOf(el)
+    if (mx !== 1 || my !== 1) {
+      parts.push(`translate(${cx} ${cy}) scale(${mx} ${my}) translate(${-cx} ${-cy})`)
+    }
+  }
+  return parts.join(" ")
 }
 
 function textNode(

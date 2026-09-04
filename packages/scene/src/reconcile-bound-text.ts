@@ -1,4 +1,5 @@
 import { labelInnerBox, polylineMidpoint, type LabelShapeKind } from "@excalidraw-clone/geometry"
+import { mirrorOf } from "./flip"
 import type { ElementType, ExcalidrawElement } from "./types"
 
 /** Padding (px) between a note container's box and its bound text box. */
@@ -26,7 +27,14 @@ const innerBoxFor = (
   container: ExcalidrawElement,
 ): { x: number; y: number; width: number; height: number } => {
   if (LABELABLE_TYPES.has(container.type)) {
-    return labelInnerBox(container.type as LabelShapeKind, container, NOTE_PADDING)
+    // mirror-aware: a flipped triangle/pentagon's inscribed box moves with the
+    // outline, so the label stays inside the shape the user actually sees.
+    return labelInnerBox(
+      container.type as LabelShapeKind,
+      container,
+      NOTE_PADDING,
+      mirrorOf(container),
+    )
   }
   return {
     x: container.x + NOTE_PADDING,

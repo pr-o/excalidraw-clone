@@ -1,3 +1,4 @@
+import { mirrorOf } from "@excalidraw-clone/scene"
 import type { ExcalidrawElement } from "@excalidraw-clone/scene"
 import type { RoughCanvas } from "roughjs/bin/canvas"
 import type { ShapeCache } from "./shape-cache"
@@ -29,6 +30,14 @@ export const drawElement = (
     ctx.translate(element.width / 2, element.height / 2)
     ctx.rotate(element.angle)
     ctx.translate(-element.width / 2, -element.height / 2)
+  }
+  if (element.type === "image" || element.type === "text") {
+    const [mx, my] = mirrorOf(element)
+    if (mx !== 1 || my !== 1) {
+      ctx.translate(element.width / 2, element.height / 2)
+      ctx.scale(mx, my)
+      ctx.translate(-element.width / 2, -element.height / 2)
+    }
   }
   if (element.type === "image") {
     const img = element.fileId === null ? undefined : getImage(element.fileId)

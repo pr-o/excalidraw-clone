@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { newRectangle, newText } from "../src/factories"
+import { newRectangle, newText, newTriangle } from "../src/factories"
 import { NOTE_PADDING, reconcileBoundText } from "../src/reconcile-bound-text"
 import type { ExcalidrawElement } from "../src/types"
 
@@ -63,6 +63,33 @@ describe("reconcileBoundText", () => {
     const afterFirst = draft[1]
     reconcileBoundText(draft)
     expect(draft[1]).toBe(afterFirst)
+  })
+
+  it("lays a y-mirrored triangle's label into the mirrored (top) half", () => {
+    const text = newText({ x: 0, y: 0, text: "hi", containerId: "C" })
+    const container = {
+      ...newTriangle({ x: 0, y: 0, width: 100, height: 100 }),
+      id: "C",
+      mirror: [1, -1] as const,
+      boundElements: [{ id: text.id, type: "text" as const }],
+    }
+    const draft: ExcalidrawElement[] = [container, text]
+    reconcileBoundText(draft)
+    const t = draft.find((e) => e.id === text.id)!
+    expect([t.x, t.y, t.width, t.height]).toEqual([25, 8, 50, 42])
+  })
+
+  it("leaves an unmirrored triangle's label in the bottom half", () => {
+    const text = newText({ x: 0, y: 0, text: "hi", containerId: "C" })
+    const container = {
+      ...newTriangle({ x: 0, y: 0, width: 100, height: 100 }),
+      id: "C",
+      boundElements: [{ id: text.id, type: "text" as const }],
+    }
+    const draft: ExcalidrawElement[] = [container, text]
+    reconcileBoundText(draft)
+    const t = draft.find((e) => e.id === text.id)!
+    expect([t.x, t.y, t.width, t.height]).toEqual([25, 50, 50, 42])
   })
 
   it("skips a dangling reference whose text is missing", () => {

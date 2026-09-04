@@ -17,6 +17,7 @@ const handlers = {
   onGroup: vi.fn(),
   onUngroup: vi.fn(),
   onLock: vi.fn(),
+  onFlip: vi.fn(),
 }
 
 describe("PropertiesPanel", () => {
@@ -203,6 +204,47 @@ describe("PropertiesPanel", () => {
     render(<PropertiesPanel t={t} selectedElements={[el]} {...handlers} onLock={onLock} />)
     await userEvent.click(screen.getByTestId("panel-lock"))
     expect(onLock).toHaveBeenCalled()
+  })
+
+  it("shows the flip row for a single selected element", () => {
+    const el = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
+    render(<PropertiesPanel t={t} selectedElements={[el]} {...handlers} />)
+    expect(screen.getByTestId("flip-x")).toBeInTheDocument()
+    expect(screen.getByTestId("flip-y")).toBeInTheDocument()
+    // independent of the >= 2-gated Arrange section
+    expect(screen.queryByTestId("align-left")).toBeNull()
+  })
+
+  it("shows the flip row for a multi-element selection", () => {
+    const a = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
+    const b = newRectangle({ x: 50, y: 0, width: 10, height: 10 })
+    render(<PropertiesPanel t={t} selectedElements={[a, b]} {...handlers} />)
+    expect(screen.getByTestId("flip-x")).toBeInTheDocument()
+    expect(screen.getByTestId("flip-y")).toBeInTheDocument()
+  })
+
+  it("calls onFlip with the axis when a flip button is clicked", async () => {
+    const el = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
+    const onFlip = vi.fn()
+    render(<PropertiesPanel t={t} selectedElements={[el]} {...handlers} onFlip={onFlip} />)
+    await userEvent.click(screen.getByTestId("flip-x"))
+    expect(onFlip).toHaveBeenCalledWith("x")
+    await userEvent.click(screen.getByTestId("flip-y"))
+    expect(onFlip).toHaveBeenCalledWith("y")
+  })
+
+  it("hides the flip row when every selected element is locked", () => {
+    const el = { ...newRectangle({ x: 0, y: 0, width: 10, height: 10 }), locked: true }
+    render(<PropertiesPanel t={t} selectedElements={[el]} {...handlers} />)
+    expect(screen.queryByTestId("flip-x")).toBeNull()
+    expect(screen.queryByTestId("flip-y")).toBeNull()
+  })
+
+  it("keeps the flip row when only some selected elements are locked", () => {
+    const a = { ...newRectangle({ x: 0, y: 0, width: 10, height: 10 }), locked: true }
+    const b = newRectangle({ x: 50, y: 0, width: 10, height: 10 })
+    render(<PropertiesPanel t={t} selectedElements={[a, b]} {...handlers} />)
+    expect(screen.getByTestId("flip-x")).toBeInTheDocument()
   })
 
   it("shows Arrowheads section when all selected are linear", () => {

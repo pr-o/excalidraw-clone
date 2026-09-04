@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest"
+import { mirrorOf } from "../src"
 import type {
   BoundElement,
   ExcalidrawArrowElement,
@@ -216,5 +217,17 @@ describe("element type definitions", () => {
       },
     }
     expect(d.files?.["file-1"]?.mimeType).toBe("image/png")
+  })
+})
+
+describe("mirror field + mirrorOf", () => {
+  it("mirrorOf defaults to [1, 1] when the field is absent", () => {
+    const el = { ...baseFields(), type: "triangle" } as ExcalidrawElement
+    expect(mirrorOf(el)).toEqual([1, 1])
+  })
+
+  it("mirrorOf returns the stored sign pair", () => {
+    const el = { ...baseFields(), type: "triangle", mirror: [-1, 1] as const } as ExcalidrawElement
+    expect(mirrorOf(el)).toEqual([-1, 1])
   })
 })

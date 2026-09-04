@@ -54,6 +54,24 @@ export const shapeVertices = (kind: PolygonShapeKind, b: Bounds): Point[] => {
   }
 }
 
+/** `shapeVertices(kind, b)` reflected around `boundsCenter(b)` on each axis
+ *  whose `mirror` sign is -1. `[1, 1]` is the identity (cheap fast path). The
+ *  single source of truth for mirrored polygon geometry — renderer, hit-test,
+ *  and binding-edge math all read from here. */
+export const mirroredShapeVertices = (
+  kind: PolygonShapeKind,
+  b: Bounds,
+  mirror: readonly [number, number],
+): Point[] => {
+  const verts = shapeVertices(kind, b)
+  if (mirror[0] === 1 && mirror[1] === 1) return verts
+  const c = boundsCenter(b)
+  return verts.map((v) => ({
+    x: mirror[0] === -1 ? 2 * c.x - v.x : v.x,
+    y: mirror[1] === -1 ? 2 * c.y - v.y : v.y,
+  }))
+}
+
 /** Point-in-convex-polygon via same-side half-plane tests. `angle` rotates
  *  the polygon around `center`; the point is un-rotated instead. */
 export const pointInConvexPolygon = (
