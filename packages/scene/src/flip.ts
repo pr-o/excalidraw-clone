@@ -72,7 +72,8 @@ const isPassengerLabel = (el: ExcalidrawElement, inSet: ReadonlySet<string>): bo
 
 /** Full replacement elements for a flip of `ids` across `axis`. Single vs.
  *  group behaviour is chosen by `ids.length`. Locked / deleted / unknown ids
- *  are dropped. Returns [] when nothing flippable is selected. */
+ *  and passenger labels (see `isPassengerLabel`) are dropped from the result.
+ *  Returns [] when nothing flippable is selected. */
 export function flipElements(
   elements: readonly ExcalidrawElement[],
   ids: readonly string[],
