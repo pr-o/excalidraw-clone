@@ -120,9 +120,6 @@
     "cancel": "Cancel",
     "confirm": "Reset canvas"
   },
-  "canvasBg": {
-    "title": "Canvas background"
-  },
   "canvas": {
     "unlockAll": "Unlock all"
   },

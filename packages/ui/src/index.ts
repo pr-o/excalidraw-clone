@@ -30,9 +30,6 @@ export type { ExportDialogProps, ExportOptions } from "./ExportDialog"
 export { ResetCanvasDialog } from "./ResetCanvasDialog"
 export type { ResetCanvasDialogProps } from "./ResetCanvasDialog"
 
-export { CanvasBgDialog } from "./CanvasBgDialog"
-export type { CanvasBgDialogProps } from "./CanvasBgDialog"
-
 export { LibraryPanel } from "./LibraryPanel"
 export type { LibraryPanelProps } from "./LibraryPanel"
 

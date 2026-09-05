@@ -118,7 +118,6 @@
     "cancel": "취소",
     "confirm": "초기화"
   },
-  "canvasBg": { "title": "캔버스 배경" },
   "canvas": { "unlockAll": "모두 잠금 해제" },
   "shortcuts": { "title": "키보드 단축키", "tools": "도구", "editor": "편집", "view": "보기" },
   "library": {

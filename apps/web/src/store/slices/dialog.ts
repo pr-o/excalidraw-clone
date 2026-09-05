@@ -1,6 +1,6 @@
 import type { StateCreator } from "zustand"
 
-export type DialogId = null | "help" | "export" | "reset" | "canvasBg"
+export type DialogId = null | "help" | "export" | "reset"
 
 export interface DialogSlice {
   openDialog: DialogId

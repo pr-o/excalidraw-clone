@@ -3,7 +3,6 @@ import { clearAllFiles, clearLocal, download, getFile } from "@excalidraw-clone/
 import { renderToSVG } from "@excalidraw-clone/renderer"
 import type { Scene } from "@excalidraw-clone/scene"
 import {
-  CanvasBgDialog,
   ExportDialog,
   HelpDialog,
   ResetCanvasDialog,
@@ -18,7 +17,6 @@ export function Dialogs({ scene }: { scene: Scene }): React.ReactElement {
   const openDialog = useAppStore((s) => s.openDialog)
   const setOpenDialog = useAppStore((s) => s.setOpenDialog)
   const canvasBg = useAppStore((s) => s.canvasBg)
-  const setCanvasBg = useAppStore((s) => s.setCanvasBg)
   const resolvedTheme = useAppStore((s) => s.resolvedTheme)
 
   const onExport = (opts: ExportOptions): void => {
@@ -51,13 +49,6 @@ export function Dialogs({ scene }: { scene: Scene }): React.ReactElement {
         open={openDialog === "reset"}
         onClose={() => setOpenDialog(null)}
         onConfirm={onResetConfirm}
-      />
-      <CanvasBgDialog
-        t={t}
-        open={openDialog === "canvasBg"}
-        onClose={() => setOpenDialog(null)}
-        value={canvasBg}
-        onChange={setCanvasBg}
       />
     </>
   )
