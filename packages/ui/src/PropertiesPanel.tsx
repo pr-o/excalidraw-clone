@@ -125,7 +125,7 @@ export function PropertiesPanel({
 
   return (
     <aside
-      className={`flex w-56 flex-col gap-3 rounded-lg bg-panel p-3 shadow ${className ?? ""}`}
+      className={`flex max-h-[calc(100vh-1.5rem)] w-56 flex-col gap-3 overflow-y-auto rounded-lg bg-panel p-3 shadow ${className ?? ""}`}
       aria-label={t("properties.label")}
     >
       <Section label={t("properties.stroke")}>
