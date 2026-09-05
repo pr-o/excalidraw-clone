@@ -4,6 +4,8 @@ import { iconHTML } from "./shared/icons"
 export type Theme = "light" | "dark" | "system"
 export type Locale = "en" | "ko"
 
+const CANVAS_BG_COLORS = ["#ffffff", "#f8f9fa", "#fff5f5", "#f3f0ff", "#1e1e1e"] as const
+
 export interface HamburgerMenuProps {
   t: (key: string) => string
   open: boolean
@@ -12,6 +14,8 @@ export interface HamburgerMenuProps {
   onThemeChange: (t: Theme) => void
   locale: Locale
   onLocaleChange: (l: Locale) => void
+  canvasBg: string
+  onCanvasBgChange: (color: string) => void
   zenMode: boolean
   onZenModeToggle: () => void
   onOpenFile: () => void
@@ -90,6 +94,24 @@ export function HamburgerMenu(props: HamburgerMenuProps): React.ReactElement {
               close()
             }}
           />
+          <MenuLabel>{props.t("menu.canvasBg")}</MenuLabel>
+          <div className="flex gap-1 px-3 py-1">
+            {CANVAS_BG_COLORS.map((c) => (
+              <button
+                key={c}
+                type="button"
+                data-testid={`canvas-bg-${c.replace("#", "")}`}
+                aria-pressed={props.canvasBg === c}
+                aria-label={c}
+                onClick={() => {
+                  props.onCanvasBgChange(c)
+                  close()
+                }}
+                className={`h-8 w-8 rounded border-2 ${props.canvasBg === c ? "border-accent" : "border-panel"}`}
+                style={{ backgroundColor: c }}
+              />
+            ))}
+          </div>
           <Separator />
           <MenuItem onClick={wrap(props.onHelp)}>{props.t("menu.help")}</MenuItem>
           <MenuItem onClick={wrap(props.onReset)} variant="danger">

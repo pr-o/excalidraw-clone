@@ -90,7 +90,8 @@
     "themeLight": "밝게",
     "themeDark": "어둡게",
     "themeSystem": "시스템",
-    "language": "언어"
+    "language": "언어",
+    "canvasBg": "캔버스 배경"
   },
   "common": { "close": "닫기" },
   "palette": {

@@ -13,6 +13,8 @@ const baseProps = (): HamburgerMenuProps => ({
   onThemeChange: vi.fn(),
   locale: "en",
   onLocaleChange: vi.fn(),
+  canvasBg: "#ffffff",
+  onCanvasBgChange: vi.fn(),
   zenMode: false,
   onZenModeToggle: vi.fn(),
   onOpenFile: vi.fn(),
@@ -82,6 +84,38 @@ describe("HamburgerMenu", () => {
     const onOpenChange = vi.fn()
     render(<HamburgerMenu {...baseProps()} open onOpenChange={onOpenChange} />)
     await userEvent.click(screen.getByTestId("locale-ko"))
+    expect(onOpenChange).toHaveBeenCalledWith(false)
+  })
+
+  it("renders exactly five canvas background swatches", () => {
+    render(<HamburgerMenu {...baseProps()} open />)
+    expect(screen.getByText("menu.canvasBg")).toBeInTheDocument()
+    const swatches = ["ffffff", "f8f9fa", "fff5f5", "f3f0ff", "1e1e1e"].map((hex) =>
+      screen.getByTestId(`canvas-bg-${hex}`),
+    )
+    expect(swatches).toHaveLength(5)
+    for (const s of swatches) expect(s).toBeInTheDocument()
+  })
+
+  it("clicking a swatch emits onCanvasBgChange with that hex", async () => {
+    const onCanvasBgChange = vi.fn()
+    render(<HamburgerMenu {...baseProps()} open onCanvasBgChange={onCanvasBgChange} />)
+    await userEvent.click(screen.getByTestId("canvas-bg-1e1e1e"))
+    expect(onCanvasBgChange).toHaveBeenCalledWith("#1e1e1e")
+  })
+
+  it("aria-pressed is true only on the swatch matching canvasBg", () => {
+    render(<HamburgerMenu {...baseProps()} open canvasBg="#f3f0ff" />)
+    expect(screen.getByTestId("canvas-bg-f3f0ff")).toHaveAttribute("aria-pressed", "true")
+    for (const hex of ["ffffff", "f8f9fa", "fff5f5", "1e1e1e"]) {
+      expect(screen.getByTestId(`canvas-bg-${hex}`)).toHaveAttribute("aria-pressed", "false")
+    }
+  })
+
+  it("selecting a canvas background closes the menu, like the theme and locale rows", async () => {
+    const onOpenChange = vi.fn()
+    render(<HamburgerMenu {...baseProps()} open onOpenChange={onOpenChange} />)
+    await userEvent.click(screen.getByTestId("canvas-bg-f8f9fa"))
     expect(onOpenChange).toHaveBeenCalledWith(false)
   })
 

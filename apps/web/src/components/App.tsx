@@ -211,6 +211,7 @@ function Inner(): React.ReactElement {
   const setTheme = useAppStore((s) => s.setTheme)
   const locale = useAppStore((s) => s.locale)
   const setLocale = useAppStore((s) => s.setLocale)
+  const setCanvasBg = useAppStore((s) => s.setCanvasBg)
   const zenMode = useAppStore((s) => s.zenMode)
   const zoom = useAppStore((s) => s.zoom)
   const toggleZenMode = useAppStore((s) => s.toggleZenMode)
@@ -416,6 +417,8 @@ function Inner(): React.ReactElement {
               onThemeChange={setTheme}
               locale={locale}
               onLocaleChange={setLocale}
+              canvasBg={canvasBg}
+              onCanvasBgChange={setCanvasBg}
               zenMode={zenMode}
               onZenModeToggle={toggleZenMode}
               onOpenFile={() => {
