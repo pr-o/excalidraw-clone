@@ -44,7 +44,7 @@ function ItemTile(props: ItemTileProps): React.ReactElement {
         type="button"
         onClick={() => props.onItemClick(item)}
         aria-label={item.name}
-        className="flex h-20 w-full items-center justify-center rounded border bg-panel-subtle p-1 hover:border-accent"
+        className="flex h-20 w-full items-center justify-center overflow-hidden rounded border bg-panel-subtle p-1 hover:border-accent [&>svg]:h-full [&>svg]:w-full"
         // biome-ignore lint/security/noDangerouslySetInnerHtml: renderer-controlled SVG
         dangerouslySetInnerHTML={{ __html: props.renderThumbnail(item) }}
       />
