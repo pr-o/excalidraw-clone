@@ -16,11 +16,25 @@ const handlers = {
 }
 
 describe("LayersPanel", () => {
-  it("shows only the toggle button when closed", () => {
+  it("shows only the toggle button when closed, keeping a11y attributes", () => {
     const a = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
     render(<LayersPanel t={t} elements={[a]} selectedIds={[]} open={false} {...handlers} />)
     expect(screen.queryByTestId(`layer-row-${a.id}`)).toBeNull()
-    expect(screen.getByTestId("layers-toggle")).toBeInTheDocument()
+    expect(screen.queryByTestId("layers-panel")).toBeNull()
+    const toggle = screen.getByTestId("layers-toggle")
+    expect(toggle).toBeInTheDocument()
+    expect(toggle).toHaveAttribute("aria-expanded", "false")
+    expect(toggle).toHaveAttribute("aria-label", "layers.toggle")
+    expect(toggle).toHaveTextContent("›")
+  })
+
+  it("keeps toggle a11y attributes when open", () => {
+    const a = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
+    render(<LayersPanel t={t} elements={[a]} selectedIds={[]} open {...handlers} />)
+    const toggle = screen.getByTestId("layers-toggle")
+    expect(toggle).toHaveAttribute("aria-expanded", "true")
+    expect(toggle).toHaveAttribute("aria-label", "layers.toggle")
+    expect(toggle).toHaveTextContent("‹")
   })
 
   it("renders rows in reverse scene order (front-most element first)", () => {

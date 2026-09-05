@@ -61,4 +61,23 @@ describe("LibraryPanel templates section", () => {
     const tile = screen.getByTestId("library-item-u1")
     expect(tile.querySelector('[aria-label="more"]')).not.toBeNull()
   })
+
+  it("shows only the toggle button when closed, keeping a11y attributes", () => {
+    renderPanel({ open: false })
+    expect(screen.queryByTestId("library-panel")).toBeNull()
+    expect(screen.queryByTestId("library-import")).toBeNull()
+    const toggle = screen.getByTestId("library-toggle")
+    expect(toggle).toBeInTheDocument()
+    expect(toggle).toHaveAttribute("aria-expanded", "false")
+    expect(toggle).toHaveAttribute("aria-label", "library.toggle")
+    expect(toggle).toHaveTextContent("‹")
+  })
+
+  it("keeps toggle a11y attributes when open", () => {
+    renderPanel({ open: true })
+    const toggle = screen.getByTestId("library-toggle")
+    expect(toggle).toHaveAttribute("aria-expanded", "true")
+    expect(toggle).toHaveAttribute("aria-label", "library.toggle")
+    expect(toggle).toHaveTextContent("›")
+  })
 })

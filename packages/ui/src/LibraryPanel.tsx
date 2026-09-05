@@ -143,6 +143,21 @@ export function LibraryPanel(props: LibraryPanelProps): React.ReactElement {
     t: props.t,
   }
 
+  if (!props.open) {
+    return (
+      <button
+        type="button"
+        onClick={props.onToggle}
+        aria-label={props.t("library.toggle")}
+        aria-expanded={false}
+        data-testid="library-toggle"
+        className="fixed bottom-16 right-3 z-30 flex h-9 w-9 items-center justify-center rounded-lg bg-panel shadow hover:bg-panel-hover"
+      >
+        ‹
+      </button>
+    )
+  }
+
   return (
     <aside
       aria-label={props.t("library.title")}

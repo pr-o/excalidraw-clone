@@ -407,7 +407,7 @@ function Inner(): React.ReactElement {
 
       {!zenMode && (
         <>
-          <div className="absolute left-3 top-3 z-30">
+          <div className="absolute left-3 top-3 z-40">
             <HamburgerMenu
               t={t}
               open={menuOpen}

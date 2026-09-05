@@ -31,6 +31,21 @@ export function LayersPanel({
     .slice()
     .reverse()
 
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-label={t("layers.toggle")}
+        aria-expanded={false}
+        data-testid="layers-toggle"
+        className="fixed left-3 top-16 z-30 flex h-9 w-9 items-center justify-center rounded-lg bg-panel shadow hover:bg-panel-hover"
+      >
+        ›
+      </button>
+    )
+  }
+
   return (
     <aside
       aria-label={t("layers.title")}
