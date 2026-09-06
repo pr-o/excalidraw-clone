@@ -20,6 +20,8 @@
   "redo": "다시 실행",
   "copy": "복사",
   "paste": "붙여넣기",
+  "copyStyles": "스타일 복사",
+  "pasteStyles": "스타일 붙여넣기",
   "duplicate": "복제",
   "group": "선택 그룹화",
   "ungroup": "그룹 해제",

@@ -43,6 +43,14 @@ describe("HelpDialog", () => {
     expect(screen.getByText("shortcuts:flipVertical")).toBeInTheDocument()
   })
 
+  it("lists the style clipboard shortcuts", () => {
+    render(<HelpDialog t={t} open onClose={() => {}} />)
+    expect(screen.getByText("Cmd/Ctrl+Alt+C")).toBeInTheDocument()
+    expect(screen.getByText("Cmd/Ctrl+Alt+V")).toBeInTheDocument()
+    expect(screen.getByText("shortcuts:copyStyles")).toBeInTheDocument()
+    expect(screen.getByText("shortcuts:pasteStyles")).toBeInTheDocument()
+  })
+
   it("emits onClose when the close button is clicked", async () => {
     const onClose = vi.fn()
     render(<HelpDialog t={t} open onClose={onClose} />)

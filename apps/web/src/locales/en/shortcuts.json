@@ -20,6 +20,8 @@
   "redo": "Redo",
   "copy": "Copy",
   "paste": "Paste",
+  "copyStyles": "Copy styles",
+  "pasteStyles": "Paste styles",
   "duplicate": "Duplicate",
   "group": "Group selection",
   "ungroup": "Ungroup",

@@ -249,3 +249,101 @@ describe("zoom keyboard shortcuts", () => {
     expect(useAppStore.getState().zoom).toBe(ZOOM_MAX)
   })
 })
+
+// The style clipboard is module-level in shortcuts.ts (it must survive the
+// re-attach that a page switch triggers), so these tests run in declaration
+// order: the "before any copy" case has to come first, while it is still null.
+describe("style clipboard shortcuts", () => {
+  let detach: () => void
+  let scene: Scene
+  beforeEach(() => {
+    scene = new Scene()
+    detach = attachShortcuts({ scene })
+    useAppStore.getState().setSelection([])
+  })
+  afterEach(() => detach())
+
+  const copy = (): void => {
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "c", ctrlKey: true, altKey: true }))
+  }
+  const paste = (): void => {
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "v", ctrlKey: true, altKey: true }))
+  }
+
+  it("Ctrl+Alt+V before anything was copied leaves the scene untouched", () => {
+    const r = newRectangle({ x: 0, y: 0, width: 10, height: 10, strokeColor: "#0000ff" })
+    scene.mutate((draft) => {
+      draft.push(r)
+    })
+    useAppStore.getState().setSelection([r.id])
+    paste()
+    expect(scene.getElements()[0]!.strokeColor).toBe("#0000ff")
+  })
+
+  it("Ctrl+Alt+C then Ctrl+Alt+V copies the style, leaving geometry untouched", () => {
+    const source = {
+      ...newRectangle({ x: 0, y: 0, width: 10, height: 10, strokeColor: "#ff0000" }),
+      strokeStyle: "dashed" as const,
+      opacity: 30,
+    }
+    const target = newRectangle({ x: 200, y: 150, width: 60, height: 40 })
+    scene.mutate((draft) => {
+      draft.push(source, target)
+    })
+
+    useAppStore.getState().setSelection([source.id])
+    copy()
+    useAppStore.getState().setSelection([target.id])
+    paste()
+
+    const next = scene.getElements().find((e) => e.id === target.id)!
+    expect(next.strokeColor).toBe("#ff0000")
+    expect(next.strokeStyle).toBe("dashed")
+    expect(next.opacity).toBe(30)
+    expect({ x: next.x, y: next.y, width: next.width, height: next.height }).toEqual({
+      x: 200,
+      y: 150,
+      width: 60,
+      height: 40,
+    })
+    // the source is untouched
+    expect(scene.getElements().find((e) => e.id === source.id)!.x).toBe(0)
+  })
+
+  it("Ctrl+Alt+V restyles every selected element", () => {
+    const source = { ...newRectangle({ x: 0, y: 0, width: 10, height: 10 }), opacity: 55 }
+    const a = newRectangle({ x: 50, y: 0, width: 10, height: 10 })
+    const b = newTriangle({ x: 90, y: 0, width: 10, height: 10 })
+    scene.mutate((draft) => {
+      draft.push(source, a, b)
+    })
+    useAppStore.getState().setSelection([source.id])
+    copy()
+    useAppStore.getState().setSelection([a.id, b.id])
+    paste()
+    const els = scene.getElements()
+    expect(els.find((e) => e.id === a.id)!.opacity).toBe(55)
+    expect(els.find((e) => e.id === b.id)!.opacity).toBe(55)
+  })
+
+  it("Ctrl+Alt+C with nothing selected keeps the previously copied style", () => {
+    const source = { ...newRectangle({ x: 0, y: 0, width: 10, height: 10 }), opacity: 22 }
+    const target = newRectangle({ x: 50, y: 0, width: 10, height: 10 })
+    scene.mutate((draft) => {
+      draft.push(source, target)
+    })
+    useAppStore.getState().setSelection([source.id])
+    copy()
+    useAppStore.getState().setSelection([])
+    copy()
+    useAppStore.getState().setSelection([target.id])
+    paste()
+    expect(scene.getElements().find((e) => e.id === target.id)!.opacity).toBe(22)
+  })
+
+  it("Ctrl+Alt+V does not fall through to the selection tool", () => {
+    useAppStore.getState().setActiveTool("rectangle")
+    paste()
+    expect(useAppStore.getState().activeTool).toBe("rectangle")
+  })
+})

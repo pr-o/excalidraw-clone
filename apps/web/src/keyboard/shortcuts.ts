@@ -11,6 +11,7 @@ import {
 import type { ToolName } from "@excalidraw-clone/tools"
 import { patchScene } from "../driver/patchScene"
 import { useAppStore } from "../store"
+import { applyStyle, extractStyle, type StyleClipboard } from "./styleClipboard"
 
 interface Bindings {
   scene: Scene
@@ -37,6 +38,12 @@ const TOOL_KEYS: Record<string, ToolName> = {
   f: "frame",
   n: "note",
 }
+
+/** Ephemeral, app-lifetime style clipboard for Cmd/Ctrl+Alt+C / +V. Module-level
+ *  rather than closure-level on purpose: `attachShortcuts` is re-invoked on every
+ *  page switch and page CRUD, and a copied style must survive those so it can be
+ *  pasted onto an element on another page. Never persisted, never cross-tab. */
+let styleClipboard: StyleClipboard | null = null
 
 export function attachShortcuts({ scene, onNextPage, onPrevPage }: Bindings): () => void {
   const handler = (e: KeyboardEvent): void => {
@@ -79,6 +86,32 @@ export function attachShortcuts({ scene, onNextPage, onPrevPage }: Bindings): ()
       if (ids.length === 0) return
       patchScene(scene, lockElements(scene.getElements(), ids))
       useAppStore.getState().setSelection([])
+      return
+    }
+    // Must precede the TOOL_KEYS dispatch, which is not gated on `!isMeta`:
+    // Ctrl+Alt+V would otherwise also switch to the selection tool.
+    if (isMeta && e.altKey && key === "c") {
+      const ids = useAppStore.getState().selectedIds
+      if (ids.length === 0) return
+      const el = scene.getElements().find((x) => x.id === ids[0])
+      if (!el) return
+      e.preventDefault()
+      styleClipboard = extractStyle(el)
+      return
+    }
+    if (isMeta && e.altKey && key === "v") {
+      const clip = styleClipboard
+      if (clip === null) return
+      const ids = useAppStore.getState().selectedIds
+      if (ids.length === 0) return
+      e.preventDefault()
+      const targets = new Set(ids)
+      scene.mutate((draft) => {
+        for (let i = 0; i < draft.length; i += 1) {
+          const el = draft[i]!
+          if (targets.has(el.id)) draft[i] = applyStyle(el, clip)
+        }
+      })
       return
     }
     if (isMeta && key === "0") {
