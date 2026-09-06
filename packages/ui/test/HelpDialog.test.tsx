@@ -43,6 +43,14 @@ describe("HelpDialog", () => {
     expect(screen.getByText("shortcuts:flipVertical")).toBeInTheDocument()
   })
 
+  it("lists the rotate shortcuts", () => {
+    render(<HelpDialog t={t} open onClose={() => {}} />)
+    expect(screen.getByText("Drag top handle")).toBeInTheDocument()
+    expect(screen.getByText("Shift + rotate")).toBeInTheDocument()
+    expect(screen.getByText("shortcuts:rotate")).toBeInTheDocument()
+    expect(screen.getByText("shortcuts:rotateSnap")).toBeInTheDocument()
+  })
+
   it("lists the style clipboard shortcuts", () => {
     render(<HelpDialog t={t} open onClose={() => {}} />)
     expect(screen.getByText("Cmd/Ctrl+Alt+C")).toBeInTheDocument()
