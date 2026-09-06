@@ -37,6 +37,7 @@ const TOOL_KEYS: Record<string, ToolName> = {
   e: "eraser",
   f: "frame",
   n: "note",
+  k: "laser",
 }
 
 /** Ephemeral, app-lifetime style clipboard for Cmd/Ctrl+Alt+C / +V. Module-level
@@ -169,7 +170,9 @@ export function attachShortcuts({ scene, onNextPage, onPrevPage }: Bindings): ()
       return
     }
     if (key === "escape") {
-      useAppStore.getState().setSelection([])
+      const store = useAppStore.getState()
+      if (store.activeTool === "laser") store.setActiveTool("selection")
+      store.setSelection([])
       return
     }
     if (key === "?" || (e.shiftKey && key === "/")) {

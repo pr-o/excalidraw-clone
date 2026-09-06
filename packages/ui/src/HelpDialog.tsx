@@ -23,6 +23,7 @@ const TOOL_SHORTCUTS: readonly Shortcut[] = [
   { keys: "E", label: "shortcuts:eraser" },
   { keys: "F", label: "shortcuts:frame" },
   { keys: "N", label: "shortcuts:note" },
+  { keys: "K", label: "shortcuts:laser" },
 ]
 
 const EDITOR_SHORTCUTS: readonly Shortcut[] = [

@@ -19,7 +19,8 @@
     "image": "이미지",
     "eraser": "지우개",
     "frame": "프레임",
-    "note": "메모"
+    "note": "메모",
+    "laser": "레이저 포인터"
   },
   "properties": {
     "label": "속성",

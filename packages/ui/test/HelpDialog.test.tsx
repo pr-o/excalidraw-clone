@@ -59,6 +59,12 @@ describe("HelpDialog", () => {
     expect(screen.getByText("shortcuts:pasteStyles")).toBeInTheDocument()
   })
 
+  it("lists the laser pointer shortcut", () => {
+    render(<HelpDialog t={t} open onClose={() => {}} />)
+    expect(screen.getByText("K")).toBeInTheDocument()
+    expect(screen.getByText("shortcuts:laser")).toBeInTheDocument()
+  })
+
   it("emits onClose when the close button is clicked", async () => {
     const onClose = vi.fn()
     render(<HelpDialog t={t} open onClose={onClose} />)

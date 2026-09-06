@@ -19,7 +19,8 @@
     "image": "Image",
     "eraser": "Eraser",
     "frame": "Frame",
-    "note": "Sticky note"
+    "note": "Sticky note",
+    "laser": "Laser pointer"
   },
   "properties": {
     "label": "Properties",

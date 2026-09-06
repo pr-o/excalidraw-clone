@@ -94,4 +94,16 @@ describe("Toolbar", () => {
     await userEvent.click(screen.getByTestId("toolbar-pentagon"))
     expect(onSelectTool).toHaveBeenCalledWith("pentagon")
   })
+
+  it("renders a laser pointer tool button", () => {
+    render(<Toolbar {...baseProps()} />)
+    expect(screen.getByTestId("toolbar-laser")).toBeInTheDocument()
+  })
+
+  it("calls onSelectTool with 'laser' on click", async () => {
+    const onSelectTool = vi.fn()
+    render(<Toolbar {...baseProps()} onSelectTool={onSelectTool} />)
+    await userEvent.click(screen.getByTestId("toolbar-laser"))
+    expect(onSelectTool).toHaveBeenCalledWith("laser")
+  })
 })
