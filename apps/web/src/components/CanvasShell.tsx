@@ -17,19 +17,21 @@ export function CanvasShell({
 }: CanvasShellProps): React.ReactElement {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const overlayRef = useRef<HTMLCanvasElement>(null)
+  const laserRef = useRef<HTMLCanvasElement>(null)
   const wrapperRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const wrapper = wrapperRef.current
     const canvas = canvasRef.current
     const overlay = overlayRef.current
-    if (!wrapper || !canvas || !overlay) return
+    const laser = laserRef.current
+    if (!wrapper || !canvas || !overlay || !laser) return
 
     const resize = (): void => {
       const dpr = window.devicePixelRatio || 1
       const w = wrapper.clientWidth
       const h = wrapper.clientHeight
-      for (const c of [canvas, overlay]) {
+      for (const c of [canvas, overlay, laser]) {
         c.width = Math.floor(w * dpr)
         c.height = Math.floor(h * dpr)
         c.style.width = `${w}px`
@@ -48,6 +50,7 @@ export function CanvasShell({
     scene,
     canvasRef,
     overlayRef,
+    laserRef,
     ...(onRendererReady ? { onReady: onRendererReady } : {}),
     ...(onRendererTeardown ? { onTeardown: onRendererTeardown } : {}),
   })
@@ -56,6 +59,7 @@ export function CanvasShell({
     <div ref={wrapperRef} className="absolute inset-0">
       <canvas ref={canvasRef} className="absolute inset-0 touch-none" />
       <canvas ref={overlayRef} className="pointer-events-none absolute inset-0" />
+      <canvas ref={laserRef} className="pointer-events-none absolute inset-0" />
     </div>
   )
 }

@@ -1,8 +1,13 @@
+import type { Point } from "@excalidraw-clone/geometry"
 import type { Scene } from "@excalidraw-clone/scene"
 import type { ToolEffect } from "@excalidraw-clone/tools"
 import { useAppStore } from "../store"
 
-export function applyEffects(scene: Scene, effects: readonly ToolEffect[]): void {
+export function applyEffects(
+  scene: Scene,
+  effects: readonly ToolEffect[],
+  laser?: { push(at: Point): void },
+): void {
   for (const eff of effects) {
     switch (eff.kind) {
       case "mutation":
@@ -27,6 +32,9 @@ export function applyEffects(scene: Scene, effects: readonly ToolEffect[]): void
         break
       case "startTextEdit":
         useAppStore.getState().setTextEditElementId(eff.elementId)
+        break
+      case "laserMove":
+        laser?.push(eff.at)
         break
     }
   }

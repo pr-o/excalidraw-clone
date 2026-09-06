@@ -21,6 +21,7 @@ import { useEffect, useRef, type RefObject } from "react"
 import { useAppStore } from "../store"
 import { applyEffects } from "./effects"
 import { pickElementAtPoint } from "./hitTest"
+import { LaserTrail } from "./laserTrail"
 import { openLink, sanitizeLinkHref } from "./link"
 import {
   applyWheel,
@@ -87,6 +88,7 @@ interface DriverOptions {
   scene: Scene
   canvasRef: RefObject<HTMLCanvasElement | null>
   overlayRef: RefObject<HTMLCanvasElement | null>
+  laserRef: RefObject<HTMLCanvasElement | null>
   onReady?: (renderer: CanvasRenderer) => void
   onTeardown?: () => void
 }
@@ -95,6 +97,7 @@ export function useDrawingDriver({
   scene,
   canvasRef,
   overlayRef,
+  laserRef,
   onReady,
   onTeardown,
 }: DriverOptions): void {
@@ -118,6 +121,13 @@ export function useDrawingDriver({
     const overlay = overlayRef.current
     if (!canvas || !overlay) return
 
+    const laserCanvas = laserRef.current
+    if (!laserCanvas) return
+    const laser = new LaserTrail(laserCanvas, () => {
+      const s = useAppStore.getState()
+      return { scrollX: s.scrollX, scrollY: s.scrollY, zoom: s.zoom }
+    })
+
     const initial = useAppStore.getState()
     const renderer = new CanvasRenderer(canvas, scene, {
       overlayCanvas: overlay,
@@ -138,6 +148,7 @@ export function useDrawingDriver({
         renderer.setGrid({ enabled: s.gridEnabled, size: s.gridSize })
       }
       if (s.selectedIds !== prev.selectedIds) renderer.setSelection(s.selectedIds)
+      if (s.activeTool !== prev.activeTool && prev.activeTool === "laser") laser.clear()
     })
 
     const resolveGrid = (): GridSnap => {
@@ -163,7 +174,7 @@ export function useDrawingDriver({
       }
       const [next, effects] = tool.reduce(currentState, event, ctx)
       useAppStore.getState().setToolState(toolName, next)
-      applyEffects(scene, effects)
+      applyEffects(scene, effects, laser)
       if (toolName === "arrow" && (next as LinearState).phase === "drawing") {
         const cand = (next as Extract<LinearState, { phase: "drawing" }>).endBindId
         renderer.setBindingHighlight(cand ? [cand] : [])
@@ -428,9 +439,10 @@ export function useDrawingDriver({
       window.removeEventListener("keyup", onKeyUp)
       useAppStore.getState().setDispatchToolEvent(null)
       unsubStore()
+      laser.clear()
       renderer.stop()
       rendererRef.current = null
       onTeardown?.()
     }
-  }, [scene, canvasRef, overlayRef, onReady, onTeardown])
+  }, [scene, canvasRef, overlayRef, laserRef, onReady, onTeardown])
 }

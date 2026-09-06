@@ -44,4 +44,13 @@ describe("applyEffects", () => {
     applyEffects(scene, [{ kind: "mutation", apply: () => {}, skipHistory: true }])
     expect(spy).toHaveBeenCalledWith(expect.any(Function), { skipHistory: true })
   })
+
+  it("laserMove effect forwards the point to the laser sink and never mutates the scene", () => {
+    const scene = new Scene()
+    const spy = vi.spyOn(scene, "mutate")
+    const push = vi.fn()
+    applyEffects(scene, [{ kind: "laserMove", at: { x: 3, y: 4 } }], { push })
+    expect(push).toHaveBeenCalledWith({ x: 3, y: 4 })
+    expect(spy).not.toHaveBeenCalled()
+  })
 })
