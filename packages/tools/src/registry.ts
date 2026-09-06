@@ -6,6 +6,7 @@ import { frameTool } from "./tools/frame"
 import { freedrawTool } from "./tools/freedraw"
 import { hexagonTool } from "./tools/hexagon"
 import { imageTool } from "./tools/image"
+import { laserTool } from "./tools/laser"
 import { lineTool } from "./tools/line"
 import { noteTool } from "./tools/note"
 import { octagonTool } from "./tools/octagon"
@@ -34,5 +35,6 @@ export const TOOLS: Record<ToolName, Tool<unknown, AnyToolEvent>> = {
   eraser: eraserTool,
   frame: frameTool,
   image: imageTool,
+  laser: laserTool,
   note: noteTool,
 }

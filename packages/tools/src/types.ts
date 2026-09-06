@@ -19,6 +19,7 @@ export type ToolName =
   | "frame"
   | "image"
   | "note"
+  | "laser"
 
 export interface Modifiers {
   shift: boolean
@@ -64,6 +65,7 @@ export type ToolEffect =
   | { kind: "removeFromSelection"; ids: readonly string[] }
   | { kind: "startTextEdit"; elementId: string }
   | { kind: "switchTool"; tool: ToolName }
+  | { kind: "laserMove"; at: Point }
 
 export interface Tool<S, E = ToolEvent> {
   readonly name: ToolName
