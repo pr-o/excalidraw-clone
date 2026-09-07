@@ -89,6 +89,31 @@ describe("PropertiesPanel", () => {
     expect(onChange).toHaveBeenCalledWith({ roundness: { type: 1 } })
   })
 
+  it("emits onChange({ roughness: 2 }) when the Cartoonist button is clicked", async () => {
+    const el = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
+    const onChange = vi.fn()
+    render(<PropertiesPanel t={t} selectedElements={[el]} {...handlers} onChange={onChange} />)
+    await userEvent.click(screen.getByTestId("roughness-2"))
+    expect(onChange).toHaveBeenCalledWith({ roughness: 2 })
+  })
+
+  it("marks the common roughness level as pressed (default 1)", () => {
+    const el = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
+    render(<PropertiesPanel t={t} selectedElements={[el]} {...handlers} />)
+    expect(screen.getByTestId("roughness-1")).toHaveAttribute("aria-pressed", "true")
+    expect(screen.getByTestId("roughness-0")).toHaveAttribute("aria-pressed", "false")
+    expect(screen.getByTestId("roughness-2")).toHaveAttribute("aria-pressed", "false")
+  })
+
+  it("no roughness button pressed for a mixed selection", () => {
+    const a = { ...newRectangle({ x: 0, y: 0, width: 10, height: 10 }), roughness: 0 as const }
+    const b = { ...newRectangle({ x: 20, y: 0, width: 10, height: 10 }), roughness: 2 as const }
+    render(<PropertiesPanel t={t} selectedElements={[a, b]} {...handlers} />)
+    expect(screen.getByTestId("roughness-0")).toHaveAttribute("aria-pressed", "false")
+    expect(screen.getByTestId("roughness-1")).toHaveAttribute("aria-pressed", "false")
+    expect(screen.getByTestId("roughness-2")).toHaveAttribute("aria-pressed", "false")
+  })
+
   it("mixed strokeStyle selection shows no pressed style button", () => {
     const a = {
       ...newRectangle({ x: 0, y: 0, width: 10, height: 10 }),

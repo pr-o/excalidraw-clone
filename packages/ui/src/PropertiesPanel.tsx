@@ -4,6 +4,7 @@ import type {
   DistributeAxis,
   ExcalidrawElement,
   FillStyle,
+  Roughness,
   Roundness,
   StrokeStyle,
   StrokeWidth,
@@ -14,6 +15,7 @@ const BG_COLORS = ["transparent", "#ffc9c9", "#b2f2bb", "#a5d8ff", "#ffec99"] as
 const STROKE_WIDTHS: readonly StrokeWidth[] = [1, 2, 4]
 const STROKE_STYLES: readonly StrokeStyle[] = ["solid", "dashed", "dotted"]
 const FILL_STYLES: readonly FillStyle[] = ["hachure", "cross-hatch", "solid"]
+const ROUGHNESS_LEVELS: readonly Roughness[] = [0, 1, 2]
 const OPACITY_STEPS = [25, 50, 75, 100] as const
 const ARROWHEAD_KINDS: readonly (Arrowhead | null)[] = [
   null,
@@ -100,6 +102,10 @@ export function PropertiesPanel({
   const fillStyle = commonValue<FillStyle>(
     selectedElements as unknown as readonly { [k: string]: unknown }[],
     "fillStyle",
+  )
+  const roughness = commonValue<Roughness>(
+    selectedElements as unknown as readonly { [k: string]: unknown }[],
+    "roughness",
   )
   const roundness = commonValue<Roundness>(
     selectedElements as unknown as readonly { [k: string]: unknown }[],
@@ -202,6 +208,23 @@ export function PropertiesPanel({
               className={`h-8 flex-1 rounded border text-xs ${fillStyle === s ? "border-accent bg-accent-soft" : "border-panel"}`}
             >
               {t(`properties.fillStyle_${s}`)}
+            </button>
+          ))}
+        </div>
+      </Section>
+
+      <Section label={t("properties.roughness")}>
+        <div className="flex gap-1">
+          {ROUGHNESS_LEVELS.map((r) => (
+            <button
+              key={r}
+              type="button"
+              data-testid={`roughness-${r}`}
+              aria-pressed={roughness === r}
+              onClick={() => onChange({ roughness: r })}
+              className={`h-8 flex-1 rounded border text-xs ${roughness === r ? "border-accent bg-accent-soft" : "border-panel"}`}
+            >
+              {t(`properties.roughness_${r}`)}
             </button>
           ))}
         </div>
