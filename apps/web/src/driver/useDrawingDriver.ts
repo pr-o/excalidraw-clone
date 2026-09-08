@@ -284,6 +284,8 @@ export function useDrawingDriver({
       const store = useAppStore.getState()
       const pending = store.pendingItem
       if (pending) {
+        // Read-only while presenting: placing a library item mutates the scene.
+        if (store.presenting) return
         const raw = clientToScene(
           canvas,
           { scrollX: store.scrollX, scrollY: store.scrollY, zoom: store.zoom },
@@ -337,6 +339,8 @@ export function useDrawingDriver({
       const store = useAppStore.getState()
       const pending = store.pendingItem
       if (pending) {
+        // Read-only while presenting: no ghost preview on the overlay.
+        if (store.presenting) return
         const raw = clientToScene(
           canvas,
           { scrollX: store.scrollX, scrollY: store.scrollY, zoom: store.zoom },
