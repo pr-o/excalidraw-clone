@@ -179,5 +179,11 @@
     "duplicate": "Duplicate page",
     "moveLeft": "Move page left",
     "moveRight": "Move page right"
+  },
+  "presentation": {
+    "prev": "Previous slide",
+    "next": "Next slide",
+    "laser": "Laser pointer",
+    "exit": "Exit presentation"
   }
 }

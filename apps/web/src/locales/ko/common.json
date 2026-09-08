@@ -170,5 +170,11 @@
     "duplicate": "페이지 복제",
     "moveLeft": "페이지 왼쪽으로 이동",
     "moveRight": "페이지 오른쪽으로 이동"
+  },
+  "presentation": {
+    "prev": "이전 슬라이드",
+    "next": "다음 슬라이드",
+    "laser": "레이저 포인터",
+    "exit": "발표 종료"
   }
 }
