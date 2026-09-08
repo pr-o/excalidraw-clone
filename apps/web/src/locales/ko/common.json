@@ -87,6 +87,8 @@
     "open": "열기…",
     "saveAs": "다른 이름으로 저장…",
     "export": "이미지 내보내기…",
+    "presentation": "발표 시작",
+    "presentationHint": "발표하려면 프레임을 추가하세요",
     "reset": "캔버스 초기화",
     "help": "도움말",
     "enterZen": "젠 모드",

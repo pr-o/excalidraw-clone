@@ -22,6 +22,8 @@ const baseProps = (): HamburgerMenuProps => ({
   onExport: vi.fn(),
   onReset: vi.fn(),
   onHelp: vi.fn(),
+  onStartPresentation: vi.fn(),
+  canPresent: true,
 })
 
 describe("HamburgerMenu", () => {
@@ -36,6 +38,7 @@ describe("HamburgerMenu", () => {
     expect(screen.getByText("menu.open")).toBeInTheDocument()
     expect(screen.getByText("menu.saveAs")).toBeInTheDocument()
     expect(screen.getByText("menu.export")).toBeInTheDocument()
+    expect(screen.getByText("menu.presentation")).toBeInTheDocument()
     expect(screen.getByText("menu.reset")).toBeInTheDocument()
     expect(screen.getByText("menu.help")).toBeInTheDocument()
   })
@@ -117,6 +120,46 @@ describe("HamburgerMenu", () => {
     render(<HamburgerMenu {...baseProps()} open onOpenChange={onOpenChange} />)
     await userEvent.click(screen.getByTestId("canvas-bg-f8f9fa"))
     expect(onOpenChange).toHaveBeenCalledWith(false)
+  })
+
+  it("canPresent true → menu-presentation is enabled and click fires onStartPresentation + closes", async () => {
+    const onStartPresentation = vi.fn()
+    const onOpenChange = vi.fn()
+    render(
+      <HamburgerMenu
+        {...baseProps()}
+        open
+        canPresent
+        onStartPresentation={onStartPresentation}
+        onOpenChange={onOpenChange}
+      />,
+    )
+    await userEvent.click(screen.getByTestId("menu-presentation"))
+    expect(onStartPresentation).toHaveBeenCalled()
+    expect(onOpenChange).toHaveBeenCalledWith(false)
+  })
+
+  it("canPresent false → menu-presentation is aria-disabled and click does nothing", async () => {
+    const onStartPresentation = vi.fn()
+    render(
+      <HamburgerMenu
+        {...baseProps()}
+        open
+        canPresent={false}
+        onStartPresentation={onStartPresentation}
+      />,
+    )
+    expect(screen.getByTestId("menu-presentation")).toHaveAttribute("aria-disabled", "true")
+    await userEvent.click(screen.getByTestId("menu-presentation"))
+    expect(onStartPresentation).not.toHaveBeenCalled()
+  })
+
+  it("canPresent false → the disabled item carries the hint as its title", () => {
+    render(<HamburgerMenu {...baseProps()} open canPresent={false} />)
+    expect(screen.getByTestId("menu-presentation")).toHaveAttribute(
+      "title",
+      "menu.presentationHint",
+    )
   })
 
   it("Escape closes the menu when open", async () => {

@@ -87,6 +87,8 @@
     "open": "Open…",
     "saveAs": "Save as…",
     "export": "Export image…",
+    "presentation": "Start presentation",
+    "presentationHint": "Add a frame to present",
     "reset": "Reset the canvas",
     "help": "Help",
     "enterZen": "Enter zen mode",

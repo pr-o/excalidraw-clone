@@ -21,6 +21,8 @@ export interface HamburgerMenuProps {
   onOpenFile: () => void
   onSaveFile: () => void
   onExport: () => void
+  onStartPresentation: () => void
+  canPresent: boolean
   onReset: () => void
   onHelp: () => void
   className?: string
@@ -64,6 +66,29 @@ export function HamburgerMenu(props: HamburgerMenuProps): React.ReactElement {
           <MenuItem onClick={wrap(props.onOpenFile)}>{props.t("menu.open")}</MenuItem>
           <MenuItem onClick={wrap(props.onSaveFile)}>{props.t("menu.saveAs")}</MenuItem>
           <MenuItem onClick={wrap(props.onExport)}>{props.t("menu.export")}</MenuItem>
+          {props.canPresent ? (
+            <button
+              type="button"
+              role="menuitem"
+              data-testid="menu-presentation"
+              onClick={wrap(props.onStartPresentation)}
+              className="block w-full rounded px-3 py-2 text-left text-sm hover:bg-panel-hover"
+            >
+              {props.t("menu.presentation")}
+            </button>
+          ) : (
+            <button
+              type="button"
+              role="menuitem"
+              data-testid="menu-presentation"
+              disabled
+              aria-disabled="true"
+              title={props.t("menu.presentationHint")}
+              className="block w-full cursor-not-allowed rounded px-3 py-2 text-left text-sm opacity-50"
+            >
+              {props.t("menu.presentation")}
+            </button>
+          )}
           <Separator />
           <MenuItem onClick={wrap(props.onZenModeToggle)}>
             {props.zenMode ? props.t("menu.exitZen") : props.t("menu.enterZen")}

@@ -274,6 +274,10 @@ function Inner(): React.ReactElement {
     [scene, sceneRevision],
   )
   const layerElements = useMemo(() => scene.getElements(), [scene, sceneRevision])
+  const frames = useMemo(
+    () => scene.getElements().filter((e) => e.type === "frame" && !e.isDeleted),
+    [scene, sceneRevision],
+  )
 
   useEffect(() => {
     void getAllLibraryItems().then(setLibraryItems)
@@ -434,6 +438,8 @@ function Inner(): React.ReactElement {
                 void saveAsExcalidraw(pages, activePageId)
               }}
               onExport={() => setOpenDialog("export")}
+              canPresent={frames.length > 0}
+              onStartPresentation={() => useAppStore.getState().enterPresentation()}
               onReset={() => setOpenDialog("reset")}
               onHelp={() => setOpenDialog("help")}
             />
