@@ -207,6 +207,46 @@ describe("keyboard shortcuts", () => {
   })
 })
 
+describe("presentation mode read-only guard", () => {
+  let detach: () => void
+  let scene: Scene
+  beforeEach(() => {
+    scene = new Scene()
+    detach = attachShortcuts({ scene })
+    useAppStore.getState().setActiveTool("selection")
+    useAppStore.getState().setSelection([])
+  })
+  afterEach(() => {
+    detach()
+    useAppStore.getState().exitPresentation()
+  })
+
+  it("ignores all editor shortcuts while presenting", () => {
+    // A committed mutation gives `undo` something to actually undo, so a
+    // leaked Cmd+Z would be observable as the element disappearing.
+    const r = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
+    scene.mutate((draft) => {
+      draft.push(r)
+    })
+    expect(scene.canUndo()).toBe(true)
+
+    useAppStore.getState().enterPresentation()
+
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "r" }))
+    expect(useAppStore.getState().activeTool).toBe("selection")
+
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "z", metaKey: true }))
+    expect(scene.getElements().map((e) => e.id)).toEqual([r.id])
+  })
+
+  it("resumes handling shortcuts after exitPresentation", () => {
+    useAppStore.getState().enterPresentation()
+    useAppStore.getState().exitPresentation()
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "r" }))
+    expect(useAppStore.getState().activeTool).toBe("rectangle")
+  })
+})
+
 describe("zoom keyboard shortcuts", () => {
   let detach: () => void
   beforeEach(() => {

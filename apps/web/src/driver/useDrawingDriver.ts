@@ -195,6 +195,9 @@ export function useDrawingDriver({
       e: PointerEvent,
     ): void => {
       const store = useAppStore.getState()
+      // Presentation mode is read-only. The laser pointer is the one exception:
+      // it is a presentation aid and writes nothing to the scene.
+      if (store.presenting && store.activeTool !== "laser") return
       const event = pointerEventToToolEvent(
         type,
         canvas,
@@ -207,6 +210,8 @@ export function useDrawingDriver({
     }
 
     const onWheel = (e: WheelEvent): void => {
+      // Read-only while presenting: the slide framing owns the viewport.
+      if (useAppStore.getState().presenting) return
       e.preventDefault()
       const store = useAppStore.getState()
       const next = applyWheel(
@@ -223,7 +228,15 @@ export function useDrawingDriver({
     }
 
     const onKeyDown = (e: KeyboardEvent): void => {
-      if (e.code !== "Space" || isTypingTarget(e.target) || spaceHeldRef.current) return
+      if (
+        e.code !== "Space" ||
+        isTypingTarget(e.target) ||
+        spaceHeldRef.current ||
+        // No Space-drag panning while presenting: the viewport is read-only.
+        useAppStore.getState().presenting
+      ) {
+        return
+      }
       spaceHeldRef.current = true
       if (!panDragRef.current) canvas.style.cursor = "grab"
     }
@@ -253,7 +266,9 @@ export function useDrawingDriver({
       // sibling after capture was released, so our up handler never fired).
       // Clear it so this new gesture is never wrongly suppressed.
       if (orphanedPointerRef.current === e.pointerId) orphanedPointerRef.current = null
-      if (spaceHeldRef.current) {
+      // `spaceHeldRef` can still be set from a Space held down before
+      // presentation started, so gate the pan gesture here too.
+      if (spaceHeldRef.current && !useAppStore.getState().presenting) {
         canvas.setPointerCapture(e.pointerId)
         const store = useAppStore.getState()
         panDragRef.current = {
@@ -356,6 +371,8 @@ export function useDrawingDriver({
       dispatchPointer("pointerUp", e)
     }
     const onDoubleClick = (e: MouseEvent): void => {
+      // Read-only while presenting (laser has no double-click behaviour).
+      if (useAppStore.getState().presenting) return
       const store = useAppStore.getState()
       const raw = clientToScene(
         canvas,
@@ -367,6 +384,8 @@ export function useDrawingDriver({
     }
 
     const onContextMenu = (e: MouseEvent): void => {
+      // No editor context menu while presenting; let the browser handle it.
+      if (useAppStore.getState().presenting) return
       e.preventDefault()
       const store = useAppStore.getState()
       const scenePoint = clientToScene(

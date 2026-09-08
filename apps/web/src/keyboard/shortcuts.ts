@@ -55,6 +55,10 @@ export function attachShortcuts({ scene, onNextPage, onPrevPage }: Bindings): ()
     ) {
       return
     }
+    // Presentation mode is read-only: every editor shortcut below is inert.
+    // PresentationHost owns the presentation keys (nav / Escape) on a
+    // capture-phase window listener, so nothing here needs to handle them.
+    if (useAppStore.getState().presenting) return
 
     const isMeta = e.metaKey || e.ctrlKey
     const key = e.key.toLowerCase()
