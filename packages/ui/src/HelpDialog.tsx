@@ -59,6 +59,9 @@ const VIEW_SHORTCUTS: readonly Shortcut[] = [
   { keys: "?", label: "shortcuts:help" },
   { keys: "Alt+PageDown", label: "shortcuts:nextPage" },
   { keys: "Alt+PageUp", label: "shortcuts:prevPage" },
+  { keys: "→ / Space", label: "shortcuts:presentNext" },
+  { keys: "←", label: "shortcuts:presentPrev" },
+  { keys: "Esc", label: "shortcuts:presentExit" },
 ]
 
 export interface HelpDialogProps {

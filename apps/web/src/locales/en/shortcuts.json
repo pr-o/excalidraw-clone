@@ -45,5 +45,8 @@
   "link": "Add or edit link",
   "openLink": "Open element link",
   "flipHorizontal": "Flip horizontal",
-  "flipVertical": "Flip vertical"
+  "flipVertical": "Flip vertical",
+  "presentNext": "Next slide",
+  "presentPrev": "Previous slide",
+  "presentExit": "Exit presentation"
 }

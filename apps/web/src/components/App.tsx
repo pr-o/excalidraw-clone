@@ -67,6 +67,7 @@ import { saveAsExcalidraw } from "../driver/saveFile"
 import { ensureI18n } from "../i18n"
 import { attachClipboard } from "../keyboard/clipboard"
 import { attachShortcuts } from "../keyboard/shortcuts"
+import { PresentationHost } from "../presentation/PresentationHost"
 import { useAppStore } from "../store"
 import { computeResolvedTheme } from "../store/slices/theme"
 import { CanvasShell } from "./CanvasShell"
@@ -102,6 +103,8 @@ function Inner(): React.ReactElement {
   // page list without re-running for every unrelated `pages` mutation.
   const pagesRef = useRef<PageRecord[]>(pages)
   pagesRef.current = pages
+  // Fullscreen target for presentation mode.
+  const rootRef = useRef<HTMLElement>(null)
   const switchToPage = useCallback(
     (targetId: string): void => {
       if (targetId === activePageId) return
@@ -222,6 +225,7 @@ function Inner(): React.ReactElement {
   const setLibraryItems = useAppStore((s) => s.setLibraryItems)
   const armLibraryItem = useAppStore((s) => s.armLibraryItem)
   const clearPendingItem = useAppStore((s) => s.clearPendingItem)
+  const presenting = useAppStore((s) => s.presenting)
   const [menuOpen, setMenuOpen] = useState(false)
   const [libraryOpen, setLibraryOpen] = useState(false)
   const [layersOpen, setLayersOpen] = useState(false)
@@ -403,14 +407,14 @@ function Inner(): React.ReactElement {
   )
 
   return (
-    <main className="relative h-screen w-screen overflow-hidden">
+    <main ref={rootRef} className="relative h-screen w-screen overflow-hidden">
       <CanvasShell
         scene={scene}
         onRendererReady={onRendererReady}
         onRendererTeardown={onRendererTeardown}
       />
 
-      {!zenMode && (
+      {!zenMode && !presenting && (
         <>
           <div className="absolute left-3 top-3 z-40">
             <HamburgerMenu
@@ -729,6 +733,8 @@ function Inner(): React.ReactElement {
           </div>
         </>
       )}
+
+      {presenting && <PresentationHost scene={scene} rootEl={rootRef.current} />}
 
       <Dialogs scene={scene} />
       <PaletteHost scene={scene} />

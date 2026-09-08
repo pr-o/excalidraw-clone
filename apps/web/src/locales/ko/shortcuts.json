@@ -45,5 +45,8 @@
   "link": "링크 추가/편집",
   "openLink": "요소 링크 열기",
   "flipHorizontal": "좌우 반전",
-  "flipVertical": "상하 반전"
+  "flipVertical": "상하 반전",
+  "presentNext": "다음 슬라이드",
+  "presentPrev": "이전 슬라이드",
+  "presentExit": "발표 종료"
 }
