@@ -57,7 +57,7 @@ const counter = (): string => screen.getByTestId("presentation-counter").textCon
 const renderHost = (scene: Scene) =>
   render(
     <I18nextProvider i18n={ensureI18n("en")}>
-      <PresentationHost scene={scene} rootEl={document.body} />
+      <PresentationHost scene={scene} rootEl={{ current: document.body }} />
     </I18nextProvider>,
   )
 

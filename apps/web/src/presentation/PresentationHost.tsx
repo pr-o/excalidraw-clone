@@ -23,8 +23,8 @@ const frameBounds = (f: ExcalidrawFrameElement): Bounds => ({
 
 export interface PresentationHostProps {
   scene: Scene
-  /** Fullscreen target — the app's `<main>`. Falls back to the document element. */
-  rootEl?: HTMLElement | null
+  /** Ref to the fullscreen target — the app's `<main>`. Falls back to the document element. */
+  rootEl?: React.RefObject<HTMLElement | null>
 }
 
 /**
@@ -55,21 +55,20 @@ export function PresentationHost({ scene, rootEl }: PresentationHostProps): Reac
 
   // Captured during the first render rather than in an effect so a remount of
   // the same instance (React StrictMode) cannot overwrite it with an
-  // already-presenting camera.
+  // already-presenting camera. The ref only ever takes one value, so the local
+  // below is stable for the component's life and safe to close over.
   const snapshotRef = useRef<ViewTransform | null>(null)
   if (snapshotRef.current === null) {
     const { scrollX, scrollY, zoom } = useAppStore.getState()
     snapshotRef.current = { scrollX, scrollY, zoom }
   }
+  const entrySnapshot: ViewTransform = snapshotRef.current
 
-  // Read through a ref so a later `rootEl` identity change cannot re-run the
-  // entry effect — its cleanup is the exit path and must fire only on unmount.
-  const rootElRef = useRef(rootEl)
-  rootElRef.current = rootEl
-
-  // Entry / exit. Runs once per mount; its cleanup is the exit path.
+  // Entry / exit. Runs once per mount; its cleanup is the exit path — it must
+  // fire only on unmount, so `rootEl` (a stable ref object) stays out of deps
+  // and is dereferenced at effect time.
   useEffect(() => {
-    const target = rootElRef.current ?? document.documentElement
+    const target = rootEl?.current ?? document.documentElement
     void target.requestFullscreen?.().catch(() => {})
 
     return () => {
@@ -77,7 +76,7 @@ export function PresentationHost({ scene, rootEl }: PresentationHostProps): Reac
       cancelRef.current = null
       if (document.fullscreenElement) void document.exitFullscreen?.().catch(() => {})
       const store = useAppStore.getState()
-      if (snapshotRef.current) store.setView(snapshotRef.current)
+      store.setView(entrySnapshot)
       if (store.activeTool === "laser") store.setActiveTool("selection")
     }
   }, [])

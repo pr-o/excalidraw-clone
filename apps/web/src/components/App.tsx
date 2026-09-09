@@ -734,7 +734,7 @@ function Inner(): React.ReactElement {
         </>
       )}
 
-      {presenting && <PresentationHost scene={scene} rootEl={rootRef.current} />}
+      {presenting && <PresentationHost scene={scene} rootEl={rootRef} />}
 
       <Dialogs scene={scene} />
       <PaletteHost scene={scene} />
