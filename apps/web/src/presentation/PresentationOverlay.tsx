@@ -1,4 +1,5 @@
 "use client"
+import { iconHTML } from "@excalidraw-clone/ui"
 import React, { useEffect, useRef, useState } from "react"
 
 /** Milliseconds of pointer/keyboard inactivity before the chrome fades out. */
@@ -119,7 +120,7 @@ export function PresentationOverlay({
           laserActive ? "bg-accent-soft" : ""
         }`}
       >
-        ✦
+        <span aria-hidden="true" dangerouslySetInnerHTML={{ __html: iconHTML("laser") }} />
       </button>
     </div>
   )

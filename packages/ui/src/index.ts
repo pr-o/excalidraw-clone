@@ -41,3 +41,5 @@ export type { MoreShapesMenuProps } from "./MoreShapesMenu"
 
 export { PagesTabBar } from "./PagesTabBar"
 export type { PagesTabBarProps } from "./PagesTabBar"
+
+export { ICONS, iconHTML } from "./shared/icons"

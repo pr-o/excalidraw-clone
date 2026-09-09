@@ -96,6 +96,14 @@ describe("PresentationOverlay", () => {
     expect(button("presentation-laser").getAttribute("aria-pressed")).toBe("false")
   })
 
+  it("renders the laser icon SVG rather than a text glyph", () => {
+    renderOverlay()
+
+    const laser = button("presentation-laser")
+    expect(laser.querySelector("svg")).not.toBeNull()
+    expect(laser.textContent ?? "").not.toContain("✦")
+  })
+
   it("fades out after 3s of inactivity and wakes on a plain keydown", () => {
     vi.useFakeTimers()
     renderOverlay()
