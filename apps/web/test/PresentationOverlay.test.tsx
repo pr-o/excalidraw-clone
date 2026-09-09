@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react"
+import { act, cleanup, render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import React from "react"
 import { afterEach, describe, expect, it, vi } from "vitest"
@@ -30,7 +30,19 @@ const renderOverlay = (overrides: Overrides = {}) =>
 
 const button = (testId: string): HTMLButtonElement => screen.getByTestId<HTMLButtonElement>(testId)
 
-afterEach(() => cleanup())
+const overlay = (): HTMLElement => screen.getByTestId("presentation-overlay")
+
+/** Dispatch a bubbling keydown from a real in-document node (not `window`). */
+const pressKey = (key: string): void => {
+  act(() => {
+    document.body.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true }))
+  })
+}
+
+afterEach(() => {
+  cleanup()
+  vi.useRealTimers()
+})
 
 describe("PresentationOverlay", () => {
   it("renders a 1-based counter of the current slide", () => {
@@ -82,6 +94,43 @@ describe("PresentationOverlay", () => {
 
     renderOverlay({ laserActive: false })
     expect(button("presentation-laser").getAttribute("aria-pressed")).toBe("false")
+  })
+
+  it("fades out after 3s of inactivity and wakes on a plain keydown", () => {
+    vi.useFakeTimers()
+    renderOverlay()
+
+    expect(overlay().className).toContain("opacity-100")
+
+    act(() => void vi.advanceTimersByTime(3000))
+    expect(overlay().className).toContain("opacity-0")
+    expect(overlay().className).toContain("pointer-events-none")
+
+    pressKey("ArrowRight")
+    expect(overlay().className).toContain("opacity-100")
+  })
+
+  it("wakes on a nav key the host swallows in the capture phase", () => {
+    vi.useFakeTimers()
+    renderOverlay()
+
+    // Mimic PresentationHost: a capture-phase window listener that swallows
+    // navigation keys before they can reach the target / bubble phases.
+    const swallow = (e: KeyboardEvent): void => {
+      e.stopPropagation()
+      e.preventDefault()
+    }
+    window.addEventListener("keydown", swallow, { capture: true })
+
+    try {
+      act(() => void vi.advanceTimersByTime(3000))
+      expect(overlay().className).toContain("opacity-0")
+
+      pressKey("ArrowRight")
+      expect(overlay().className).toContain("opacity-100")
+    } finally {
+      window.removeEventListener("keydown", swallow, { capture: true })
+    }
   })
 
   it("exposes every overlay test id", () => {

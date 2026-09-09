@@ -52,12 +52,16 @@ export function PresentationOverlay({
     }
 
     schedule()
-    window.addEventListener("mousemove", wake)
-    window.addEventListener("keydown", wake)
+    // Capture phase: PresentationHost swallows navigation keys with
+    // stopPropagation() in its own window capture listener, so a bubble-phase
+    // listener here would never see them. Same-target, same-phase listeners all
+    // still run, so `wake` fires regardless of registration order.
+    window.addEventListener("mousemove", wake, { capture: true })
+    window.addEventListener("keydown", wake, { capture: true })
     return () => {
       clear()
-      window.removeEventListener("mousemove", wake)
-      window.removeEventListener("keydown", wake)
+      window.removeEventListener("mousemove", wake, { capture: true })
+      window.removeEventListener("keydown", wake, { capture: true })
     }
   }, [])
 
