@@ -118,6 +118,33 @@ describe("PresentationOverlay", () => {
     expect(overlay().className).toContain("opacity-100")
   })
 
+  it("fades after exactly IDLE_FADE_MS and a mousemove re-arms the full timer", () => {
+    vi.useFakeTimers()
+    renderOverlay()
+
+    // Visible on mount.
+    expect(overlay().className).toContain("opacity-100")
+
+    // Fades once the full idle window elapses.
+    act(() => void vi.advanceTimersByTime(3000))
+    expect(overlay().className).toContain("opacity-0")
+    expect(overlay().className).toContain("pointer-events-none")
+
+    // A plain mousemove wakes it back up...
+    act(() => {
+      document.dispatchEvent(new MouseEvent("mousemove", { bubbles: true }))
+    })
+    expect(overlay().className).toContain("opacity-100")
+
+    // ...and re-arms the FULL 3s window: 2999ms is not enough to fade again.
+    act(() => void vi.advanceTimersByTime(2999))
+    expect(overlay().className).toContain("opacity-100")
+
+    // One more millisecond tips it over.
+    act(() => void vi.advanceTimersByTime(1))
+    expect(overlay().className).toContain("opacity-0")
+  })
+
   it("wakes on a nav key the host swallows in the capture phase", () => {
     vi.useFakeTimers()
     renderOverlay()
