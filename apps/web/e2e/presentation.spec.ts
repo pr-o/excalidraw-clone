@@ -173,6 +173,44 @@ test("editor shortcuts are swallowed while presenting", async ({ page }) => {
   )
 })
 
+test("wheel does not drift the viewport while presenting", async ({ page }) => {
+  await freshCanvas(page)
+
+  // Dark theme: strokes are invisible against the light-theme white canvas,
+  // so pixel comparisons must run in dark mode (same constraint as zoom-pan.spec.ts).
+  await page.locator('button[aria-label="Menu"]').click()
+  await page.locator('[data-testid="theme-dark"]').click()
+  await page.waitForTimeout(300)
+
+  // A frame with a rectangle inside it — a strong stroke signal to compare.
+  await drawFrame(page, { x: 80, y: 80 }, { x: 420, y: 340 })
+  await page.locator('[data-testid="toolbar-rectangle"]').click()
+  await dragOnCanvas(page, { x: 150, y: 150 }, { x: 340, y: 280 })
+  await page.waitForTimeout(150)
+  await page.locator('[data-testid="toolbar-selection"]').click()
+
+  await startPresentation(page)
+  await expect(counter(page)).toHaveText("1 / 1")
+  await page.waitForTimeout(700) // let the 400ms camera glide settle
+
+  const canvas = page.locator("canvas").first()
+  const before = await canvas.screenshot()
+
+  // Wheel while presenting must be inert — the viewport is owned by the slide fit.
+  const box = await canvas.boundingBox()
+  if (!box) throw new Error("canvas not found")
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await page.mouse.wheel(0, 240)
+  await page.mouse.wheel(0, -120)
+  await page.waitForTimeout(250)
+
+  const after = await canvas.screenshot()
+  expect(Buffer.compare(before, after)).toBe(0)
+
+  await page.keyboard.press("Escape")
+  await expect(page.locator('[data-testid="toolbar-selection"]')).toBeVisible()
+})
+
 test("menu entry is disabled with no frames on the page", async ({ page }) => {
   await freshCanvas(page)
 
