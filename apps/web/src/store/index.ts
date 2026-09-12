@@ -3,6 +3,7 @@ import { createCanvasBgSlice, type CanvasBgSlice } from "./slices/canvasBg"
 import { createContextMenuSlice, type ContextMenuSlice } from "./slices/contextMenu"
 import { createDialogSlice, type DialogSlice } from "./slices/dialog"
 import { createDispatchSlice, type DispatchSlice } from "./slices/dispatch"
+import { createFindSlice, type FindSlice } from "./slices/find"
 import { createGridSlice, type GridSlice } from "./slices/grid"
 import { createI18nSlice, type I18nSlice } from "./slices/i18n"
 import { createLibrarySlice, type LibrarySlice } from "./slices/library"
@@ -33,7 +34,8 @@ export type AppState = ToolSlice &
   LibrarySlice &
   PointerSlice &
   LinkEditorSlice &
-  PresentationSlice
+  PresentationSlice &
+  FindSlice
 
 export const useAppStore = create<AppState>()((...a) => ({
   ...createToolSlice(...a),
@@ -53,4 +55,5 @@ export const useAppStore = create<AppState>()((...a) => ({
   ...createPointerSlice(...a),
   ...createLinkEditorSlice(...a),
   ...createPresentationSlice(...a),
+  ...createFindSlice(...a),
 }))
