@@ -42,6 +42,17 @@ describe("keyboard shortcuts", () => {
     expect(useAppStore.getState().paletteOpen).toBe(true)
   })
 
+  it("Cmd+F opens find", () => {
+    useAppStore.getState().setFindOpen(false)
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "f", metaKey: true }))
+    expect(useAppStore.getState().findOpen).toBe(true)
+  })
+
+  it("'f' switches to frame tool", () => {
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "f" }))
+    expect(useAppStore.getState().activeTool).toBe("frame")
+  })
+
   it("Escape clears selection", () => {
     useAppStore.getState().setSelection(["a"])
     window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }))

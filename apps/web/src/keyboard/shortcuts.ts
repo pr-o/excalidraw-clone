@@ -154,6 +154,11 @@ export function attachShortcuts({ scene, onNextPage, onPrevPage }: Bindings): ()
       useAppStore.getState().setPaletteOpen(true)
       return
     }
+    if (isMeta && key === "f") {
+      e.preventDefault()
+      useAppStore.getState().setFindOpen(true)
+      return
+    }
     if (isMeta && key === "k") {
       e.preventDefault()
       const ids = useAppStore.getState().selectedIds
