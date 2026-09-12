@@ -42,4 +42,7 @@ export type { MoreShapesMenuProps } from "./MoreShapesMenu"
 export { PagesTabBar } from "./PagesTabBar"
 export type { PagesTabBarProps } from "./PagesTabBar"
 
+export { FindOverlay } from "./FindOverlay"
+export type { FindOverlayProps } from "./FindOverlay"
+
 export { ICONS, iconHTML } from "./shared/icons"
