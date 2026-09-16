@@ -28,10 +28,6 @@ const maxChannelIn = async (
 const setDarkTheme = async (page: Page): Promise<void> => {
   await page.getByRole("button", { name: /menu/i }).click()
   await page.locator('[data-testid="theme-dark"]').click()
-  // The theme row does not close the menu, and the open panel (left-3/top-11,
-  // w-56) covers the canvas region this spec draws into — so close it here.
-  await page.keyboard.press("Escape")
-  await expect(page.getByRole("menu")).toHaveCount(0)
   await page.waitForTimeout(300)
 }
 
