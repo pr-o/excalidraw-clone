@@ -108,6 +108,12 @@
     "lockSelection": "선택 요소 잠금",
     "unlockAll": "모든 잠금 해제"
   },
+  "find": {
+    "title": "캔버스에서 찾기",
+    "placeholder": "캔버스에서 찾기…",
+    "prev": "이전 검색 결과",
+    "next": "다음 검색 결과"
+  },
   "export": {
     "title": "이미지 내보내기",
     "format": "형식",

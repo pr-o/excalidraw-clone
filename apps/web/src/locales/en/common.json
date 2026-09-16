@@ -110,6 +110,12 @@
     "lockSelection": "Lock selection",
     "unlockAll": "Unlock all elements"
   },
+  "find": {
+    "title": "Find on canvas",
+    "placeholder": "Find on canvas…",
+    "prev": "Previous match",
+    "next": "Next match"
+  },
   "export": {
     "title": "Export image",
     "format": "Format",

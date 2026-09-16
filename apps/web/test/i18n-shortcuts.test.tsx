@@ -44,6 +44,7 @@ describe("HelpDialog — real i18n resolution", () => {
     expect(screen.getByText("Next slide")).toBeDefined()
     expect(screen.getByText("Previous slide")).toBeDefined()
     expect(screen.getByText("Exit presentation")).toBeDefined()
+    expect(screen.getByText("Find on canvas")).toBeDefined()
     expect(screen.queryByText(/^shortcuts\./)).toBeNull()
   })
 })
