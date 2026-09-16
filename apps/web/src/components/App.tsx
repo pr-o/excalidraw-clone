@@ -73,6 +73,7 @@ import { computeResolvedTheme } from "../store/slices/theme"
 import { CanvasShell } from "./CanvasShell"
 import { ContextMenuHost } from "./ContextMenuHost"
 import { Dialogs } from "./Dialogs"
+import { FindHost } from "./FindHost"
 import { LinkOverlay } from "./LinkOverlay"
 import { PaletteHost } from "./PaletteHost"
 import { TextEditingOverlay } from "./TextEditingOverlay"
@@ -738,6 +739,7 @@ function Inner(): React.ReactElement {
 
       <Dialogs scene={scene} />
       <PaletteHost scene={scene} />
+      <FindHost scene={scene} />
       <ContextMenuHost
         scene={scene}
         pages={pages.filter((p) => p.id !== activePageId).map((p) => ({ id: p.id, name: p.name }))}
