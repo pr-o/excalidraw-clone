@@ -37,6 +37,14 @@ export function FindOverlay({
   if (!open) return null
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>): void => {
+    // A second Cmd/Ctrl+F while the input has focus must re-select the query
+    // rather than fall through to the browser's own find bar. The global
+    // shortcut handler bails out on INPUT targets, so this is trapped here.
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "f") {
+      e.preventDefault()
+      e.currentTarget.select()
+      return
+    }
     if (e.key === "Enter" && e.shiftKey) {
       e.preventDefault()
       onPrev()
@@ -51,12 +59,15 @@ export function FindOverlay({
 
   const disabled = matchCount === 0
 
+  // Centred just under the toolbar: both screen corners are already taken —
+  // the right by PropertiesPanel (which appears on every successful jump) and
+  // the library panel, the left by the menu button and the layers panel.
   return (
     <div
       role="dialog"
       aria-label={t("find.title")}
       data-testid="find-overlay"
-      className={`fixed right-4 top-4 z-50 flex items-center gap-2 rounded-lg bg-panel px-2 py-1.5 shadow-lg ${className ?? ""}`}
+      className={`fixed left-1/2 top-16 z-50 flex -translate-x-1/2 items-center gap-2 rounded-lg bg-panel px-2 py-1.5 shadow-lg ${className ?? ""}`}
     >
       <input
         ref={inputRef}
@@ -70,6 +81,7 @@ export function FindOverlay({
       />
       <span
         data-testid="find-counter"
+        aria-live="polite"
         className="whitespace-nowrap text-xs tabular-nums text-muted"
       >
         {`${disabled ? 0 : matchIndex} of ${matchCount}`}
@@ -93,6 +105,16 @@ export function FindOverlay({
         className="flex h-7 w-7 items-center justify-center rounded text-sm hover:bg-panel-hover disabled:opacity-40 disabled:hover:bg-transparent"
       >
         ›
+      </button>
+      <button
+        type="button"
+        onClick={onClose}
+        aria-label={t("common.close")}
+        title={t("common.close")}
+        data-testid="find-close"
+        className="flex h-7 w-7 items-center justify-center rounded text-sm hover:bg-panel-hover"
+      >
+        ×
       </button>
     </div>
   )

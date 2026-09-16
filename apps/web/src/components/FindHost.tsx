@@ -57,10 +57,13 @@ export function FindHost({ scene }: { scene: Scene }): React.ReactElement {
   const matches = useMemo(() => filterMatches(items, query), [items, query])
 
   // A new query restarts the cursor: the next find-next must land on match 1.
+  // `scene` is in the deps because each page owns its own Scene instance, so a
+  // page switch would otherwise leave the cursor pointing at a match index from
+  // the page we just left.
   useEffect(() => {
     setIndex(0)
     hasJumpedRef.current = false
-  }, [query])
+  }, [query, scene])
 
   const clampedIndex = matches.length === 0 ? 0 : Math.min(index, matches.length - 1)
 

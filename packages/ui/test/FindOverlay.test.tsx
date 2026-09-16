@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react"
+import { fireEvent, render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { describe, expect, it, vi } from "vitest"
 import { FindOverlay, type FindOverlayProps } from "../src/FindOverlay"
@@ -69,6 +69,38 @@ describe("FindOverlay", () => {
     render(<FindOverlay {...props({ query: "a", onClose })} />)
     await userEvent.type(screen.getByTestId("find-input"), "{Escape}")
     expect(onClose).toHaveBeenCalledTimes(1)
+  })
+
+  it("clicking the close button calls onClose", async () => {
+    const onClose = vi.fn()
+    render(<FindOverlay {...props({ query: "a", onClose })} />)
+    await userEvent.click(screen.getByTestId("find-close"))
+    expect(onClose).toHaveBeenCalledTimes(1)
+  })
+
+  it.each([
+    ["Ctrl", { ctrlKey: true }],
+    ["Meta", { metaKey: true }],
+  ])("%s+F on the focused input is trapped and selects the query", (_label, modifier) => {
+    const onClose = vi.fn()
+    const onNext = vi.fn()
+    const onPrev = vi.fn()
+    render(
+      <FindOverlay
+        {...props({ query: "abc", matchIndex: 1, matchCount: 2, onClose, onNext, onPrev })}
+      />,
+    )
+    const input = screen.getByTestId<HTMLInputElement>("find-input")
+
+    const handled = fireEvent.keyDown(input, { key: "f", ...modifier })
+
+    // fireEvent returns false when a handler called preventDefault().
+    expect(handled).toBe(false)
+    expect(input.selectionStart).toBe(0)
+    expect(input.selectionEnd).toBe(3)
+    expect(onClose).not.toHaveBeenCalled()
+    expect(onNext).not.toHaveBeenCalled()
+    expect(onPrev).not.toHaveBeenCalled()
   })
 
   it("clicking next / prev calls onNext / onPrev", async () => {

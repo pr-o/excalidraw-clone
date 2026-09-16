@@ -116,18 +116,65 @@ describe("FindHost", () => {
     expect(useAppStore.getState().selectedIds).toEqual([second.id])
   })
 
-  it("cycles backward with wraparound: prev from match 1 lands on the last match", () => {
+  // Three matches, so the two directions are actually distinguishable: with
+  // only two, prev and next from match 1 both land on match 2 and a sign flip
+  // in `advance` would go unnoticed.
+  it("cycles backward with wraparound: prev from match 1 lands on the LAST match", () => {
     const first = text(0, 0, "Alpha one")
     const second = text(1000, 500, "Alpha two")
-    renderHost(new Scene([first, second]))
+    const third = text(2000, 900, "Alpha three")
+    renderHost(new Scene([first, second, third]))
 
     typeQuery("alpha")
     clickNext()
+    expect(counter()).toBe("1 of 3")
     clickPrev()
 
-    expect(counter()).toBe("2 of 2")
+    expect(counter()).toBe("3 of 3")
+    expectViewToBe(currentView(), expectedView(third))
+    expect(useAppStore.getState().selectedIds).toEqual([third.id])
+  })
+
+  it("next from match 1 lands on match 2, distinguishing it from prev", () => {
+    const first = text(0, 0, "Alpha one")
+    const second = text(1000, 500, "Alpha two")
+    const third = text(2000, 900, "Alpha three")
+    renderHost(new Scene([first, second, third]))
+
+    typeQuery("alpha")
+    clickNext()
+    clickNext()
+
+    expect(counter()).toBe("2 of 3")
     expectViewToBe(currentView(), expectedView(second))
     expect(useAppStore.getState().selectedIds).toEqual([second.id])
+  })
+
+  it("resets the match cursor when the page (Scene) changes under it", () => {
+    const first = text(0, 0, "Alpha one")
+    const second = text(1000, 500, "Alpha two")
+    const third = text(2000, 900, "Alpha three")
+    const pageA = new Scene([first, second, third])
+    const { rerender } = renderHost(pageA)
+
+    typeQuery("alpha")
+    clickNext()
+    clickNext()
+    expect(counter()).toBe("2 of 3")
+
+    // Switching pages swaps the Scene instance; the cursor must restart.
+    const onlyMatch = text(0, 0, "Alpha elsewhere")
+    const pageB = new Scene([onlyMatch])
+    rerender(
+      <I18nextProvider i18n={ensureI18n("en")}>
+        <FindHost scene={pageB} />
+      </I18nextProvider>,
+    )
+
+    expect(counter()).toBe("1 of 1")
+    clickNext()
+    expect(counter()).toBe("1 of 1")
+    expectViewToBe(currentView(), expectedView(onlyMatch))
   })
 
   it("jumps to a locked match but leaves the selection untouched", () => {
