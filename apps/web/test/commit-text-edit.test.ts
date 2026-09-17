@@ -40,6 +40,13 @@ describe("commitTextEdit", () => {
     expect((draft[0] as ExcalidrawTextElement).text).toBe("")
   })
 
+  it("empty commit on a freshly-placed free text element (never had content) deletes it", () => {
+    const fresh = newText({ x: 0, y: 0 }) // no `text` given -> defaults to ""
+    const draft: ExcalidrawElement[] = [fresh]
+    commitTextEdit(draft, fresh.id, "")
+    expect(draft).toHaveLength(0)
+  })
+
   it("unknown id is a no-op", () => {
     const draft: ExcalidrawElement[] = []
     expect(() => commitTextEdit(draft, "nope", "x")).not.toThrow()
