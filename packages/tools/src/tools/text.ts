@@ -1,9 +1,14 @@
-import { newText } from "@excalidraw-clone/scene"
+import { type ExcalidrawElement, newText } from "@excalidraw-clone/scene"
 import type { Tool, ToolContext, ToolEffect, ToolEvent } from "../types"
 
-export type TextState = { phase: "idle" } | { phase: "editing"; elementId: string }
+export type TextState = { phase: "idle" } | { phase: "placing"; elementId: string }
 
 const TEXT_INITIAL: TextState = { phase: "idle" }
+
+const removeById = (draft: ExcalidrawElement[], id: string): void => {
+  const i = draft.findIndex((e) => e.id === id)
+  if (i >= 0) draft.splice(i, 1)
+}
 
 export const textTool: Tool<TextState, ToolEvent> = {
   name: "text",
@@ -14,21 +19,36 @@ export const textTool: Tool<TextState, ToolEvent> = {
       if (event.type === "pointerDown") {
         const element = newText({ x: event.at.x, y: event.at.y })
         return [
-          { phase: "editing", elementId: element.id },
+          { phase: "placing", elementId: element.id },
           [
             {
               kind: "mutation",
               apply: (draft) => {
                 draft.push(element)
               },
+              skipHistory: true,
             },
-            { kind: "startTextEdit", elementId: element.id },
           ],
         ]
       }
       return [state, []]
     }
-    if (event.type === "escape") return [{ phase: "idle" }, []]
+    const { elementId } = state
+    if (event.type === "pointerUp") {
+      return [{ phase: "idle" }, [{ kind: "startTextEdit", elementId }]]
+    }
+    if (event.type === "escape") {
+      return [
+        { phase: "idle" },
+        [
+          {
+            kind: "mutation",
+            apply: (draft) => removeById(draft, elementId),
+            skipHistory: true,
+          },
+        ],
+      ]
+    }
     return [state, []]
   },
 }
