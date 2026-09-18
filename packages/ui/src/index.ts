@@ -45,4 +45,7 @@ export type { PagesTabBarProps } from "./PagesTabBar"
 export { FindOverlay } from "./FindOverlay"
 export type { FindOverlayProps } from "./FindOverlay"
 
+export { StatsPanel } from "./StatsPanel"
+export type { StatsPanelProps } from "./StatsPanel"
+
 export { ICONS, iconHTML } from "./shared/icons"
