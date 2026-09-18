@@ -80,6 +80,16 @@ describe("StatsPanel", () => {
     expect(input).toHaveValue("40")
   })
 
+  it("clearing a field and blurring is a no-op, reverting to the live value", async () => {
+    const onChange = vi.fn()
+    render(<StatsPanel t={t} open stats={singleStats} onChange={onChange} />)
+    const input = screen.getByTestId("stats-x")
+    await userEvent.clear(input)
+    fireEvent.blur(input)
+    expect(onChange).not.toHaveBeenCalled()
+    expect(input).toHaveValue("10")
+  })
+
   it("typing 0 or a negative width clamps to a minimum of 1 before committing", async () => {
     const onChange = vi.fn()
     render(<StatsPanel t={t} open stats={singleStats} onChange={onChange} />)

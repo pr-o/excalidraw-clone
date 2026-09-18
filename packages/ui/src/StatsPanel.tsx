@@ -24,7 +24,12 @@ function Field({ testId, label, value, disabled, onCommit }: FieldProps): React.
   const display = draft ?? String(value)
 
   const commit = (): void => {
-    if (draft === null) return
+    // An empty or whitespace-only draft means "the user cleared the field",
+    // not "set this to 0" — treat it like an untouched draft and revert.
+    if (draft === null || draft.trim() === "") {
+      setDraft(null)
+      return
+    }
     const n = Number(draft)
     if (Number.isFinite(n)) onCommit(n)
     setDraft(null)
