@@ -44,6 +44,8 @@ export type {
 } from "./factories"
 export { ELBOW_STUB, routeElbow, sideCenter, sideOf, type Side } from "./elbow"
 export { getElementBounds, getElementsBounds } from "./bounds"
+export { computeStats } from "./stats"
+export type { Stats } from "./stats"
 export { hitTestElement } from "./hit-test"
 export type { HitTestOptions } from "./hit-test"
 export { Scene } from "./scene"
