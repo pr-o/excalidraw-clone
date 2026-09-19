@@ -57,6 +57,7 @@ const VIEW_SHORTCUTS: readonly Shortcut[] = [
   { keys: "Cmd/Ctrl+'", label: "shortcuts:toggleGrid" },
   { keys: "Cmd/Ctrl+/", label: "shortcuts:commandPalette" },
   { keys: "Cmd/Ctrl+F", label: "shortcuts:find" },
+  { keys: "Alt+/", label: "shortcuts:stats" },
   { keys: "?", label: "shortcuts:help" },
   { keys: "Alt+PageDown", label: "shortcuts:nextPage" },
   { keys: "Alt+PageUp", label: "shortcuts:prevPage" },

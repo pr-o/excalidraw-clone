@@ -116,6 +116,16 @@
     "prev": "Previous match",
     "next": "Next match"
   },
+  "stats": {
+    "title": "Stats",
+    "x": "X",
+    "y": "Y",
+    "width": "W",
+    "height": "H",
+    "angle": "Angle",
+    "elements": "Elements",
+    "selected": "Selected"
+  },
   "export": {
     "title": "Export image",
     "format": "Format",
