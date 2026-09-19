@@ -17,6 +17,7 @@ interface Bindings {
   scene: Scene
   onNextPage?: () => void
   onPrevPage?: () => void
+  onToggleStats?: () => void
 }
 
 const TOOL_KEYS: Record<string, ToolName> = {
@@ -46,7 +47,12 @@ const TOOL_KEYS: Record<string, ToolName> = {
  *  pasted onto an element on another page. Never persisted, never cross-tab. */
 let styleClipboard: StyleClipboard | null = null
 
-export function attachShortcuts({ scene, onNextPage, onPrevPage }: Bindings): () => void {
+export function attachShortcuts({
+  scene,
+  onNextPage,
+  onPrevPage,
+  onToggleStats,
+}: Bindings): () => void {
   const handler = (e: KeyboardEvent): void => {
     const target = e.target as HTMLElement | null
     if (
@@ -176,6 +182,11 @@ export function attachShortcuts({ scene, onNextPage, onPrevPage }: Bindings): ()
     if (e.altKey && key === "pageup") {
       e.preventDefault()
       onPrevPage?.()
+      return
+    }
+    if (e.altKey && key === "/") {
+      e.preventDefault()
+      onToggleStats?.()
       return
     }
     if (key === "escape") {

@@ -216,6 +216,24 @@ describe("keyboard shortcuts", () => {
   it("Alt+PageDown without a handler does not throw", () => {
     window.dispatchEvent(new KeyboardEvent("keydown", { key: "PageDown", altKey: true }))
   })
+
+  it("Alt+/ calls onToggleStats when provided", () => {
+    detach()
+    const onToggleStats = vi.fn()
+    detach = attachShortcuts({ scene, onToggleStats })
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "/", altKey: true }))
+    expect(onToggleStats).toHaveBeenCalledTimes(1)
+  })
+
+  it("Alt+/ without a handler does not throw", () => {
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "/", altKey: true }))
+  })
+
+  it("Shift+/ still opens the help dialog (not confused with Alt+/)", () => {
+    useAppStore.getState().setOpenDialog(null)
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "/", shiftKey: true }))
+    expect(useAppStore.getState().openDialog).toBe("help")
+  })
 })
 
 describe("presentation mode read-only guard", () => {
