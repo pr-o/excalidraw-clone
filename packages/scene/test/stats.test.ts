@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { computeStats, getElementsBounds, newRectangle } from "../src"
+import { computeStats, getElementsBounds, newLine, newRectangle } from "../src"
 
 describe("computeStats — scene (no selection)", () => {
   it("returns the live, non-deleted element count when nothing is selected", () => {
@@ -22,6 +22,7 @@ describe("computeStats — single selection", () => {
     expect(computeStats([el], [el])).toEqual({
       kind: "single",
       id: el.id,
+      type: "rectangle",
       x: 10,
       y: 20,
       width: 30,
@@ -35,6 +36,20 @@ describe("computeStats — single selection", () => {
     const stats = computeStats([el], [el])
     expect(stats.kind).toBe("single")
     if (stats.kind === "single") expect(stats.angleDeg).toBe(0)
+  })
+
+  it("reports the element's type so callers can discriminate (rectangle)", () => {
+    const el = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
+    const stats = computeStats([el], [el])
+    expect(stats.kind).toBe("single")
+    if (stats.kind === "single") expect(stats.type).toBe("rectangle")
+  })
+
+  it("reports the element's type so callers can discriminate (line)", () => {
+    const el = newLine({ x: 0, y: 0, width: 50, height: 20 })
+    const stats = computeStats([el], [el])
+    expect(stats.kind).toBe("single")
+    if (stats.kind === "single") expect(stats.type).toBe("line")
   })
 })
 

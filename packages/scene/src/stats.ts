@@ -6,6 +6,7 @@ export type Stats =
   | {
       kind: "single"
       id: string
+      type: ExcalidrawElement["type"]
       x: number
       y: number
       width: number
@@ -29,6 +30,7 @@ export function computeStats(
     return {
       kind: "single",
       id: el.id,
+      type: el.type,
       x: el.x,
       y: el.y,
       width: el.width,

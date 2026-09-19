@@ -1,4 +1,4 @@
-import type { Stats } from "@excalidraw-clone/scene"
+import type { ElementType, Stats } from "@excalidraw-clone/scene"
 import { fireEvent, render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { describe, expect, it, vi } from "vitest"
@@ -10,12 +10,14 @@ const sceneStats: Stats = { kind: "scene", elementCount: 3 }
 const singleStats: Stats = {
   kind: "single",
   id: "el1",
+  type: "rectangle",
   x: 10,
   y: 20,
   width: 30,
   height: 40,
   angleDeg: 0,
 }
+const singleStatsOfType = (type: ElementType): Stats => ({ ...singleStats, type })
 const multiStats: Stats = { kind: "multi", count: 2, x: 0, y: 0, width: 100, height: 50 }
 
 describe("StatsPanel", () => {
@@ -98,6 +100,33 @@ describe("StatsPanel", () => {
     await userEvent.type(input, "-5")
     fireEvent.blur(input)
     expect(onChange).toHaveBeenCalledWith({ width: 1 })
+  })
+
+  it.each(["line", "arrow", "freedraw"] as const)(
+    "a single %s element disables width/height but leaves x/y/angle editable",
+    (type) => {
+      render(<StatsPanel t={t} open stats={singleStatsOfType(type)} onChange={vi.fn()} />)
+      expect(screen.getByTestId("stats-width")).toBeDisabled()
+      expect(screen.getByTestId("stats-height")).toBeDisabled()
+      expect(screen.getByTestId("stats-x")).not.toBeDisabled()
+      expect(screen.getByTestId("stats-y")).not.toBeDisabled()
+      expect(screen.getByTestId("stats-angle")).not.toBeDisabled()
+    },
+  )
+
+  it("a single rectangle still leaves width/height editable", () => {
+    render(<StatsPanel t={t} open stats={singleStatsOfType("rectangle")} onChange={vi.fn()} />)
+    expect(screen.getByTestId("stats-width")).not.toBeDisabled()
+    expect(screen.getByTestId("stats-height")).not.toBeDisabled()
+  })
+
+  it("a disabled width field on a line element cannot commit a change", async () => {
+    const onChange = vi.fn()
+    render(<StatsPanel t={t} open stats={singleStatsOfType("line")} onChange={onChange} />)
+    const input = screen.getByTestId("stats-width")
+    await userEvent.type(input, "75")
+    fireEvent.blur(input)
+    expect(onChange).not.toHaveBeenCalled()
   })
 
   it("committing the angle field converts typed degrees back to radians", async () => {

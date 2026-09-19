@@ -82,6 +82,14 @@ export function StatsPanel({
   }
 
   const isSingle = stats.kind === "single"
+  // `line`/`arrow`/`freedraw` derive their geometry entirely from `element.points`;
+  // `width`/`height` are a derived bounding box that every other code path recomputes
+  // from the points. Writing them here would be a silent no-op on canvas and would leave
+  // the stored bounds stale, so those two fields stay read-only for these types.
+  const isPointsDerived =
+    stats.kind === "single" &&
+    (stats.type === "line" || stats.type === "arrow" || stats.type === "freedraw")
+  const sizeDisabled = !isSingle || isPointsDerived
 
   return (
     <aside aria-label={t("stats.title")} data-testid="stats-panel" className={container}>
@@ -110,14 +118,14 @@ export function StatsPanel({
           testId="stats-width"
           label={t("stats.width")}
           value={stats.width}
-          disabled={!isSingle}
+          disabled={sizeDisabled}
           onCommit={(n) => onChange({ width: Math.max(1, n) })}
         />
         <Field
           testId="stats-height"
           label={t("stats.height")}
           value={stats.height}
-          disabled={!isSingle}
+          disabled={sizeDisabled}
           onCommit={(n) => onChange({ height: Math.max(1, n) })}
         />
         {stats.kind === "single" && (
