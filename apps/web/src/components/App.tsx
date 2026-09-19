@@ -7,6 +7,7 @@ import {
   bringForward,
   bringToFront,
   BUILTIN_TEMPLATES,
+  computeStats,
   distributeElements,
   duplicateElements,
   expandIdsToGroups,
@@ -28,6 +29,7 @@ import {
   LibraryPanel,
   PagesTabBar,
   PropertiesPanel,
+  StatsPanel,
   Toolbar,
 } from "@excalidraw-clone/ui"
 import {
@@ -196,6 +198,7 @@ function Inner(): React.ReactElement {
       scene,
       onNextPage: () => switchToPage(cyclePageId(pages, activePageId, "next")),
       onPrevPage: () => switchToPage(cyclePageId(pages, activePageId, "prev")),
+      onToggleStats: () => setStatsOpen((v) => !v),
     })
   }, [scene, pages, activePageId, switchToPage])
   useEffect(() => {
@@ -231,6 +234,7 @@ function Inner(): React.ReactElement {
   const [libraryOpen, setLibraryOpen] = useState(false)
   const [layersOpen, setLayersOpen] = useState(false)
   const [moreShapesOpen, setMoreShapesOpen] = useState(false)
+  const [statsOpen, setStatsOpen] = useState(false)
   const [renderer, setRenderer] = useState<CanvasRenderer | null>(null)
   const onRendererReady = useCallback((r: CanvasRenderer): void => setRenderer(r), [])
   const onRendererTeardown = useCallback((): void => setRenderer(null), [])
@@ -279,6 +283,10 @@ function Inner(): React.ReactElement {
     [scene, sceneRevision],
   )
   const layerElements = useMemo(() => scene.getElements(), [scene, sceneRevision])
+  const stats = useMemo(
+    () => computeStats(selectedElements, layerElements),
+    [selectedElements, layerElements],
+  )
   const frames = useMemo(
     () => scene.getElements().filter((e) => e.type === "frame" && !e.isDeleted),
     [scene, sceneRevision],
@@ -663,6 +671,20 @@ function Inner(): React.ReactElement {
             }}
             onReorder={(id, direction) => setPages(reorderPage(pages, id, direction))}
             onMove={(id, toIndex) => setPages(movePage(pages, id, toIndex))}
+          />
+
+          <StatsPanel
+            t={t}
+            open={statsOpen}
+            stats={stats}
+            onChange={(patch) => {
+              if (stats.kind !== "single") return
+              const id = stats.id
+              scene.mutate((draft) => {
+                const i = draft.findIndex((e) => e.id === id)
+                if (i >= 0) draft[i] = { ...draft[i]!, ...patch }
+              })
+            }}
           />
 
           {hasLockedElements && (
