@@ -1,7 +1,9 @@
+import type { Point } from "@excalidraw-clone/geometry"
 import { newArrow, newRectangle } from "@excalidraw-clone/scene"
 import type { ExcalidrawArrowElement, ExcalidrawElement } from "@excalidraw-clone/scene"
 import { describe, expect, it } from "vitest"
 import { findHandleAt } from "../src"
+import type { ResizeHandle } from "../src"
 import { IDENTITY_VIEW } from "./test-utils"
 
 const horizontalArrow = (): ExcalidrawArrowElement => ({
@@ -106,5 +108,46 @@ describe("findHandleAt — bend points", () => {
       elementId: arrow.id,
       end: "start",
     })
+  })
+})
+
+describe("findHandleAt — group resize (2+ selection)", () => {
+  const rectA = () => ({ ...newRectangle({ x: 0, y: 0, width: 100, height: 100 }), id: "a" })
+  const rectB = () => ({ ...newRectangle({ x: 300, y: 0, width: 100, height: 100 }), id: "b" })
+
+  const HANDLE_POSITIONS: { handle: ResizeHandle; at: Point }[] = [
+    { handle: "nw", at: { x: 0, y: 0 } },
+    { handle: "ne", at: { x: 400, y: 0 } },
+    { handle: "se", at: { x: 400, y: 100 } },
+    { handle: "sw", at: { x: 0, y: 100 } },
+    { handle: "n", at: { x: 200, y: 0 } },
+    { handle: "e", at: { x: 400, y: 50 } },
+    { handle: "s", at: { x: 200, y: 100 } },
+    { handle: "w", at: { x: 0, y: 50 } },
+  ]
+
+  it.each(HANDLE_POSITIONS)("hits the combined-bbox $handle handle", ({ handle, at }) => {
+    const a = rectA()
+    const b = rectB()
+    const hit = findHandleAt(at, [a.id, b.id], [a, b], IDENTITY_VIEW)
+    expect(hit).toEqual({ kind: "groupResize", handle, ids: [a.id, b.id] })
+  })
+
+  it("misses a point that is not on any combined-bbox handle", () => {
+    const a = rectA()
+    const b = rectB()
+    expect(findHandleAt({ x: 150, y: 50 }, [a.id, b.id], [a, b], IDENTITY_VIEW)).toBeNull()
+  })
+
+  it("falls back to null when fewer than 2 non-deleted elements remain in the selection", () => {
+    const a = rectA()
+    const deletedB = { ...rectB(), isDeleted: true }
+    const hit = findHandleAt({ x: 100, y: 100 }, [a.id, deletedB.id], [a, deletedB], IDENTITY_VIEW)
+    expect(hit).toBeNull()
+  })
+
+  it("regression: single-selection resize hit-testing is unaffected by the new branch", () => {
+    const r = newRectangle({ x: 0, y: 0, width: 100, height: 100 })
+    expect(findHandleAt({ x: 100, y: 100 }, [r.id], [r], IDENTITY_VIEW)?.kind).toBe("resize")
   })
 })

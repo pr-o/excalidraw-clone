@@ -4,7 +4,7 @@ import {
   rotatePoint,
   sceneToViewport,
 } from "@excalidraw-clone/geometry"
-import type { ExcalidrawElement } from "@excalidraw-clone/scene"
+import { type ExcalidrawElement, getElementsBounds } from "@excalidraw-clone/scene"
 import type { ResizeHandle } from "./types"
 
 const HANDLE_HIT_HALF = 6
@@ -17,6 +17,7 @@ export type HandleHit =
   | { kind: "endpoint"; elementId: string; end: "start" | "end" }
   | { kind: "bend"; elementId: string; index: number }
   | { kind: "bendAdd"; elementId: string; segmentIndex: number; at: Point }
+  | { kind: "groupResize"; handle: ResizeHandle; ids: readonly string[] }
 
 const rotatedCorners = (e: ExcalidrawElement): readonly [Point, Point, Point, Point] => {
   const corners: [Point, Point, Point, Point] = [
@@ -51,6 +52,33 @@ export const findHandleAt = (
   elements: readonly ExcalidrawElement[],
   view: ViewTransform,
 ): HandleHit | null => {
+  if (selectedIds.length >= 2) {
+    const selected = selectedIds
+      .map((id) => elements.find((el) => el.id === id))
+      .filter((el): el is ExcalidrawElement => !!el && !el.isDeleted)
+    if (selected.length < 2) return null
+    const bounds = getElementsBounds(selected)
+    if (!bounds) return null
+    const atV = sceneToViewport(at, view)
+    const nw = sceneToViewport({ x: bounds.x, y: bounds.y }, view)
+    const ne = sceneToViewport({ x: bounds.x + bounds.width, y: bounds.y }, view)
+    const se = sceneToViewport({ x: bounds.x + bounds.width, y: bounds.y + bounds.height }, view)
+    const sw = sceneToViewport({ x: bounds.x, y: bounds.y + bounds.height }, view)
+    const handlePoints: { name: ResizeHandle; p: Point }[] = [
+      { name: "nw", p: nw },
+      { name: "ne", p: ne },
+      { name: "se", p: se },
+      { name: "sw", p: sw },
+      { name: "n", p: midPoint(nw, ne) },
+      { name: "e", p: midPoint(ne, se) },
+      { name: "s", p: midPoint(se, sw) },
+      { name: "w", p: midPoint(sw, nw) },
+    ]
+    for (const { name, p } of handlePoints) {
+      if (within(atV, p)) return { kind: "groupResize", handle: name, ids: selectedIds }
+    }
+    return null
+  }
   if (selectedIds.length !== 1) return null
   const id = selectedIds[0]!
   const e = elements.find((el) => el.id === id)

@@ -55,7 +55,9 @@ const reduceIdle = (
     const handle = findHandleAt(event.at, ctx.selectedIds, ctx.readElements(), ctx.viewTransform)
     if (handle) {
       const elements = ctx.readElements()
-      const e = elements.find((el) => el.id === handle.elementId)
+      // `groupResize` hits carry no single element id; a later task wires their drag state.
+      const e =
+        "elementId" in handle ? elements.find((el) => el.id === handle.elementId) : undefined
       if (e && handle.kind === "resize") {
         return [
           {
