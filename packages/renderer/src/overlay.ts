@@ -110,7 +110,6 @@ const drawElementChrome = (
   view: ViewTransform,
   theme: Theme,
 ): void => {
-  drawElementOutline(ctx, e, view, theme)
   if (isLinear(e)) {
     const pts = (e as { points: readonly Point[] }).points
     const absV = pts.map((p) => sceneToViewport({ x: e.x + p.x, y: e.y + p.y }, view))
@@ -121,6 +120,7 @@ const drawElementChrome = (
     for (const p of absV) drawHandle(ctx, p, theme)
     return
   }
+  drawElementOutline(ctx, e, view, theme)
   const corners = elementCorners(e).map((p) => sceneToViewport(p, view))
   const c0 = corners[0]!
   const c1 = corners[1]!

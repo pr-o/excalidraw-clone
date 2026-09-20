@@ -94,6 +94,8 @@ describe("CanvasRenderer selection overlay", () => {
     flush()
     expect(overlayCtx.__calls.filter((c) => c.method === "fillRect").length).toBe(2)
     expect(overlayCtx.__calls.filter((c) => c.method === "arc").length).toBe(0)
+    // No per-element outline stroke for a single selected linear element (handles only).
+    expect(overlayCtx.__calls.filter((c) => c.method === "stroke").length).toBe(0)
   })
 
   it("single selected 3-point arrow → 3 solid dots + 2 ghost dots, no arc", () => {
@@ -118,6 +120,8 @@ describe("CanvasRenderer selection overlay", () => {
     // 3 solid handle strokes + 2 segment-midpoint ghost strokes
     expect(overlayCtx.__calls.filter((c) => c.method === "strokeRect").length).toBe(5)
     expect(overlayCtx.__calls.filter((c) => c.method === "arc").length).toBe(0)
+    // No per-element outline stroke for a single selected linear element (handles only).
+    expect(overlayCtx.__calls.filter((c) => c.method === "stroke").length).toBe(0)
   })
 
   it("marquee uses dashed stroke", () => {
