@@ -1,4 +1,5 @@
 import type { Point } from "@excalidraw-clone/geometry"
+import type { ExcalidrawElement } from "@excalidraw-clone/scene"
 import type { LinearSnapshot } from "./endpoint"
 
 export type ResizeHandle = "nw" | "n" | "ne" | "e" | "se" | "s" | "sw" | "w"
@@ -17,6 +18,14 @@ export type SelectionState =
       handle: ResizeHandle
       elementId: string
       origin: { x: number; y: number; width: number; height: number; angle: number }
+      start: Point
+    }
+  | {
+      phase: "groupResizing"
+      handle: ResizeHandle
+      ids: readonly string[]
+      origin: { x: number; y: number; width: number; height: number; angle: number }
+      originalElements: readonly ExcalidrawElement[]
       start: Point
     }
   | {

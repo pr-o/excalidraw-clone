@@ -157,8 +157,8 @@ describe("selection — resize: commit + escape", () => {
   })
 })
 
-describe("selection — resize: only single-element resize is supported in v1", () => {
-  it("with multi-selection, handle hit returns null and click on empty space goes to marquee", () => {
+describe("selection — resize: multi-selection click away from any handle falls through to marquee", () => {
+  it("point (100,100) is not on the combined bbox's 8 handle positions, so it still starts a marquee", () => {
     const a = newRectangle({ x: 0, y: 0, width: 100, height: 100 })
     const b = newRectangle({ x: 200, y: 0, width: 100, height: 100 })
     const ctx = makeCtx({
@@ -172,5 +172,83 @@ describe("selection — resize: only single-element resize is supported in v1", 
       ctx,
     )
     expect(r[0].phase).toBe("marquee")
+  })
+})
+
+describe("selection — group resize (2+ selection)", () => {
+  const setup = () => {
+    const a = newRectangle({ x: 0, y: 0, width: 100, height: 100 })
+    const b = newRectangle({ x: 200, y: 0, width: 100, height: 100 })
+    const draft: ExcalidrawElement[] = [a, b]
+    const ctx = makeCtx({
+      readElements: () => draft,
+      hitTest: () => null,
+      selectedIds: [a.id, b.id],
+    })
+    return { a, b, draft, ctx }
+  }
+
+  it("SE handle drag scales both rectangles proportionally from the combined bounds", () => {
+    const { a, b, draft, ctx } = setup()
+    let s = selectionTool.reduce(
+      selectionTool.initial,
+      { type: "pointerDown", at: point(300, 100) },
+      ctx,
+    )
+    expect(s[0].phase).toBe("groupResizing")
+    s = selectionTool.reduce(s[0], { type: "pointerMove", at: point(600, 200) }, ctx)
+    applyMutation(s[1], draft)
+    const outA = draft.find((e) => e.id === a.id)!
+    const outB = draft.find((e) => e.id === b.id)!
+    expect([outA.x, outA.y, outA.width, outA.height]).toEqual([0, 0, 200, 200])
+    expect([outB.x, outB.y, outB.width, outB.height]).toEqual([400, 0, 200, 200])
+  })
+
+  it("shift constrains the drag to the combined bounds' own aspect ratio", () => {
+    const { a, b, draft, ctx } = setup()
+    const shiftCtx = { ...ctx, modifiers: withModifiers({ shift: true }) }
+    let s = selectionTool.reduce(
+      selectionTool.initial,
+      { type: "pointerDown", at: point(300, 100) },
+      shiftCtx,
+    )
+    s = selectionTool.reduce(s[0], { type: "pointerMove", at: point(900, 250) }, shiftCtx)
+    applyMutation(s[1], draft)
+    const outA = draft.find((e) => e.id === a.id)!
+    const outB = draft.find((e) => e.id === b.id)!
+    expect([outA.x, outA.y, outA.width, outA.height]).toEqual([0, 0, 300, 300])
+    expect([outB.x, outB.y, outB.width, outB.height]).toEqual([600, 0, 300, 300])
+  })
+
+  it("pointerUp emits a history-tracked mutation and returns to idle", () => {
+    const { ctx } = setup()
+    let s = selectionTool.reduce(
+      selectionTool.initial,
+      { type: "pointerDown", at: point(300, 100) },
+      ctx,
+    )
+    s = selectionTool.reduce(s[0], { type: "pointerMove", at: point(600, 200) }, ctx)
+    const up = selectionTool.reduce(s[0], { type: "pointerUp", at: point(600, 200) }, ctx)
+    expect(up[0].phase).toBe("idle")
+    const mut = up[1].find((e) => e.kind === "mutation")
+    if (mut?.kind === "mutation") expect(mut.skipHistory).toBeUndefined()
+  })
+
+  it("escape restores both elements to their exact pre-drag geometry", () => {
+    const { a, b, draft, ctx } = setup()
+    let s = selectionTool.reduce(
+      selectionTool.initial,
+      { type: "pointerDown", at: point(300, 100) },
+      ctx,
+    )
+    s = selectionTool.reduce(s[0], { type: "pointerMove", at: point(600, 200) }, ctx)
+    applyMutation(s[1], draft)
+    expect(draft.find((e) => e.id === a.id)?.width).not.toBe(100)
+    s = selectionTool.reduce(s[0], { type: "escape" }, ctx)
+    applyMutation(s[1], draft)
+    const outA = draft.find((e) => e.id === a.id)!
+    const outB = draft.find((e) => e.id === b.id)!
+    expect([outA.x, outA.y, outA.width, outA.height]).toEqual([0, 0, 100, 100])
+    expect([outB.x, outB.y, outB.width, outB.height]).toEqual([200, 0, 100, 100])
   })
 })

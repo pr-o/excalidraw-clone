@@ -1,8 +1,10 @@
 import { snapPointToGrid } from "@excalidraw-clone/geometry"
 import {
+  type ExcalidrawElement,
   bindingTargetAt,
   expandIdsToFrameMembers,
   expandIdsToGroups,
+  getElementsBounds,
   LABELABLE_TYPES,
   newLabelFor,
   newLabelForLinear,
@@ -23,6 +25,11 @@ import {
   snapshotLinear,
 } from "./endpoint"
 import { findHandleAt } from "./handles"
+import {
+  buildGroupResizeCommitEffect,
+  buildGroupResizeMoveEffect,
+  buildGroupResizeRevertEffect,
+} from "./group-resize"
 import { elementsInsideMarquee, marqueeBounds } from "./marquee"
 import {
   buildResizeCommitEffect,
@@ -55,9 +62,35 @@ const reduceIdle = (
     const handle = findHandleAt(event.at, ctx.selectedIds, ctx.readElements(), ctx.viewTransform)
     if (handle) {
       const elements = ctx.readElements()
-      // `groupResize` hits carry no single element id; a later task wires their drag state.
-      const e =
-        "elementId" in handle ? elements.find((el) => el.id === handle.elementId) : undefined
+      if (handle.kind === "groupResize") {
+        const selected = handle.ids
+          .map((id) => elements.find((el) => el.id === id))
+          .filter((el): el is ExcalidrawElement => !!el && !el.isDeleted)
+        const bounds = getElementsBounds(selected)
+        // Defensive: findHandleAt already required 2+ non-deleted members to
+        // produce this hit from this same `elements` snapshot, so `bounds`
+        // is never actually null here — kept for the same reason similar
+        // guards are kept elsewhere in this codebase (cheap insurance).
+        if (!bounds) return [{ phase: "idle" }, []]
+        return [
+          {
+            phase: "groupResizing",
+            handle: handle.handle,
+            ids: handle.ids,
+            origin: {
+              x: bounds.x,
+              y: bounds.y,
+              width: bounds.width,
+              height: bounds.height,
+              angle: 0,
+            },
+            originalElements: selected,
+            start: event.at,
+          },
+          [],
+        ]
+      }
+      const e = elements.find((el) => el.id === handle.elementId)
       if (e && handle.kind === "resize") {
         return [
           {
@@ -331,6 +364,37 @@ const reduceResizing = (
   }
 }
 
+const reduceGroupResizing = (
+  state: Extract<SelectionState, { phase: "groupResizing" }>,
+  event: ToolEvent,
+  ctx: ToolContext,
+): [SelectionState, readonly ToolEffect[]] => {
+  switch (event.type) {
+    case "pointerMove": {
+      return [
+        state,
+        [
+          buildGroupResizeMoveEffect(
+            state.ids,
+            state.originalElements,
+            state.origin,
+            state.handle,
+            state.start,
+            event.at,
+            ctx.modifiers,
+          ),
+        ],
+      ]
+    }
+    case "pointerUp":
+      return [{ phase: "idle" }, [buildGroupResizeCommitEffect(state.ids)]]
+    case "escape":
+      return [{ phase: "idle" }, [buildGroupResizeRevertEffect(state.ids, state.originalElements)]]
+    default:
+      return [state, []]
+  }
+}
+
 const reduceRotating = (
   state: Extract<SelectionState, { phase: "rotating" }>,
   event: ToolEvent,
@@ -407,6 +471,8 @@ export const selectionTool: Tool<SelectionState, ToolEvent> = {
         return reduceMarquee(state, event, ctx)
       case "resizing":
         return reduceResizing(state, event, ctx)
+      case "groupResizing":
+        return reduceGroupResizing(state, event, ctx)
       case "rotating":
         return reduceRotating(state, event, ctx)
       case "endpointDragging":
