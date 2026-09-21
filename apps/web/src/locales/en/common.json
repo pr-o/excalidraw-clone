@@ -172,6 +172,25 @@
     "title": "Layers",
     "toggle": "Toggle layers panel"
   },
+  "history": {
+    "title": "History",
+    "toggle": "Toggle history panel",
+    "initial": "Initial state",
+    "added_one": "Added {{count}} element",
+    "added_other": "Added {{count}} elements",
+    "removed_one": "Deleted {{count}} element",
+    "removed_other": "Deleted {{count}} elements",
+    "moved_one": "Moved {{count}} element",
+    "moved_other": "Moved {{count}} elements",
+    "resized_one": "Resized {{count}} element",
+    "resized_other": "Resized {{count}} elements",
+    "restyled_one": "Changed style of {{count}} element",
+    "restyled_other": "Changed style of {{count}} elements",
+    "reordered_one": "Reordered {{count}} element",
+    "reordered_other": "Reordered {{count}} elements",
+    "modified_one": "Modified {{count}} element",
+    "modified_other": "Modified {{count}} elements"
+  },
   "contextMenu": {
     "copy": "Copy",
     "cut": "Cut",
