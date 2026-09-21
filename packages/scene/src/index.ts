@@ -62,6 +62,8 @@ export { expandIdsToFrameMembers, reconcileFrameMembership } from "./frames"
 export { lockElements, unlockAll, unlockElements } from "./locking"
 export { flipElements, mirrorOf } from "./flip"
 export type { FlipAxis } from "./flip"
+export { resizeElements } from "./resize-group"
+export type { ResizeBounds } from "./resize-group"
 export { bringForward, bringToFront, sendBackward, sendToBack } from "./z-order"
 export {
   LABELABLE_TYPES,

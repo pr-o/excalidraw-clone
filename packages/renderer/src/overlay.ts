@@ -5,7 +5,11 @@ import {
   rotatePoint,
   sceneToViewport,
 } from "@excalidraw-clone/geometry"
-import { type ExcalidrawElement, getElementBounds } from "@excalidraw-clone/scene"
+import {
+  type ExcalidrawElement,
+  getElementBounds,
+  getElementsBounds,
+} from "@excalidraw-clone/scene"
 import type { Theme } from "./types"
 
 const HANDLE_SIZE = 8
@@ -71,6 +75,35 @@ const drawGhostHandle = (ctx: CanvasRenderingContext2D, p: Point, theme: Theme):
   ctx.strokeRect(p.x - HANDLE_SIZE / 2, p.y - HANDLE_SIZE / 2, HANDLE_SIZE, HANDLE_SIZE)
 }
 
+const drawElementOutline = (
+  ctx: CanvasRenderingContext2D,
+  e: ExcalidrawElement,
+  view: ViewTransform,
+  theme: Theme,
+): void => {
+  if (isLinear(e)) {
+    const pts = (e as { points: readonly Point[] }).points
+    const absV = pts.map((p) => sceneToViewport({ x: e.x + p.x, y: e.y + p.y }, view))
+    ctx.strokeStyle = SELECTION_STROKE[theme]
+    ctx.lineWidth = 1
+    ctx.beginPath()
+    ctx.moveTo(absV[0]!.x, absV[0]!.y)
+    for (let i = 1; i < absV.length; i += 1) ctx.lineTo(absV[i]!.x, absV[i]!.y)
+    ctx.stroke()
+    return
+  }
+  const corners = elementCorners(e).map((p) => sceneToViewport(p, view))
+  ctx.strokeStyle = SELECTION_STROKE[theme]
+  ctx.lineWidth = 1
+  ctx.beginPath()
+  ctx.moveTo(corners[0]!.x, corners[0]!.y)
+  for (let i = 1; i < corners.length; i += 1) {
+    ctx.lineTo(corners[i]!.x, corners[i]!.y)
+  }
+  ctx.closePath()
+  ctx.stroke()
+}
+
 const drawElementChrome = (
   ctx: CanvasRenderingContext2D,
   e: ExcalidrawElement,
@@ -87,17 +120,8 @@ const drawElementChrome = (
     for (const p of absV) drawHandle(ctx, p, theme)
     return
   }
+  drawElementOutline(ctx, e, view, theme)
   const corners = elementCorners(e).map((p) => sceneToViewport(p, view))
-  ctx.strokeStyle = SELECTION_STROKE[theme]
-  ctx.lineWidth = 1
-  ctx.beginPath()
-  ctx.moveTo(corners[0]!.x, corners[0]!.y)
-  for (let i = 1; i < corners.length; i += 1) {
-    ctx.lineTo(corners[i]!.x, corners[i]!.y)
-  }
-  ctx.closePath()
-  ctx.stroke()
-
   const c0 = corners[0]!
   const c1 = corners[1]!
   const c2 = corners[2]!
@@ -130,6 +154,40 @@ const drawElementChrome = (
   ctx.arc(rotPoint.x, rotPoint.y, ROTATION_HANDLE_RADIUS, 0, Math.PI * 2)
   ctx.fill()
   ctx.stroke()
+}
+
+const drawGroupResizeChrome = (
+  ctx: CanvasRenderingContext2D,
+  elements: readonly ExcalidrawElement[],
+  view: ViewTransform,
+  theme: Theme,
+): void => {
+  const bounds = getElementsBounds(elements)
+  if (!bounds) return
+  const nw = sceneToViewport({ x: bounds.x, y: bounds.y }, view)
+  const ne = sceneToViewport({ x: bounds.x + bounds.width, y: bounds.y }, view)
+  const se = sceneToViewport({ x: bounds.x + bounds.width, y: bounds.y + bounds.height }, view)
+  const sw = sceneToViewport({ x: bounds.x, y: bounds.y + bounds.height }, view)
+  ctx.strokeStyle = SELECTION_STROKE[theme]
+  ctx.lineWidth = 1
+  ctx.beginPath()
+  ctx.moveTo(nw.x, nw.y)
+  ctx.lineTo(ne.x, ne.y)
+  ctx.lineTo(se.x, se.y)
+  ctx.lineTo(sw.x, sw.y)
+  ctx.closePath()
+  ctx.stroke()
+  const handles: Point[] = [
+    nw,
+    ne,
+    se,
+    sw,
+    midPoint(nw, ne),
+    midPoint(ne, se),
+    midPoint(se, sw),
+    midPoint(sw, nw),
+  ]
+  for (const h of handles) drawHandle(ctx, h, theme)
 }
 
 export interface DrawSelectionChromeOptions {
@@ -166,11 +224,17 @@ export const drawSelectionChrome = (
   }
   if (selection.length > 0) {
     const byId = new Map(elements.map((e) => [e.id, e]))
-    for (const id of selection) {
-      const e = byId.get(id)
-      if (!e) continue
-      void getElementBounds(e)
-      drawElementChrome(ctx, e, view, theme)
+    const selectedElements = selection
+      .map((id) => byId.get(id))
+      .filter((e): e is ExcalidrawElement => !!e)
+    if (selectedElements.length >= 2) {
+      for (const e of selectedElements) drawElementOutline(ctx, e, view, theme)
+      drawGroupResizeChrome(ctx, selectedElements, view, theme)
+    } else {
+      for (const e of selectedElements) {
+        void getElementBounds(e)
+        drawElementChrome(ctx, e, view, theme)
+      }
     }
   }
   if (marquee) {

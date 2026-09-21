@@ -11,7 +11,7 @@ export interface ResizeOrigin {
   angle: number
 }
 
-const computeResize = (
+export const computeResize = (
   origin: ResizeOrigin,
   handle: ResizeHandle,
   start: Point,
