@@ -87,6 +87,20 @@ export class Scene {
     return this.historyIndex < this.history.length - 1
   }
 
+  getHistory(): readonly (readonly ExcalidrawElement[])[] {
+    return this.history
+  }
+
+  getHistoryIndex(): number {
+    return this.historyIndex
+  }
+
+  jumpToHistory(index: number): void {
+    if (index < 0 || index >= this.history.length) return
+    this.historyIndex = index
+    this.setElements(this.history[index]!)
+  }
+
   protected resetHistory(snapshot: readonly ExcalidrawElement[]): void {
     this.history = [snapshot]
     this.historyIndex = 0

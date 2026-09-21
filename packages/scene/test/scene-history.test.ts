@@ -100,3 +100,83 @@ describe("Scene history — cap", () => {
     expect(s.getElements().length).toBe(11)
   })
 })
+
+describe("Scene history — getHistory / getHistoryIndex / jumpToHistory", () => {
+  it("getHistory returns every snapshot; getHistoryIndex tracks the current position", () => {
+    const s = new Scene()
+    s.mutate((d) => {
+      d.push(newRectangle({ x: 0, y: 0 }))
+    })
+    s.mutate((d) => {
+      d.push(newRectangle({ x: 1, y: 1 }))
+    })
+    expect(s.getHistory().length).toBe(3) // initial (empty) + 2 mutations
+    expect(s.getHistoryIndex()).toBe(2)
+  })
+
+  it("jumpToHistory jumps directly to an arbitrary earlier index", () => {
+    const s = new Scene()
+    s.mutate((d) => {
+      d.push(newRectangle({ x: 0, y: 0 }))
+    })
+    s.mutate((d) => {
+      d.push(newRectangle({ x: 1, y: 1 }))
+    })
+    s.mutate((d) => {
+      d.push(newRectangle({ x: 2, y: 2 }))
+    })
+    s.jumpToHistory(0)
+    expect(s.getElements().length).toBe(0)
+    expect(s.getHistoryIndex()).toBe(0)
+  })
+
+  it("jumpToHistory forward re-applies a later state", () => {
+    const s = new Scene()
+    s.mutate((d) => {
+      d.push(newRectangle({ x: 0, y: 0 }))
+    })
+    s.mutate((d) => {
+      d.push(newRectangle({ x: 1, y: 1 }))
+    })
+    s.jumpToHistory(0)
+    s.jumpToHistory(2)
+    expect(s.getElements().length).toBe(2)
+    expect(s.getHistoryIndex()).toBe(2)
+  })
+
+  it("jumpToHistory is a no-op for a negative index", () => {
+    const s = new Scene()
+    s.mutate((d) => {
+      d.push(newRectangle({ x: 0, y: 0 }))
+    })
+    s.jumpToHistory(-1)
+    expect(s.getHistoryIndex()).toBe(1)
+    expect(s.getElements().length).toBe(1)
+  })
+
+  it("jumpToHistory is a no-op for an index at or beyond history.length", () => {
+    const s = new Scene()
+    s.mutate((d) => {
+      d.push(newRectangle({ x: 0, y: 0 }))
+    })
+    s.jumpToHistory(5)
+    expect(s.getHistoryIndex()).toBe(1)
+    expect(s.getElements().length).toBe(1)
+  })
+
+  it("a mutate() after jumping back truncates the future, same as after undo()", () => {
+    const s = new Scene()
+    s.mutate((d) => {
+      d.push(newRectangle({ x: 0, y: 0 }))
+    })
+    s.mutate((d) => {
+      d.push(newRectangle({ x: 1, y: 1 }))
+    })
+    s.jumpToHistory(0)
+    s.mutate((d) => {
+      d.push(newRectangle({ x: 2, y: 2 }))
+    })
+    expect(s.canRedo()).toBe(false)
+    expect(s.getHistory().length).toBe(2) // initial + the new branch's one mutation
+  })
+})
