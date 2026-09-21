@@ -163,6 +163,18 @@
     "title": "레이어",
     "toggle": "레이어 패널 열고 닫기"
   },
+  "history": {
+    "title": "히스토리",
+    "toggle": "히스토리 패널 열고 닫기",
+    "initial": "초기 상태",
+    "added_other": "요소 {{count}}개 추가됨",
+    "removed_other": "요소 {{count}}개 삭제됨",
+    "moved_other": "요소 {{count}}개 이동됨",
+    "resized_other": "요소 {{count}}개 크기 변경됨",
+    "restyled_other": "요소 {{count}}개 스타일 변경됨",
+    "reordered_other": "요소 {{count}}개 순서 변경됨",
+    "modified_other": "요소 {{count}}개 수정됨"
+  },
   "contextMenu": {
     "copy": "복사",
     "cut": "잘라내기",

@@ -25,6 +25,7 @@ import {
 } from "@excalidraw-clone/scene"
 import {
   HamburgerMenu,
+  HistoryPanel,
   LayersPanel,
   LibraryPanel,
   PagesTabBar,
@@ -235,6 +236,7 @@ function Inner(): React.ReactElement {
   const [layersOpen, setLayersOpen] = useState(false)
   const [moreShapesOpen, setMoreShapesOpen] = useState(false)
   const [statsOpen, setStatsOpen] = useState(false)
+  const [historyOpen, setHistoryOpen] = useState(false)
   const [renderer, setRenderer] = useState<CanvasRenderer | null>(null)
   const onRendererReady = useCallback((r: CanvasRenderer): void => setRenderer(r), [])
   const onRendererTeardown = useCallback((): void => setRenderer(null), [])
@@ -283,6 +285,7 @@ function Inner(): React.ReactElement {
     [scene, sceneRevision],
   )
   const layerElements = useMemo(() => scene.getElements(), [scene, sceneRevision])
+  const historyEntries = useMemo(() => scene.getHistory(), [scene, sceneRevision])
   const stats = useMemo(
     () => computeStats(selectedElements, layerElements),
     [selectedElements, layerElements],
@@ -685,6 +688,17 @@ function Inner(): React.ReactElement {
                 if (i >= 0) draft[i] = { ...draft[i]!, ...patch }
               })
             }}
+          />
+
+          <HistoryPanel
+            // i18next's TFunction overloads aren't directly assignable to the
+            // panel's `(key, options?)` shape under exactOptionalPropertyTypes.
+            t={(key, options) => (options ? t(key, options) : t(key))}
+            history={historyEntries}
+            currentIndex={scene.getHistoryIndex()}
+            open={historyOpen}
+            onToggle={() => setHistoryOpen((v) => !v)}
+            onJump={(index) => scene.jumpToHistory(index)}
           />
 
           {hasLockedElements && (
