@@ -51,7 +51,7 @@ describe("CanvasRenderer selection overlay", () => {
     expect(arcCalls).toBe(1)
   })
 
-  it("two selected rectangles → 16 handle fillRects + 2 rotation arcs", () => {
+  it("two selected rectangles → per-element outlines + one combined box with 8 handles", () => {
     const { canvas: main } = createMockCanvas()
     const { canvas: overlay, ctx: overlayCtx } = createMockCanvas()
     const a = newRectangle({ x: 0, y: 0, width: 50, height: 50 })
@@ -64,9 +64,16 @@ describe("CanvasRenderer selection overlay", () => {
     r.start()
     flush()
     const fillRectCalls = overlayCtx.__calls.filter((c) => c.method === "fillRect").length
+    const strokeRectCalls = overlayCtx.__calls.filter((c) => c.method === "strokeRect").length
+    const strokeCalls = overlayCtx.__calls.filter((c) => c.method === "stroke").length
     const arcCalls = overlayCtx.__calls.filter((c) => c.method === "arc").length
-    expect(fillRectCalls).toBe(16)
-    expect(arcCalls).toBe(2)
+    // Only the combined bounding box carries handles now.
+    expect(fillRectCalls).toBe(8)
+    expect(strokeRectCalls).toBe(8)
+    // 2 per-element outlines + 1 combined box.
+    expect(strokeCalls).toBe(3)
+    // No rotation handle for the group box.
+    expect(arcCalls).toBe(0)
   })
 
   it("single selected arrow → 2 endpoint dots, no rotation arc, no bbox stroke", () => {
@@ -87,6 +94,8 @@ describe("CanvasRenderer selection overlay", () => {
     flush()
     expect(overlayCtx.__calls.filter((c) => c.method === "fillRect").length).toBe(2)
     expect(overlayCtx.__calls.filter((c) => c.method === "arc").length).toBe(0)
+    // No per-element outline stroke for a single selected linear element (handles only).
+    expect(overlayCtx.__calls.filter((c) => c.method === "stroke").length).toBe(0)
   })
 
   it("single selected 3-point arrow → 3 solid dots + 2 ghost dots, no arc", () => {
@@ -111,6 +120,8 @@ describe("CanvasRenderer selection overlay", () => {
     // 3 solid handle strokes + 2 segment-midpoint ghost strokes
     expect(overlayCtx.__calls.filter((c) => c.method === "strokeRect").length).toBe(5)
     expect(overlayCtx.__calls.filter((c) => c.method === "arc").length).toBe(0)
+    // No per-element outline stroke for a single selected linear element (handles only).
+    expect(overlayCtx.__calls.filter((c) => c.method === "stroke").length).toBe(0)
   })
 
   it("marquee uses dashed stroke", () => {
