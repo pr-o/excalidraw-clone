@@ -1,3 +1,4 @@
+import { useMemo } from "react"
 import { describeHistoryChange, type ExcalidrawElement } from "@excalidraw-clone/scene"
 
 export interface HistoryPanelProps {
@@ -17,6 +18,31 @@ export function HistoryPanel({
   onToggle,
   onJump,
 }: HistoryPanelProps): React.ReactElement {
+  // Hooks must run unconditionally, so this sits above the closed-state early
+  // return. Scene.pushHistory always reassigns `this.history` to a new array
+  // (never mutates in place), so reference-keyed memoization is correct — and
+  // it keeps per-frame `skipHistory` drag notifications from re-deriving every
+  // label on every pointer-move.
+  const entries = useMemo(
+    () =>
+      open
+        ? history.map((snapshot, i) => {
+            const description = describeHistoryChange(
+              i === 0 ? undefined : history[i - 1],
+              snapshot,
+            )
+            const label =
+              description.category === "initial"
+                ? t("history.initial")
+                : t(`history.${description.category}`, { count: description.count })
+            return { index: i, label }
+          })
+        : [],
+    // `t` is intentionally omitted: it is a stable i18next binding here, and
+    // including it would defeat the memo on every render.
+    [open, history],
+  )
+
   if (!open) {
     return (
       <button
@@ -31,15 +57,6 @@ export function HistoryPanel({
       </button>
     )
   }
-
-  const entries = history.map((snapshot, i) => {
-    const description = describeHistoryChange(i === 0 ? undefined : history[i - 1], snapshot)
-    const label =
-      description.category === "initial"
-        ? t("history.initial")
-        : t(`history.${description.category}`, { count: description.count })
-    return { index: i, label }
-  })
 
   return (
     <aside

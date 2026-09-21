@@ -55,7 +55,29 @@ export class Scene {
     reconcileBindings(draft)
     reconcileFrameMembership(draft)
     this.setElements(draft)
-    if (!opts?.skipHistory) this.pushHistory(draft)
+    // A value-identical commit (e.g. a plain click-to-select, which replaces an
+    // element with an unchanged clone) must not pollute the undo stack — under
+    // MAX_HISTORY such no-ops can otherwise evict every real entry.
+    //
+    // The baseline is the last snapshot actually recorded on the undo stack,
+    // NOT `this.elements`: in-flight `skipHistory: true` drafting (every
+    // pointer-move frame of a draw or drag) advances `this.elements` ahead of
+    // the undo stack, so comparing against live state would silently drop a
+    // gesture's final commit whenever it matched its own last draft frame.
+    if (!opts?.skipHistory) {
+      const recorded = this.history[this.historyIndex]
+      if (!recorded || !Scene.isSameSnapshot(recorded, draft)) this.pushHistory(draft)
+    }
+  }
+
+  /** Deep value-equality for two element snapshots (plain JSON-safe objects). */
+  private static isSameSnapshot(
+    a: readonly ExcalidrawElement[],
+    b: readonly ExcalidrawElement[],
+  ): boolean {
+    if (a === b) return true
+    if (a.length !== b.length) return false
+    return JSON.stringify(a) === JSON.stringify(b)
   }
 
   protected pushHistory(snapshot: readonly ExcalidrawElement[]): void {

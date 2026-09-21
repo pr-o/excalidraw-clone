@@ -473,7 +473,9 @@ function Inner(): React.ReactElement {
             />
           </div>
 
-          <div className="absolute right-3 top-3 z-30">
+          {/* Right offset clears the HistoryPanel: its closed toggle occupies
+              right:12px–48px, and its open panel occupies right:0–256px. */}
+          <div className={`absolute ${historyOpen ? "right-[280px]" : "right-14"} top-3 z-30`}>
             <PropertiesPanel
               t={t}
               selectedElements={selectedElements}
