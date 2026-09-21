@@ -103,6 +103,91 @@ describe("Scene.mutate — binding reconciliation", () => {
   })
 })
 
+describe("Scene.mutate — no-op dedup", () => {
+  it("does not push history for a value-identical element replacement", () => {
+    const r = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
+    const s = new Scene([r])
+    const historyBefore = s.getHistory().length
+    const indexBefore = s.getHistoryIndex()
+
+    // A plain click-to-select commits a value-identical clone of the element.
+    s.mutate((d) => {
+      d[0] = { ...d[0]! }
+    })
+
+    expect(s.getHistory().length).toBe(historyBefore)
+    expect(s.getHistoryIndex()).toBe(indexBefore)
+    expect(s.canRedo()).toBe(false)
+  })
+
+  it("does not push history when the draft is untouched", () => {
+    const r = newRectangle({ x: 0, y: 0 })
+    const s = new Scene([r])
+    const before = s.getHistory().length
+    s.mutate(() => {})
+    expect(s.getHistory().length).toBe(before)
+  })
+
+  it("repeated no-op mutations never evict real history entries", () => {
+    const s = new Scene()
+    s.mutate((d) => {
+      d.push(newRectangle({ x: 0, y: 0 }))
+    })
+    const after = s.getHistory().length
+    for (let i = 0; i < 150; i += 1) {
+      s.mutate((d) => {
+        d[0] = { ...d[0]! }
+      })
+    }
+    expect(s.getHistory().length).toBe(after)
+    expect(s.canUndo()).toBe(true)
+    s.undo()
+    expect(s.getElements().length).toBe(0)
+  })
+
+  it("still pushes history when a value actually changes", () => {
+    const r = newRectangle({ x: 0, y: 0 })
+    const s = new Scene([r])
+    const before = s.getHistory().length
+    s.mutate((d) => {
+      d[0] = { ...d[0]!, x: 5 }
+    })
+    expect(s.getHistory().length).toBe(before + 1)
+    expect(s.canUndo()).toBe(true)
+  })
+
+  it("pushes history for a draw gesture whose final commit matches its last draft frame", () => {
+    const s = new Scene()
+    // Drawing a rectangle: every pointer-move frame commits with skipHistory,
+    // so `this.elements` runs ahead of the undo stack while the gesture is live.
+    s.mutate(
+      (d) => {
+        d.push(newRectangle({ x: 0, y: 0, width: 1, height: 1 }))
+      },
+      { skipHistory: true },
+    )
+    s.mutate(
+      (d) => {
+        d[0] = { ...d[0]!, width: 50, height: 50 }
+      },
+      { skipHistory: true },
+    )
+    expect(s.getHistory().length).toBe(1) // nothing recorded yet
+
+    // pointerUp finalizes with the exact geometry of the last draft frame: a
+    // no-op against live state, but the first real change against the undo
+    // stack, so it must be recorded.
+    s.mutate((d) => {
+      d[0] = { ...d[0]! }
+    })
+
+    expect(s.getHistory().length).toBe(2)
+    expect(s.canUndo()).toBe(true)
+    s.undo()
+    expect(s.getElements().length).toBe(0)
+  })
+})
+
 describe("Scene.mutate — skipHistory option", () => {
   it("accepts opts without throwing", () => {
     const s = new Scene()

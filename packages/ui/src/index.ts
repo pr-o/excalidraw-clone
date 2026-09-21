@@ -36,6 +36,9 @@ export type { LibraryPanelProps } from "./LibraryPanel"
 export { LayersPanel } from "./LayersPanel"
 export type { LayersPanelProps } from "./LayersPanel"
 
+export { HistoryPanel } from "./HistoryPanel"
+export type { HistoryPanelProps } from "./HistoryPanel"
+
 export { MoreShapesMenu } from "./MoreShapesMenu"
 export type { MoreShapesMenuProps } from "./MoreShapesMenu"
 
