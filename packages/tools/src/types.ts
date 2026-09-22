@@ -1,4 +1,4 @@
-import type { GridSnap, Point, ViewTransform } from "@excalidraw-clone/geometry"
+import type { AlignmentGuide, GridSnap, Point, ViewTransform } from "@excalidraw-clone/geometry"
 import type { ExcalidrawElement } from "@excalidraw-clone/scene"
 
 export type ToolName =
@@ -66,6 +66,7 @@ export type ToolEffect =
   | { kind: "startTextEdit"; elementId: string }
   | { kind: "switchTool"; tool: ToolName }
   | { kind: "laserMove"; at: Point }
+  | { kind: "setGuides"; guides: readonly AlignmentGuide[] }
 
 export interface Tool<S, E = ToolEvent> {
   readonly name: ToolName

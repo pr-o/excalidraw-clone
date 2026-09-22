@@ -263,6 +263,157 @@ describe("selection — drag with grid snap", () => {
   })
 })
 
+// These fixtures use 10x10 movers, smaller than the resize-handle hit box (6px
+// half-extent around each handle point), so *every* point inside them is within
+// reach of a corner handle and would start a resize instead of a drag. `hitTest`
+// is stubbed and only the pointer *delta* feeds the drag math, so the pointer is
+// parked at DRAG_POINTER_Y — clear of every handle, deltas unchanged.
+const DRAG_POINTER_Y = 40
+
+describe("selection — drag alignment guides", () => {
+  it("emits a setGuides effect and folds the correction into dx when near a candidate edge", () => {
+    const r = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
+    const c = { ...newRectangle({ x: 28, y: 500, width: 10, height: 10 }), id: "c" }
+    const draft: ExcalidrawElement[] = [r, c]
+    const ctx = makeCtx({ hitTest: () => r, readElements: () => draft, selectedIds: [r.id] })
+    const down = selectionTool.reduce(
+      selectionTool.initial,
+      { type: "pointerDown", at: point(5, DRAG_POINTER_Y) },
+      ctx,
+    )
+    const move = selectionTool.reduce(
+      down[0],
+      { type: "pointerMove", at: point(25, DRAG_POINTER_Y) },
+      ctx,
+    )
+    applyMutation(move[1], draft)
+    // raw dx = 20 (far edge 30), alignment correction -2 (candidate near edge 28)
+    expect(draft[0]!.x).toBe(18)
+    expect(draft[0]!.y).toBe(0)
+    const guidesEff = move[1].find((e) => e.kind === "setGuides")
+    expect(guidesEff).toBeDefined()
+    if (guidesEff?.kind === "setGuides") {
+      // Perpendicular (y) extent is the min/max of BOTH the mover's (0..10)
+      // and the candidate's (500..510) y ranges, per computeAlignmentSnap's
+      // bestAxisMatch — they don't overlap, so the combined range is 0..510.
+      expect(guidesEff.guides).toEqual([{ axis: "x", position: 28, start: 0, end: 510 }])
+    }
+  })
+
+  it("grid enabled suppresses alignment guides entirely even near a candidate edge", () => {
+    const r = newRectangle({ x: 20, y: 20, width: 10, height: 10 })
+    const c = { ...newRectangle({ x: 48, y: 500, width: 10, height: 10 }), id: "c" }
+    const draft: ExcalidrawElement[] = [r, c]
+    const ctx = makeCtx({
+      hitTest: () => r,
+      readElements: () => draft,
+      selectedIds: [r.id],
+      grid: { enabled: true, size: 20 },
+    })
+    const down = selectionTool.reduce(
+      selectionTool.initial,
+      { type: "pointerDown", at: point(25, DRAG_POINTER_Y) },
+      ctx,
+    )
+    const move = selectionTool.reduce(
+      down[0],
+      { type: "pointerMove", at: point(45, DRAG_POINTER_Y) },
+      ctx,
+    )
+    applyMutation(move[1], draft)
+    // Pure grid-path delta (anchor already on-grid, +20 from the pointer) — no alignment.
+    expect(draft[0]!.x).toBe(40)
+    const guidesEff = move[1].find((e) => e.kind === "setGuides")
+    expect(guidesEff?.kind === "setGuides" && guidesEff.guides).toEqual([])
+  })
+
+  it("ctrl bypasses alignment guides even when a candidate edge is within threshold", () => {
+    const r = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
+    const c = { ...newRectangle({ x: 28, y: 500, width: 10, height: 10 }), id: "c" }
+    const draft: ExcalidrawElement[] = [r, c]
+    const ctx = makeCtx({
+      hitTest: () => r,
+      readElements: () => draft,
+      selectedIds: [r.id],
+      modifiers: withModifiers({ ctrl: true }),
+    })
+    const down = selectionTool.reduce(
+      selectionTool.initial,
+      { type: "pointerDown", at: point(5, DRAG_POINTER_Y) },
+      ctx,
+    )
+    const move = selectionTool.reduce(
+      down[0],
+      { type: "pointerMove", at: point(25, DRAG_POINTER_Y) },
+      ctx,
+    )
+    applyMutation(move[1], draft)
+    // Pure delta (+20), no alignment correction.
+    expect(draft[0]!.x).toBe(20)
+    const guidesEff = move[1].find((e) => e.kind === "setGuides")
+    expect(guidesEff?.kind === "setGuides" && guidesEff.guides).toEqual([])
+  })
+
+  it("multi-selection uses the combined bounding box, not a single member's bounds", () => {
+    const a = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
+    const b = { ...newRectangle({ x: 40, y: 0, width: 10, height: 10 }), id: "b" }
+    // Candidate's center (25) matches the combined bbox's center (25) exactly;
+    // neither a's own center (5) nor b's own center (45) is within the 8px threshold of it.
+    const c = { ...newRectangle({ x: 21, y: 500, width: 8, height: 10 }), id: "c" }
+    const draft: ExcalidrawElement[] = [a, b, c]
+    const ctx = makeCtx({
+      hitTest: () => a,
+      readElements: () => draft,
+      selectedIds: [a.id, b.id],
+    })
+    const down = selectionTool.reduce(
+      selectionTool.initial,
+      { type: "pointerDown", at: point(5, DRAG_POINTER_Y) },
+      ctx,
+    )
+    expect(down[0].phase).toBe("dragging")
+    if (down[0].phase === "dragging") expect(down[0].movedIds).toEqual([a.id, b.id])
+    // Zero-delta move: pointer hasn't moved, so movingBounds equals the combined bbox exactly.
+    const move = selectionTool.reduce(
+      down[0],
+      { type: "pointerMove", at: point(5, DRAG_POINTER_Y) },
+      ctx,
+    )
+    const guidesEff = move[1].find((e) => e.kind === "setGuides")
+    expect(guidesEff?.kind === "setGuides" && guidesEff.guides).toEqual([
+      { axis: "x", position: 25, start: 0, end: 510 },
+    ])
+  })
+
+  it("pointerUp and escape both clear guides", () => {
+    const r = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
+    const c = { ...newRectangle({ x: 28, y: 500, width: 10, height: 10 }), id: "c" }
+    const draft: ExcalidrawElement[] = [r, c]
+    const ctx = makeCtx({ hitTest: () => r, readElements: () => draft, selectedIds: [r.id] })
+    const down = selectionTool.reduce(
+      selectionTool.initial,
+      { type: "pointerDown", at: point(5, DRAG_POINTER_Y) },
+      ctx,
+    )
+    const move = selectionTool.reduce(
+      down[0],
+      { type: "pointerMove", at: point(25, DRAG_POINTER_Y) },
+      ctx,
+    )
+    const up = selectionTool.reduce(
+      move[0],
+      { type: "pointerUp", at: point(25, DRAG_POINTER_Y) },
+      ctx,
+    )
+    const upGuides = up[1].find((e) => e.kind === "setGuides")
+    expect(upGuides?.kind === "setGuides" && upGuides.guides).toEqual([])
+
+    const escape = selectionTool.reduce(move[0], { type: "escape" }, ctx)
+    const escGuides = escape[1].find((e) => e.kind === "setGuides")
+    expect(escGuides?.kind === "setGuides" && escGuides.guides).toEqual([])
+  })
+})
+
 const makeBoundPair = (): ExcalidrawElement[] => {
   const target = {
     ...newRectangle({ x: 400, y: 0, width: 100, height: 100 }),

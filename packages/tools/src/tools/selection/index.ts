@@ -10,6 +10,7 @@ import {
   newLabelForLinear,
 } from "@excalidraw-clone/scene"
 import type { Tool, ToolContext, ToolEffect, ToolEvent } from "../../types"
+import { computeDragAlignment } from "./alignment"
 import {
   buildBendCommitEffect,
   buildBendInsertEffect,
@@ -286,22 +287,38 @@ const reduceDragging = (
           const dy = snapped.y - anchor.y + (event.at.y - state.last.y)
           return [
             { ...state, last: event.at, firstMove: false },
-            [buildDragMoveEffect(state.movedIds, dx, dy)],
+            [buildDragMoveEffect(state.movedIds, dx, dy), { kind: "setGuides", guides: [] }],
           ]
         }
       }
-      const dx = event.at.x - state.last.x
-      const dy = event.at.y - state.last.y
+      const rawDx = event.at.x - state.last.x
+      const rawDy = event.at.y - state.last.y
+      if (ctx.grid.enabled) {
+        return [
+          { ...state, last: event.at, firstMove: false },
+          [buildDragMoveEffect(state.movedIds, rawDx, rawDy), { kind: "setGuides", guides: [] }],
+        ]
+      }
+      const { dx, dy, guides } = computeDragAlignment(state.movedIds, rawDx, rawDy, ctx)
       return [
         { ...state, last: event.at, firstMove: false },
-        [buildDragMoveEffect(state.movedIds, dx, dy)],
+        [buildDragMoveEffect(state.movedIds, dx, dy), { kind: "setGuides", guides }],
       ]
     }
     case "pointerUp": {
-      return [{ phase: "idle" }, [buildDragCommitEffect(state.movedIds)]]
+      return [
+        { phase: "idle" },
+        [buildDragCommitEffect(state.movedIds), { kind: "setGuides", guides: [] }],
+      ]
     }
     case "escape": {
-      return [{ phase: "idle" }, [buildDragRevertEffect(state.movedIds, state.start, state.last)]]
+      return [
+        { phase: "idle" },
+        [
+          buildDragRevertEffect(state.movedIds, state.start, state.last),
+          { kind: "setGuides", guides: [] },
+        ],
+      ]
     }
     default:
       return [state, []]
