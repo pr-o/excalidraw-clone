@@ -34,6 +34,8 @@ export {
 } from "./transform"
 export { snapPointToGrid } from "./snap"
 export type { GridSnap, SnapModifiers } from "./snap"
+export { computeAlignmentSnap } from "./alignment-guides"
+export type { AlignmentGuide, AlignmentSnapResult } from "./alignment-guides"
 export { edgePointToward } from "./binding-edge"
 export type { EdgeKind } from "./binding-edge"
 export {
