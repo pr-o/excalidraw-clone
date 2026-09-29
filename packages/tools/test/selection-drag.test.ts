@@ -261,6 +261,32 @@ describe("selection — drag with grid snap", () => {
     expect(draft[0]!.x).toBe(23)
     expect(draft[0]!.y).toBe(27)
   })
+
+  it("escape after a grid-snapped first move restores the exact original position", () => {
+    const r = newRectangle({ x: 13, y: 27, width: 50, height: 50 })
+    const ctx = makeCtx({
+      hitTest: () => r,
+      readElements: () => [r],
+      grid: GRID,
+    })
+    const down = selectionTool.reduce(
+      selectionTool.initial,
+      { type: "pointerDown", at: point(20, 40) },
+      ctx,
+    )
+    const draft: ExcalidrawElement[] = [{ ...r }]
+    // Same fixture as the first test in this block: anchor (13,27) snaps to
+    // (20,20), baking in a (+7,-7) offset never captured by raw pointer travel.
+    const move = selectionTool.reduce(down[0], { type: "pointerMove", at: point(40, 40) }, ctx)
+    applyMutation(move[1], draft)
+    expect(draft[0]!.x).toBe(40)
+    expect(draft[0]!.y).toBe(20)
+
+    const esc = selectionTool.reduce(move[0], { type: "escape" }, ctx)
+    applyMutation(esc[1], draft)
+    expect(draft[0]!.x).toBe(13)
+    expect(draft[0]!.y).toBe(27)
+  })
 })
 
 // These fixtures use 10x10 movers, smaller than the resize-handle hit box (6px

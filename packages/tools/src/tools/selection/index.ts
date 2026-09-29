@@ -186,6 +186,8 @@ const reduceIdle = (
         firstMove: true,
         alignDx: 0,
         alignDy: 0,
+        gridSnapDx: 0,
+        gridSnapDy: 0,
       },
       selectionEffects,
     ]
@@ -291,10 +293,20 @@ const reduceDragging = (
             ctrl: ctx.modifiers.ctrl,
             meta: ctx.modifiers.meta,
           })
-          const dx = snapped.x - anchor.x + (event.at.x - state.last.x)
-          const dy = snapped.y - anchor.y + (event.at.y - state.last.y)
+          const gridSnapDx = snapped.x - anchor.x
+          const gridSnapDy = snapped.y - anchor.y
+          const dx = gridSnapDx + (event.at.x - state.last.x)
+          const dy = gridSnapDy + (event.at.y - state.last.y)
           return [
-            { ...state, last: event.at, firstMove: false, alignDx: 0, alignDy: 0 },
+            {
+              ...state,
+              last: event.at,
+              firstMove: false,
+              alignDx: 0,
+              alignDy: 0,
+              gridSnapDx,
+              gridSnapDy,
+            },
             [buildDragMoveEffect(state.movedIds, dx, dy), { kind: "setGuides", guides: [] }],
           ]
         }
@@ -338,8 +350,8 @@ const reduceDragging = (
         [
           buildDragRevertEffect(
             state.movedIds,
-            state.last.x - state.start.x + state.alignDx,
-            state.last.y - state.start.y + state.alignDy,
+            state.last.x - state.start.x + state.alignDx + state.gridSnapDx,
+            state.last.y - state.start.y + state.alignDy + state.gridSnapDy,
           ),
           { kind: "setGuides", guides: [] },
         ],
