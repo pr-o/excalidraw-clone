@@ -191,6 +191,9 @@ export function attachShortcuts({
     }
     if (key === "escape") {
       const store = useAppStore.getState()
+      // Let the active tool cancel/revert its own in-progress gesture (drag,
+      // resize, in-progress shape draw, etc.) before the blanket state below.
+      store.dispatchToolEvent?.({ type: "escape" })
       if (store.activeTool === "laser") store.setActiveTool("selection")
       store.setSelection([])
       return
