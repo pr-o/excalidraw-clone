@@ -1,11 +1,11 @@
-import type { Bounds, ViewTransform } from "@excalidraw-clone/geometry"
+import type { AlignmentGuide, Bounds, ViewTransform } from "@excalidraw-clone/geometry"
 import { LABELABLE_TYPES, LINEAR_LABELABLE_TYPES } from "@excalidraw-clone/scene"
 import type { ExcalidrawElement, Scene } from "@excalidraw-clone/scene"
 import { RoughCanvas } from "roughjs/bin/canvas"
 import { isElementVisible } from "./culling"
 import { drawElement } from "./draw-element"
 import { drawGrid } from "./grid"
-import { type MarqueeBox, drawSelectionChrome } from "./overlay"
+import { type MarqueeBox, drawAlignmentGuides, drawSelectionChrome } from "./overlay"
 import { ShapeCache } from "./shape-cache"
 import { resolveColor } from "./theme-colors"
 import type { CanvasRendererOptions, GridOptions, Theme } from "./types"
@@ -31,6 +31,7 @@ export class CanvasRenderer {
   private readonly overlayCtx: CanvasRenderingContext2D | null
   private marquee: MarqueeBox | null = null
   private highlight: readonly string[] = []
+  private guides: readonly AlignmentGuide[] = []
 
   private dirty = false
   private rafId: number | null = null
@@ -49,6 +50,7 @@ export class CanvasRenderer {
     this.canvasBg = options.canvasBg ?? "#ffffff"
     this.selection = options.selection ?? []
     this.grid = options.grid ?? { enabled: false, size: 20 }
+    this.guides = options.guides ?? []
     this.overlayCanvas = options.overlayCanvas ?? null
     this.overlayCtx = this.overlayCanvas ? this.overlayCanvas.getContext("2d") : null
   }
@@ -107,6 +109,11 @@ export class CanvasRenderer {
 
   setGrid(opts: GridOptions): void {
     this.grid = opts
+    this.requestRedraw()
+  }
+
+  setGuides(guides: readonly AlignmentGuide[]): void {
+    this.guides = guides
     this.requestRedraw()
   }
 
@@ -201,9 +208,17 @@ export class CanvasRenderer {
         this.highlight,
         { clearBackground: true },
       )
+      drawAlignmentGuides(this.overlayCtx, this.guides, this.viewTransform, this.theme)
       return
     }
-    if (this.selection.length === 0 && !this.marquee && this.highlight.length === 0) return
+    if (
+      this.selection.length === 0 &&
+      !this.marquee &&
+      this.highlight.length === 0 &&
+      this.guides.length === 0
+    ) {
+      return
+    }
     drawSelectionChrome(
       this.ctx,
       this.canvas,
@@ -215,5 +230,6 @@ export class CanvasRenderer {
       this.highlight,
       { clearBackground: false },
     )
+    drawAlignmentGuides(this.ctx, this.guides, this.viewTransform, this.theme)
   }
 }

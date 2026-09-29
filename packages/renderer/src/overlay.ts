@@ -1,4 +1,5 @@
 import {
+  type AlignmentGuide,
   type Bounds,
   type Point,
   type ViewTransform,
@@ -29,6 +30,11 @@ const SELECTION_FILL: Record<Theme, string> = {
 const BINDING_HIGHLIGHT: Record<Theme, string> = {
   light: "#6965db",
   dark: "#a8a5ff",
+}
+
+const ALIGNMENT_GUIDE_STROKE: Record<Theme, string> = {
+  light: "#6965db",
+  dark: "#a5a5ff",
 }
 
 export interface MarqueeBox {
@@ -250,4 +256,30 @@ export const drawSelectionChrome = (
     ctx.strokeRect(x, y, w, h)
     ctx.setLineDash([])
   }
+}
+
+export const drawAlignmentGuides = (
+  ctx: CanvasRenderingContext2D,
+  guides: readonly AlignmentGuide[],
+  view: ViewTransform,
+  theme: Theme,
+): void => {
+  if (guides.length === 0) return
+  ctx.save()
+  ctx.strokeStyle = ALIGNMENT_GUIDE_STROKE[theme]
+  ctx.lineWidth = 1
+  ctx.setLineDash([4, 4])
+  for (const g of guides) {
+    const from: Point =
+      g.axis === "x" ? { x: g.position, y: g.start } : { x: g.start, y: g.position }
+    const to: Point = g.axis === "x" ? { x: g.position, y: g.end } : { x: g.end, y: g.position }
+    const a = sceneToViewport(from, view)
+    const b = sceneToViewport(to, view)
+    ctx.beginPath()
+    ctx.moveTo(a.x, a.y)
+    ctx.lineTo(b.x, b.y)
+    ctx.stroke()
+  }
+  ctx.setLineDash([])
+  ctx.restore()
 }

@@ -1,4 +1,4 @@
-import type { ViewTransform } from "@excalidraw-clone/geometry"
+import type { AlignmentGuide, ViewTransform } from "@excalidraw-clone/geometry"
 
 export type Theme = "light" | "dark"
 
@@ -15,4 +15,5 @@ export interface CanvasRendererOptions {
   canvasBg?: string
   selection?: readonly string[]
   grid?: GridOptions
+  guides?: readonly AlignmentGuide[]
 }

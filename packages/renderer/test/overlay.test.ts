@@ -180,3 +180,41 @@ describe("CanvasRenderer selection overlay", () => {
     expect(overlayCtx.__calls.filter((c) => c.method === "clearRect").length).toBe(1)
   })
 })
+
+describe("CanvasRenderer alignment guides", () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.spyOn(RoughCanvas.prototype, "draw").mockImplementation(() => undefined)
+  })
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.restoreAllMocks()
+  })
+
+  it("no guides set → no guide stroke calls", () => {
+    const { canvas: main } = createMockCanvas()
+    const { canvas: overlay, ctx: overlayCtx } = createMockCanvas()
+    const r = new CanvasRenderer(main, new Scene(), { overlayCanvas: overlay })
+    r.start()
+    flush()
+    expect(overlayCtx.__calls.filter((c) => c.method === "stroke").length).toBe(0)
+  })
+
+  it("setGuides draws one dashed stroke per guide on the overlay canvas", () => {
+    const { canvas: main } = createMockCanvas()
+    const { canvas: overlay, ctx: overlayCtx } = createMockCanvas()
+    const r = new CanvasRenderer(main, new Scene(), { overlayCanvas: overlay })
+    r.start()
+    flush()
+    r.setGuides([
+      { axis: "x", position: 50, start: 0, end: 100 },
+      { axis: "y", position: 20, start: 0, end: 200 },
+    ])
+    flush()
+    expect(overlayCtx.__calls.filter((c) => c.method === "stroke").length).toBe(2)
+    const dashCalls = overlayCtx.__calls.filter((c) => c.method === "setLineDash")
+    expect(
+      dashCalls.some((c) => Array.isArray(c.args[0]) && (c.args[0] as number[]).length > 0),
+    ).toBe(true)
+  })
+})

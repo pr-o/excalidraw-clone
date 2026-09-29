@@ -91,6 +91,18 @@ describe("CanvasRenderer skeleton", () => {
     expect(callsOf(ctx, "clearRect").length).toBe(base + 3)
   })
 
+  it("setGuides schedules a redraw", () => {
+    const { canvas, ctx } = createMockCanvas()
+    const scene = new Scene()
+    const r = new CanvasRenderer(canvas, scene)
+    r.start()
+    flushFrame()
+    const before = callsOf(ctx, "clearRect").length
+    r.setGuides([{ axis: "x", position: 10, start: 0, end: 20 }])
+    flushFrame()
+    expect(callsOf(ctx, "clearRect").length).toBe(before + 1)
+  })
+
   it("scene.mutate while running schedules a redraw", () => {
     const { canvas, ctx } = createMockCanvas()
     const scene = new Scene()
