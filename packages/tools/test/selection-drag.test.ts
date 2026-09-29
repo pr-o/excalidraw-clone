@@ -1,6 +1,6 @@
 import type { GridSnap } from "@excalidraw-clone/geometry"
 import type { ExcalidrawArrowElement, ExcalidrawElement } from "@excalidraw-clone/scene"
-import { BINDING_GAP, newArrow, newFrame, newRectangle } from "@excalidraw-clone/scene"
+import { BINDING_GAP, newArrow, newFrame, newRectangle, newText } from "@excalidraw-clone/scene"
 import { describe, expect, it } from "vitest"
 import { selectionTool } from "../src"
 import { translateElements } from "../src/tools/selection/drag"
@@ -411,6 +411,95 @@ describe("selection — drag alignment guides", () => {
     const escape = selectionTool.reduce(move[0], { type: "escape" }, ctx)
     const escGuides = escape[1].find((e) => e.kind === "setGuides")
     expect(escGuides?.kind === "setGuides" && escGuides.guides).toEqual([])
+  })
+
+  it("does not glue the element to a guide across consecutive small pointer moves", () => {
+    const r = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
+    const c = { ...newRectangle({ x: 28, y: 500, width: 10, height: 10 }), id: "c" }
+    const draft: ExcalidrawElement[] = [r, c]
+    const ctx = makeCtx({ hitTest: () => r, readElements: () => draft, selectedIds: [r.id] })
+    let state = selectionTool.reduce(
+      selectionTool.initial,
+      { type: "pointerDown", at: point(5, DRAG_POINTER_Y) },
+      ctx,
+    )[0]
+    const moveTo = (x: number): void => {
+      const [next, effects] = selectionTool.reduce(
+        state,
+        { type: "pointerMove", at: point(x, DRAG_POINTER_Y) },
+        ctx,
+      )
+      applyMutation(effects, draft)
+      state = next
+    }
+    moveTo(25)
+    // raw +20 → far edge 30, snapped -2 onto candidate near edge 28.
+    expect(draft[0]!.x).toBe(18)
+    moveTo(28)
+    // raw total +23 → uncorrected edges 23/28/33 hit candidate 28/33 exactly
+    // (zero correction) — the element must track the cursor, not stay at 18.
+    expect(draft[0]!.x).toBe(23)
+    // Each step is +6 (within the 8px threshold) but the total travel leaves
+    // every candidate edge far behind: the element lands on the raw position.
+    for (const x of [34, 40, 46, 52, 58, 61]) moveTo(x)
+    expect(draft[0]!.x).toBe(56)
+    expect(draft[0]!.y).toBe(0)
+  })
+
+  it("escape after an alignment-corrected drag restores the exact original position", () => {
+    const r = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
+    const c = { ...newRectangle({ x: 28, y: 500, width: 10, height: 10 }), id: "c" }
+    const draft: ExcalidrawElement[] = [r, c]
+    const ctx = makeCtx({ hitTest: () => r, readElements: () => draft, selectedIds: [r.id] })
+    const down = selectionTool.reduce(
+      selectionTool.initial,
+      { type: "pointerDown", at: point(5, DRAG_POINTER_Y) },
+      ctx,
+    )
+    const move = selectionTool.reduce(
+      down[0],
+      { type: "pointerMove", at: point(25, DRAG_POINTER_Y) },
+      ctx,
+    )
+    applyMutation(move[1], draft)
+    expect(draft[0]!.x).toBe(18) // correction -2 is baked in
+    const escape = selectionTool.reduce(move[0], { type: "escape" }, ctx)
+    applyMutation(escape[1], draft)
+    expect(draft[0]!.x).toBe(0)
+    expect(draft[0]!.y).toBe(0)
+    expect(draft[1]!.x).toBe(28)
+    expect(draft[1]!.y).toBe(500)
+  })
+
+  it("excludes bound text labels from snap candidates", () => {
+    const r = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
+    const container = {
+      ...newRectangle({ x: 300, y: 300, width: 100, height: 100 }),
+      id: "box",
+      boundElements: [{ id: "lbl", type: "text" as const }],
+    }
+    // Stale label geometry whose near edge (28) would otherwise attract the
+    // mover's far edge (30 after a +20 drag).
+    const label = {
+      ...newText({ x: 28, y: 500, width: 10, height: 10, text: "hi", containerId: "box" }),
+      id: "lbl",
+    }
+    const draft: ExcalidrawElement[] = [r, container, label]
+    const ctx = makeCtx({ hitTest: () => r, readElements: () => draft, selectedIds: [r.id] })
+    const down = selectionTool.reduce(
+      selectionTool.initial,
+      { type: "pointerDown", at: point(5, DRAG_POINTER_Y) },
+      ctx,
+    )
+    const move = selectionTool.reduce(
+      down[0],
+      { type: "pointerMove", at: point(25, DRAG_POINTER_Y) },
+      ctx,
+    )
+    applyMutation(move[1], draft)
+    expect(draft[0]!.x).toBe(20)
+    const guidesEff = move[1].find((e) => e.kind === "setGuides")
+    expect(guidesEff?.kind === "setGuides" && guidesEff.guides).toEqual([])
   })
 })
 

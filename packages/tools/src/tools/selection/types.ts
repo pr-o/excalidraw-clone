@@ -12,6 +12,10 @@ export type SelectionState =
       last: Point
       movedIds: readonly string[]
       firstMove: boolean
+      /** Cumulative alignment-guide correction currently baked into the
+       *  moved elements' live position (on top of raw pointer travel). */
+      alignDx: number
+      alignDy: number
     }
   | {
       phase: "resizing"

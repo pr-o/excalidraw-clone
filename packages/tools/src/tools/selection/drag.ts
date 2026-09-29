@@ -1,4 +1,3 @@
-import type { Point } from "@excalidraw-clone/geometry"
 import type { ExcalidrawArrowElement, ExcalidrawElement } from "@excalidraw-clone/scene"
 import type { ToolEffect } from "../../types"
 import { removeBackRef } from "../../binding-refs"
@@ -63,12 +62,15 @@ export const buildDragCommitEffect = (ids: readonly string[]): ToolEffect => ({
   },
 })
 
+/** Undoes a drag by translating by the negation of the total translation
+ *  applied over the drag (raw pointer travel plus any baked-in alignment
+ *  correction). */
 export const buildDragRevertEffect = (
   ids: readonly string[],
-  start: Point,
-  last: Point,
+  appliedDx: number,
+  appliedDy: number,
 ): ToolEffect => ({
   kind: "mutation",
-  apply: (draft) => translateElements(draft, ids, start.x - last.x, start.y - last.y),
+  apply: (draft) => translateElements(draft, ids, -appliedDx, -appliedDy),
   skipHistory: true,
 })

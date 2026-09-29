@@ -178,7 +178,15 @@ const reduceIdle = (
         ? [{ kind: "addToSelection", ids: hitIds }]
         : [{ kind: "select", ids: hitIds }]
     return [
-      { phase: "dragging", start: event.at, last: event.at, movedIds, firstMove: true },
+      {
+        phase: "dragging",
+        start: event.at,
+        last: event.at,
+        movedIds,
+        firstMove: true,
+        alignDx: 0,
+        alignDy: 0,
+      },
       selectionEffects,
     ]
   }
@@ -286,7 +294,7 @@ const reduceDragging = (
           const dx = snapped.x - anchor.x + (event.at.x - state.last.x)
           const dy = snapped.y - anchor.y + (event.at.y - state.last.y)
           return [
-            { ...state, last: event.at, firstMove: false },
+            { ...state, last: event.at, firstMove: false, alignDx: 0, alignDy: 0 },
             [buildDragMoveEffect(state.movedIds, dx, dy), { kind: "setGuides", guides: [] }],
           ]
         }
@@ -294,14 +302,27 @@ const reduceDragging = (
       const rawDx = event.at.x - state.last.x
       const rawDy = event.at.y - state.last.y
       if (ctx.grid.enabled) {
+        // Grid governs: drop any alignment correction left from a grid-off
+        // stretch of this drag so the invariant (live = original + pointer
+        // travel + alignDx/Dy) holds when the grid is toggled mid-drag.
         return [
-          { ...state, last: event.at, firstMove: false },
-          [buildDragMoveEffect(state.movedIds, rawDx, rawDy), { kind: "setGuides", guides: [] }],
+          { ...state, last: event.at, firstMove: false, alignDx: 0, alignDy: 0 },
+          [
+            buildDragMoveEffect(state.movedIds, rawDx - state.alignDx, rawDy - state.alignDy),
+            { kind: "setGuides", guides: [] },
+          ],
         ]
       }
-      const { dx, dy, guides } = computeDragAlignment(state.movedIds, rawDx, rawDy, ctx)
+      const { dx, dy, alignDx, alignDy, guides } = computeDragAlignment(
+        state.movedIds,
+        rawDx,
+        rawDy,
+        state.alignDx,
+        state.alignDy,
+        ctx,
+      )
       return [
-        { ...state, last: event.at, firstMove: false },
+        { ...state, last: event.at, firstMove: false, alignDx, alignDy },
         [buildDragMoveEffect(state.movedIds, dx, dy), { kind: "setGuides", guides }],
       ]
     }
@@ -315,7 +336,11 @@ const reduceDragging = (
       return [
         { phase: "idle" },
         [
-          buildDragRevertEffect(state.movedIds, state.start, state.last),
+          buildDragRevertEffect(
+            state.movedIds,
+            state.last.x - state.start.x + state.alignDx,
+            state.last.y - state.start.y + state.alignDy,
+          ),
           { kind: "setGuides", guides: [] },
         ],
       ]
