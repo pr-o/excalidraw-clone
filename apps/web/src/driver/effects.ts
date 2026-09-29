@@ -36,6 +36,9 @@ export function applyEffects(
       case "laserMove":
         laser?.push(eff.at)
         break
+      case "setGuides":
+        useAppStore.getState().setActiveGuides(eff.guides)
+        break
     }
   }
 }

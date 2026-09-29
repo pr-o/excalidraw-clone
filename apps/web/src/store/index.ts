@@ -5,6 +5,7 @@ import { createDialogSlice, type DialogSlice } from "./slices/dialog"
 import { createDispatchSlice, type DispatchSlice } from "./slices/dispatch"
 import { createFindSlice, type FindSlice } from "./slices/find"
 import { createGridSlice, type GridSlice } from "./slices/grid"
+import { createGuidesSlice, type GuidesSlice } from "./slices/guides"
 import { createI18nSlice, type I18nSlice } from "./slices/i18n"
 import { createLibrarySlice, type LibrarySlice } from "./slices/library"
 import { createLinkEditorSlice, type LinkEditorSlice } from "./slices/linkEditor"
@@ -22,6 +23,7 @@ export type AppState = ToolSlice &
   ThemeSlice &
   ViewSlice &
   GridSlice &
+  GuidesSlice &
   DialogSlice &
   PaletteSlice &
   I18nSlice &
@@ -42,6 +44,7 @@ export const useAppStore = create<AppState>()((...a) => ({
   ...createThemeSlice(...a),
   ...createViewSlice(...a),
   ...createGridSlice(...a),
+  ...createGuidesSlice(...a),
   ...createDialogSlice(...a),
   ...createPaletteSlice(...a),
   ...createI18nSlice(...a),

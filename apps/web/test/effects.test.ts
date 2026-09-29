@@ -53,4 +53,11 @@ describe("applyEffects", () => {
     expect(push).toHaveBeenCalledWith({ x: 3, y: 4 })
     expect(spy).not.toHaveBeenCalled()
   })
+
+  it("setGuides effect updates the guides slice", () => {
+    const scene = new Scene()
+    const guides = [{ axis: "y" as const, position: 5, start: 0, end: 10 }]
+    applyEffects(scene, [{ kind: "setGuides", guides }])
+    expect(useAppStore.getState().activeGuides).toEqual(guides)
+  })
 })
