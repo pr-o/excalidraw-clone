@@ -243,7 +243,10 @@ export function attachShortcuts({
         return
       }
     }
-    if (key === "arrowup" || key === "arrowdown" || key === "arrowleft" || key === "arrowright") {
+    if (
+      !isMeta &&
+      (key === "arrowup" || key === "arrowdown" || key === "arrowleft" || key === "arrowright")
+    ) {
       const ids = useAppStore.getState().selectedIds
       if (ids.length === 0) return
       e.preventDefault()

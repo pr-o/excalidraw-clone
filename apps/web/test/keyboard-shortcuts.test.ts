@@ -479,27 +479,31 @@ describe("Ctrl/Cmd+Arrow flowchart chaining", () => {
     expect(scene.getElements()).toEqual(before)
   })
 
-  it("Ctrl+Arrow with a non-chainable selection (text) creates nothing", () => {
+  it("Ctrl+Arrow with a non-chainable selection (text) is a true no-op, not a nudge", () => {
     const tx = newText({ x: 0, y: 0, text: "hi" })
     scene.mutate((draft) => {
       draft.push(tx)
     })
     useAppStore.getState().setSelection([tx.id])
-    press("ArrowRight", { ctrlKey: true })
-    expect(scene.getElements().filter((e) => e.type !== "text")).toHaveLength(0)
+    const ev = press("ArrowRight", { ctrlKey: true })
+    expect(ev.defaultPrevented).toBe(false)
     expect(scene.getElements()).toHaveLength(1)
+    expect(scene.getElements()[0]!.x).toBe(0)
   })
 
-  it("Ctrl+Arrow with multiple shapes selected creates nothing", () => {
+  it("Ctrl+Arrow with multiple shapes selected is a true no-op, not a nudge", () => {
     const a = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
     const b = newRectangle({ x: 50, y: 0, width: 10, height: 10 })
     scene.mutate((draft) => {
       draft.push(a, b)
     })
     useAppStore.getState().setSelection([a.id, b.id])
-    press("ArrowRight", { ctrlKey: true })
+    const ev = press("ArrowRight", { ctrlKey: true })
+    expect(ev.defaultPrevented).toBe(false)
     expect(scene.getElements()).toHaveLength(2)
     expect(scene.getElements().some((e) => e.type === "arrow")).toBe(false)
+    expect(scene.getElements().find((e) => e.id === a.id)!.x).toBe(0)
+    expect(scene.getElements().find((e) => e.id === b.id)!.x).toBe(50)
   })
 
   it("plain ArrowRight still nudges a selected rectangle without chaining", () => {
