@@ -91,8 +91,7 @@ test("the Bold toggle in the properties panel persists fontWeight = bold on the 
   await editor.blur()
   await expect(editor).toHaveCount(0)
 
-  // Select all: a freshly typed free text element keeps a 0×0 box, so a
-  // canvas click does not hit it.
+  // Select via Ctrl/Cmd+A (click-to-select is covered by its own test below).
   await page.locator('[data-testid="toolbar-selection"]').click()
   await page.keyboard.press("ControlOrMeta+a")
 
@@ -109,4 +108,27 @@ test("the Bold toggle in the properties panel persists fontWeight = bold on the 
   const texts = data.elements.filter((e) => e.type === "text" && !e.isDeleted)
   expect(texts).toHaveLength(1)
   expect(texts[0]?.fontWeight).toBe("bold")
+})
+
+test("committed free text can be selected by clicking on it", async ({ page }) => {
+  await freshCanvas(page)
+
+  await page.locator('[data-testid="toolbar-text"]').click()
+  await clickCanvas(page, { x: 200, y: 200 })
+
+  const editor = page.locator("textarea")
+  await editor.waitFor({ state: "visible" })
+  await page.keyboard.type("hello world")
+  await page.keyboard.press("Escape")
+  await expect(editor).toHaveCount(0)
+
+  await page.locator('[data-testid="toolbar-selection"]').click()
+  // Click an empty spot first so nothing is selected.
+  await clickCanvas(page, { x: 600, y: 500 })
+  const bold = page.locator('[data-testid="font-bold"]')
+  await expect(bold).toHaveCount(0)
+
+  // Click inside the rendered text (a few px right/below its top-left origin).
+  await clickCanvas(page, { x: 215, y: 210 })
+  await expect(bold).toBeVisible()
 })

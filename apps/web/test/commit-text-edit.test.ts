@@ -52,4 +52,39 @@ describe("commitTextEdit", () => {
     expect(() => commitTextEdit(draft, "nope", "x")).not.toThrow()
     expect(draft).toHaveLength(0)
   })
+  it("measuredSize resizes a standalone text element along with its text", () => {
+    const free = newText({ x: 0, y: 0 })
+    const draft: ExcalidrawElement[] = [free]
+    commitTextEdit(draft, free.id, "hello", { width: 42, height: 25 })
+    const t = draft[0] as ExcalidrawTextElement
+    expect(t.text).toBe("hello")
+    expect(t.width).toBe(42)
+    expect(t.height).toBe(25)
+  })
+
+  it("measuredSize also shrinks existing standalone text", () => {
+    const free = { ...newText({ x: 0, y: 0, text: "a long line" }), width: 200, height: 25 }
+    const draft: ExcalidrawElement[] = [free]
+    commitTextEdit(draft, free.id, "a", { width: 8, height: 25 })
+    expect(draft[0]!.width).toBe(8)
+    expect(draft[0]!.height).toBe(25)
+  })
+
+  it("measuredSize is ignored for a bound label", () => {
+    const { container, label } = labeledRect()
+    const draft: ExcalidrawElement[] = [container, label]
+    commitTextEdit(draft, label.id, "hello", { width: 999, height: 999 })
+    const t = draft[1] as ExcalidrawTextElement
+    expect(t.text).toBe("hello")
+    expect(t.width).toBe(label.width)
+    expect(t.height).toBe(label.height)
+  })
+
+  it("omitting measuredSize leaves a standalone element's size untouched", () => {
+    const free = newText({ x: 0, y: 0 })
+    const draft: ExcalidrawElement[] = [free]
+    commitTextEdit(draft, free.id, "hello")
+    expect(draft[0]!.width).toBe(0)
+    expect(draft[0]!.height).toBe(0)
+  })
 })

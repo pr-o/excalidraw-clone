@@ -1,5 +1,5 @@
 "use client"
-import { fontFamilyName } from "@excalidraw-clone/renderer"
+import { fontFamilyName, measureText } from "@excalidraw-clone/renderer"
 import type { Scene } from "@excalidraw-clone/scene"
 import React, { useEffect, useRef, useState } from "react"
 import { commitTextEdit } from "../driver/commitTextEdit"
@@ -78,8 +78,22 @@ export function TextEditingOverlay({ scene }: { scene: Scene }): React.ReactElem
 
   const commit = (): void => {
     const noVisibleChange = value === "" && (el?.text ?? "") === ""
+    // Free-standing text has no container to size it; measure the typed
+    // content so the persisted box (and so its hit-test area) fits it.
+    const ctx = el.containerId === null ? document.createElement("canvas").getContext("2d") : null
+    const measuredSize = ctx
+      ? measureText(
+          ctx,
+          value,
+          el.fontSize,
+          el.fontFamily,
+          el.lineHeight,
+          el.fontWeight ?? "normal",
+          el.fontStyle ?? "normal",
+        )
+      : undefined
     scene.mutate(
-      (draft) => commitTextEdit(draft, id, value),
+      (draft) => commitTextEdit(draft, id, value, measuredSize),
       noVisibleChange ? { skipHistory: true } : undefined,
     )
     setId(null)
