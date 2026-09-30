@@ -55,3 +55,24 @@ test("a single click with the text tool, then blurring without typing, leaves no
   const live = data.elements.filter((e) => !e.isDeleted)
   expect(live).toHaveLength(0)
 })
+
+test("typing then pressing Escape commits the text (same as click-away)", async ({ page }) => {
+  await freshCanvas(page)
+
+  await page.locator('[data-testid="toolbar-text"]').click()
+  await clickCanvas(page, { x: 200, y: 200 })
+
+  const editor = page.locator("textarea")
+  await editor.waitFor({ state: "visible" })
+  await page.keyboard.type("hello")
+  await page.keyboard.press("Escape")
+  await expect(editor).toHaveCount(0)
+  await page.waitForTimeout(900)
+
+  const sceneJson = await page.evaluate(() => localStorage.getItem("excalidraw-scene"))
+  const data = parseStoredScene<{ type: string; text?: string; isDeleted?: boolean }>(sceneJson)
+  const live = data.elements.filter((e) => !e.isDeleted)
+  const texts = live.filter((e) => e.type === "text")
+  expect(texts).toHaveLength(1)
+  expect(texts[0]?.text).toBe("hello")
+})

@@ -1,6 +1,6 @@
 "use client"
 import type { Scene } from "@excalidraw-clone/scene"
-import { useEffect, useRef, useState } from "react"
+import React, { useEffect, useRef, useState } from "react"
 import { commitTextEdit } from "../driver/commitTextEdit"
 import { renameFrame } from "../driver/renameFrame"
 import { useAppStore } from "../store"
@@ -95,10 +95,9 @@ export function TextEditingOverlay({ scene }: { scene: Scene }): React.ReactElem
       onKeyDown={(e) => {
         if (e.key === "Escape") {
           e.preventDefault()
-          if ((el?.text ?? "") === "") {
-            scene.mutate((draft) => commitTextEdit(draft, id, ""), { skipHistory: true })
-          }
-          setId(null)
+          // Blur rather than commit() directly: onBlur → commit() is the exact
+          // click-away path, so typed text is kept and it can't double-commit.
+          e.currentTarget.blur()
         }
       }}
       style={{
