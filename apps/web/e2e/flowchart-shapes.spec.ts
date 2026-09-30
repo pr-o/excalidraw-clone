@@ -66,3 +66,32 @@ test("arrow binds to a hexagon", async ({ page }) => {
   // binding gap — it must not reach into the shape's interior
   expect(arrow!.x + arrow!.width).toBeLessThanOrEqual(305)
 })
+
+test("Ctrl+ArrowRight chains a connected rectangle and selects it", async ({ page }) => {
+  await freshCanvas(page)
+
+  await page.locator('[data-testid="toolbar-rectangle"]').click()
+  await dragOnCanvas(page, { x: 100, y: 100 }, { x: 200, y: 160 })
+  await page.waitForTimeout(120)
+  // The rectangle tool leaves the new shape selected.
+  await page.keyboard.press("Control+ArrowRight")
+  await page.waitForTimeout(900)
+
+  const els = await readScene(page)
+  const rects = els.filter((e) => e.type === "rectangle")
+  const arrows = els.filter((e) => e.type === "arrow")
+  expect(rects).toHaveLength(2)
+  expect(arrows).toHaveLength(1)
+  const [first, second] = [...rects].sort((a, b) => a.x - b.x)
+  expect(second!.x).toBeCloseTo(first!.x + first!.width + 80, 0)
+  expect(second!.y).toBeCloseTo(first!.y, 0)
+  expect(arrows[0]!.endBinding?.elementId).toBe(second!.id)
+
+  // The new rectangle is selected: a second press chains again from it.
+  await page.keyboard.press("Control+ArrowRight")
+  await page.waitForTimeout(900)
+  const after = await readScene(page)
+  const third = after.filter((e) => e.type === "rectangle").sort((a, b) => a.x - b.x)[2]
+  expect(third!.x).toBeCloseTo(second!.x + second!.width + 80, 0)
+  expect(after.filter((e) => e.type === "arrow")).toHaveLength(2)
+})

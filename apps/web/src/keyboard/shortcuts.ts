@@ -11,7 +11,15 @@ import {
 import type { ToolName } from "@excalidraw-clone/tools"
 import { patchScene } from "../driver/patchScene"
 import { useAppStore } from "../store"
+import { type ChainDirection, createChainedShape } from "./flowchartChain"
 import { applyStyle, extractStyle, type StyleClipboard } from "./styleClipboard"
+
+const CHAIN_DIRECTIONS: Record<string, ChainDirection> = {
+  arrowup: "up",
+  arrowdown: "down",
+  arrowleft: "left",
+  arrowright: "right",
+}
 
 interface Bindings {
   scene: Scene
@@ -222,6 +230,18 @@ export function attachShortcuts({
         .map((el) => el.id)
       useAppStore.getState().setSelection(all)
       return
+    }
+    // Must precede the nudge branch below, which has no isMeta guard.
+    if (isMeta && CHAIN_DIRECTIONS[key]) {
+      const ids = useAppStore.getState().selectedIds
+      const source =
+        ids.length === 1 ? scene.getElements().find((el) => el.id === ids[0]) : undefined
+      const newId = source ? createChainedShape(scene, source, CHAIN_DIRECTIONS[key]) : null
+      if (newId) {
+        e.preventDefault()
+        useAppStore.getState().setSelection([newId])
+        return
+      }
     }
     if (key === "arrowup" || key === "arrowdown" || key === "arrowleft" || key === "arrowright") {
       const ids = useAppStore.getState().selectedIds

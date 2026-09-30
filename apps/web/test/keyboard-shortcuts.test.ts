@@ -416,3 +416,100 @@ describe("style clipboard shortcuts", () => {
     expect(useAppStore.getState().activeTool).toBe("rectangle")
   })
 })
+
+describe("Ctrl/Cmd+Arrow flowchart chaining", () => {
+  let detach: () => void
+  let scene: Scene
+  beforeEach(() => {
+    scene = new Scene()
+    detach = attachShortcuts({ scene })
+    useAppStore.getState().setActiveTool("selection")
+    useAppStore.getState().setSelection([])
+  })
+  afterEach(() => detach())
+
+  const press = (key: string, init: KeyboardEventInit = {}): KeyboardEvent => {
+    const ev = new KeyboardEvent("keydown", { key, cancelable: true, ...init })
+    window.dispatchEvent(ev)
+    return ev
+  }
+
+  it("Ctrl+ArrowRight chains a bound shape from a single selected rectangle and selects it", () => {
+    const r = newRectangle({ x: 0, y: 0, width: 100, height: 50 })
+    scene.mutate((draft) => {
+      draft.push(r)
+    })
+    useAppStore.getState().setSelection([r.id])
+    const ev = press("ArrowRight", { ctrlKey: true })
+    expect(ev.defaultPrevented).toBe(true)
+    const els = scene.getElements()
+    const rects = els.filter((e) => e.type === "rectangle")
+    const arrows = els.filter((e) => e.type === "arrow")
+    expect(rects).toHaveLength(2)
+    expect(arrows).toHaveLength(1)
+    const created = rects.find((e) => e.id !== r.id)!
+    expect(created.x).toBe(180)
+    expect(created.y).toBe(0)
+    // source is not nudged by the same keypress
+    expect(els.find((e) => e.id === r.id)!.x).toBe(0)
+    expect(useAppStore.getState().selectedIds).toEqual([created.id])
+  })
+
+  it("Cmd+ArrowDown works with metaKey and repeated presses extend the chain", () => {
+    const t = newTriangle({ x: 0, y: 0, width: 40, height: 40 })
+    scene.mutate((draft) => {
+      draft.push(t)
+    })
+    useAppStore.getState().setSelection([t.id])
+    press("ArrowDown", { metaKey: true })
+    press("ArrowDown", { metaKey: true })
+    const tris = scene.getElements().filter((e) => e.type === "triangle")
+    expect(tris.map((e) => e.y).sort((a, b) => a - b)).toEqual([0, 120, 240])
+    expect(scene.getElements().filter((e) => e.type === "arrow")).toHaveLength(2)
+  })
+
+  it("Ctrl+Arrow with nothing selected is a no-op", () => {
+    const r = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
+    scene.mutate((draft) => {
+      draft.push(r)
+    })
+    const before = scene.getElements()
+    const ev = press("ArrowRight", { ctrlKey: true })
+    expect(ev.defaultPrevented).toBe(false)
+    expect(scene.getElements()).toEqual(before)
+  })
+
+  it("Ctrl+Arrow with a non-chainable selection (text) creates nothing", () => {
+    const tx = newText({ x: 0, y: 0, text: "hi" })
+    scene.mutate((draft) => {
+      draft.push(tx)
+    })
+    useAppStore.getState().setSelection([tx.id])
+    press("ArrowRight", { ctrlKey: true })
+    expect(scene.getElements().filter((e) => e.type !== "text")).toHaveLength(0)
+    expect(scene.getElements()).toHaveLength(1)
+  })
+
+  it("Ctrl+Arrow with multiple shapes selected creates nothing", () => {
+    const a = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
+    const b = newRectangle({ x: 50, y: 0, width: 10, height: 10 })
+    scene.mutate((draft) => {
+      draft.push(a, b)
+    })
+    useAppStore.getState().setSelection([a.id, b.id])
+    press("ArrowRight", { ctrlKey: true })
+    expect(scene.getElements()).toHaveLength(2)
+    expect(scene.getElements().some((e) => e.type === "arrow")).toBe(false)
+  })
+
+  it("plain ArrowRight still nudges a selected rectangle without chaining", () => {
+    const r = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
+    scene.mutate((draft) => {
+      draft.push(r)
+    })
+    useAppStore.getState().setSelection([r.id])
+    press("ArrowRight")
+    expect(scene.getElements()).toHaveLength(1)
+    expect(scene.getElements()[0]!.x).toBe(1)
+  })
+})
