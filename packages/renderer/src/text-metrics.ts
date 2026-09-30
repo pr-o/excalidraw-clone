@@ -8,8 +8,16 @@ const FAMILY_NAMES: Record<FontFamily, string> = {
 
 export const fontFamilyName = (family: FontFamily): string => FAMILY_NAMES[family]
 
-export const fontSpec = (fontSize: number, family: FontFamily): string =>
-  `${fontSize}px ${fontFamilyName(family)}`
+export type FontWeight = "normal" | "bold"
+export type FontStyle = "normal" | "italic"
+
+/** CSS/canvas font shorthand: `<style> <weight> <size>px <family>`. */
+export const fontSpec = (
+  fontSize: number,
+  family: FontFamily,
+  weight: FontWeight = "normal",
+  style: FontStyle = "normal",
+): string => `${style} ${weight} ${fontSize}px ${fontFamilyName(family)}`
 
 export interface TextSize {
   width: number
@@ -68,9 +76,11 @@ export const measureText = (
   fontSize: number,
   family: FontFamily,
   lineHeight: number,
+  weight: FontWeight = "normal",
+  style: FontStyle = "normal",
 ): TextSize => {
   const prevFont = ctx.font
-  ctx.font = fontSpec(fontSize, family)
+  ctx.font = fontSpec(fontSize, family, weight, style)
   const lines = text.split("\n")
   let width = 0
   for (const line of lines) {

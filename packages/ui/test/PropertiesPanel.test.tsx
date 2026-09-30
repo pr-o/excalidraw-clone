@@ -1,4 +1,4 @@
-import { newArrow, newLine, newRectangle } from "@excalidraw-clone/scene"
+import { newArrow, newLine, newRectangle, newText } from "@excalidraw-clone/scene"
 import { render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { describe, expect, it, vi } from "vitest"
@@ -332,5 +332,120 @@ describe("PropertiesPanel", () => {
     const rect = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
     render(<PropertiesPanel t={t} selectedElements={[rect]} {...handlers} />)
     expect(screen.queryByTestId("arrow-type-elbow")).toBeNull()
+  })
+})
+
+describe("PropertiesPanel — Text section", () => {
+  it("shows the Text section for an all-text selection", () => {
+    const a = newText({ x: 0, y: 0, text: "a" })
+    const b = newText({ x: 0, y: 40, text: "b" })
+    render(<PropertiesPanel t={t} selectedElements={[a, b]} {...handlers} />)
+    expect(screen.getByText("properties.text")).toBeInTheDocument()
+    expect(screen.getByTestId("font-family-1")).toBeInTheDocument()
+    expect(screen.getByTestId("font-bold")).toBeInTheDocument()
+    expect(screen.getByTestId("font-italic")).toBeInTheDocument()
+  })
+
+  it("hides the Text section for a non-text selection", () => {
+    const el = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
+    render(<PropertiesPanel t={t} selectedElements={[el]} {...handlers} />)
+    expect(screen.queryByTestId("font-family-1")).toBeNull()
+    expect(screen.queryByTestId("font-bold")).toBeNull()
+  })
+
+  it("hides the Text section for a mixed text + shape selection", () => {
+    const a = newText({ x: 0, y: 0, text: "a" })
+    const b = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
+    render(<PropertiesPanel t={t} selectedElements={[a, b]} {...handlers} />)
+    expect(screen.queryByTestId("font-family-1")).toBeNull()
+  })
+
+  it.each([
+    [1, "properties.fontFamily_handDrawn"],
+    [2, "properties.fontFamily_normal"],
+    [3, "properties.fontFamily_code"],
+  ] as const)("emits onChange({ fontFamily: %i }) from its labelled button", async (n, label) => {
+    const el = newText({ x: 0, y: 0, text: "a" })
+    const onChange = vi.fn()
+    render(<PropertiesPanel t={t} selectedElements={[el]} {...handlers} onChange={onChange} />)
+    const button = screen.getByTestId(`font-family-${n}`)
+    expect(button).toHaveTextContent(label)
+    await userEvent.click(button)
+    expect(onChange).toHaveBeenCalledWith({ fontFamily: n })
+  })
+
+  it("marks the element's font family as pressed", () => {
+    const el = newText({ x: 0, y: 0, text: "a", fontFamily: 3 })
+    render(<PropertiesPanel t={t} selectedElements={[el]} {...handlers} />)
+    expect(screen.getByTestId("font-family-3")).toHaveAttribute("aria-pressed", "true")
+    expect(screen.getByTestId("font-family-1")).toHaveAttribute("aria-pressed", "false")
+    expect(screen.getByTestId("font-family-2")).toHaveAttribute("aria-pressed", "false")
+  })
+
+  it("no font family pressed for a mixed selection", () => {
+    const a = newText({ x: 0, y: 0, text: "a", fontFamily: 1 })
+    const b = newText({ x: 0, y: 40, text: "b", fontFamily: 2 })
+    render(<PropertiesPanel t={t} selectedElements={[a, b]} {...handlers} />)
+    for (const n of [1, 2, 3]) {
+      expect(screen.getByTestId(`font-family-${n}`)).toHaveAttribute("aria-pressed", "false")
+    }
+  })
+
+  it("bold: not pressed by default and clicking sets bold", async () => {
+    const el = newText({ x: 0, y: 0, text: "a" })
+    const onChange = vi.fn()
+    render(<PropertiesPanel t={t} selectedElements={[el]} {...handlers} onChange={onChange} />)
+    const bold = screen.getByTestId("font-bold")
+    expect(bold).toHaveAttribute("aria-pressed", "false")
+    await userEvent.click(bold)
+    expect(onChange).toHaveBeenCalledWith({ fontWeight: "bold" })
+  })
+
+  it("bold: pressed when bold and clicking sets normal", async () => {
+    const el = newText({ x: 0, y: 0, text: "a", fontWeight: "bold" })
+    const onChange = vi.fn()
+    render(<PropertiesPanel t={t} selectedElements={[el]} {...handlers} onChange={onChange} />)
+    const bold = screen.getByTestId("font-bold")
+    expect(bold).toHaveAttribute("aria-pressed", "true")
+    await userEvent.click(bold)
+    expect(onChange).toHaveBeenCalledWith({ fontWeight: "normal" })
+  })
+
+  it("italic: not pressed by default and clicking sets italic", async () => {
+    const el = newText({ x: 0, y: 0, text: "a" })
+    const onChange = vi.fn()
+    render(<PropertiesPanel t={t} selectedElements={[el]} {...handlers} onChange={onChange} />)
+    const italic = screen.getByTestId("font-italic")
+    expect(italic).toHaveAttribute("aria-pressed", "false")
+    await userEvent.click(italic)
+    expect(onChange).toHaveBeenCalledWith({ fontStyle: "italic" })
+  })
+
+  it("italic: pressed when italic and clicking sets normal", async () => {
+    const el = newText({ x: 0, y: 0, text: "a", fontStyle: "italic" })
+    const onChange = vi.fn()
+    render(<PropertiesPanel t={t} selectedElements={[el]} {...handlers} onChange={onChange} />)
+    const italic = screen.getByTestId("font-italic")
+    expect(italic).toHaveAttribute("aria-pressed", "true")
+    await userEvent.click(italic)
+    expect(onChange).toHaveBeenCalledWith({ fontStyle: "normal" })
+  })
+
+  it("mixed bold/italic selection shows not pressed; clicking applies to all", async () => {
+    const a = newText({ x: 0, y: 0, text: "a", fontWeight: "bold", fontStyle: "italic" })
+    const b = newText({ x: 0, y: 40, text: "b" })
+    const onChange = vi.fn()
+    render(<PropertiesPanel t={t} selectedElements={[a, b]} {...handlers} onChange={onChange} />)
+    expect(screen.getByTestId("font-bold")).toHaveAttribute("aria-pressed", "false")
+    expect(screen.getByTestId("font-italic")).toHaveAttribute("aria-pressed", "false")
+    await userEvent.click(screen.getByTestId("font-bold"))
+    expect(onChange).toHaveBeenCalledWith({ fontWeight: "bold" })
+  })
+
+  it("treats legacy text without fontWeight/fontStyle as normal", () => {
+    const { fontWeight: _w, fontStyle: _s, ...legacy } = newText({ x: 0, y: 0, text: "a" })
+    render(<PropertiesPanel t={t} selectedElements={[legacy]} {...handlers} />)
+    expect(screen.getByTestId("font-bold")).toHaveAttribute("aria-pressed", "false")
+    expect(screen.getByTestId("font-italic")).toHaveAttribute("aria-pressed", "false")
   })
 })

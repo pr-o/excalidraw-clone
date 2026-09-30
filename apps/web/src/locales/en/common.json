@@ -78,6 +78,13 @@
     "arrowType": "Arrow type",
     "arrowTypeSharp": "Sharp",
     "arrowTypeElbow": "Elbow",
+    "text": "Text",
+    "fontFamily": "Font family",
+    "fontFamily_handDrawn": "Hand-drawn",
+    "fontFamily_normal": "Normal",
+    "fontFamily_code": "Code",
+    "bold": "Bold",
+    "italic": "Italic",
     "lock": "Lock",
     "flip_horizontal": "Flip horizontal",
     "flip_vertical": "Flip vertical"

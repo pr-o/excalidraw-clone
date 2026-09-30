@@ -179,7 +179,7 @@ describe("renderer elements", () => {
     r.start()
     flush()
     const fonts = ctx.__calls.filter((c) => c.method === "set:font").map((c) => c.args[0] as string)
-    expect(fonts.some((f) => f.startsWith("8px"))).toBe(true)
+    expect(fonts.some((f) => f.startsWith("normal normal 8px"))).toBe(true)
     r.stop()
 
     // arrow label and standalone text stay at 20px
@@ -201,7 +201,7 @@ describe("renderer elements", () => {
       .filter((c) => c.method === "set:font")
       .map((c) => c.args[0] as string)
     expect(fonts2.length).toBeGreaterThan(0)
-    expect(fonts2.every((f) => f.startsWith("20px"))).toBe(true)
+    expect(fonts2.every((f) => f.startsWith("normal normal 20px"))).toBe(true)
     r2.stop()
   })
 })

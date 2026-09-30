@@ -9,4 +9,6 @@ export const DEFAULT_ROUGHNESS: Roughness = 1
 export const DEFAULT_OPACITY = 100
 export const DEFAULT_FONT_FAMILY: FontFamily = 1
 export const DEFAULT_FONT_SIZE = 20
+export const DEFAULT_FONT_WEIGHT = "normal" as const
+export const DEFAULT_FONT_STYLE = "normal" as const
 export const DEFAULT_LINE_HEIGHT = 1.25

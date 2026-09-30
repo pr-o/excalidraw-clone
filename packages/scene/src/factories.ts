@@ -31,6 +31,8 @@ import {
   DEFAULT_FILL_STYLE,
   DEFAULT_FONT_FAMILY,
   DEFAULT_FONT_SIZE,
+  DEFAULT_FONT_STYLE,
+  DEFAULT_FONT_WEIGHT,
   DEFAULT_LINE_HEIGHT,
   DEFAULT_OPACITY,
   DEFAULT_ROUGHNESS,
@@ -159,6 +161,8 @@ export interface NewTextInput extends NewElementInput {
   text?: string
   fontSize?: number
   fontFamily?: FontFamily
+  fontWeight?: "normal" | "bold"
+  fontStyle?: "normal" | "italic"
   textAlign?: TextAlign
   verticalAlign?: VerticalAlign
   containerId?: string | null
@@ -172,6 +176,8 @@ export const newText = (input: NewTextInput): ExcalidrawTextElement => {
     text,
     fontSize: input.fontSize ?? DEFAULT_FONT_SIZE,
     fontFamily: input.fontFamily ?? DEFAULT_FONT_FAMILY,
+    fontWeight: input.fontWeight ?? DEFAULT_FONT_WEIGHT,
+    fontStyle: input.fontStyle ?? DEFAULT_FONT_STYLE,
     textAlign: input.textAlign ?? "left",
     verticalAlign: input.verticalAlign ?? "top",
     containerId: input.containerId ?? null,

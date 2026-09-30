@@ -1,4 +1,5 @@
 "use client"
+import { fontFamilyName } from "@excalidraw-clone/renderer"
 import type { Scene } from "@excalidraw-clone/scene"
 import React, { useEffect, useRef, useState } from "react"
 import { commitTextEdit } from "../driver/commitTextEdit"
@@ -105,7 +106,9 @@ export function TextEditingOverlay({ scene }: { scene: Scene }): React.ReactElem
         left: `${left}px`,
         top: `${top}px`,
         fontSize: `${fontSize}px`,
-        fontFamily: "Caveat, cursive",
+        fontFamily: fontFamilyName(el.fontFamily),
+        fontWeight: el.fontWeight ?? "normal",
+        fontStyle: el.fontStyle ?? "normal",
         background: "transparent",
         border: "1px solid #999",
         outline: "none",

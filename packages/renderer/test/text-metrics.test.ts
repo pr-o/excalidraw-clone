@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { layoutLabel } from "../src/text-metrics"
+import { fontSpec, layoutLabel, measureText } from "../src/text-metrics"
 
 // mirrors the mock canvas: every character is 10px wide
 const m = (s: string): number => s.length * 10
@@ -45,5 +45,43 @@ describe("layoutLabel", () => {
   it("collapses consecutive spaces in wrapped output", () => {
     const out = layoutLabel("a  b", { width: 100, height: 100 }, 20, 1.25, m)
     expect(out.lines).toEqual(["a b"])
+  })
+})
+
+describe("fontSpec", () => {
+  it("defaults to a normal-style, normal-weight CSS font shorthand", () => {
+    expect(fontSpec(20, 1)).toBe('normal normal 20px "Caveat", cursive')
+  })
+
+  it("includes explicit weight and style in shorthand order (style weight size family)", () => {
+    expect(fontSpec(16, 2, "bold", "italic")).toBe(
+      'italic bold 16px "Helvetica Neue", Helvetica, Arial, sans-serif',
+    )
+  })
+
+  it("supports bold alone and italic alone", () => {
+    expect(fontSpec(12, 3, "bold")).toBe(
+      'normal bold 12px "Cascadia Code", "Courier New", monospace',
+    )
+    expect(fontSpec(12, 3, "normal", "italic")).toBe(
+      'italic normal 12px "Cascadia Code", "Courier New", monospace',
+    )
+  })
+})
+
+describe("measureText", () => {
+  it("measures with the given weight and style applied to the font", () => {
+    const fonts: string[] = []
+    const fake = {
+      font: "prev",
+      measureText: (line: string) => {
+        fonts.push(fake.font)
+        return { width: line.length * 10 }
+      },
+    }
+    const ctx = fake as unknown as CanvasRenderingContext2D
+    measureText(ctx, "hi", 20, 1, 1.25, "bold", "italic")
+    expect(fonts[0]).toBe('italic bold 20px "Caveat", cursive')
+    expect(ctx.font).toBe("prev")
   })
 })

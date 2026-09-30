@@ -53,7 +53,9 @@ export const drawText = (
   if (e.text.length === 0) return
 
   ctx.save()
-  ctx.font = fontSpec(e.fontSize, e.fontFamily)
+  const weight = e.fontWeight ?? "normal"
+  const style = e.fontStyle ?? "normal"
+  ctx.font = fontSpec(e.fontSize, e.fontFamily, weight, style)
   let fontSize = e.fontSize
   let lines: readonly string[] = e.text.split("\n")
   if (opts?.fit) {
@@ -67,7 +69,7 @@ export const drawText = (
     lines = layout.lines
     if (layout.scale < 1) {
       fontSize = e.fontSize * layout.scale
-      ctx.font = fontSpec(fontSize, e.fontFamily)
+      ctx.font = fontSpec(fontSize, e.fontFamily, weight, style)
     }
   }
   const lineHeightPx = fontSize * e.lineHeight

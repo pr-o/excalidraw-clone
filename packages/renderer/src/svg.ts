@@ -12,6 +12,8 @@ import {
   fontFamilyName,
   layoutLabel,
   measureText,
+  type FontStyle,
+  type FontWeight,
   type LabelLayout,
   type TextSize,
 } from "./text-metrics"
@@ -23,14 +25,16 @@ export type TextMeasure = (
   fontSize: number,
   family: FontFamily,
   lineHeight: number,
+  weight?: FontWeight,
+  style?: FontStyle,
 ) => TextSize
 
 const defaultMeasure = (): TextMeasure | null => {
   if (typeof document === "undefined") return null
   const ctx = document.createElement("canvas").getContext("2d")
   if (!ctx) return null
-  return (text, fontSize, family, lineHeight) =>
-    measureText(ctx, text, fontSize, family, lineHeight)
+  return (text, fontSize, family, lineHeight, weight, style) =>
+    measureText(ctx, text, fontSize, family, lineHeight, weight, style)
 }
 
 export interface SVGRenderOptions {
@@ -97,7 +101,15 @@ export function renderToSVG(scene: Scene, opts: SVGRenderOptions = {}): string {
             { width: el.width, height: el.height },
             el.fontSize,
             el.lineHeight,
-            (s) => measure(s, el.fontSize, el.fontFamily, el.lineHeight).width,
+            (s) =>
+              measure(
+                s,
+                el.fontSize,
+                el.fontFamily,
+                el.lineHeight,
+                el.fontWeight ?? "normal",
+                el.fontStyle ?? "normal",
+              ).width,
           )
         : undefined
     const node = renderElement(doc, el, rsvg, opts.files, theme, backing, labelLayout)
@@ -131,7 +143,14 @@ function renderElement(
 
   if (el.type === "text") {
     if (backing && el.text.length > 0) {
-      const size = backing.measure(el.text, el.fontSize, el.fontFamily, el.lineHeight)
+      const size = backing.measure(
+        el.text,
+        el.fontSize,
+        el.fontFamily,
+        el.lineHeight,
+        el.fontWeight ?? "normal",
+        el.fontStyle ?? "normal",
+      )
       const rect = doc.createElementNS(SVG_NS, "rect")
       rect.setAttribute("x", String(el.width / 2 - size.width / 2 - OCCLUSION_PADDING))
       rect.setAttribute("y", String(el.height / 2 - size.height / 2 - OCCLUSION_PADDING))
@@ -197,6 +216,8 @@ function textNode(
   const text = doc.createElementNS(SVG_NS, "text")
   text.setAttribute("font-family", fontFamilyName(el.fontFamily))
   text.setAttribute("font-size", String(fontSize))
+  text.setAttribute("font-weight", el.fontWeight ?? "normal")
+  text.setAttribute("font-style", el.fontStyle ?? "normal")
   text.setAttribute("fill", resolveColor(el.strokeColor, theme))
   text.setAttribute("text-anchor", anchorFor(el.textAlign))
   text.setAttribute("dominant-baseline", "text-before-edge")

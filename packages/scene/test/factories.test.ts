@@ -4,6 +4,8 @@ import {
   DEFAULT_FILL_STYLE,
   DEFAULT_FONT_FAMILY,
   DEFAULT_FONT_SIZE,
+  DEFAULT_FONT_STYLE,
+  DEFAULT_FONT_WEIGHT,
   DEFAULT_OPACITY,
   DEFAULT_ROUGHNESS,
   DEFAULT_STROKE_COLOR,
@@ -144,6 +146,20 @@ describe("text factory", () => {
     expect(t.originalText).toBe("hello")
     expect(t.fontSize).toBe(32)
     expect(t.textAlign).toBe("center")
+  })
+
+  it("defaults fontWeight and fontStyle to normal", () => {
+    const t = newText({ x: 0, y: 0 })
+    expect(t.fontWeight).toBe(DEFAULT_FONT_WEIGHT)
+    expect(t.fontStyle).toBe(DEFAULT_FONT_STYLE)
+    expect(t.fontWeight).toBe("normal")
+    expect(t.fontStyle).toBe("normal")
+  })
+
+  it("honors explicit fontWeight and fontStyle", () => {
+    const t = newText({ x: 0, y: 0, fontWeight: "bold", fontStyle: "italic" })
+    expect(t.fontWeight).toBe("bold")
+    expect(t.fontStyle).toBe("italic")
   })
 })
 

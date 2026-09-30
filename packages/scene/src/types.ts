@@ -148,6 +148,10 @@ export interface ExcalidrawTextElement extends ExcalidrawElementBase {
   text: string
   fontSize: number
   fontFamily: FontFamily
+  /** Absent ⟺ "normal" (elements persisted before bold support). */
+  fontWeight?: "normal" | "bold"
+  /** Absent ⟺ "normal" (elements persisted before italic support). */
+  fontStyle?: "normal" | "italic"
   textAlign: TextAlign
   verticalAlign: VerticalAlign
   containerId: string | null

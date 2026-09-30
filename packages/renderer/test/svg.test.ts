@@ -100,6 +100,24 @@ describe("renderToSVG linear label backing", () => {
     expect(svg).toContain('fill="#ffffff"')
   })
 
+  it("passes the label's weight and style to the measurer", () => {
+    const calls: unknown[][] = []
+    const scene = labeledArrowScene()
+    const label = scene.getElements().find((e) => e.type === "text")!
+    scene.mutate((d) => {
+      const i = d.findIndex((e) => e.id === label.id)
+      d[i] = { ...d[i]!, fontWeight: "bold", fontStyle: "italic" } as (typeof d)[number]
+    })
+    renderToSVG(scene, {
+      measure: (...args) => {
+        calls.push(args)
+        return stubMeasure(args[0], args[1], args[2], args[3])
+      },
+    })
+    expect(calls.length).toBeGreaterThan(0)
+    expect(calls.every((c) => c[4] === "bold" && c[5] === "italic")).toBe(true)
+  })
+
   it("emits no backing rect for a shape label", () => {
     const rect = newRectangle({ x: 0, y: 0, width: 100, height: 80 })
     const label = {
@@ -198,6 +216,34 @@ describe("renderToSVG mirror transform", () => {
     const el = { ...newRectangle({ x: 0, y: 0, width: 10, height: 10 }), mirror: [-1, 1] as const }
     const svg = renderToSVG(new Scene([el]))
     expect(svg).not.toContain("scale(")
+  })
+})
+
+describe("renderToSVG text formatting", () => {
+  it("emits normal font-weight and font-style for default text", () => {
+    const svg = renderToSVG(new Scene([newText({ x: 0, y: 0, text: "hi" })]))
+    expect(svg).toContain('font-weight="normal"')
+    expect(svg).toContain('font-style="normal"')
+  })
+
+  it("emits bold and italic for formatted text", () => {
+    const el = newText({ x: 0, y: 0, text: "hi", fontWeight: "bold", fontStyle: "italic" })
+    const svg = renderToSVG(new Scene([el]))
+    expect(svg).toContain('font-weight="bold"')
+    expect(svg).toContain('font-style="italic"')
+  })
+
+  it("defaults a legacy text element without the fields to normal", () => {
+    const { fontWeight: _w, fontStyle: _s, ...legacy } = newText({ x: 0, y: 0, text: "hi" })
+    const svg = renderToSVG(new Scene([legacy]))
+    expect(svg).toContain('font-weight="normal"')
+    expect(svg).toContain('font-style="normal"')
+  })
+
+  it("does not put font-weight/font-style on a frame name label", () => {
+    const svg = renderToSVG(new Scene([newFrame({ x: 0, y: 0, width: 100, height: 80 })]))
+    expect(svg).not.toContain("font-weight")
+    expect(svg).not.toContain("font-style")
   })
 })
 

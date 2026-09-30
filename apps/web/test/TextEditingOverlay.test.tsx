@@ -84,3 +84,41 @@ describe("TextEditingOverlay — Escape commits like click-away", () => {
     expect(useAppStore.getState().textEditElementId).toBeNull()
   })
 })
+
+describe("TextEditingOverlay — WYSIWYG font styling", () => {
+  it("styles the textarea with the element's font family, weight, and style", async () => {
+    const scene = new Scene()
+    const text = newText({
+      x: 10,
+      y: 10,
+      text: "styled",
+      fontFamily: 3,
+      fontWeight: "bold",
+      fontStyle: "italic",
+    })
+    scene.mutate((d) => d.push(text))
+    useAppStore.getState().setTextEditElementId(text.id)
+
+    const { container } = renderOverlay(scene)
+    const textarea = await focusedTextarea(container)
+
+    expect(textarea.style.fontFamily).toContain("Cascadia Code")
+    expect(textarea.style.fontFamily).not.toContain("Caveat")
+    expect(textarea.style.fontWeight).toBe("bold")
+    expect(textarea.style.fontStyle).toBe("italic")
+  })
+
+  it("defaults a legacy element without weight/style to normal", async () => {
+    const scene = new Scene()
+    const { fontWeight: _w, fontStyle: _s, ...legacy } = newText({ x: 10, y: 10, text: "old" })
+    scene.mutate((d) => d.push(legacy))
+    useAppStore.getState().setTextEditElementId(legacy.id)
+
+    const { container } = renderOverlay(scene)
+    const textarea = await focusedTextarea(container)
+
+    expect(textarea.style.fontFamily).toContain("Caveat")
+    expect(textarea.style.fontWeight).toBe("normal")
+    expect(textarea.style.fontStyle).toBe("normal")
+  })
+})

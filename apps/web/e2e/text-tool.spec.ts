@@ -76,3 +76,37 @@ test("typing then pressing Escape commits the text (same as click-away)", async 
   expect(texts).toHaveLength(1)
   expect(texts[0]?.text).toBe("hello")
 })
+
+test("the Bold toggle in the properties panel persists fontWeight = bold on the selected text", async ({
+  page,
+}) => {
+  await freshCanvas(page)
+
+  await page.locator('[data-testid="toolbar-text"]').click()
+  await clickCanvas(page, { x: 200, y: 200 })
+
+  const editor = page.locator("textarea")
+  await editor.waitFor({ state: "visible" })
+  await page.keyboard.type("hello")
+  await editor.blur()
+  await expect(editor).toHaveCount(0)
+
+  // Select all: a freshly typed free text element keeps a 0×0 box, so a
+  // canvas click does not hit it.
+  await page.locator('[data-testid="toolbar-selection"]').click()
+  await page.keyboard.press("ControlOrMeta+a")
+
+  const bold = page.locator('[data-testid="font-bold"]')
+  await expect(bold).toHaveAttribute("aria-pressed", "false")
+  await bold.click()
+  await expect(bold).toHaveAttribute("aria-pressed", "true")
+
+  await page.waitForTimeout(900)
+  const sceneJson = await page.evaluate(() => localStorage.getItem("excalidraw-scene"))
+  const data = parseStoredScene<{ type: string; fontWeight?: string; isDeleted?: boolean }>(
+    sceneJson,
+  )
+  const texts = data.elements.filter((e) => e.type === "text" && !e.isDeleted)
+  expect(texts).toHaveLength(1)
+  expect(texts[0]?.fontWeight).toBe("bold")
+})

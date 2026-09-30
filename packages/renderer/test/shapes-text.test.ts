@@ -43,6 +43,38 @@ describe("drawText", () => {
     expect((ctx.__props.font as string).includes("32px")).toBe(true)
   })
 
+  it("defaults the font spec to normal weight and style", () => {
+    const { ctx } = createMockCanvas()
+    const t = { ...newText({ x: 0, y: 0, text: "hi" }) }
+    drawText(ctx as unknown as CanvasRenderingContext2D, t)
+    expect(ctx.__props.font as string).toMatch(/^normal normal 20px /)
+  })
+
+  it("applies bold and italic from the element to the font spec", () => {
+    const { ctx } = createMockCanvas()
+    const t = { ...newText({ x: 0, y: 0, text: "hi", fontWeight: "bold", fontStyle: "italic" }) }
+    drawText(ctx as unknown as CanvasRenderingContext2D, t)
+    expect(ctx.__props.font as string).toMatch(/^italic bold 20px /)
+  })
+
+  it("treats a legacy element without fontWeight/fontStyle as normal", () => {
+    const { ctx } = createMockCanvas()
+    const { fontWeight: _w, fontStyle: _s, ...legacy } = newText({ x: 0, y: 0, text: "hi" })
+    drawText(ctx as unknown as CanvasRenderingContext2D, legacy)
+    expect(ctx.__props.font as string).toMatch(/^normal normal 20px /)
+  })
+
+  it("keeps bold/italic when fit shrinks the font", () => {
+    const { ctx } = createMockCanvas()
+    const t = {
+      ...newText({ x: 0, y: 0, text: "hi!!", fontWeight: "bold", fontStyle: "italic" }),
+      width: 20,
+      height: 100,
+    }
+    drawText(ctx as unknown as CanvasRenderingContext2D, t, undefined, { fit: true })
+    expect(ctx.__props.font as string).toMatch(/^italic bold 10px /)
+  })
+
   it("with occlude, fills a padded backing rect before the text", () => {
     const { ctx } = createMockCanvas()
     // mock measureText: width = text.length * 10 → "hi" = 20
@@ -79,7 +111,7 @@ describe("drawText", () => {
     // "hi!!" → mock width 40; box width 20 → scale 0.5 → 20px × 0.5 = 10px
     const t = { ...newText({ x: 0, y: 0, width: 20, height: 64, text: "hi!!" }) }
     drawText(ctx as unknown as CanvasRenderingContext2D, t, undefined, { fit: true })
-    expect((ctx.__props.font as string).startsWith("10px")).toBe(true)
+    expect((ctx.__props.font as string).startsWith("normal normal 10px")).toBe(true)
   })
 
   it("fit leaves text that already fits at its natural size", () => {
@@ -87,7 +119,7 @@ describe("drawText", () => {
     // "hi" → width 20 ≤ 84; height 25 ≤ 64 → scale 1
     const t = { ...newText({ x: 0, y: 0, width: 84, height: 64, text: "hi" }) }
     drawText(ctx as unknown as CanvasRenderingContext2D, t, undefined, { fit: true })
-    expect((ctx.__props.font as string).startsWith("20px")).toBe(true)
+    expect((ctx.__props.font as string).startsWith("normal normal 20px")).toBe(true)
   })
 
   it("fit shrinks by the height bound for tall multi-line text", () => {
@@ -95,7 +127,7 @@ describe("drawText", () => {
     // 4 lines × 25 = 100 natural height; box height 50 → scale 0.5 → 10px
     const t = { ...newText({ x: 0, y: 0, width: 84, height: 50, text: "a\nb\nc\nd" }) }
     drawText(ctx as unknown as CanvasRenderingContext2D, t, undefined, { fit: true })
-    expect((ctx.__props.font as string).startsWith("10px")).toBe(true)
+    expect((ctx.__props.font as string).startsWith("normal normal 10px")).toBe(true)
   })
 
   it("fit with empty text draws nothing", () => {
@@ -112,7 +144,7 @@ describe("drawText", () => {
     drawText(ctx as unknown as CanvasRenderingContext2D, t, undefined, { fit: true })
     const fills = ctx.__calls.filter((c) => c.method === "fillText")
     expect(fills.map((c) => c.args[0])).toEqual(["hello", "world"])
-    expect((ctx.__props.font as string).startsWith("20px")).toBe(true)
+    expect((ctx.__props.font as string).startsWith("normal normal 20px")).toBe(true)
   })
 
   it("fit shrinks a wrapped block that is taller than the box", () => {
@@ -121,7 +153,7 @@ describe("drawText", () => {
     const t = { ...newText({ x: 0, y: 0, width: 10, height: 50, text: "a b c d" }) }
     drawText(ctx as unknown as CanvasRenderingContext2D, t, undefined, { fit: true })
     expect(ctx.__calls.filter((c) => c.method === "fillText")).toHaveLength(4)
-    expect((ctx.__props.font as string).startsWith("10px")).toBe(true)
+    expect((ctx.__props.font as string).startsWith("normal normal 10px")).toBe(true)
   })
 
   it("without fit, text is never wrapped", () => {

@@ -4,6 +4,7 @@ import type {
   DistributeAxis,
   ExcalidrawElement,
   FillStyle,
+  FontFamily,
   Roughness,
   Roundness,
   StrokeStyle,
@@ -17,6 +18,11 @@ const STROKE_STYLES: readonly StrokeStyle[] = ["solid", "dashed", "dotted"]
 const FILL_STYLES: readonly FillStyle[] = ["hachure", "cross-hatch", "solid"]
 const ROUGHNESS_LEVELS: readonly Roughness[] = [0, 1, 2]
 const OPACITY_STEPS = [25, 50, 75, 100] as const
+const FONT_FAMILIES: readonly (readonly [FontFamily, string])[] = [
+  [1, "handDrawn"],
+  [2, "normal"],
+  [3, "code"],
+]
 const ARROWHEAD_KINDS: readonly (Arrowhead | null)[] = [
   null,
   "arrow",
@@ -128,6 +134,23 @@ export function PropertiesPanel({
     selectedElements as unknown as readonly { [k: string]: unknown }[],
     "endArrowhead",
   )
+  const allText = selectedElements.length > 0 && selectedElements.every((e) => e.type === "text")
+  const textElements = selectedElements.flatMap((e) => (e.type === "text" ? [e] : []))
+  const fontFamily = commonValue<FontFamily>(
+    textElements as unknown as readonly { [k: string]: unknown }[],
+    "fontFamily",
+  )
+  // Legacy elements may lack fontWeight/fontStyle; absent ⟺ "normal".
+  const fontWeight = commonValue<"normal" | "bold">(
+    textElements.map((e) => ({ fontWeight: e.fontWeight ?? "normal" })),
+    "fontWeight",
+  )
+  const fontStyle = commonValue<"normal" | "italic">(
+    textElements.map((e) => ({ fontStyle: e.fontStyle ?? "normal" })),
+    "fontStyle",
+  )
+  const isBold = fontWeight === "bold"
+  const isItalic = fontStyle === "italic"
 
   return (
     <aside
@@ -283,6 +306,45 @@ export function PropertiesPanel({
               className={`h-8 flex-1 rounded border text-xs ${elbowed === true ? "border-accent bg-accent-soft" : "border-panel"}`}
             >
               {t("properties.arrowTypeElbow")}
+            </button>
+          </div>
+        </Section>
+      )}
+
+      {allText && (
+        <Section label={t("properties.text")}>
+          <div className="flex gap-1" role="group" aria-label={t("properties.fontFamily")}>
+            {FONT_FAMILIES.map(([n, key]) => (
+              <button
+                key={n}
+                type="button"
+                data-testid={`font-family-${n}`}
+                aria-pressed={fontFamily === n}
+                onClick={() => onChange({ fontFamily: n })}
+                className={`h-8 flex-1 rounded border text-xs ${fontFamily === n ? "border-accent bg-accent-soft" : "border-panel"}`}
+              >
+                {t(`properties.fontFamily_${key}`)}
+              </button>
+            ))}
+          </div>
+          <div className="mt-1 flex gap-1">
+            <button
+              type="button"
+              data-testid="font-bold"
+              aria-pressed={isBold}
+              onClick={() => onChange({ fontWeight: isBold ? "normal" : "bold" })}
+              className={`h-8 flex-1 rounded border text-xs font-bold ${isBold ? "border-accent bg-accent-soft" : "border-panel"}`}
+            >
+              {t("properties.bold")}
+            </button>
+            <button
+              type="button"
+              data-testid="font-italic"
+              aria-pressed={isItalic}
+              onClick={() => onChange({ fontStyle: isItalic ? "normal" : "italic" })}
+              className={`h-8 flex-1 rounded border text-xs italic ${isItalic ? "border-accent bg-accent-soft" : "border-panel"}`}
+            >
+              {t("properties.italic")}
             </button>
           </div>
         </Section>
