@@ -448,4 +448,70 @@ describe("PropertiesPanel — Text section", () => {
     expect(screen.getByTestId("font-bold")).toHaveAttribute("aria-pressed", "false")
     expect(screen.getByTestId("font-italic")).toHaveAttribute("aria-pressed", "false")
   })
+
+  it("shows a labelled font-size group for an all-text selection", () => {
+    const el = newText({ x: 0, y: 0, text: "a" })
+    render(<PropertiesPanel t={t} selectedElements={[el]} {...handlers} />)
+    const group = screen.getByRole("group", { name: "properties.fontSize" })
+    for (const n of [16, 20, 28, 36]) {
+      expect(group).toContainElement(screen.getByTestId(`font-size-${n}`))
+    }
+  })
+
+  it("hides the font-size buttons for a non-text selection", () => {
+    const el = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
+    render(<PropertiesPanel t={t} selectedElements={[el]} {...handlers} />)
+    expect(screen.queryByTestId("font-size-20")).toBeNull()
+  })
+
+  it.each([
+    [16, "properties.fontSize_s"],
+    [20, "properties.fontSize_m"],
+    [28, "properties.fontSize_l"],
+    [36, "properties.fontSize_xl"],
+  ] as const)("emits onChange({ fontSize: %i }) from its labelled button", async (n, label) => {
+    const el = newText({ x: 0, y: 0, text: "a" })
+    const onChange = vi.fn()
+    render(<PropertiesPanel t={t} selectedElements={[el]} {...handlers} onChange={onChange} />)
+    const button = screen.getByTestId(`font-size-${n}`)
+    expect(button).toHaveTextContent(label)
+    await userEvent.click(button)
+    expect(onChange).toHaveBeenCalledWith({ fontSize: n })
+  })
+
+  it("marks M (20) as pressed for a default text element", () => {
+    const el = newText({ x: 0, y: 0, text: "a" })
+    render(<PropertiesPanel t={t} selectedElements={[el]} {...handlers} />)
+    expect(screen.getByTestId("font-size-20")).toHaveAttribute("aria-pressed", "true")
+    for (const n of [16, 28, 36]) {
+      expect(screen.getByTestId(`font-size-${n}`)).toHaveAttribute("aria-pressed", "false")
+    }
+  })
+
+  it("marks the element's font size as pressed", () => {
+    const el = newText({ x: 0, y: 0, text: "a", fontSize: 28 })
+    render(<PropertiesPanel t={t} selectedElements={[el]} {...handlers} />)
+    expect(screen.getByTestId("font-size-28")).toHaveAttribute("aria-pressed", "true")
+    expect(screen.getByTestId("font-size-20")).toHaveAttribute("aria-pressed", "false")
+  })
+
+  it("no font size pressed for a mixed-size selection; clicking applies to all", async () => {
+    const a = newText({ x: 0, y: 0, text: "a", fontSize: 16 })
+    const b = newText({ x: 0, y: 40, text: "b", fontSize: 36 })
+    const onChange = vi.fn()
+    render(<PropertiesPanel t={t} selectedElements={[a, b]} {...handlers} onChange={onChange} />)
+    for (const n of [16, 20, 28, 36]) {
+      expect(screen.getByTestId(`font-size-${n}`)).toHaveAttribute("aria-pressed", "false")
+    }
+    await userEvent.click(screen.getByTestId("font-size-28"))
+    expect(onChange).toHaveBeenCalledWith({ fontSize: 28 })
+  })
+
+  it("no font size pressed for a non-preset size", () => {
+    const el = newText({ x: 0, y: 0, text: "a", fontSize: 24 })
+    render(<PropertiesPanel t={t} selectedElements={[el]} {...handlers} />)
+    for (const n of [16, 20, 28, 36]) {
+      expect(screen.getByTestId(`font-size-${n}`)).toHaveAttribute("aria-pressed", "false")
+    }
+  })
 })

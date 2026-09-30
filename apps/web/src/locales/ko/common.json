@@ -85,6 +85,11 @@
     "fontFamily_code": "코드",
     "bold": "굵게",
     "italic": "기울임",
+    "fontSize": "글자 크기",
+    "fontSize_s": "소",
+    "fontSize_m": "중",
+    "fontSize_l": "대",
+    "fontSize_xl": "특대",
     "lock": "잠금",
     "flip_horizontal": "좌우 반전",
     "flip_vertical": "상하 반전"

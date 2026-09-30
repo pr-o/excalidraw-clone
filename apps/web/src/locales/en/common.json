@@ -85,6 +85,11 @@
     "fontFamily_code": "Code",
     "bold": "Bold",
     "italic": "Italic",
+    "fontSize": "Font size",
+    "fontSize_s": "S",
+    "fontSize_m": "M",
+    "fontSize_l": "L",
+    "fontSize_xl": "XL",
     "lock": "Lock",
     "flip_horizontal": "Flip horizontal",
     "flip_vertical": "Flip vertical"

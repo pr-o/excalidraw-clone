@@ -23,6 +23,13 @@ const FONT_FAMILIES: readonly (readonly [FontFamily, string])[] = [
   [2, "normal"],
   [3, "code"],
 ]
+// Preset font sizes: [px, i18n label suffix]. 20 matches DEFAULT_FONT_SIZE ("M").
+const FONT_SIZES: readonly (readonly [number, string])[] = [
+  [16, "s"],
+  [20, "m"],
+  [28, "l"],
+  [36, "xl"],
+]
 const ARROWHEAD_KINDS: readonly (Arrowhead | null)[] = [
   null,
   "arrow",
@@ -139,6 +146,10 @@ export function PropertiesPanel({
   const fontFamily = commonValue<FontFamily>(
     textElements as unknown as readonly { [k: string]: unknown }[],
     "fontFamily",
+  )
+  const fontSize = commonValue<number>(
+    textElements as unknown as readonly { [k: string]: unknown }[],
+    "fontSize",
   )
   // Legacy elements may lack fontWeight/fontStyle; absent ⟺ "normal".
   const fontWeight = commonValue<"normal" | "bold">(
@@ -346,6 +357,20 @@ export function PropertiesPanel({
             >
               {t("properties.italic")}
             </button>
+          </div>
+          <div className="mt-1 flex gap-1" role="group" aria-label={t("properties.fontSize")}>
+            {FONT_SIZES.map(([size, key]) => (
+              <button
+                key={size}
+                type="button"
+                data-testid={`font-size-${size}`}
+                aria-pressed={fontSize === size}
+                onClick={() => onChange({ fontSize: size })}
+                className={`h-8 flex-1 rounded border text-xs ${fontSize === size ? "border-accent bg-accent-soft" : "border-panel"}`}
+              >
+                {t(`properties.fontSize_${key}`)}
+              </button>
+            ))}
           </div>
         </Section>
       )}
