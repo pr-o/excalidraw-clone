@@ -8,9 +8,15 @@ import {
   type ExportOptions,
 } from "@excalidraw-clone/ui"
 import { useTranslation } from "react-i18next"
+import { copyPNGToClipboard } from "../driver/copyImageToClipboard"
 import { exportToPNG } from "../driver/exportPNG"
 import { renderExportSVG } from "../driver/exportSVG"
-import { hasExportableSelection } from "../driver/exportTarget"
+import {
+  exportFilename,
+  hasExportableSelection,
+  resolveExportTarget,
+  type ExportTarget,
+} from "../driver/exportTarget"
 import type { PageRecord } from "../driver/pages"
 import { useAppStore } from "../store"
 
@@ -31,9 +37,19 @@ export function Dialogs({ scene, pages, activePageId }: DialogsProps): React.Rea
   // Only computed while the dialog is open; the closure check walks the page.
   const hasSelection = exportOpen && hasExportableSelection(scene.getElements(), selectedIds)
 
+  const targetFor = (opts: ExportOptions): ExportTarget =>
+    resolveExportTarget(pages, activePageId, selectedIds, opts)
+
   const onExport = (opts: ExportOptions): void => {
-    void exportScene(scene, opts, canvasBg)
+    void exportImage(targetFor(opts), opts, canvasBg)
     setOpenDialog(null)
+  }
+
+  // Must stay synchronous up to the clipboard.write call (user activation):
+  // copyPNGToClipboard issues the write before awaiting the render.
+  const onCopy = (opts: ExportOptions): Promise<void> => {
+    const target = targetFor(opts)
+    return copyPNGToClipboard(() => exportToPNG(target.elements, opts, canvasBg, target.pageName))
   }
 
   const onResetConfirm = (): void => {
@@ -54,6 +70,7 @@ export function Dialogs({ scene, pages, activePageId }: DialogsProps): React.Rea
         open={exportOpen}
         onClose={() => setOpenDialog(null)}
         onExport={onExport}
+        onCopy={onCopy}
         pages={pages.map((p) => ({ id: p.id, name: p.name }))}
         activePageId={activePageId}
         hasSelection={hasSelection}
@@ -69,12 +86,16 @@ export function Dialogs({ scene, pages, activePageId }: DialogsProps): React.Rea
   )
 }
 
-async function exportScene(scene: Scene, opts: ExportOptions, canvasBg: string): Promise<void> {
-  const elements = scene.getElements()
+async function exportImage(
+  target: ExportTarget,
+  opts: ExportOptions,
+  canvasBg: string,
+): Promise<void> {
+  const filename = exportFilename(target.pageName, target.scope, opts.format)
   if (opts.format === "svg") {
-    const svg = await renderExportSVG(elements, opts, canvasBg)
-    download(new Blob([svg], { type: "image/svg+xml" }), "drawing.svg")
+    const svg = await renderExportSVG(target.elements, opts, canvasBg)
+    download(new Blob([svg], { type: "image/svg+xml" }), filename)
     return
   }
-  download(await exportToPNG(elements, opts, canvasBg), "drawing.png")
+  download(await exportToPNG(target.elements, opts, canvasBg, target.pageName), filename)
 }
