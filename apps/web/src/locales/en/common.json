@@ -147,6 +147,13 @@
     "bgDark": "Dark",
     "bgTransparent": "Transparent",
     "embed": "Embed scene (re-importable)",
+    "page": "Page",
+    "scope": "Content",
+    "scopePage": "Whole page",
+    "scopeSelection": "Selection only",
+    "copy": "Copy to clipboard",
+    "copied": "Copied to clipboard",
+    "copyFailed": "Couldn't copy to the clipboard. Your browser may not allow it — use Export instead.",
     "cancel": "Cancel",
     "confirm": "Export"
   },

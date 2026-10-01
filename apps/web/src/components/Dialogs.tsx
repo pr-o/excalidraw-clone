@@ -10,14 +10,26 @@ import {
 import { useTranslation } from "react-i18next"
 import { exportToPNG } from "../driver/exportPNG"
 import { renderExportSVG } from "../driver/exportSVG"
+import { hasExportableSelection } from "../driver/exportTarget"
+import type { PageRecord } from "../driver/pages"
 import { useAppStore } from "../store"
 
-export function Dialogs({ scene }: { scene: Scene }): React.ReactElement {
+export interface DialogsProps {
+  scene: Scene
+  pages: readonly PageRecord[]
+  activePageId: string
+}
+
+export function Dialogs({ scene, pages, activePageId }: DialogsProps): React.ReactElement {
   const { t } = useTranslation()
   const openDialog = useAppStore((s) => s.openDialog)
   const setOpenDialog = useAppStore((s) => s.setOpenDialog)
   const canvasBg = useAppStore((s) => s.canvasBg)
   const resolvedTheme = useAppStore((s) => s.resolvedTheme)
+  const selectedIds = useAppStore((s) => s.selectedIds)
+  const exportOpen = openDialog === "export"
+  // Only computed while the dialog is open; the closure check walks the page.
+  const hasSelection = exportOpen && hasExportableSelection(scene.getElements(), selectedIds)
 
   const onExport = (opts: ExportOptions): void => {
     void exportScene(scene, opts, canvasBg)
@@ -39,9 +51,12 @@ export function Dialogs({ scene }: { scene: Scene }): React.ReactElement {
       <HelpDialog t={t} open={openDialog === "help"} onClose={() => setOpenDialog(null)} />
       <ExportDialog
         t={t}
-        open={openDialog === "export"}
+        open={exportOpen}
         onClose={() => setOpenDialog(null)}
         onExport={onExport}
+        pages={pages.map((p) => ({ id: p.id, name: p.name }))}
+        activePageId={activePageId}
+        hasSelection={hasSelection}
         defaultBackground={resolvedTheme === "dark" ? "dark" : "white"}
       />
       <ResetCanvasDialog

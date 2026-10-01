@@ -25,7 +25,7 @@ export { PagePickerFlyout } from "./PagePickerFlyout"
 export type { PagePickerFlyoutProps, PagePickerPage } from "./PagePickerFlyout"
 
 export { ExportDialog } from "./ExportDialog"
-export type { ExportDialogProps, ExportOptions } from "./ExportDialog"
+export type { ExportDialogProps, ExportOptions, ExportPageOption } from "./ExportDialog"
 
 export { ResetCanvasDialog } from "./ResetCanvasDialog"
 export type { ResetCanvasDialogProps } from "./ResetCanvasDialog"

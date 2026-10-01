@@ -775,7 +775,7 @@ function Inner(): React.ReactElement {
 
       {presenting && <PresentationHost scene={scene} rootEl={rootRef} />}
 
-      <Dialogs scene={scene} />
+      <Dialogs scene={scene} pages={pages} activePageId={activePageId} />
       <PaletteHost scene={scene} />
       <FindHost scene={scene} />
       <ContextMenuHost
