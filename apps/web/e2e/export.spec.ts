@@ -1,9 +1,11 @@
 import { expect, test, type Page } from "@playwright/test"
 import { readFileSync } from "node:fs"
+import { inflateSync } from "node:zlib"
 import { dragOnCanvas } from "./_helpers"
 
 type Point = { x: number; y: number }
 type ExportedPNG = { filename: string; width: number; height: number; bytes: Buffer }
+type ExportedPDF = { filename: string; width: number; height: number; bytes: Buffer }
 
 const freshCanvas = async (page: Page): Promise<void> => {
   await page.goto("/")
@@ -48,6 +50,40 @@ const exportPNG = async (page: Page): Promise<ExportedPNG> => {
     height: bytes.readUInt32BE(20),
     bytes,
   }
+}
+
+/** Click Export and read the downloaded PDF's name and its single page's
+ *  MediaBox size (page dictionaries are never compressed). */
+const exportPDF = async (page: Page): Promise<ExportedPDF> => {
+  const downloadPromise = page.waitForEvent("download")
+  await exportButton(page).click()
+  const download = await downloadPromise
+  const bytes = readFileSync(await download.path())
+  expect(bytes.subarray(0, 5).toString("latin1")).toBe("%PDF-")
+  const boxes = [
+    ...bytes
+      .toString("latin1")
+      .matchAll(/\/MediaBox \[\s*([\d.-]+)\s+([\d.-]+)\s+([\d.-]+)\s+([\d.-]+)\s*\]/g),
+  ]
+  expect(boxes).toHaveLength(1) // one page
+  const [x0, y0, x1, y1] = boxes[0]!.slice(1).map(Number) as [number, number, number, number]
+  return { filename: download.suggestedFilename(), width: x1 - x0, height: y1 - y0, bytes }
+}
+
+/** Every Flate-compressed stream of a PDF, inflated and concatenated. */
+const pdfStreams = (bytes: Buffer): string => {
+  const latin = bytes.toString("latin1")
+  const out: string[] = []
+  for (const m of latin.matchAll(/(?<!end)stream\r?\n/g)) {
+    const start = m.index + m[0].length
+    const end = latin.indexOf("endstream", start)
+    try {
+      out.push(inflateSync(bytes.subarray(start, end)).toString("latin1"))
+    } catch {
+      // not a Flate stream
+    }
+  }
+  return out.join("\n")
 }
 
 const expectNear = (actual: number, expected: number): void => {
@@ -188,4 +224,53 @@ test("a failed clipboard write shows an inline error and keeps the dialog usable
 
   const exported = await exportPNG(page)
   expect(exported.filename).toBe("Page 1.png")
+})
+
+test("PDF export is one vector page sized like the PNG, for the page or the selection", async ({
+  page,
+}) => {
+  await freshCanvas(page)
+  await drawTwoRectsAndSelectFirst(page)
+
+  await openExportDialog(page)
+  await page.locator('[data-testid="format-pdf"]').click()
+  // Scale has no meaning for a content-sized vector page.
+  await expect(page.locator('[data-testid="scale-1"]')).toHaveCount(0)
+  const whole = await exportPDF(page)
+  expect(whole.filename).toBe("Page 1.pdf")
+  // Same box as the PNG test above: bbox 400×280 plus 20px padding per side.
+  expectNear(whole.width, 440)
+  expectNear(whole.height, 320)
+  // Shapes are drawn as vector paths, not an embedded raster.
+  expect(whole.bytes.toString("latin1")).not.toContain("/Subtype /Image")
+
+  await openExportDialog(page)
+  await page.locator('[data-testid="format-pdf"]').click()
+  await page.locator('[data-testid="scope-selection"]').click()
+  const selection = await exportPDF(page)
+  expect(selection.filename).toBe("Page 1-selection.pdf")
+  expectNear(selection.width, 100)
+  expectNear(selection.height, 100)
+})
+
+test("PDF export keeps text as real PDF text", async ({ page }) => {
+  await freshCanvas(page)
+  const canvas = page.locator("canvas").first()
+  const box = await canvas.boundingBox()
+  if (!box) throw new Error("canvas not found")
+  await page.locator('[data-testid="toolbar-text"]').click()
+  await page.mouse.click(box.x + 200, box.y + 200)
+  const editor = page.locator("textarea")
+  await editor.waitFor({ state: "visible" })
+  await page.keyboard.type("hello pdf")
+  await editor.blur()
+  await page.waitForTimeout(300)
+
+  await openExportDialog(page)
+  await page.locator('[data-testid="format-pdf"]').click()
+  const pdf = await exportPDF(page)
+  expect(pdf.filename).toBe("Page 1.pdf")
+  // The default hand-drawn family falls back to the standard Times font.
+  expect(pdf.bytes.toString("latin1")).toContain("/BaseFont /Times-Roman")
+  expect(pdfStreams(pdf.bytes)).toContain("(hello pdf) Tj")
 })
