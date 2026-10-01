@@ -21,10 +21,12 @@
     "@excalidraw-clone/tools": "workspace:*",
     "@excalidraw-clone/ui": "workspace:*",
     "i18next": "^24.0.0",
+    "jspdf": "4.2.1",
     "next": "^16.2.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-i18next": "^15.0.0",
+    "svg2pdf.js": "2.8.1",
     "zustand": "^5.0.0"
   },
   "devDependencies": {
