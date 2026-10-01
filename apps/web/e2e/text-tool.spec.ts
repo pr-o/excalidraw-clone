@@ -132,3 +132,61 @@ test("committed free text can be selected by clicking on it", async ({ page }) =
   await clickCanvas(page, { x: 215, y: 210 })
   await expect(bold).toBeVisible()
 })
+
+test("changing font size to XL grows the text's box so its new area is click-selectable", async ({
+  page,
+}) => {
+  await freshCanvas(page)
+
+  await page.locator('[data-testid="toolbar-text"]').click()
+  await clickCanvas(page, { x: 200, y: 200 })
+  const editor = page.locator("textarea")
+  await editor.waitFor({ state: "visible" })
+  await page.keyboard.type("hello world")
+  await page.keyboard.press("Escape")
+  await expect(editor).toHaveCount(0)
+
+  type StoredText = {
+    type: string
+    x: number
+    y: number
+    width: number
+    height: number
+    fontSize: number
+    isDeleted?: boolean
+  }
+  const readText = async (): Promise<StoredText> => {
+    await page.waitForTimeout(900)
+    const sceneJson = await page.evaluate(() => localStorage.getItem("excalidraw-scene"))
+    const texts = parseStoredScene<StoredText>(sceneJson).elements.filter(
+      (e) => e.type === "text" && !e.isDeleted,
+    )
+    expect(texts).toHaveLength(1)
+    return texts[0]!
+  }
+  const before = await readText()
+  expect(before.fontSize).toBe(20)
+
+  await page.locator('[data-testid="toolbar-selection"]').click()
+  await page.keyboard.press("ControlOrMeta+a")
+  const xl = page.locator('[data-testid="font-size-36"]')
+  await expect(page.locator('[data-testid="font-size-20"]')).toHaveAttribute("aria-pressed", "true")
+  await xl.click()
+  await expect(xl).toHaveAttribute("aria-pressed", "true")
+
+  const after = await readText()
+  expect(after.fontSize).toBe(36)
+  expect(after.width).toBeGreaterThan(before.width * 1.5)
+  expect(after.height).toBeGreaterThan(before.height * 1.5)
+
+  // Deselect, then click a point inside the NEW box but outside the OLD one
+  // (right of the old right edge, vertically inside both boxes).
+  await clickCanvas(page, { x: 700, y: 550 })
+  await expect(xl).toHaveCount(0)
+  await clickCanvas(page, {
+    x: after.x + before.width + (after.width - before.width) / 2,
+    y: after.y + before.height / 2,
+  })
+  await expect(xl).toBeVisible()
+  await expect(xl).toHaveAttribute("aria-pressed", "true")
+})

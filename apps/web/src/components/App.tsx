@@ -11,7 +11,6 @@ import {
   distributeElements,
   duplicateElements,
   expandIdsToGroups,
-  type ExcalidrawElement,
   flipElements,
   groupElements,
   type LibraryItem,
@@ -47,6 +46,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { I18nextProvider, useTranslation } from "react-i18next"
 import { startAutoSave } from "../driver/autoSave"
+import { applyPropertiesPatch } from "../driver/applyPropertiesPatch"
 import { hydratePages, hydrateUI } from "../driver/hydration"
 import { pickAndUploadImage } from "../driver/imageUpload"
 import {
@@ -483,7 +483,7 @@ function Inner(): React.ReactElement {
                 scene.mutate((draft) => {
                   for (let i = 0; i < draft.length; i += 1) {
                     if (selectedIds.includes(draft[i]!.id)) {
-                      draft[i] = { ...draft[i]!, ...patch } as ExcalidrawElement
+                      draft[i] = applyPropertiesPatch(draft[i]!, patch)
                     }
                   }
                 })
