@@ -1,18 +1,32 @@
 "use client"
 import { embedTextChunk, getFile, PNG_EXCALIDRAW_KEYWORD } from "@excalidraw-clone/persistence"
 import { CanvasRenderer } from "@excalidraw-clone/renderer"
-import { buildExcalidrawData, newPage, type Scene } from "@excalidraw-clone/scene"
+import {
+  buildExcalidrawData,
+  newPage,
+  Scene,
+  type ExcalidrawElement,
+} from "@excalidraw-clone/scene"
 import type { ExportOptions } from "@excalidraw-clone/ui"
 
 const PADDING = 20
 
+export type PNGRenderOptions = Pick<ExportOptions, "scale" | "background" | "embedScene">
+
+/** Render exactly `elements` to a PNG blob sized to their bounding box plus
+ *  padding. The elements are wrapped in a throwaway Scene, so any page or
+ *  selection subset can be exported without touching the live canvas. When
+ *  `embedScene` is set, the embedded document holds only these elements, as a
+ *  single page named `pageName`. */
 export async function exportToPNG(
-  scene: Scene,
-  opts: ExportOptions,
+  elements: readonly ExcalidrawElement[],
+  opts: PNGRenderOptions,
   canvasBg = "#ffffff",
+  pageName = "Page 1",
 ): Promise<Blob> {
-  const elements = scene.getElements()
-  const bbox = computeBBox(elements)
+  const live = elements.filter((e) => !e.isDeleted)
+  const scene = new Scene(live)
+  const bbox = computeBBox(live)
   const w = Math.max(1, bbox.width + PADDING * 2)
   const h = Math.max(1, bbox.height + PADDING * 2)
   const canvas = document.createElement("canvas")
@@ -26,7 +40,7 @@ export async function exportToPNG(
   })
 
   const fileIds = new Set<string>()
-  for (const el of elements) {
+  for (const el of live) {
     if (el.type === "image" && el.fileId !== null) fileIds.add(el.fileId)
   }
   const loads: Promise<void>[] = []
@@ -48,14 +62,14 @@ export async function exportToPNG(
   })
 
   if (opts.embedScene) {
-    const page = newPage("Page 1", scene.getElementsIncludingDeleted())
+    const page = newPage(pageName, live)
     const json = JSON.stringify(buildExcalidrawData([page], page.id))
     return embedTextChunk(blob, PNG_EXCALIDRAW_KEYWORD, json)
   }
   return blob
 }
 
-function computeBBox(elements: ReturnType<Scene["getElements"]>): {
+function computeBBox(elements: readonly ExcalidrawElement[]): {
   x: number
   y: number
   width: number

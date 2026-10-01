@@ -1,6 +1,5 @@
 "use client"
-import { clearAllFiles, clearLocal, download, getFile } from "@excalidraw-clone/persistence"
-import { renderToSVG } from "@excalidraw-clone/renderer"
+import { clearAllFiles, clearLocal, download } from "@excalidraw-clone/persistence"
 import type { Scene } from "@excalidraw-clone/scene"
 import {
   ExportDialog,
@@ -10,6 +9,7 @@ import {
 } from "@excalidraw-clone/ui"
 import { useTranslation } from "react-i18next"
 import { exportToPNG } from "../driver/exportPNG"
+import { renderExportSVG } from "../driver/exportSVG"
 import { useAppStore } from "../store"
 
 export function Dialogs({ scene }: { scene: Scene }): React.ReactElement {
@@ -55,21 +55,11 @@ export function Dialogs({ scene }: { scene: Scene }): React.ReactElement {
 }
 
 async function exportScene(scene: Scene, opts: ExportOptions, canvasBg: string): Promise<void> {
-  const theme = opts.background === "dark" ? "dark" : "light"
-  const background = opts.background === "transparent" ? "transparent" : canvasBg
+  const elements = scene.getElements()
   if (opts.format === "svg") {
-    const files = new Map<string, string>()
-    for (const el of scene.getElements()) {
-      if (el.type === "image" && el.fileId !== null && !files.has(el.fileId)) {
-        const bin = await getFile(el.fileId)
-        if (bin) files.set(el.fileId, bin.dataURL)
-      }
-    }
-    const svg = renderToSVG(scene, { background, theme, files })
-    const blob = new Blob([svg], { type: "image/svg+xml" })
-    download(blob, "drawing.svg")
+    const svg = await renderExportSVG(elements, opts, canvasBg)
+    download(new Blob([svg], { type: "image/svg+xml" }), "drawing.svg")
     return
   }
-  const blob = await exportToPNG(scene, opts, canvasBg)
-  download(blob, "drawing.png")
+  download(await exportToPNG(elements, opts, canvasBg), "drawing.png")
 }
