@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import { Dialog } from "./shared/Dialog"
 
 export interface ExportOptions {
-  format: "png" | "svg"
+  format: "png" | "svg" | "pdf"
   scale: 1 | 2 | 3
   background: "white" | "dark" | "transparent"
   embedScene: boolean
@@ -156,16 +156,20 @@ export function ExportDialog({
             options={[
               { value: "png", label: "PNG", testId: "format-png" },
               { value: "svg", label: "SVG", testId: "format-svg" },
+              { value: "pdf", label: "PDF", testId: "format-pdf" },
             ]}
           />
         </Row>
-        <Row label={t("export.scale")}>
-          <Toggle
-            value={scale}
-            setValue={setScale}
-            options={SCALES.map((s) => ({ value: s, label: `${s}×`, testId: `scale-${s}` }))}
-          />
-        </Row>
+        {/* A PDF is vector and sized to its content: scale does not apply. */}
+        {format !== "pdf" && (
+          <Row label={t("export.scale")}>
+            <Toggle
+              value={scale}
+              setValue={setScale}
+              options={SCALES.map((s) => ({ value: s, label: `${s}×`, testId: `scale-${s}` }))}
+            />
+          </Row>
+        )}
         <Row label={t("export.background")}>
           <Toggle
             value={background}

@@ -145,6 +145,9 @@ describe("exportFilename", () => {
     ["tab\there", "page", "png", "tab-here.png"],
     ["  padded  ", "page", "png", "padded.png"],
     ["회의 노트", "page", "png", "회의 노트.png"],
+    ["Notes", "page", "pdf", "Notes.pdf"],
+    ["Notes", "selection", "pdf", "Notes-selection.pdf"],
+    ["", "page", "pdf", "drawing.pdf"],
   ] as const)("(%j, %s, %s) → %j", (name, scope, format, expected) => {
     expect(exportFilename(name, scope, format)).toBe(expected)
   })

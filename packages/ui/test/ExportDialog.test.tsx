@@ -399,3 +399,66 @@ describe("ExportDialog — copy to clipboard", () => {
     expect(copy).toBeEnabled()
   })
 })
+
+describe("ExportDialog — PDF format", () => {
+  it("offers PDF and exports format 'pdf'", async () => {
+    const onExport = vi.fn()
+    render(
+      <ExportDialog
+        t={t}
+        open
+        onClose={() => {}}
+        onExport={onExport}
+        pages={ONE_PAGE}
+        activePageId="p1"
+      />,
+    )
+    const pdf = screen.getByTestId("format-pdf")
+    expect(pdf).toHaveTextContent("PDF")
+    await userEvent.click(pdf)
+    expect(pdf).toHaveAttribute("aria-pressed", "true")
+    await userEvent.click(confirm())
+    expect(onExport).toHaveBeenCalledWith(expect.objectContaining({ format: "pdf", pageId: "p1" }))
+  })
+
+  it("hides the Scale row for PDF and restores it, with the earlier choice, for PNG", async () => {
+    render(
+      <ExportDialog
+        t={t}
+        open
+        onClose={() => {}}
+        onExport={() => {}}
+        pages={ONE_PAGE}
+        activePageId="p1"
+      />,
+    )
+    await userEvent.click(screen.getByTestId("scale-2"))
+    await userEvent.click(screen.getByTestId("format-pdf"))
+    expect(screen.queryByText("export.scale")).toBeNull()
+    expect(screen.queryByTestId("scale-2")).toBeNull()
+    // Background still applies to PDF.
+    expect(screen.getByTestId("bg-dark")).toBeInTheDocument()
+
+    await userEvent.click(screen.getByTestId("format-png"))
+    expect(screen.getByText("export.scale")).toBeInTheDocument()
+    expect(screen.getByTestId("scale-2")).toHaveAttribute("aria-pressed", "true")
+  })
+
+  it("still copies a PNG when PDF is chosen", async () => {
+    const onCopy = vi.fn<CopyFn>(() => Promise.resolve())
+    render(
+      <ExportDialog
+        t={t}
+        open
+        onClose={() => {}}
+        onExport={() => {}}
+        onCopy={onCopy}
+        pages={ONE_PAGE}
+        activePageId="p1"
+      />,
+    )
+    await userEvent.click(screen.getByTestId("format-pdf"))
+    await userEvent.click(screen.getByTestId("export-copy"))
+    expect(onCopy).toHaveBeenCalledWith(expect.objectContaining({ format: "png" }))
+  })
+})

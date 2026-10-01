@@ -1,4 +1,5 @@
 import { expandIdsToCopyClosure, type ExcalidrawElement } from "@excalidraw-clone/scene"
+import type { ExportOptions } from "@excalidraw-clone/ui"
 import type { PageRecord } from "./pages"
 
 export type ExportScope = "page" | "selection"
@@ -55,7 +56,7 @@ const UNSAFE_FILENAME_CHARS = new Set(["\\", "/", ":", "*", "?", '"', "<", ">", 
 export function exportFilename(
   pageName: string,
   scope: ExportScope,
-  format: "png" | "svg",
+  format: ExportOptions["format"],
 ): string {
   const cleaned = Array.from(pageName, (ch) =>
     ch < " " || UNSAFE_FILENAME_CHARS.has(ch) ? "-" : ch,
