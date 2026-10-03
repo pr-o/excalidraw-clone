@@ -47,6 +47,7 @@ describe("ExportDialog", () => {
       embedScene: false,
       scope: "page",
       pageId: "p1",
+      allPages: false,
     })
   })
 
@@ -74,6 +75,7 @@ describe("ExportDialog", () => {
       embedScene: true,
       scope: "page",
       pageId: "p1",
+      allPages: false,
     })
   })
 })
@@ -460,5 +462,101 @@ describe("ExportDialog — PDF format", () => {
     await userEvent.click(screen.getByTestId("format-pdf"))
     await userEvent.click(screen.getByTestId("export-copy"))
     expect(onCopy).toHaveBeenCalledWith(expect.objectContaining({ format: "png" }))
+  })
+})
+
+describe("ExportDialog — export all pages", () => {
+  it("hides the all-pages checkbox when there is only one page", () => {
+    render(
+      <ExportDialog
+        t={t}
+        open
+        onClose={() => {}}
+        onExport={() => {}}
+        pages={ONE_PAGE}
+        activePageId="p1"
+      />,
+    )
+    expect(screen.queryByTestId("export-all-pages")).toBeNull()
+  })
+
+  it("shows the checkbox with 2+ pages, unchecked by default", () => {
+    render(
+      <ExportDialog
+        t={t}
+        open
+        onClose={() => {}}
+        onExport={() => {}}
+        pages={TWO_PAGES}
+        activePageId="p1"
+      />,
+    )
+    expect(screen.getByTestId("export-all-pages")).not.toBeChecked()
+  })
+
+  it("checking it hides the page picker, scope toggle and Copy button, and emits allPages: true", async () => {
+    const onExport = vi.fn()
+    const onCopy = vi.fn<CopyFn>(() => Promise.resolve())
+    render(
+      <ExportDialog
+        t={t}
+        open
+        onClose={() => {}}
+        onExport={onExport}
+        onCopy={onCopy}
+        pages={TWO_PAGES}
+        activePageId="p1"
+        hasSelection
+      />,
+    )
+    await userEvent.click(screen.getByTestId("export-all-pages"))
+    expect(screen.queryByTestId("export-page")).toBeNull()
+    expect(screen.queryByTestId("scope-page")).toBeNull()
+    expect(screen.queryByTestId("export-copy")).toBeNull()
+    await userEvent.click(confirm())
+    expect(onExport).toHaveBeenCalledWith(expect.objectContaining({ allPages: true }))
+  })
+
+  it("unchecking restores the page picker and scope toggle", async () => {
+    render(
+      <ExportDialog
+        t={t}
+        open
+        onClose={() => {}}
+        onExport={() => {}}
+        pages={TWO_PAGES}
+        activePageId="p1"
+        hasSelection
+      />,
+    )
+    const checkbox = screen.getByTestId("export-all-pages")
+    await userEvent.click(checkbox)
+    await userEvent.click(checkbox)
+    expect(screen.getByTestId("export-page")).toBeInTheDocument()
+    expect(screen.getByTestId("scope-page")).toBeInTheDocument()
+  })
+
+  it("reopening resets allPages to false", async () => {
+    const onExport = vi.fn()
+    const props = { t, onClose: () => {}, onExport, pages: TWO_PAGES, activePageId: "p1" }
+    const { rerender } = render(<ExportDialog {...props} open />)
+    await userEvent.click(screen.getByTestId("export-all-pages"))
+    rerender(<ExportDialog {...props} open={false} />)
+    rerender(<ExportDialog {...props} open />)
+    expect(screen.getByTestId("export-all-pages")).not.toBeChecked()
+    expect(screen.getByTestId("export-page")).toBeInTheDocument()
+  })
+
+  it("ignores a stale check once the pages drop to one", async () => {
+    const onExport = vi.fn()
+    const onCopy = vi.fn<CopyFn>(() => Promise.resolve())
+    const props = { t, open: true, onClose: () => {}, onExport, onCopy, activePageId: "p1" }
+    const { rerender } = render(<ExportDialog {...props} pages={TWO_PAGES} />)
+    await userEvent.click(screen.getByTestId("export-all-pages"))
+    rerender(<ExportDialog {...props} pages={ONE_PAGE} />)
+    expect(screen.queryByTestId("export-all-pages")).toBeNull()
+    expect(screen.getByTestId("export-copy")).toBeInTheDocument()
+    await userEvent.click(confirm())
+    expect(onExport).toHaveBeenCalledWith(expect.objectContaining({ allPages: false }))
   })
 })

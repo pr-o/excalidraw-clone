@@ -145,6 +145,7 @@
     "bgDark": "어둡게",
     "bgTransparent": "투명",
     "embed": "장면 정보 포함",
+    "allPages": "모든 페이지 내보내기 (.zip)",
     "page": "페이지",
     "scope": "내용",
     "scopePage": "페이지 전체",

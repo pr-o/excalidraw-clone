@@ -147,6 +147,7 @@
     "bgDark": "Dark",
     "bgTransparent": "Transparent",
     "embed": "Embed scene (re-importable)",
+    "allPages": "Export all pages (.zip)",
     "page": "Page",
     "scope": "Content",
     "scopePage": "Whole page",

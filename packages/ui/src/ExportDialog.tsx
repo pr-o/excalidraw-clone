@@ -8,8 +8,10 @@ export interface ExportOptions {
   embedScene: boolean
   /** "selection" exports only the current selection (active page only). */
   scope: "page" | "selection"
-  /** The page whose elements are exported. */
+  /** The page whose elements are exported. Ignored when allPages is true. */
   pageId: string
+  /** Export every page as its own file inside one .zip, instead of a single file. */
+  allPages: boolean
 }
 
 /** A page as listed in the export page picker. */
@@ -60,6 +62,7 @@ export function ExportDialog({
   const [embedScene, setEmbedScene] = useState(false)
   const [scope, setScope] = useState<ExportOptions["scope"]>("page")
   const [pageId, setPageId] = useState(activePageId)
+  const [allPages, setAllPages] = useState(false)
   const [copyStatus, setCopyStatus] = useState<CopyStatus>("idle")
 
   // The component stays mounted while closed, so per-session choices are
@@ -69,6 +72,7 @@ export function ExportDialog({
     setBackground(defaultBackground ?? "white")
     setScope("page")
     setPageId(activePageId)
+    setAllPages(false)
     setCopyStatus("idle")
   }, [open, defaultBackground, activePageId])
 
@@ -76,8 +80,13 @@ export function ExportDialog({
 
   // A picked page that no longer exists falls back to the active page.
   const targetPageId = pages.some((p) => p.id === pageId) ? pageId : activePageId
-  // Selection is page-local: only offer it when exporting the active page.
-  const showScope = hasSelection && targetPageId === activePageId
+  const showAllPagesToggle = pages.length > 1
+  // Like targetPageId: a stale check (pages dropped to one) is ignored.
+  const exportAllPages = showAllPagesToggle && allPages
+  const showPagePicker = pages.length > 1 && !exportAllPages
+  // Selection is page-local: only offer it when exporting the active page,
+  // and never alongside an all-pages zip.
+  const showScope = !exportAllPages && hasSelection && targetPageId === activePageId
   const currentOptions = (): ExportOptions => ({
     format,
     scale,
@@ -85,6 +94,7 @@ export function ExportDialog({
     embedScene,
     scope: showScope ? scope : "page",
     pageId: targetPageId,
+    allPages: exportAllPages,
   })
 
   const handleCopy = (): void => {
@@ -116,7 +126,18 @@ export function ExportDialog({
       {...(className !== undefined ? { className } : {})}
     >
       <div className="space-y-4">
-        {pages.length > 1 && (
+        {showAllPagesToggle && (
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              data-testid="export-all-pages"
+              checked={allPages}
+              onChange={(e) => setAllPages(e.target.checked)}
+            />
+            {t("export.allPages")}
+          </label>
+        )}
+        {showPagePicker && (
           <Row label={t("export.page")}>
             <select
               data-testid="export-page"
@@ -207,7 +228,7 @@ export function ExportDialog({
           >
             {t("export.cancel")}
           </button>
-          {onCopy && (
+          {onCopy && !exportAllPages && (
             <button
               type="button"
               data-testid="export-copy"
