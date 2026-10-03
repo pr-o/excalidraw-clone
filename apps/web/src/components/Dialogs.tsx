@@ -9,9 +9,8 @@ import {
 } from "@excalidraw-clone/ui"
 import { useTranslation } from "react-i18next"
 import { copyPNGToClipboard } from "../driver/copyImageToClipboard"
-import { exportToPDF } from "../driver/exportPDF"
 import { exportToPNG } from "../driver/exportPNG"
-import { renderExportSVG } from "../driver/exportSVG"
+import { renderPageBlob } from "../driver/exportRender"
 import {
   exportFilename,
   hasExportableSelection,
@@ -93,14 +92,8 @@ async function exportImage(
   canvasBg: string,
 ): Promise<void> {
   const filename = exportFilename(target.pageName, target.scope, opts.format)
-  if (opts.format === "svg") {
-    const svg = await renderExportSVG(target.elements, opts, canvasBg)
-    download(new Blob([svg], { type: "image/svg+xml" }), filename)
-    return
-  }
-  if (opts.format === "pdf") {
-    download(await exportToPDF(target.elements, opts, canvasBg), filename)
-    return
-  }
-  download(await exportToPNG(target.elements, opts, canvasBg, target.pageName), filename)
+  download(
+    await renderPageBlob(opts.format, target.elements, opts, canvasBg, target.pageName),
+    filename,
+  )
 }
