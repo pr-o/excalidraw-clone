@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
-import { prepareSVGForPDF, svgToPDF } from "../src/driver/exportPDF"
+import { prepareSVGForPDF, svgsToPDF, svgToPDF } from "../src/driver/exportPDF"
 
 // svg2pdf.js needs a real layout engine (SVGElement.getBBox), which jsdom
 // lacks, and its UMD "main" build cannot even be imported under Vitest. It is
@@ -76,5 +76,58 @@ describe("svgToPDF", () => {
   it("rejects when svg2pdf rejects", async () => {
     svg2pdf.mockRejectedValueOnce(new Error("boom"))
     await expect(svgToPDF(svgOf(10, 10))).rejects.toThrow("boom")
+  })
+})
+
+describe("svgsToPDF", () => {
+  it("gives every page its own size, landscape and portrait mixed", async () => {
+    const blob = await svgsToPDF([svgOf(440, 320), svgOf(100, 300)])
+    expect(blob.type).toBe("application/pdf")
+    const text = await pdfText(blob)
+    expect(text.startsWith("%PDF-")).toBe(true)
+    expect(text.match(/\/Type \/Page\b/g)).toHaveLength(2)
+    const boxes = [...text.matchAll(/\/MediaBox \[0 0 ([\d.]+) ([\d.]+)\]/g)].map((m) => [
+      Number(m[1]),
+      Number(m[2]),
+    ])
+    // In page order; the second page must NOT inherit the first's landscape
+    // orientation (which would swap it to 300×100).
+    expect(boxes).toEqual([
+      [440, 320],
+      [100, 300],
+    ])
+  })
+
+  it("a single SVG still makes exactly one page", async () => {
+    const text = await pdfText(await svgsToPDF([svgOf(140, 90)]))
+    expect(text.match(/\/Type \/Page\b/g)).toHaveLength(1)
+    expect(text).toMatch(/\/MediaBox \[0 0 140\.? 90\.?\]/)
+  })
+
+  it("draws each SVG once, onto its own page, at full page size", async () => {
+    await svgsToPDF([svgOf(440, 320), svgOf(100, 300), svgOf(250, 250)])
+    expect(svg2pdf).toHaveBeenCalledTimes(3)
+    const calls = svg2pdf.mock.calls
+    expect(calls.map(([el]) => [el.localName, el.getAttribute("width")])).toEqual([
+      ["svg", "440"],
+      ["svg", "100"],
+      ["svg", "250"],
+    ])
+    expect(calls.map(([, , opts]) => opts)).toEqual([
+      { x: 0, y: 0, width: 440, height: 320 },
+      { x: 0, y: 0, width: 100, height: 300 },
+      { x: 0, y: 0, width: 250, height: 250 },
+    ])
+    // One shared document, not one per page.
+    expect(new Set(calls.map(([, pdf]) => pdf)).size).toBe(1)
+  })
+
+  it("rejects an empty list", async () => {
+    await expect(svgsToPDF([])).rejects.toThrow(/no pages/)
+  })
+
+  it("rejects when svg2pdf rejects on a later page", async () => {
+    svg2pdf.mockResolvedValueOnce(undefined).mockRejectedValueOnce(new Error("boom"))
+    await expect(svgsToPDF([svgOf(10, 10), svgOf(20, 20)])).rejects.toThrow("boom")
   })
 })

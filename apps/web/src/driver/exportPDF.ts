@@ -3,6 +3,7 @@ import { getFile } from "@excalidraw-clone/persistence"
 import type { ExcalidrawElement } from "@excalidraw-clone/scene"
 import type { ExportOptions } from "@excalidraw-clone/ui"
 import { renderExportSVG, type FileLoader } from "./exportSVG"
+import type { PageRecord } from "./pages"
 
 const SVG_NS = "http://www.w3.org/2000/svg"
 
@@ -58,6 +59,33 @@ export async function svgToPDF(svg: string): Promise<Blob> {
   return pdf.output("blob")
 }
 
+/** Draw several export SVGs into one PDF, one page each, every page exactly
+ *  its own SVG's size (1 SVG unit = 1 pt). The multi-page twin of svgToPDF.
+ *  jsPDF and svg2pdf.js are loaded on first use. Rejects on an empty list. */
+export async function svgsToPDF(svgs: readonly string[]): Promise<Blob> {
+  const [first, ...rest] = svgs.map(prepareSVGForPDF)
+  if (!first) throw new Error("svgsToPDF: no pages to export")
+  const [{ jsPDF }, { svg2pdf }] = await Promise.all([import("jspdf"), import("svg2pdf.js")])
+  // jsPDF swaps [w, h] to match `orientation` (default portrait), so a wide
+  // page must be declared landscape or it comes out rotated.
+  const pdf = new jsPDF({
+    orientation: first.width > first.height ? "landscape" : "portrait",
+    unit: "pt",
+    format: [first.width, first.height],
+    compress: true,
+    putOnlyUsedFonts: true,
+  })
+  await svg2pdf(first.root, pdf, { x: 0, y: 0, width: first.width, height: first.height })
+  for (const { root, width, height } of rest) {
+    // addPage's orientation is sticky (omitted = previous page's), so always
+    // pass it, or a tall page after a wide one comes out rotated. The new page
+    // becomes current, so svg2pdf draws onto it.
+    pdf.addPage([width, height], width > height ? "landscape" : "portrait")
+    await svg2pdf(root, pdf, { x: 0, y: 0, width, height })
+  }
+  return pdf.output("blob")
+}
+
 /** Render exactly `elements` to a one-page PDF sized like the PNG/SVG export
  *  (content bounding box plus the same 20px padding). Vector output: there is
  *  no scale. Text uses the PDF standard fonts (Helvetica/Times/Courier). */
@@ -68,4 +96,20 @@ export async function exportToPDF(
   loadFile: FileLoader = getFile,
 ): Promise<Blob> {
   return svgToPDF(await renderExportSVG(elements, opts, canvasBg, loadFile))
+}
+
+/** Render every page, in order, into one multi-page PDF, each page sized
+ *  like its own single-page PDF export (content bounding box plus padding).
+ *  Always the whole page: selection is page-local and never applies here. */
+export async function buildCombinedPDF(
+  pages: readonly Pick<PageRecord, "name" | "scene">[],
+  opts: Pick<ExportOptions, "background">,
+  canvasBg: string,
+  loadFile: FileLoader = getFile,
+): Promise<Blob> {
+  const svgs: string[] = []
+  for (const page of pages) {
+    svgs.push(await renderExportSVG(page.scene.getElements(), opts, canvasBg, loadFile))
+  }
+  return svgsToPDF(svgs)
 }
