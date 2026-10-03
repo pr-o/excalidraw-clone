@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test"
+import JSZip from "jszip"
 import { readFileSync } from "node:fs"
 import { inflateSync } from "node:zlib"
 import { dragOnCanvas } from "./_helpers"
@@ -273,4 +274,57 @@ test("PDF export keeps text as real PDF text", async ({ page }) => {
   // The default hand-drawn family falls back to the standard Times font.
   expect(pdf.bytes.toString("latin1")).toContain("/BaseFont /Times-Roman")
   expect(pdfStreams(pdf.bytes)).toContain("(hello pdf) Tj")
+})
+
+test("export all pages downloads a zip with one entry per page", async ({ page }) => {
+  await freshCanvas(page)
+  await drawRect(page, { x: 100, y: 100 }, { x: 160, y: 160 }) // page 1
+
+  await page.locator('[data-testid="page-add"]').click()
+  await expect(page.locator('[data-testid^="page-tab-"]')).toHaveCount(2)
+  await drawRect(page, { x: 100, y: 100 }, { x: 400, y: 300 }) // page 2
+  await page.locator('[data-testid="toolbar-selection"]').click()
+  await page.waitForTimeout(120)
+
+  await openExportDialog(page)
+  await page.locator('[data-testid="format-svg"]').click()
+  await expect(page.locator('[data-testid="export-all-pages"]')).toBeVisible()
+  await page.locator('[data-testid="export-all-pages"]').check()
+  await expect(page.locator('[data-testid="export-page"]')).toHaveCount(0)
+
+  const downloadPromise = page.waitForEvent("download")
+  await exportButton(page).click()
+  const download = await downloadPromise
+  expect(download.suggestedFilename()).toBe("export.zip")
+  const bytes = readFileSync(await download.path())
+  const zip = await JSZip.loadAsync(bytes)
+  expect(Object.keys(zip.files).sort()).toEqual(["Page 1.svg", "Page 2.svg"])
+  const page1Svg = await zip.file("Page 1.svg")?.async("text")
+  expect(page1Svg).toContain("<svg")
+})
+
+test("export all pages disambiguates pages that share a name", async ({ page }) => {
+  await freshCanvas(page)
+  await drawRect(page, { x: 100, y: 100 }, { x: 160, y: 160 })
+  await page.locator('[data-testid="page-add"]').click()
+  await expect(page.locator('[data-testid^="page-tab-"]')).toHaveCount(2)
+  const secondId = (await page
+    .locator('[data-testid^="page-tab-"]')
+    .nth(1)
+    .getAttribute("data-testid"))!.replace("page-tab-", "")
+
+  // Rename page 2 to "Page 1" so both pages share a name.
+  await page.locator(`[data-testid="page-switch-${secondId}"]`).dblclick()
+  const input = page.locator(`[data-testid="page-rename-input-${secondId}"]`)
+  await input.fill("Page 1")
+  await input.press("Enter")
+  await expect(input).toHaveCount(0)
+
+  await openExportDialog(page)
+  await page.locator('[data-testid="export-all-pages"]').check()
+  const downloadPromise = page.waitForEvent("download")
+  await exportButton(page).click()
+  const bytes = readFileSync(await (await downloadPromise).path())
+  const zip = await JSZip.loadAsync(bytes)
+  expect(Object.keys(zip.files).sort()).toEqual(["Page 1 (2).png", "Page 1.png"])
 })

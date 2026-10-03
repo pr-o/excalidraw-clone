@@ -17,6 +17,7 @@ import {
   resolveExportTarget,
   type ExportTarget,
 } from "../driver/exportTarget"
+import { buildExportZip } from "../driver/exportZip"
 import type { PageRecord } from "../driver/pages"
 import { useAppStore } from "../store"
 
@@ -41,7 +42,11 @@ export function Dialogs({ scene, pages, activePageId }: DialogsProps): React.Rea
     resolveExportTarget(pages, activePageId, selectedIds, opts)
 
   const onExport = (opts: ExportOptions): void => {
-    void exportImage(targetFor(opts), opts, canvasBg)
+    if (opts.allPages) {
+      void exportAllPages(pages, opts, canvasBg)
+    } else {
+      void exportImage(targetFor(opts), opts, canvasBg)
+    }
     setOpenDialog(null)
   }
 
@@ -96,4 +101,12 @@ async function exportImage(
     await renderPageBlob(opts.format, target.elements, opts, canvasBg, target.pageName),
     filename,
   )
+}
+
+async function exportAllPages(
+  pages: readonly PageRecord[],
+  opts: ExportOptions,
+  canvasBg: string,
+): Promise<void> {
+  download(await buildExportZip(pages, opts, canvasBg), "export.zip")
 }
