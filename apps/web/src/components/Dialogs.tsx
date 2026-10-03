@@ -9,6 +9,7 @@ import {
 } from "@excalidraw-clone/ui"
 import { useTranslation } from "react-i18next"
 import { copyPNGToClipboard } from "../driver/copyImageToClipboard"
+import { buildCombinedPDF } from "../driver/exportPDF"
 import { exportToPNG } from "../driver/exportPNG"
 import { renderPageBlob } from "../driver/exportRender"
 import {
@@ -108,5 +109,10 @@ async function exportAllPages(
   opts: ExportOptions,
   canvasBg: string,
 ): Promise<void> {
+  // PDF has real pages, so all pages go into one PDF; images go into a zip.
+  if (opts.format === "pdf") {
+    download(await buildCombinedPDF(pages, opts, canvasBg), "export.pdf")
+    return
+  }
   download(await buildExportZip(pages, opts, canvasBg), "export.zip")
 }

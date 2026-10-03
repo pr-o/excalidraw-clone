@@ -53,22 +53,28 @@ const exportPNG = async (page: Page): Promise<ExportedPNG> => {
   }
 }
 
-/** Click Export and read the downloaded PDF's name and its single page's
- *  MediaBox size (page dictionaries are never compressed). */
+/** Every page's MediaBox size, in page order (page dictionaries are never
+ *  compressed, so the raw bytes can be scanned). */
+const pdfMediaBoxes = (bytes: Buffer): { width: number; height: number }[] =>
+  [
+    ...bytes
+      .toString("latin1")
+      .matchAll(/\/MediaBox \[\s*([\d.-]+)\s+([\d.-]+)\s+([\d.-]+)\s+([\d.-]+)\s*\]/g),
+  ].map((m) => {
+    const [x0, y0, x1, y1] = m.slice(1).map(Number) as [number, number, number, number]
+    return { width: x1 - x0, height: y1 - y0 }
+  })
+
+/** Click Export and read the downloaded PDF's name and its single page's size. */
 const exportPDF = async (page: Page): Promise<ExportedPDF> => {
   const downloadPromise = page.waitForEvent("download")
   await exportButton(page).click()
   const download = await downloadPromise
   const bytes = readFileSync(await download.path())
   expect(bytes.subarray(0, 5).toString("latin1")).toBe("%PDF-")
-  const boxes = [
-    ...bytes
-      .toString("latin1")
-      .matchAll(/\/MediaBox \[\s*([\d.-]+)\s+([\d.-]+)\s+([\d.-]+)\s+([\d.-]+)\s*\]/g),
-  ]
+  const boxes = pdfMediaBoxes(bytes)
   expect(boxes).toHaveLength(1) // one page
-  const [x0, y0, x1, y1] = boxes[0]!.slice(1).map(Number) as [number, number, number, number]
-  return { filename: download.suggestedFilename(), width: x1 - x0, height: y1 - y0, bytes }
+  return { filename: download.suggestedFilename(), ...boxes[0]!, bytes }
 }
 
 /** Every Flate-compressed stream of a PDF, inflated and concatenated. */
@@ -327,4 +333,38 @@ test("export all pages disambiguates pages that share a name", async ({ page }) 
   const bytes = readFileSync(await (await downloadPromise).path())
   const zip = await JSZip.loadAsync(bytes)
   expect(Object.keys(zip.files).sort()).toEqual(["Page 1 (2).png", "Page 1.png"])
+})
+
+test("export all pages as PDF downloads one multi-page export.pdf", async ({ page }) => {
+  await freshCanvas(page)
+  await drawRect(page, { x: 100, y: 100 }, { x: 160, y: 160 }) // page 1: 60×60
+
+  await page.locator('[data-testid="page-add"]').click()
+  await expect(page.locator('[data-testid^="page-tab-"]')).toHaveCount(2)
+  await drawRect(page, { x: 100, y: 100 }, { x: 400, y: 300 }) // page 2: 300×200
+  await page.locator('[data-testid="toolbar-selection"]').click()
+  await page.waitForTimeout(120)
+
+  await openExportDialog(page)
+  await page.locator('[data-testid="format-pdf"]').click()
+  await page.locator('[data-testid="export-all-pages"]').check()
+
+  const downloadPromise = page.waitForEvent("download")
+  await exportButton(page).click()
+  const download = await downloadPromise
+  expect(download.suggestedFilename()).toBe("export.pdf")
+  const bytes = readFileSync(await download.path())
+  expect(bytes.subarray(0, 5).toString("latin1")).toBe("%PDF-")
+
+  // One PDF page per scene page, in page order, each sized to its own
+  // content (bbox + 20px padding per side), not a uniform page size.
+  const boxes = pdfMediaBoxes(bytes)
+  expect(boxes).toHaveLength(2)
+  expectNear(boxes[0]!.width, 100)
+  expectNear(boxes[0]!.height, 100)
+  expectNear(boxes[1]!.width, 340)
+  expectNear(boxes[1]!.height, 240)
+  expect(boxes[0]!.width).not.toBe(boxes[1]!.width)
+  // Still vector output.
+  expect(bytes.toString("latin1")).not.toContain("/Subtype /Image")
 })
