@@ -10,7 +10,7 @@ export interface ExportOptions {
   scope: "page" | "selection"
   /** The page whose elements are exported. Ignored when allPages is true. */
   pageId: string
-  /** Export every page as its own file inside one .zip, instead of a single file. */
+  /** Export every page: one .zip of per-page files (PNG/SVG), or one multi-page PDF (PDF). */
   allPages: boolean
 }
 

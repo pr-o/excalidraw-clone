@@ -17,7 +17,8 @@ const pdfText = async (blob: Blob): Promise<string> =>
   new TextDecoder("latin1").decode(new Uint8Array(await blob.arrayBuffer()))
 
 beforeEach(() => {
-  svg2pdf.mockClear()
+  svg2pdf.mockReset()
+  svg2pdf.mockImplementation((_el, pdf) => Promise.resolve(pdf))
 })
 
 describe("prepareSVGForPDF", () => {
@@ -105,7 +106,15 @@ describe("svgsToPDF", () => {
   })
 
   it("draws each SVG once, onto its own page, at full page size", async () => {
+    const drawnOnPage: number[] = []
+    svg2pdf.mockImplementation((_el, pdf) => {
+      drawnOnPage.push(
+        (pdf as { getCurrentPageInfo(): { pageNumber: number } }).getCurrentPageInfo().pageNumber,
+      )
+      return Promise.resolve(pdf)
+    })
     await svgsToPDF([svgOf(440, 320), svgOf(100, 300), svgOf(250, 250)])
+    expect(drawnOnPage).toEqual([1, 2, 3])
     expect(svg2pdf).toHaveBeenCalledTimes(3)
     const calls = svg2pdf.mock.calls
     expect(calls.map(([el]) => [el.localName, el.getAttribute("width")])).toEqual([
