@@ -138,3 +138,31 @@ export const pointInPolygon = (p: Point, vertices: readonly Point[]): boolean =>
   }
   return inside
 }
+
+const orient = (a: Point, b: Point, c: Point): number =>
+  Math.sign((b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x))
+
+/** Proper-crossing test; touching/collinear endpoints do not count. */
+const segmentsCross = (a: Point, b: Point, c: Point, d: Point): boolean =>
+  orient(a, b, c) * orient(a, b, d) < 0 && orient(c, d, a) * orient(c, d, b) < 0
+
+/** True when the closed `polygon` overlaps `bounds` (crossing, containing or contained). */
+export const polygonIntersectsBounds = (polygon: readonly Point[], b: Bounds): boolean => {
+  if (polygon.length < 3) return false
+  const box: Point[] = [
+    { x: b.x, y: b.y },
+    { x: b.x + b.width, y: b.y },
+    { x: b.x + b.width, y: b.y + b.height },
+    { x: b.x, y: b.y + b.height },
+  ]
+  if (box.some((c) => pointInPolygon(c, polygon))) return true
+  if (
+    polygon.some((p) => p.x >= b.x && p.x <= b.x + b.width && p.y >= b.y && p.y <= b.y + b.height)
+  ) {
+    return true
+  }
+  return polygon.some((p, i) => {
+    const q = polygon[(i + 1) % polygon.length]!
+    return box.some((c, k) => segmentsCross(p, q, c, box[(k + 1) % 4]!))
+  })
+}

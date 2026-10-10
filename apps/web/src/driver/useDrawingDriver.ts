@@ -191,6 +191,10 @@ export function useDrawingDriver({
       const [next, effects] = tool.reduce(currentState, event, ctx)
       useAppStore.getState().setToolState(toolName, next)
       applyEffects(scene, effects, laser)
+      if (toolName === "selection") {
+        const sel = next as SelectionState
+        renderer.setMarquee(sel.phase === "marquee" ? { start: sel.start, end: sel.current } : null)
+      }
       if (toolName === "lasso") {
         const lasso = next as LassoState
         renderer.setLasso(lasso.phase === "drawing" ? lasso.points : [])

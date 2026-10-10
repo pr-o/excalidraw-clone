@@ -42,6 +42,7 @@ export {
   mirroredShapeVertices,
   pointInConvexPolygon,
   pointInPolygon,
+  polygonIntersectsBounds,
   polygonEdgePointToward,
   shapeVertices,
 } from "./polygon"

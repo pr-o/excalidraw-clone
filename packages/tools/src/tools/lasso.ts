@@ -1,4 +1,4 @@
-import { type Point, pointInPolygon } from "@excalidraw-clone/geometry"
+import { type Point, polygonIntersectsBounds } from "@excalidraw-clone/geometry"
 import {
   type ExcalidrawElement,
   expandIdsToGroups,
@@ -11,22 +11,13 @@ export type LassoState = { phase: "idle" } | { phase: "drawing"; points: readonl
 
 const LASSO_INITIAL: LassoState = { phase: "idle" }
 
-/** Ids of live, unlocked elements whose bounds corners all lie inside `path`. */
-const elementsInsideLasso = (
+/** Ids of live, unlocked elements whose bounds overlap the closed `path`. */
+const elementsTouchingLasso = (
   path: readonly Point[],
   elements: readonly ExcalidrawElement[],
 ): string[] =>
   elements
-    .filter((e) => {
-      if (e.isDeleted || e.locked) return false
-      const b = getElementBounds(e)
-      return [
-        { x: b.x, y: b.y },
-        { x: b.x + b.width, y: b.y },
-        { x: b.x + b.width, y: b.y + b.height },
-        { x: b.x, y: b.y + b.height },
-      ].every((corner) => pointInPolygon(corner, path))
-    })
+    .filter((e) => !e.isDeleted && !e.locked && polygonIntersectsBounds(path, getElementBounds(e)))
     .map((e) => e.id)
 
 const finish = (effects: readonly ToolEffect[]): [LassoState, readonly ToolEffect[]] => [
@@ -48,7 +39,7 @@ export const lassoTool: Tool<LassoState, ToolEvent> = {
         return [{ phase: "drawing", points: [...state.points, event.at] }, NO_EFFECTS]
       case "pointerUp": {
         const elements = ctx.readElements()
-        const enclosed = expandIdsToGroups(elementsInsideLasso(state.points, elements), elements)
+        const enclosed = expandIdsToGroups(elementsTouchingLasso(state.points, elements), elements)
         const ids = ctx.modifiers.shift ? [...new Set([...ctx.selectedIds, ...enclosed])] : enclosed
         return finish([{ kind: "select", ids }])
       }

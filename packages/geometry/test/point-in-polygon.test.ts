@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { pointInPolygon } from "../src"
+import { pointInPolygon, polygonIntersectsBounds } from "../src"
 
 describe("pointInPolygon", () => {
   const square = [
@@ -37,5 +37,19 @@ describe("pointInPolygon", () => {
         { x: 2, y: 2 },
       ]),
     ).toBe(false)
+  })
+})
+
+describe("polygonIntersectsBounds", () => {
+  const tri = [
+    { x: 0, y: 0 },
+    { x: 20, y: 0 },
+    { x: 0, y: 20 },
+  ]
+  it("detects containment, crossing and separation", () => {
+    expect(polygonIntersectsBounds(tri, { x: 2, y: 2, width: 3, height: 3 })).toBe(true) // inside
+    expect(polygonIntersectsBounds(tri, { x: 8, y: 8, width: 20, height: 20 })).toBe(true) // edge crosses
+    expect(polygonIntersectsBounds(tri, { x: -50, y: -50, width: 200, height: 200 })).toBe(true) // contains polygon
+    expect(polygonIntersectsBounds(tri, { x: 15, y: 15, width: 5, height: 5 })).toBe(false) // beyond hypotenuse
   })
 })

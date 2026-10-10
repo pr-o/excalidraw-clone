@@ -28,7 +28,7 @@ describe("lassoTool", () => {
     expect(state).toEqual({ phase: "drawing", points: [at(1, 2)] })
   })
 
-  it("selects only enclosed, unlocked elements, then returns to the selection tool", () => {
+  it("selects elements the path encloses or crosses, skipping locked ones, then returns to the selection tool", () => {
     const [state, effects] = drag()
     expect(state).toBe(lassoTool.initial)
     expect(effects).toEqual([

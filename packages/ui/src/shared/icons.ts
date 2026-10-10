@@ -27,7 +27,7 @@ export const ICONS: Record<string, string> = {
     '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="6" width="12" height="9"/><line x1="2" y1="9" x2="18" y2="9"/></svg>',
   note: '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h12v8l-4 4H4z"/><path d="M16 12h-4v4"/></svg>',
   lasso:
-    '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 2"><path d="M10 3C5 3 2 6 2 9s3 5 8 5 8-2 8-5-3-6-8-6z"/><path d="M8 14c-1 2 0 3 2 3" stroke-dasharray="none"/></svg>',
+    '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 2"><path d="M10 3C5 3 2 5.5 2 8.5S5 14 10 14s8-2.5 8-5.5S15 3 10 3z"/><path d="M7 14c-1.5 1.5-1 3.5 1.5 3.5" stroke-dasharray="none"/><circle cx="8.5" cy="17.5" r="1" stroke-dasharray="none"/></svg>',
   laser:
     '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="3"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="10" y1="16" x2="10" y2="19"/><line x1="1" y1="10" x2="4" y2="10"/><line x1="16" y1="10" x2="19" y2="10"/></svg>',
   hamburger:
