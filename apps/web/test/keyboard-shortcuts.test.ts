@@ -9,6 +9,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { attachShortcuts } from "../src/keyboard/shortcuts"
 import { useAppStore } from "../src/store"
 
+const press = (init: KeyboardEventInit): void => {
+  window.dispatchEvent(new KeyboardEvent("keydown", init))
+}
+
 describe("keyboard shortcuts", () => {
   let detach: () => void
   let scene: Scene
@@ -23,44 +27,44 @@ describe("keyboard shortcuts", () => {
   afterEach(() => detach())
 
   it("'r' switches to rectangle tool", () => {
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: "r" }))
+    press({ key: "r" })
     expect(useAppStore.getState().activeTool).toBe("rectangle")
   })
 
   it("'5' switches to pentagon tool", () => {
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: "5" }))
+    press({ key: "5" })
     expect(useAppStore.getState().activeTool).toBe("pentagon")
   })
 
   it("'8' switches to octagon tool", () => {
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: "8" }))
+    press({ key: "8" })
     expect(useAppStore.getState().activeTool).toBe("octagon")
   })
 
   it("Cmd+/ opens command palette", () => {
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: "/", metaKey: true }))
+    press({ key: "/", metaKey: true })
     expect(useAppStore.getState().paletteOpen).toBe(true)
   })
 
   it("Cmd+F opens find", () => {
     useAppStore.getState().setFindOpen(false)
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: "f", metaKey: true }))
+    press({ key: "f", metaKey: true })
     expect(useAppStore.getState().findOpen).toBe(true)
   })
 
   it("'f' switches to frame tool", () => {
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: "f" }))
+    press({ key: "f" })
     expect(useAppStore.getState().activeTool).toBe("frame")
   })
 
   it("Escape clears selection", () => {
     useAppStore.getState().setSelection(["a"])
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }))
+    press({ key: "Escape" })
     expect(useAppStore.getState().selectedIds).toEqual([])
   })
 
   it("'?' opens help dialog", () => {
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: "?" }))
+    press({ key: "?" })
     expect(useAppStore.getState().openDialog).toBe("help")
   })
 
@@ -71,7 +75,7 @@ describe("keyboard shortcuts", () => {
       draft.push(r)
     })
     useAppStore.getState().setSelection([r.id])
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }))
+    press({ key: "k", metaKey: true })
     expect(useAppStore.getState().linkEditorElementId).toBe(r.id)
   })
 
@@ -83,7 +87,7 @@ describe("keyboard shortcuts", () => {
       draft.push(a, b)
     })
     useAppStore.getState().setSelection([a.id, b.id])
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }))
+    press({ key: "k", metaKey: true })
     expect(useAppStore.getState().linkEditorElementId).toBeNull()
   })
 
@@ -94,7 +98,7 @@ describe("keyboard shortcuts", () => {
       draft.push(r)
     })
     useAppStore.getState().setSelection([r.id])
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }))
+    press({ key: "k", metaKey: true })
     expect(useAppStore.getState().linkEditorElementId).toBeNull()
   })
 
@@ -104,7 +108,7 @@ describe("keyboard shortcuts", () => {
       draft.push(r)
     })
     useAppStore.getState().setSelection([r.id])
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: "L", ctrlKey: true, shiftKey: true }))
+    press({ key: "L", ctrlKey: true, shiftKey: true })
     expect(scene.getElements()[0]!.locked).toBe(true)
     expect(useAppStore.getState().selectedIds).toEqual([])
   })
@@ -114,7 +118,7 @@ describe("keyboard shortcuts", () => {
     scene.mutate((draft) => {
       draft.push(r)
     })
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: "L", ctrlKey: true, shiftKey: true }))
+    press({ key: "L", ctrlKey: true, shiftKey: true })
     expect(scene.getElements()[0]!.locked).toBe(false)
   })
 
@@ -125,7 +129,7 @@ describe("keyboard shortcuts", () => {
     scene.mutate((draft) => {
       draft.push(r, locked, label)
     })
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: "a", ctrlKey: true }))
+    press({ key: "a", ctrlKey: true })
     expect(useAppStore.getState().selectedIds).toEqual([r.id])
   })
 
@@ -135,9 +139,9 @@ describe("keyboard shortcuts", () => {
       draft.push(r)
     })
     useAppStore.getState().setSelection([r.id])
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight" }))
+    press({ key: "ArrowRight" })
     expect(scene.getElements()[0]!.x).toBe(6)
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", shiftKey: true }))
+    press({ key: "ArrowDown", shiftKey: true })
     expect(scene.getElements()[0]!.y).toBe(15)
   })
 
@@ -146,7 +150,7 @@ describe("keyboard shortcuts", () => {
     scene.mutate((draft) => {
       draft.push(r)
     })
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft" }))
+    press({ key: "ArrowLeft" })
     expect(scene.getElements()[0]!.x).toBe(5)
   })
 
@@ -156,7 +160,7 @@ describe("keyboard shortcuts", () => {
       draft.push(tri)
     })
     useAppStore.getState().setSelection([tri.id])
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: "H", shiftKey: true }))
+    press({ key: "H", shiftKey: true })
     expect(scene.getElements()[0]!.mirror).toEqual([-1, 1])
   })
 
@@ -167,7 +171,7 @@ describe("keyboard shortcuts", () => {
     })
     useAppStore.getState().setSelection([tri.id])
     useAppStore.getState().setActiveTool("rectangle")
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: "V", shiftKey: true }))
+    press({ key: "V", shiftKey: true })
     expect(scene.getElements()[0]!.mirror).toEqual([1, -1])
     expect(useAppStore.getState().activeTool).toBe("rectangle")
   })
@@ -178,7 +182,7 @@ describe("keyboard shortcuts", () => {
       draft.push(tri)
     })
     useAppStore.getState().setActiveTool("rectangle")
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: "V", shiftKey: true }))
+    press({ key: "V", shiftKey: true })
     expect(scene.getElements()[0]!.mirror).toBeUndefined()
     expect(useAppStore.getState().activeTool).toBe("rectangle")
   })
@@ -190,7 +194,7 @@ describe("keyboard shortcuts", () => {
       draft.push(a, b)
     })
     useAppStore.getState().setSelection([a.id, b.id])
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: "H", shiftKey: true }))
+    press({ key: "H", shiftKey: true })
     const els = scene.getElements()
     expect(els.find((e) => e.id === a.id)!.x).toBe(90)
     expect(els.find((e) => e.id === b.id)!.x).toBe(0)
@@ -201,7 +205,7 @@ describe("keyboard shortcuts", () => {
     detach()
     const onNextPage = vi.fn()
     detach = attachShortcuts({ scene, onNextPage })
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: "PageDown", altKey: true }))
+    press({ key: "PageDown", altKey: true })
     expect(onNextPage).toHaveBeenCalledTimes(1)
   })
 
@@ -209,29 +213,29 @@ describe("keyboard shortcuts", () => {
     detach()
     const onPrevPage = vi.fn()
     detach = attachShortcuts({ scene, onPrevPage })
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: "PageUp", altKey: true }))
+    press({ key: "PageUp", altKey: true })
     expect(onPrevPage).toHaveBeenCalledTimes(1)
   })
 
   it("Alt+PageDown without a handler does not throw", () => {
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: "PageDown", altKey: true }))
+    press({ key: "PageDown", altKey: true })
   })
 
   it("Alt+/ calls onToggleStats when provided", () => {
     detach()
     const onToggleStats = vi.fn()
     detach = attachShortcuts({ scene, onToggleStats })
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: "/", altKey: true }))
+    press({ key: "/", altKey: true })
     expect(onToggleStats).toHaveBeenCalledTimes(1)
   })
 
   it("Alt+/ without a handler does not throw", () => {
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: "/", altKey: true }))
+    press({ key: "/", altKey: true })
   })
 
   it("Shift+/ still opens the help dialog (not confused with Alt+/)", () => {
     useAppStore.getState().setOpenDialog(null)
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: "/", shiftKey: true }))
+    press({ key: "/", shiftKey: true })
     expect(useAppStore.getState().openDialog).toBe("help")
   })
 })
@@ -261,17 +265,17 @@ describe("presentation mode read-only guard", () => {
 
     useAppStore.getState().enterPresentation()
 
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: "r" }))
+    press({ key: "r" })
     expect(useAppStore.getState().activeTool).toBe("selection")
 
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: "z", metaKey: true }))
+    press({ key: "z", metaKey: true })
     expect(scene.getElements().map((e) => e.id)).toEqual([r.id])
   })
 
   it("resumes handling shortcuts after exitPresentation", () => {
     useAppStore.getState().enterPresentation()
     useAppStore.getState().exitPresentation()
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: "r" }))
+    press({ key: "r" })
     expect(useAppStore.getState().activeTool).toBe("rectangle")
   })
 })
@@ -288,7 +292,7 @@ describe("zoom keyboard shortcuts", () => {
     useAppStore.getState().setView(before)
     const anchor = { x: window.innerWidth / 2, y: window.innerHeight / 2 }
     const scenePointBefore = viewportToScene(anchor, before)
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: "0", ctrlKey: true }))
+    press({ key: "0", ctrlKey: true })
     const after = useAppStore.getState()
     expect(after.zoom).toBe(1)
     const back = sceneToViewport(scenePointBefore, {
@@ -302,19 +306,19 @@ describe("zoom keyboard shortcuts", () => {
 
   it("Ctrl++ zooms in by one step", () => {
     useAppStore.getState().setView({ scrollX: 0, scrollY: 0, zoom: 1 })
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: "+", ctrlKey: true }))
+    press({ key: "+", ctrlKey: true })
     expect(useAppStore.getState().zoom).toBeCloseTo(1.1)
   })
 
   it("Ctrl+- zooms out by one step", () => {
     useAppStore.getState().setView({ scrollX: 0, scrollY: 0, zoom: 1 })
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: "-", ctrlKey: true }))
+    press({ key: "-", ctrlKey: true })
     expect(useAppStore.getState().zoom).toBeCloseTo(1 / 1.1)
   })
 
   it("Ctrl++ respects ZOOM_MAX", () => {
     useAppStore.getState().setView({ scrollX: 0, scrollY: 0, zoom: ZOOM_MAX })
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: "+", ctrlKey: true }))
+    press({ key: "+", ctrlKey: true })
     expect(useAppStore.getState().zoom).toBe(ZOOM_MAX)
   })
 })
@@ -333,10 +337,10 @@ describe("style clipboard shortcuts", () => {
   afterEach(() => detach())
 
   const copy = (): void => {
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: "c", ctrlKey: true, altKey: true }))
+    press({ key: "c", ctrlKey: true, altKey: true })
   }
   const paste = (): void => {
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: "v", ctrlKey: true, altKey: true }))
+    press({ key: "v", ctrlKey: true, altKey: true })
   }
 
   it("Ctrl+Alt+V before anything was copied leaves the scene untouched", () => {

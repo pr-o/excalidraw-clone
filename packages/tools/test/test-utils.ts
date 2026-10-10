@@ -1,6 +1,6 @@
 import type { GridSnap, Point, ViewTransform } from "@excalidraw-clone/geometry"
 import type { ExcalidrawElement } from "@excalidraw-clone/scene"
-import type { Modifiers, ToolContext } from "../src"
+import { selectionTool, type Modifiers, type ToolContext } from "../src"
 
 export const NO_MODIFIERS: Modifiers = {
   shift: false,
@@ -38,3 +38,7 @@ export const withModifiers = (mods: Partial<Modifiers>): Modifiers => ({
   ...NO_MODIFIERS,
   ...mods,
 })
+
+/** Selection tool's reduction of a pointerDown at (x, y) from its initial state. */
+export const pressAt = (ctx: ToolContext, x: number, y: number) =>
+  selectionTool.reduce(selectionTool.initial, { type: "pointerDown", at: point(x, y) }, ctx)

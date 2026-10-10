@@ -4,16 +4,12 @@ import { BINDING_GAP, newArrow, newFrame, newRectangle, newText } from "@excalid
 import { describe, expect, it } from "vitest"
 import { selectionTool } from "../src"
 import { translateElements } from "../src/tools/selection/drag"
-import { applyMutation, makeCtx, point, withModifiers } from "./test-utils"
+import { applyMutation, makeCtx, point, withModifiers, pressAt } from "./test-utils"
 
 describe("selection — empty space click", () => {
   it("pointerDown over empty space enters marquee + clears selection", () => {
     const ctx = makeCtx({ hitTest: () => null, selectedIds: ["x"] })
-    const r = selectionTool.reduce(
-      selectionTool.initial,
-      { type: "pointerDown", at: point(5, 5) },
-      ctx,
-    )
+    const r = pressAt(ctx, 5, 5)
     expect(r[0].phase).toBe("marquee")
     expect(r[1].some((e) => e.kind === "select")).toBe(true)
     const sel = r[1].find((e) => e.kind === "select")
@@ -26,11 +22,7 @@ describe("selection — empty space click", () => {
       selectedIds: ["x"],
       modifiers: withModifiers({ shift: true }),
     })
-    const r = selectionTool.reduce(
-      selectionTool.initial,
-      { type: "pointerDown", at: point(5, 5) },
-      ctx,
-    )
+    const r = pressAt(ctx, 5, 5)
     expect(r[0].phase).toBe("marquee")
     expect(r[1].length).toBe(0)
   })
@@ -40,11 +32,7 @@ describe("selection — click-on-element selects + drags", () => {
   it("click on unselected element emits select and enters dragging with that id", () => {
     const r = newRectangle({ x: 0, y: 0, width: 50, height: 50 })
     const ctx = makeCtx({ hitTest: () => r, readElements: () => [r] })
-    const out = selectionTool.reduce(
-      selectionTool.initial,
-      { type: "pointerDown", at: point(10, 10) },
-      ctx,
-    )
+    const out = pressAt(ctx, 10, 10)
     expect(out[0].phase).toBe("dragging")
     if (out[0].phase === "dragging") expect(out[0].movedIds).toEqual([r.id])
     const sel = out[1].find((e) => e.kind === "select")
@@ -57,11 +45,7 @@ describe("selection — click-on-element selects + drags", () => {
     const member = { ...newRectangle({ x: 10, y: 10, width: 20, height: 20 }), frameId: frame.id }
     const outside = newRectangle({ x: 300, y: 300, width: 20, height: 20 })
     const ctx = makeCtx({ hitTest: () => frame, readElements: () => [frame, member, outside] })
-    const out = selectionTool.reduce(
-      selectionTool.initial,
-      { type: "pointerDown", at: point(50, 50) },
-      ctx,
-    )
+    const out = pressAt(ctx, 50, 50)
     expect(out[0].phase).toBe("dragging")
     if (out[0].phase === "dragging") {
       expect([...out[0].movedIds].sort()).toEqual([frame.id, member.id].sort())
@@ -77,11 +61,7 @@ describe("selection — click-on-element selects + drags", () => {
       readElements: () => [r],
       selectedIds: [r.id],
     })
-    const out = selectionTool.reduce(
-      selectionTool.initial,
-      { type: "pointerDown", at: point(10, 10) },
-      ctx,
-    )
+    const out = pressAt(ctx, 10, 10)
     expect(out[0].phase).toBe("dragging")
     expect(out[1].some((e) => e.kind === "select")).toBe(false)
   })
@@ -95,11 +75,7 @@ describe("selection — click-on-element selects + drags", () => {
       selectedIds: [a.id],
       modifiers: withModifiers({ shift: true }),
     })
-    const out = selectionTool.reduce(
-      selectionTool.initial,
-      { type: "pointerDown", at: point(110, 10) },
-      ctx,
-    )
+    const out = pressAt(ctx, 110, 10)
     expect(out[0].phase).toBe("dragging")
     if (out[0].phase === "dragging") {
       expect(out[0].movedIds).toEqual([a.id, b.id])
@@ -114,11 +90,7 @@ describe("selection — drag translation", () => {
     const r = newRectangle({ x: 10, y: 20, width: 30, height: 30 })
     const draft: ExcalidrawElement[] = [r]
     const ctx = makeCtx({ hitTest: () => r, readElements: () => draft, selectedIds: [r.id] })
-    let s = selectionTool.reduce(
-      selectionTool.initial,
-      { type: "pointerDown", at: point(15, 25) },
-      ctx,
-    )
+    let s = pressAt(ctx, 15, 25)
     applyMutation(s[1], draft)
     s = selectionTool.reduce(s[0], { type: "pointerMove", at: point(35, 45) }, ctx)
     applyMutation(s[1], draft)
@@ -129,11 +101,7 @@ describe("selection — drag translation", () => {
   it("pointerUp ends drag and emits a history-tracked mutation (skipHistory undefined)", () => {
     const r = newRectangle({ x: 0, y: 0, width: 50, height: 50 })
     const ctx = makeCtx({ hitTest: () => r, readElements: () => [r], selectedIds: [r.id] })
-    const down = selectionTool.reduce(
-      selectionTool.initial,
-      { type: "pointerDown", at: point(10, 10) },
-      ctx,
-    )
+    const down = pressAt(ctx, 10, 10)
     const move = selectionTool.reduce(down[0], { type: "pointerMove", at: point(20, 20) }, ctx)
     const up = selectionTool.reduce(move[0], { type: "pointerUp", at: point(20, 20) }, ctx)
     expect(up[0].phase).toBe("idle")
@@ -146,11 +114,7 @@ describe("selection — drag translation", () => {
     const r = newRectangle({ x: 0, y: 0, width: 50, height: 50 })
     const draft: ExcalidrawElement[] = [r]
     const ctx = makeCtx({ hitTest: () => r, readElements: () => draft, selectedIds: [r.id] })
-    let s = selectionTool.reduce(
-      selectionTool.initial,
-      { type: "pointerDown", at: point(10, 10) },
-      ctx,
-    )
+    let s = pressAt(ctx, 10, 10)
     applyMutation(s[1], draft)
     s = selectionTool.reduce(s[0], { type: "pointerMove", at: point(40, 30) }, ctx)
     applyMutation(s[1], draft)
@@ -200,11 +164,7 @@ describe("selection — drag with grid snap", () => {
       readElements: () => [r],
       grid: GRID,
     })
-    const down = selectionTool.reduce(
-      selectionTool.initial,
-      { type: "pointerDown", at: point(20, 40) },
-      ctx,
-    )
+    const down = pressAt(ctx, 20, 40)
     expect(down[0].phase).toBe("dragging")
 
     // Anchor (13,27) snaps to nearest grid intersection: (20, 20). 27 rounds DOWN to 20
@@ -229,11 +189,7 @@ describe("selection — drag with grid snap", () => {
       hitTest: () => r,
       readElements: () => [r],
     })
-    const down = selectionTool.reduce(
-      selectionTool.initial,
-      { type: "pointerDown", at: point(20, 40) },
-      ctx,
-    )
+    const down = pressAt(ctx, 20, 40)
     const draft: ExcalidrawElement[] = [{ ...r }]
     const move = selectionTool.reduce(down[0], { type: "pointerMove", at: point(30, 40) }, ctx)
     applyMutation(move[1], draft)
@@ -249,11 +205,7 @@ describe("selection — drag with grid snap", () => {
       grid: GRID,
       modifiers: withModifiers({ ctrl: true }),
     })
-    const down = selectionTool.reduce(
-      selectionTool.initial,
-      { type: "pointerDown", at: point(20, 40) },
-      ctx,
-    )
+    const down = pressAt(ctx, 20, 40)
     const draft: ExcalidrawElement[] = [{ ...r }]
     const move = selectionTool.reduce(down[0], { type: "pointerMove", at: point(30, 40) }, ctx)
     applyMutation(move[1], draft)
@@ -269,11 +221,7 @@ describe("selection — drag with grid snap", () => {
       readElements: () => [r],
       grid: GRID,
     })
-    const down = selectionTool.reduce(
-      selectionTool.initial,
-      { type: "pointerDown", at: point(20, 40) },
-      ctx,
-    )
+    const down = pressAt(ctx, 20, 40)
     const draft: ExcalidrawElement[] = [{ ...r }]
     // Same fixture as the first test in this block: anchor (13,27) snaps to
     // (20,20), baking in a (+7,-7) offset never captured by raw pointer travel.
@@ -302,11 +250,7 @@ describe("selection — drag alignment guides", () => {
     const c = { ...newRectangle({ x: 28, y: 500, width: 10, height: 10 }), id: "c" }
     const draft: ExcalidrawElement[] = [r, c]
     const ctx = makeCtx({ hitTest: () => r, readElements: () => draft, selectedIds: [r.id] })
-    const down = selectionTool.reduce(
-      selectionTool.initial,
-      { type: "pointerDown", at: point(5, DRAG_POINTER_Y) },
-      ctx,
-    )
+    const down = pressAt(ctx, 5, DRAG_POINTER_Y)
     const move = selectionTool.reduce(
       down[0],
       { type: "pointerMove", at: point(25, DRAG_POINTER_Y) },
@@ -336,11 +280,7 @@ describe("selection — drag alignment guides", () => {
       selectedIds: [r.id],
       grid: { enabled: true, size: 20 },
     })
-    const down = selectionTool.reduce(
-      selectionTool.initial,
-      { type: "pointerDown", at: point(25, DRAG_POINTER_Y) },
-      ctx,
-    )
+    const down = pressAt(ctx, 25, DRAG_POINTER_Y)
     const move = selectionTool.reduce(
       down[0],
       { type: "pointerMove", at: point(45, DRAG_POINTER_Y) },
@@ -363,11 +303,7 @@ describe("selection — drag alignment guides", () => {
       selectedIds: [r.id],
       modifiers: withModifiers({ ctrl: true }),
     })
-    const down = selectionTool.reduce(
-      selectionTool.initial,
-      { type: "pointerDown", at: point(5, DRAG_POINTER_Y) },
-      ctx,
-    )
+    const down = pressAt(ctx, 5, DRAG_POINTER_Y)
     const move = selectionTool.reduce(
       down[0],
       { type: "pointerMove", at: point(25, DRAG_POINTER_Y) },
@@ -392,11 +328,7 @@ describe("selection — drag alignment guides", () => {
       readElements: () => draft,
       selectedIds: [a.id, b.id],
     })
-    const down = selectionTool.reduce(
-      selectionTool.initial,
-      { type: "pointerDown", at: point(5, DRAG_POINTER_Y) },
-      ctx,
-    )
+    const down = pressAt(ctx, 5, DRAG_POINTER_Y)
     expect(down[0].phase).toBe("dragging")
     if (down[0].phase === "dragging") expect(down[0].movedIds).toEqual([a.id, b.id])
     // Zero-delta move: pointer hasn't moved, so movingBounds equals the combined bbox exactly.
@@ -416,11 +348,7 @@ describe("selection — drag alignment guides", () => {
     const c = { ...newRectangle({ x: 28, y: 500, width: 10, height: 10 }), id: "c" }
     const draft: ExcalidrawElement[] = [r, c]
     const ctx = makeCtx({ hitTest: () => r, readElements: () => draft, selectedIds: [r.id] })
-    const down = selectionTool.reduce(
-      selectionTool.initial,
-      { type: "pointerDown", at: point(5, DRAG_POINTER_Y) },
-      ctx,
-    )
+    const down = pressAt(ctx, 5, DRAG_POINTER_Y)
     const move = selectionTool.reduce(
       down[0],
       { type: "pointerMove", at: point(25, DRAG_POINTER_Y) },
@@ -444,11 +372,7 @@ describe("selection — drag alignment guides", () => {
     const c = { ...newRectangle({ x: 28, y: 500, width: 10, height: 10 }), id: "c" }
     const draft: ExcalidrawElement[] = [r, c]
     const ctx = makeCtx({ hitTest: () => r, readElements: () => draft, selectedIds: [r.id] })
-    let state = selectionTool.reduce(
-      selectionTool.initial,
-      { type: "pointerDown", at: point(5, DRAG_POINTER_Y) },
-      ctx,
-    )[0]
+    let state = pressAt(ctx, 5, DRAG_POINTER_Y)[0]
     const moveTo = (x: number): void => {
       const [next, effects] = selectionTool.reduce(
         state,
@@ -477,11 +401,7 @@ describe("selection — drag alignment guides", () => {
     const c = { ...newRectangle({ x: 28, y: 500, width: 10, height: 10 }), id: "c" }
     const draft: ExcalidrawElement[] = [r, c]
     const ctx = makeCtx({ hitTest: () => r, readElements: () => draft, selectedIds: [r.id] })
-    const down = selectionTool.reduce(
-      selectionTool.initial,
-      { type: "pointerDown", at: point(5, DRAG_POINTER_Y) },
-      ctx,
-    )
+    const down = pressAt(ctx, 5, DRAG_POINTER_Y)
     const move = selectionTool.reduce(
       down[0],
       { type: "pointerMove", at: point(25, DRAG_POINTER_Y) },
@@ -512,11 +432,7 @@ describe("selection — drag alignment guides", () => {
     }
     const draft: ExcalidrawElement[] = [r, container, label]
     const ctx = makeCtx({ hitTest: () => r, readElements: () => draft, selectedIds: [r.id] })
-    const down = selectionTool.reduce(
-      selectionTool.initial,
-      { type: "pointerDown", at: point(5, DRAG_POINTER_Y) },
-      ctx,
-    )
+    const down = pressAt(ctx, 5, DRAG_POINTER_Y)
     const move = selectionTool.reduce(
       down[0],
       { type: "pointerMove", at: point(25, DRAG_POINTER_Y) },

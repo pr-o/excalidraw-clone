@@ -2,7 +2,7 @@ import type { ExcalidrawElement } from "@excalidraw-clone/scene"
 import { newRectangle } from "@excalidraw-clone/scene"
 import { describe, expect, it } from "vitest"
 import { selectionTool } from "../src"
-import { applyMutation, makeCtx, point, withModifiers } from "./test-utils"
+import { applyMutation, makeCtx, point, withModifiers, pressAt } from "./test-utils"
 
 const HANDLE_SE = { x: 100, y: 100 }
 const HANDLE_SW = { x: 0, y: 100 }
@@ -166,11 +166,7 @@ describe("selection — resize: multi-selection click away from any handle falls
       selectedIds: [a.id, b.id],
       hitTest: () => null,
     })
-    const r = selectionTool.reduce(
-      selectionTool.initial,
-      { type: "pointerDown", at: point(100, 100) },
-      ctx,
-    )
+    const r = pressAt(ctx, 100, 100)
     expect(r[0].phase).toBe("marquee")
   })
 })
@@ -190,11 +186,7 @@ describe("selection — group resize (2+ selection)", () => {
 
   it("SE handle drag scales both rectangles proportionally from the combined bounds", () => {
     const { a, b, draft, ctx } = setup()
-    let s = selectionTool.reduce(
-      selectionTool.initial,
-      { type: "pointerDown", at: point(300, 100) },
-      ctx,
-    )
+    let s = pressAt(ctx, 300, 100)
     expect(s[0].phase).toBe("groupResizing")
     s = selectionTool.reduce(s[0], { type: "pointerMove", at: point(600, 200) }, ctx)
     applyMutation(s[1], draft)
@@ -207,11 +199,7 @@ describe("selection — group resize (2+ selection)", () => {
   it("shift constrains the drag to the combined bounds' own aspect ratio", () => {
     const { a, b, draft, ctx } = setup()
     const shiftCtx = { ...ctx, modifiers: withModifiers({ shift: true }) }
-    let s = selectionTool.reduce(
-      selectionTool.initial,
-      { type: "pointerDown", at: point(300, 100) },
-      shiftCtx,
-    )
+    let s = pressAt(shiftCtx, 300, 100)
     s = selectionTool.reduce(s[0], { type: "pointerMove", at: point(900, 250) }, shiftCtx)
     applyMutation(s[1], draft)
     const outA = draft.find((e) => e.id === a.id)!
@@ -222,11 +210,7 @@ describe("selection — group resize (2+ selection)", () => {
 
   it("pointerUp emits a history-tracked mutation and returns to idle", () => {
     const { ctx } = setup()
-    let s = selectionTool.reduce(
-      selectionTool.initial,
-      { type: "pointerDown", at: point(300, 100) },
-      ctx,
-    )
+    let s = pressAt(ctx, 300, 100)
     s = selectionTool.reduce(s[0], { type: "pointerMove", at: point(600, 200) }, ctx)
     const up = selectionTool.reduce(s[0], { type: "pointerUp", at: point(600, 200) }, ctx)
     expect(up[0].phase).toBe("idle")
@@ -236,11 +220,7 @@ describe("selection — group resize (2+ selection)", () => {
 
   it("escape restores both elements to their exact pre-drag geometry", () => {
     const { a, b, draft, ctx } = setup()
-    let s = selectionTool.reduce(
-      selectionTool.initial,
-      { type: "pointerDown", at: point(300, 100) },
-      ctx,
-    )
+    let s = pressAt(ctx, 300, 100)
     s = selectionTool.reduce(s[0], { type: "pointerMove", at: point(600, 200) }, ctx)
     applyMutation(s[1], draft)
     expect(draft.find((e) => e.id === a.id)?.width).not.toBe(100)

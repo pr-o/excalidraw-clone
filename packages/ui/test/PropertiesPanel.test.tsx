@@ -33,20 +33,43 @@ describe("PropertiesPanel", () => {
     expect(swatch).toHaveAttribute("aria-pressed", "true")
   })
 
-  it("emits onChange({ strokeColor }) when a swatch is clicked", async () => {
+  it.each([
+    [
+      "emits onChange({ strokeColor }) when a swatch is clicked",
+      "stroke-e03131",
+      { strokeColor: "#e03131" },
+    ],
+    [
+      "emits onChange({ strokeWidth }) when stroke-width button is clicked",
+      "stroke-width-2",
+      { strokeWidth: 2 },
+    ],
+    [
+      "emits onChange({ strokeStyle }) when a stroke-style button is clicked",
+      "stroke-style-dashed",
+      { strokeStyle: "dashed" },
+    ],
+    [
+      "emits onChange({ fillStyle }) when a fill-style button is clicked",
+      "fill-style-cross-hatch",
+      { fillStyle: "cross-hatch" },
+    ],
+    [
+      "emits onChange({ roundness }) when a roundness button is clicked",
+      "roundness-round",
+      { roundness: { type: 1 } },
+    ],
+    [
+      "emits onChange({ roughness: 2 }) when the Cartoonist button is clicked",
+      "roughness-2",
+      { roughness: 2 },
+    ],
+  ])("%s", async (_name, testId, patch) => {
     const el = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
     const onChange = vi.fn()
     render(<PropertiesPanel t={t} selectedElements={[el]} {...handlers} onChange={onChange} />)
-    await userEvent.click(screen.getByTestId("stroke-e03131"))
-    expect(onChange).toHaveBeenCalledWith({ strokeColor: "#e03131" })
-  })
-
-  it("emits onChange({ strokeWidth }) when stroke-width button is clicked", async () => {
-    const el = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
-    const onChange = vi.fn()
-    render(<PropertiesPanel t={t} selectedElements={[el]} {...handlers} onChange={onChange} />)
-    await userEvent.click(screen.getByTestId("stroke-width-2"))
-    expect(onChange).toHaveBeenCalledWith({ strokeWidth: 2 })
+    await userEvent.click(screen.getByTestId(testId))
+    expect(onChange).toHaveBeenCalledWith(patch)
   })
 
   it("emits onDelete when Delete is clicked", async () => {
@@ -63,38 +86,6 @@ describe("PropertiesPanel", () => {
     render(<PropertiesPanel t={t} selectedElements={[a, b]} {...handlers} />)
     expect(screen.getByTestId("stroke-1e1e1e")).toHaveAttribute("aria-pressed", "false")
     expect(screen.getByTestId("stroke-e03131")).toHaveAttribute("aria-pressed", "false")
-  })
-
-  it("emits onChange({ strokeStyle }) when a stroke-style button is clicked", async () => {
-    const el = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
-    const onChange = vi.fn()
-    render(<PropertiesPanel t={t} selectedElements={[el]} {...handlers} onChange={onChange} />)
-    await userEvent.click(screen.getByTestId("stroke-style-dashed"))
-    expect(onChange).toHaveBeenCalledWith({ strokeStyle: "dashed" })
-  })
-
-  it("emits onChange({ fillStyle }) when a fill-style button is clicked", async () => {
-    const el = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
-    const onChange = vi.fn()
-    render(<PropertiesPanel t={t} selectedElements={[el]} {...handlers} onChange={onChange} />)
-    await userEvent.click(screen.getByTestId("fill-style-cross-hatch"))
-    expect(onChange).toHaveBeenCalledWith({ fillStyle: "cross-hatch" })
-  })
-
-  it("emits onChange({ roundness }) when a roundness button is clicked", async () => {
-    const el = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
-    const onChange = vi.fn()
-    render(<PropertiesPanel t={t} selectedElements={[el]} {...handlers} onChange={onChange} />)
-    await userEvent.click(screen.getByTestId("roundness-round"))
-    expect(onChange).toHaveBeenCalledWith({ roundness: { type: 1 } })
-  })
-
-  it("emits onChange({ roughness: 2 }) when the Cartoonist button is clicked", async () => {
-    const el = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
-    const onChange = vi.fn()
-    render(<PropertiesPanel t={t} selectedElements={[el]} {...handlers} onChange={onChange} />)
-    await userEvent.click(screen.getByTestId("roughness-2"))
-    expect(onChange).toHaveBeenCalledWith({ roughness: 2 })
   })
 
   it("marks the common roughness level as pressed (default 1)", () => {

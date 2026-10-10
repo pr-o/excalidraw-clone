@@ -2,7 +2,7 @@ import { newRectangle, newText } from "@excalidraw-clone/scene"
 import type { ExcalidrawElement } from "@excalidraw-clone/scene"
 import { describe, expect, it } from "vitest"
 import { selectionTool } from "../src"
-import { makeCtx, point, withModifiers } from "./test-utils"
+import { makeCtx, point, withModifiers, pressAt } from "./test-utils"
 
 const rect = (x: number): ExcalidrawElement => newRectangle({ x, y: 0, width: 10, height: 10 })
 const inGroup = (el: ExcalidrawElement, gid: string): ExcalidrawElement => ({
@@ -15,11 +15,7 @@ describe("selection — groups", () => {
     const a = inGroup(rect(0), "g1")
     const b = inGroup(rect(20), "g1")
     const ctx = makeCtx({ readElements: () => [a, b], hitTest: () => a })
-    const [state, effects] = selectionTool.reduce(
-      selectionTool.initial,
-      { type: "pointerDown", at: point(5, 5) },
-      ctx,
-    )
+    const [state, effects] = pressAt(ctx, 5, 5)
     const sel = effects.find((e) => e.kind === "select")
     expect(sel && sel.kind === "select" ? [...sel.ids] : []).toEqual([a.id, b.id])
     expect(state.phase).toBe("dragging")
@@ -36,11 +32,7 @@ describe("selection — groups", () => {
       selectedIds: [other.id],
       modifiers: withModifiers({ shift: true }),
     })
-    const [, effects] = selectionTool.reduce(
-      selectionTool.initial,
-      { type: "pointerDown", at: point(5, 5) },
-      ctx,
-    )
+    const [, effects] = pressAt(ctx, 5, 5)
     const add = effects.find((e) => e.kind === "addToSelection")
     expect(add && add.kind === "addToSelection" ? [...add.ids] : []).toEqual([a.id, b.id])
   })
@@ -49,11 +41,7 @@ describe("selection — groups", () => {
     const a = inGroup(rect(0), "g1")
     const far = inGroup(rect(500), "g1") // outside the marquee, same group
     const ctx = makeCtx({ readElements: () => [a, far], hitTest: () => null })
-    const [afterDown] = selectionTool.reduce(
-      selectionTool.initial,
-      { type: "pointerDown", at: point(-5, -5) },
-      ctx,
-    )
+    const [afterDown] = pressAt(ctx, -5, -5)
     const [afterMove] = selectionTool.reduce(
       afterDown,
       { type: "pointerMove", at: point(15, 15) },
@@ -113,11 +101,7 @@ describe("selection — groups", () => {
     const a = rect(0)
     const b = rect(20)
     const ctx = makeCtx({ readElements: () => [a, b], hitTest: () => a })
-    const [, effects] = selectionTool.reduce(
-      selectionTool.initial,
-      { type: "pointerDown", at: point(5, 5) },
-      ctx,
-    )
+    const [, effects] = pressAt(ctx, 5, 5)
     const sel = effects.find((e) => e.kind === "select")
     expect(sel && sel.kind === "select" ? [...sel.ids] : []).toEqual([a.id])
   })
