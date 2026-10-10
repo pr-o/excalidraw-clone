@@ -17,6 +17,7 @@ import {
 import {
   TOOLS,
   type AnyToolEvent,
+  type LassoState,
   type LinearState,
   type Modifiers,
   type SelectionState,
@@ -155,6 +156,7 @@ export function useDrawingDriver({
       if (s.selectedIds !== prev.selectedIds) renderer.setSelection(s.selectedIds)
       if (s.activeGuides !== prev.activeGuides) renderer.setGuides(s.activeGuides)
       if (s.activeTool !== prev.activeTool && prev.activeTool === "laser") laser.clear()
+      if (s.activeTool !== prev.activeTool && prev.activeTool === "lasso") renderer.setLasso([])
     })
 
     const resolveGrid = (): GridSnap => {
@@ -189,6 +191,10 @@ export function useDrawingDriver({
       const [next, effects] = tool.reduce(currentState, event, ctx)
       useAppStore.getState().setToolState(toolName, next)
       applyEffects(scene, effects, laser)
+      if (toolName === "lasso") {
+        const lasso = next as LassoState
+        renderer.setLasso(lasso.phase === "drawing" ? lasso.points : [])
+      }
       if (toolName === "arrow" && (next as LinearState).phase === "drawing") {
         const cand = (next as Extract<LinearState, { phase: "drawing" }>).endBindId
         renderer.setBindingHighlight(cand ? [cand] : [])

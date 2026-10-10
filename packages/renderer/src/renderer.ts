@@ -1,11 +1,11 @@
-import type { AlignmentGuide, Bounds, ViewTransform } from "@excalidraw-clone/geometry"
+import type { AlignmentGuide, Bounds, Point, ViewTransform } from "@excalidraw-clone/geometry"
 import { LABELABLE_TYPES, LINEAR_LABELABLE_TYPES } from "@excalidraw-clone/scene"
 import type { ExcalidrawElement, Scene } from "@excalidraw-clone/scene"
 import { RoughCanvas } from "roughjs/bin/canvas"
 import { isElementVisible } from "./culling"
 import { drawElement } from "./draw-element"
 import { drawGrid } from "./grid"
-import { type MarqueeBox, drawAlignmentGuides, drawSelectionChrome } from "./overlay"
+import { type MarqueeBox, drawAlignmentGuides, drawLasso, drawSelectionChrome } from "./overlay"
 import { ShapeCache } from "./shape-cache"
 import { resolveColor } from "./theme-colors"
 import type { CanvasRendererOptions, GridOptions, Theme } from "./types"
@@ -32,6 +32,7 @@ export class CanvasRenderer {
   private marquee: MarqueeBox | null = null
   private highlight: readonly string[] = []
   private guides: readonly AlignmentGuide[] = []
+  private lasso: readonly Point[] = []
 
   private dirty = false
   private rafId: number | null = null
@@ -57,6 +58,11 @@ export class CanvasRenderer {
 
   setMarquee(box: MarqueeBox | null): void {
     this.marquee = box
+    this.requestRedraw()
+  }
+
+  setLasso(path: readonly Point[]): void {
+    this.lasso = path
     this.requestRedraw()
   }
 
@@ -204,7 +210,8 @@ export class CanvasRenderer {
       this.selection.length === 0 &&
       !this.marquee &&
       this.highlight.length === 0 &&
-      this.guides.length === 0
+      this.guides.length === 0 &&
+      this.lasso.length === 0
     ) {
       return
     }
@@ -221,5 +228,6 @@ export class CanvasRenderer {
       { clearBackground: onOverlay },
     )
     drawAlignmentGuides(ctx, this.guides, this.viewTransform, this.theme)
+    drawLasso(ctx, this.lasso, this.viewTransform, this.theme)
   }
 }

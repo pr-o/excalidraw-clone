@@ -47,6 +47,7 @@ const TOOL_KEYS: Record<string, ToolName> = {
   f: "frame",
   n: "note",
   k: "laser",
+  s: "lasso",
 }
 
 /** Ephemeral, app-lifetime style clipboard for Cmd/Ctrl+Alt+C / +V. Module-level

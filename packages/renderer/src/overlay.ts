@@ -234,6 +234,27 @@ export const drawSelectionChrome = (
   }
 }
 
+export const drawLasso = (
+  ctx: CanvasRenderingContext2D,
+  path: readonly Point[],
+  view: ViewTransform,
+  theme: Theme,
+): void => {
+  if (path.length < 2) return
+  ctx.save()
+  ctx.strokeStyle = SELECTION_STROKE[theme]
+  ctx.lineWidth = 1.5
+  ctx.setLineDash([5, 5])
+  ctx.beginPath()
+  path.forEach((p, i) => {
+    const v = sceneToViewport(p, view)
+    if (i === 0) ctx.moveTo(v.x, v.y)
+    else ctx.lineTo(v.x, v.y)
+  })
+  ctx.stroke()
+  ctx.restore()
+}
+
 export const drawAlignmentGuides = (
   ctx: CanvasRenderingContext2D,
   guides: readonly AlignmentGuide[],

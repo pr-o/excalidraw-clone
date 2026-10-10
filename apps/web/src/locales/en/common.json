@@ -20,7 +20,8 @@
     "eraser": "Eraser",
     "frame": "Frame",
     "note": "Sticky note",
-    "laser": "Laser pointer"
+    "laser": "Laser pointer",
+    "lasso": "Lasso select"
   },
   "properties": {
     "label": "Properties",

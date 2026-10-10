@@ -30,6 +30,8 @@ export { noteTool } from "./tools/note"
 export type { NoteState } from "./tools/note"
 export { laserTool } from "./tools/laser"
 export type { LaserState } from "./tools/laser"
+export { lassoTool } from "./tools/lasso"
+export type { LassoState } from "./tools/lasso"
 export { SELECTION_INITIAL, findHandleAt, selectionTool } from "./tools/selection"
 export type { HandleHit, ResizeHandle, SelectionState } from "./tools/selection"
 export type {

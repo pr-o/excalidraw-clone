@@ -125,3 +125,16 @@ export const polygonEdgePointToward = (
   }
   return best ?? c
 }
+
+/** Even-odd ray-cast containment; works for concave and self-intersecting polygons. */
+export const pointInPolygon = (p: Point, vertices: readonly Point[]): boolean => {
+  let inside = false
+  for (let i = 0, j = vertices.length - 1; i < vertices.length; j = i, i += 1) {
+    const a = vertices[i]!
+    const b = vertices[j]!
+    if (a.y > p.y !== b.y > p.y && p.x < ((b.x - a.x) * (p.y - a.y)) / (b.y - a.y) + a.x) {
+      inside = !inside
+    }
+  }
+  return inside
+}

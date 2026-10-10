@@ -20,7 +20,8 @@
     "eraser": "지우개",
     "frame": "프레임",
     "note": "메모",
-    "laser": "레이저 포인터"
+    "laser": "레이저 포인터",
+    "lasso": "올가미 선택"
   },
   "properties": {
     "label": "속성",

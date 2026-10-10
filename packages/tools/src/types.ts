@@ -20,6 +20,7 @@ export type ToolName =
   | "image"
   | "note"
   | "laser"
+  | "lasso"
 
 export interface Modifiers {
   shift: boolean

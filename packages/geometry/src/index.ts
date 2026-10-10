@@ -41,6 +41,7 @@ export type { EdgeKind } from "./binding-edge"
 export {
   mirroredShapeVertices,
   pointInConvexPolygon,
+  pointInPolygon,
   polygonEdgePointToward,
   shapeVertices,
 } from "./polygon"
