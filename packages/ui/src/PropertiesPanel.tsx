@@ -67,13 +67,30 @@ export interface PropertiesPanelProps {
   className?: string
 }
 
-function commonValue<T>(items: readonly { [k: string]: unknown }[], key: string): T | undefined {
+function commonValue<T>(items: readonly object[], key: string): T | undefined {
   if (items.length === 0) return undefined
-  const first = items[0]?.[key] as T
-  for (let i = 1; i < items.length; i += 1) {
-    if (items[i]?.[key] !== first) return undefined
-  }
-  return first
+  const get = (item: object): unknown => (item as Record<string, unknown>)[key]
+  const first = get(items[0] as object)
+  return items.every((item) => get(item) === first) ? (first as T) : undefined
+}
+
+const CHECKER =
+  "linear-gradient(45deg, #ddd 25%, transparent 25%, transparent 75%, #ddd 75%), linear-gradient(45deg, #ddd 25%, transparent 25%, transparent 75%, #ddd 75%)"
+const ACTION = "flex-1 rounded border border-panel p-1 text-xs"
+
+function Choice({
+  pressed,
+  className = "h-8 flex-1 text-xs",
+  ...rest
+}: { pressed: boolean } & React.ButtonHTMLAttributes<HTMLButtonElement>): React.ReactElement {
+  return (
+    <button
+      type="button"
+      aria-pressed={pressed}
+      className={`rounded border ${className} ${pressed ? "border-accent bg-accent-soft" : "border-panel"}`}
+      {...rest}
+    />
+  )
 }
 
 export function PropertiesPanel({
@@ -92,76 +109,76 @@ export function PropertiesPanel({
 }: PropertiesPanelProps): React.ReactElement | null {
   if (selectedElements.length === 0) return null
 
-  const strokeColor = commonValue<string>(
-    selectedElements as unknown as readonly { [k: string]: unknown }[],
-    "strokeColor",
-  )
-  const backgroundColor = commonValue<string>(
-    selectedElements as unknown as readonly { [k: string]: unknown }[],
-    "backgroundColor",
-  )
-  const strokeWidth = commonValue<StrokeWidth>(
-    selectedElements as unknown as readonly { [k: string]: unknown }[],
-    "strokeWidth",
-  )
-  const opacity = commonValue<number>(
-    selectedElements as unknown as readonly { [k: string]: unknown }[],
-    "opacity",
-  )
-  const strokeStyle = commonValue<StrokeStyle>(
-    selectedElements as unknown as readonly { [k: string]: unknown }[],
-    "strokeStyle",
-  )
-  const fillStyle = commonValue<FillStyle>(
-    selectedElements as unknown as readonly { [k: string]: unknown }[],
-    "fillStyle",
-  )
-  const roughness = commonValue<Roughness>(
-    selectedElements as unknown as readonly { [k: string]: unknown }[],
-    "roughness",
-  )
-  const roundness = commonValue<Roundness>(
-    selectedElements as unknown as readonly { [k: string]: unknown }[],
-    "roundness",
-  )
+  const common = <T,>(key: string): T | undefined => commonValue<T>(selectedElements, key)
+  const strokeColor = common<string>("strokeColor")
+  const backgroundColor = common<string>("backgroundColor")
+  const strokeWidth = common<StrokeWidth>("strokeWidth")
+  const roundness = common<Roundness>("roundness")
   const isRound = roundness !== undefined && roundness !== null
-  const allLinear =
-    selectedElements.length > 0 &&
-    selectedElements.every((e) => e.type === "arrow" || e.type === "line")
-  const allArrow = selectedElements.length > 0 && selectedElements.every((e) => e.type === "arrow")
-  const elbowed = commonValue<boolean>(
-    selectedElements as unknown as readonly { [k: string]: unknown }[],
-    "elbowed",
-  )
-  const startArrowhead = commonValue<Arrowhead | null>(
-    selectedElements as unknown as readonly { [k: string]: unknown }[],
-    "startArrowhead",
-  )
-  const endArrowhead = commonValue<Arrowhead | null>(
-    selectedElements as unknown as readonly { [k: string]: unknown }[],
-    "endArrowhead",
-  )
-  const allText = selectedElements.length > 0 && selectedElements.every((e) => e.type === "text")
+  const isSharp = roundness !== undefined && !isRound
+  const allLinear = selectedElements.every((e) => e.type === "arrow" || e.type === "line")
+  const allArrow = selectedElements.every((e) => e.type === "arrow")
+  const allText = selectedElements.every((e) => e.type === "text")
   const textElements = selectedElements.flatMap((e) => (e.type === "text" ? [e] : []))
-  const fontFamily = commonValue<FontFamily>(
-    textElements as unknown as readonly { [k: string]: unknown }[],
-    "fontFamily",
-  )
-  const fontSize = commonValue<number>(
-    textElements as unknown as readonly { [k: string]: unknown }[],
-    "fontSize",
-  )
   // Legacy elements may lack fontWeight/fontStyle; absent ⟺ "normal".
-  const fontWeight = commonValue<"normal" | "bold">(
-    textElements.map((e) => ({ fontWeight: e.fontWeight ?? "normal" })),
-    "fontWeight",
+  const isBold =
+    commonValue(
+      textElements.map((e) => ({ fontWeight: e.fontWeight ?? "normal" })),
+      "fontWeight",
+    ) === "bold"
+  const isItalic =
+    commonValue(
+      textElements.map((e) => ({ fontStyle: e.fontStyle ?? "normal" })),
+      "fontStyle",
+    ) === "italic"
+  const canGroup = selectedElements.length >= 2
+  const canUngroup = selectedElements.some((el) => el.groupIds.length > 0)
+
+  /** A row of mutually exclusive buttons, each patching `field` with its value. */
+  const row = <V,>(
+    field: string,
+    items: readonly (readonly [value: V, testId: string, label: React.ReactNode])[],
+    group?: string,
+  ): React.ReactElement => {
+    const current = common<V>(field)
+    return (
+      <div
+        className={`flex gap-1${group ? " mt-1" : ""}`}
+        role={group ? "group" : undefined}
+        aria-label={group}
+      >
+        {items.map(([value, testId, label]) => (
+          <Choice
+            key={testId}
+            data-testid={testId}
+            pressed={current === value}
+            onClick={() => onChange({ [field]: value })}
+          >
+            {label}
+          </Choice>
+        ))}
+      </div>
+    )
+  }
+
+  const swatches = (
+    colors: readonly string[],
+    current: string | undefined,
+    field: string,
+    prefix: string,
+  ): React.ReactElement => (
+    <div className="flex gap-1">
+      {colors.map((c) => (
+        <Swatch
+          key={c}
+          color={c}
+          active={current === c}
+          testId={`${prefix}-${c === "transparent" ? "none" : c.replace("#", "")}`}
+          onClick={() => onChange({ [field]: c })}
+        />
+      ))}
+    </div>
   )
-  const fontStyle = commonValue<"normal" | "italic">(
-    textElements.map((e) => ({ fontStyle: e.fontStyle ?? "normal" })),
-    "fontStyle",
-  )
-  const isBold = fontWeight === "bold"
-  const isItalic = fontStyle === "italic"
 
   return (
     <aside
@@ -169,270 +186,175 @@ export function PropertiesPanel({
       aria-label={t("properties.label")}
     >
       <Section label={t("properties.stroke")}>
-        <div className="flex gap-1">
-          {STROKE_COLORS.map((c) => (
-            <Swatch
-              key={c}
-              color={c}
-              active={strokeColor === c}
-              testId={`stroke-${c.replace("#", "")}`}
-              onClick={() => onChange({ strokeColor: c })}
-            />
-          ))}
-        </div>
+        {swatches(STROKE_COLORS, strokeColor, "strokeColor", "stroke")}
       </Section>
 
       <Section label={t("properties.background")}>
-        <div className="flex gap-1">
-          {BG_COLORS.map((c) => (
-            <Swatch
-              key={c}
-              color={c}
-              active={backgroundColor === c}
-              testId={`bg-${c === "transparent" ? "none" : c.replace("#", "")}`}
-              onClick={() => onChange({ backgroundColor: c })}
-            />
-          ))}
-        </div>
+        {swatches(BG_COLORS, backgroundColor, "backgroundColor", "bg")}
       </Section>
 
       <Section label={t("properties.strokeWidth")}>
         <div className="flex gap-1">
           {STROKE_WIDTHS.map((w) => (
-            <button
+            <Choice
               key={w}
-              type="button"
               data-testid={`stroke-width-${w}`}
-              aria-pressed={strokeWidth === w}
+              pressed={strokeWidth === w}
               onClick={() => onChange({ strokeWidth: w })}
-              className={`h-8 w-8 rounded border ${strokeWidth === w ? "border-accent bg-accent-soft" : "border-panel"}`}
+              className="h-8 w-8"
             >
               <div style={{ height: `${w}px` }} className="mx-auto w-5 bg-current" aria-hidden />
-            </button>
+            </Choice>
           ))}
         </div>
       </Section>
 
       <Section label={t("properties.strokeStyle")}>
-        <div className="flex gap-1">
-          {STROKE_STYLES.map((s) => (
-            <button
-              key={s}
-              type="button"
-              data-testid={`stroke-style-${s}`}
-              aria-pressed={strokeStyle === s}
-              onClick={() => onChange({ strokeStyle: s })}
-              className={`h-8 flex-1 rounded border text-xs ${strokeStyle === s ? "border-accent bg-accent-soft" : "border-panel"}`}
-            >
-              {t(`properties.strokeStyle_${s}`)}
-            </button>
-          ))}
-        </div>
+        {row(
+          "strokeStyle",
+          STROKE_STYLES.map((s) => [s, `stroke-style-${s}`, t(`properties.strokeStyle_${s}`)]),
+        )}
       </Section>
 
       <Section label={t("properties.fillStyle")}>
-        <div className="flex gap-1">
-          {FILL_STYLES.map((s) => (
-            <button
-              key={s}
-              type="button"
-              data-testid={`fill-style-${s}`}
-              aria-pressed={fillStyle === s}
-              onClick={() => onChange({ fillStyle: s })}
-              className={`h-8 flex-1 rounded border text-xs ${fillStyle === s ? "border-accent bg-accent-soft" : "border-panel"}`}
-            >
-              {t(`properties.fillStyle_${s}`)}
-            </button>
-          ))}
-        </div>
+        {row(
+          "fillStyle",
+          FILL_STYLES.map((s) => [s, `fill-style-${s}`, t(`properties.fillStyle_${s}`)]),
+        )}
       </Section>
 
       <Section label={t("properties.roughness")}>
-        <div className="flex gap-1">
-          {ROUGHNESS_LEVELS.map((r) => (
-            <button
-              key={r}
-              type="button"
-              data-testid={`roughness-${r}`}
-              aria-pressed={roughness === r}
-              onClick={() => onChange({ roughness: r })}
-              className={`h-8 flex-1 rounded border text-xs ${roughness === r ? "border-accent bg-accent-soft" : "border-panel"}`}
-            >
-              {t(`properties.roughness_${r}`)}
-            </button>
-          ))}
-        </div>
+        {row(
+          "roughness",
+          ROUGHNESS_LEVELS.map((r) => [r, `roughness-${r}`, t(`properties.roughness_${r}`)]),
+        )}
       </Section>
 
       {allLinear && (
         <Section label={t("properties.arrowheads")}>
-          {(
-            [
-              ["start", "startArrowhead", startArrowhead],
-              ["end", "endArrowhead", endArrowhead],
-            ] as const
-          ).map(([end, field, value]) => (
-            <div key={end} className="mb-1 flex items-center gap-1">
-              <span className="w-8 text-[10px] text-muted">
-                {t(`properties.arrowhead${end === "start" ? "Start" : "End"}`)}
-              </span>
-              <div className="flex flex-1 flex-wrap gap-0.5">
-                {ARROWHEAD_KINDS.map((kind) => (
-                  <button
-                    key={kind ?? "none"}
-                    type="button"
-                    data-testid={`arrowhead-${end}-${kind ?? "none"}`}
-                    aria-pressed={value === kind}
-                    aria-label={t(`properties.arrowhead_${kind ?? "none"}`)}
-                    title={t(`properties.arrowhead_${kind ?? "none"}`)}
-                    onClick={() => onChange({ [field]: kind })}
-                    className={`flex h-6 w-6 items-center justify-center rounded border ${value === kind ? "border-accent bg-accent-soft" : "border-panel"}`}
-                  >
-                    <ArrowheadGlyph kind={kind} />
-                  </button>
-                ))}
+          {(["start", "end"] as const).map((end) => {
+            const field = `${end}Arrowhead`
+            const value = common<Arrowhead | null>(field)
+            return (
+              <div key={end} className="mb-1 flex items-center gap-1">
+                <span className="w-8 text-[10px] text-muted">
+                  {t(`properties.arrowhead${end === "start" ? "Start" : "End"}`)}
+                </span>
+                <div className="flex flex-1 flex-wrap gap-0.5">
+                  {ARROWHEAD_KINDS.map((kind) => (
+                    <Choice
+                      key={kind ?? "none"}
+                      data-testid={`arrowhead-${end}-${kind ?? "none"}`}
+                      pressed={value === kind}
+                      aria-label={t(`properties.arrowhead_${kind ?? "none"}`)}
+                      title={t(`properties.arrowhead_${kind ?? "none"}`)}
+                      onClick={() => onChange({ [field]: kind })}
+                      className="flex h-6 w-6 items-center justify-center"
+                    >
+                      <ArrowheadGlyph kind={kind} />
+                    </Choice>
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </Section>
       )}
 
       {allArrow && (
         <Section label={t("properties.arrowType")}>
-          <div className="flex gap-1">
-            <button
-              type="button"
-              data-testid="arrow-type-sharp"
-              aria-pressed={elbowed === false}
-              onClick={() => onChange({ elbowed: false })}
-              className={`h-8 flex-1 rounded border text-xs ${elbowed === false ? "border-accent bg-accent-soft" : "border-panel"}`}
-            >
-              {t("properties.arrowTypeSharp")}
-            </button>
-            <button
-              type="button"
-              data-testid="arrow-type-elbow"
-              aria-pressed={elbowed === true}
-              onClick={() => onChange({ elbowed: true })}
-              className={`h-8 flex-1 rounded border text-xs ${elbowed === true ? "border-accent bg-accent-soft" : "border-panel"}`}
-            >
-              {t("properties.arrowTypeElbow")}
-            </button>
-          </div>
+          {row("elbowed", [
+            [false, "arrow-type-sharp", t("properties.arrowTypeSharp")],
+            [true, "arrow-type-elbow", t("properties.arrowTypeElbow")],
+          ])}
         </Section>
       )}
 
       {allText && (
         <Section label={t("properties.text")}>
-          <div className="flex gap-1" role="group" aria-label={t("properties.fontFamily")}>
-            {FONT_FAMILIES.map(([n, key]) => (
-              <button
-                key={n}
-                type="button"
-                data-testid={`font-family-${n}`}
-                aria-pressed={fontFamily === n}
-                onClick={() => onChange({ fontFamily: n })}
-                className={`h-8 flex-1 rounded border text-xs ${fontFamily === n ? "border-accent bg-accent-soft" : "border-panel"}`}
-              >
-                {t(`properties.fontFamily_${key}`)}
-              </button>
-            ))}
-          </div>
+          {row(
+            "fontFamily",
+            FONT_FAMILIES.map(([n, key]) => [
+              n,
+              `font-family-${n}`,
+              t(`properties.fontFamily_${key}`),
+            ]),
+            t("properties.fontFamily"),
+          )}
           <div className="mt-1 flex gap-1">
-            <button
-              type="button"
+            <Choice
               data-testid="font-bold"
-              aria-pressed={isBold}
+              pressed={isBold}
               onClick={() => onChange({ fontWeight: isBold ? "normal" : "bold" })}
-              className={`h-8 flex-1 rounded border text-xs font-bold ${isBold ? "border-accent bg-accent-soft" : "border-panel"}`}
+              className="h-8 flex-1 text-xs font-bold"
             >
               {t("properties.bold")}
-            </button>
-            <button
-              type="button"
+            </Choice>
+            <Choice
               data-testid="font-italic"
-              aria-pressed={isItalic}
+              pressed={isItalic}
               onClick={() => onChange({ fontStyle: isItalic ? "normal" : "italic" })}
-              className={`h-8 flex-1 rounded border text-xs italic ${isItalic ? "border-accent bg-accent-soft" : "border-panel"}`}
+              className="h-8 flex-1 text-xs italic"
             >
               {t("properties.italic")}
-            </button>
+            </Choice>
           </div>
-          <div className="mt-1 flex gap-1" role="group" aria-label={t("properties.fontSize")}>
-            {FONT_SIZES.map(([size, key]) => (
-              <button
-                key={size}
-                type="button"
-                data-testid={`font-size-${size}`}
-                aria-pressed={fontSize === size}
-                onClick={() => onChange({ fontSize: size })}
-                className={`h-8 flex-1 rounded border text-xs ${fontSize === size ? "border-accent bg-accent-soft" : "border-panel"}`}
-              >
-                {t(`properties.fontSize_${key}`)}
-              </button>
-            ))}
-          </div>
+          {row(
+            "fontSize",
+            FONT_SIZES.map(([size, key]) => [
+              size,
+              `font-size-${size}`,
+              t(`properties.fontSize_${key}`),
+            ]),
+            t("properties.fontSize"),
+          )}
         </Section>
       )}
 
       <Section label={t("properties.roundness")}>
         <div className="flex gap-1">
-          <button
-            type="button"
+          <Choice
             data-testid="roundness-sharp"
-            aria-pressed={roundness !== undefined && !isRound}
+            pressed={isSharp}
             onClick={() => onChange({ roundness: null })}
-            className={`h-8 flex-1 rounded border text-xs ${roundness !== undefined && !isRound ? "border-accent bg-accent-soft" : "border-panel"}`}
           >
             {t("properties.roundness_sharp")}
-          </button>
-          <button
-            type="button"
+          </Choice>
+          <Choice
             data-testid="roundness-round"
-            aria-pressed={isRound}
+            pressed={isRound}
             onClick={() => onChange({ roundness: { type: 1 } })}
-            className={`h-8 flex-1 rounded border text-xs ${isRound ? "border-accent bg-accent-soft" : "border-panel"}`}
           >
             {t("properties.roundness_round")}
-          </button>
+          </Choice>
         </div>
       </Section>
 
       <Section label={t("properties.opacity")}>
-        <div className="flex gap-1">
-          {OPACITY_STEPS.map((o) => (
-            <button
-              key={o}
-              type="button"
-              data-testid={`opacity-${o}`}
-              aria-pressed={opacity === o}
-              onClick={() => onChange({ opacity: o })}
-              className={`h-8 flex-1 rounded border text-xs ${opacity === o ? "border-accent bg-accent-soft" : "border-panel"}`}
-            >
-              {o}%
-            </button>
-          ))}
-        </div>
+        {row(
+          "opacity",
+          OPACITY_STEPS.map((o) => [o, `opacity-${o}`, `${o}%`]),
+        )}
       </Section>
 
-      {(selectedElements.length >= 2 || selectedElements.some((el) => el.groupIds.length > 0)) && (
+      {(canGroup || canUngroup) && (
         <Section label={t("properties.group")}>
           <div className="flex gap-1">
             <button
               type="button"
               data-testid="group-selection"
-              disabled={selectedElements.length < 2}
+              disabled={!canGroup}
               onClick={onGroup}
-              className="flex-1 rounded border border-panel p-1 text-xs disabled:opacity-40"
+              className={`${ACTION} disabled:opacity-40`}
             >
               {t("properties.group")}
             </button>
             <button
               type="button"
               data-testid="ungroup-selection"
-              disabled={!selectedElements.some((el) => el.groupIds.length > 0)}
+              disabled={!canUngroup}
               onClick={onUngroup}
-              className="flex-1 rounded border border-panel p-1 text-xs disabled:opacity-40"
+              className={`${ACTION} disabled:opacity-40`}
             >
               {t("properties.ungroup")}
             </button>
@@ -440,7 +362,7 @@ export function PropertiesPanel({
         </Section>
       )}
 
-      {selectedElements.length >= 2 && (
+      {canGroup && (
         <Section label={t("properties.arrange")}>
           <div className="grid grid-cols-3 gap-1">
             {(["left", "centerX", "right", "top", "centerY", "bottom"] as const).map((edge) => (
@@ -450,7 +372,7 @@ export function PropertiesPanel({
                 data-testid={`align-${edge}`}
                 aria-label={t(`properties.align_${edge}`)}
                 onClick={() => onAlign(edge)}
-                className="rounded border border-panel p-1 text-xs"
+                className={ACTION}
               >
                 {ALIGN_GLYPH[edge]}
               </button>
@@ -465,7 +387,7 @@ export function PropertiesPanel({
                 aria-label={t(`properties.distribute_${axis}`)}
                 disabled={selectedElements.length < 3}
                 onClick={() => onDistribute(axis)}
-                className="flex-1 rounded border border-panel p-1 text-xs disabled:opacity-40"
+                className={`${ACTION} disabled:opacity-40`}
               >
                 {axis === "horizontal" ? "⇿" : "⇳"}
               </button>
@@ -476,24 +398,23 @@ export function PropertiesPanel({
 
       {!selectedElements.every((el) => el.locked) && (
         <div className="flex gap-1">
-          <button
-            type="button"
-            data-testid="flip-x"
-            aria-label={t("properties.flip_horizontal")}
-            onClick={() => onFlip("x")}
-            className="flex-1 rounded border border-panel p-1 text-xs"
-          >
-            ⇋
-          </button>
-          <button
-            type="button"
-            data-testid="flip-y"
-            aria-label={t("properties.flip_vertical")}
-            onClick={() => onFlip("y")}
-            className="flex-1 rounded border border-panel p-1 text-xs"
-          >
-            ⥯
-          </button>
+          {(
+            [
+              ["x", "flip_horizontal", "⇋"],
+              ["y", "flip_vertical", "⥯"],
+            ] as const
+          ).map(([axis, key, glyph]) => (
+            <button
+              key={axis}
+              type="button"
+              data-testid={`flip-${axis}`}
+              aria-label={t(`properties.${key}`)}
+              onClick={() => onFlip(axis)}
+              className={ACTION}
+            >
+              {glyph}
+            </button>
+          ))}
         </div>
       )}
 
@@ -508,11 +429,7 @@ export function PropertiesPanel({
 
       <Section label={t("properties.actions")}>
         <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={onDuplicate}
-            className="flex-1 rounded border border-panel p-1 text-xs"
-          >
+          <button type="button" onClick={onDuplicate} className={ACTION}>
             {t("properties.duplicate")}
           </button>
           <button
@@ -607,10 +524,7 @@ function Swatch({
       className={`h-7 w-7 rounded border-2 ${active ? "border-accent" : "border-panel"}`}
       style={{
         backgroundColor: color === "transparent" ? "white" : color,
-        backgroundImage:
-          color === "transparent"
-            ? "linear-gradient(45deg, #ddd 25%, transparent 25%, transparent 75%, #ddd 75%), linear-gradient(45deg, #ddd 25%, transparent 25%, transparent 75%, #ddd 75%)"
-            : undefined,
+        backgroundImage: color === "transparent" ? CHECKER : undefined,
         backgroundSize: color === "transparent" ? "8px 8px" : undefined,
         backgroundPosition: color === "transparent" ? "0 0, 4px 4px" : undefined,
       }}

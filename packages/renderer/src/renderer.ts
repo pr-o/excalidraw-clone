@@ -196,22 +196,11 @@ export class CanvasRenderer {
   }
 
   private renderSelection(elements: readonly ExcalidrawElement[]): void {
-    if (this.overlayCanvas && this.overlayCtx) {
-      drawSelectionChrome(
-        this.overlayCtx,
-        this.overlayCanvas,
-        this.selection,
-        elements,
-        this.viewTransform,
-        this.theme,
-        this.marquee,
-        this.highlight,
-        { clearBackground: true },
-      )
-      drawAlignmentGuides(this.overlayCtx, this.guides, this.viewTransform, this.theme)
-      return
-    }
+    // Dedicated overlay canvas when given (cleared each frame); otherwise draw
+    // on top of the main canvas, and only when there is something to draw.
+    const onOverlay = this.overlayCanvas !== null && this.overlayCtx !== null
     if (
+      !onOverlay &&
       this.selection.length === 0 &&
       !this.marquee &&
       this.highlight.length === 0 &&
@@ -219,17 +208,18 @@ export class CanvasRenderer {
     ) {
       return
     }
+    const ctx = this.overlayCtx ?? this.ctx
     drawSelectionChrome(
-      this.ctx,
-      this.canvas,
+      ctx,
+      this.overlayCanvas ?? this.canvas,
       this.selection,
       elements,
       this.viewTransform,
       this.theme,
       this.marquee,
       this.highlight,
-      { clearBackground: false },
+      { clearBackground: onOverlay },
     )
-    drawAlignmentGuides(this.ctx, this.guides, this.viewTransform, this.theme)
+    drawAlignmentGuides(ctx, this.guides, this.viewTransform, this.theme)
   }
 }

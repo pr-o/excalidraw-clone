@@ -1,5 +1,4 @@
 "use client"
-import { zoomToPoint } from "@excalidraw-clone/geometry"
 import { renderToSVG } from "@excalidraw-clone/renderer"
 import type { CanvasRenderer } from "@excalidraw-clone/renderer"
 import {
@@ -62,10 +61,11 @@ import {
   withViewport,
   type PageRecord,
 } from "../driver/pages"
+import { zoomAboutCentre } from "../driver/zoom"
 import { renderPageThumbnail } from "../driver/pageThumbnails"
 import { useSceneRevision } from "../hooks/useSceneRevision"
 import { openExcalidrawFromPicker } from "../driver/openFile"
-import { patchScene } from "../driver/patchScene"
+import { deleteElements, patchScene, reorderElements, replaceElements } from "../driver/patchScene"
 import { saveAsExcalidraw } from "../driver/saveFile"
 import { ensureI18n } from "../i18n"
 import { attachClipboard } from "../keyboard/clipboard"
@@ -109,6 +109,16 @@ function Inner(): React.ReactElement {
   pagesRef.current = pages
   // Fullscreen target for presentation mode.
   const rootRef = useRef<HTMLElement>(null)
+  // Re-render one page's thumbnail; a failed render (e.g. a tainted canvas)
+  // keeps the last good thumbnail rather than blanking it.
+  const refreshThumbnail = useCallback(
+    (pageScene: Scene, pageId: string): void => {
+      void renderPageThumbnail(pageScene, canvasBg, resolvedTheme)
+        .then((thumb) => setThumbnails((prev) => ({ ...prev, [pageId]: thumb })))
+        .catch(() => {})
+    },
+    [canvasBg, resolvedTheme],
+  )
   const switchToPage = useCallback(
     (targetId: string): void => {
       if (targetId === activePageId) return
@@ -120,18 +130,9 @@ function Inner(): React.ReactElement {
       s.setView(target?.viewport ?? DEFAULT_VIEWPORT)
       setActivePageId(targetId)
       s.setSelection([])
-      if (target) {
-        void renderPageThumbnail(target.scene, canvasBg, resolvedTheme)
-          .then((thumb) => {
-            setThumbnails((prev) => ({ ...prev, [targetId]: thumb }))
-          })
-          .catch(() => {
-            // Rendering can fail (e.g. SecurityError from a tainted canvas).
-            // Leave the previous thumbnail in place rather than blanking it.
-          })
-      }
+      if (target) refreshThumbnail(target.scene, targetId)
     },
-    [activePageId, pages, canvasBg, resolvedTheme],
+    [activePageId, pages, refreshThumbnail],
   )
   useEffect(() => {
     hydrateUI()
@@ -178,22 +179,14 @@ function Inner(): React.ReactElement {
   useEffect(() => {
     const saver = createAutoSaver({
       delayMs: 500,
-      flush: () => {
-        void renderPageThumbnail(scene, canvasBg, resolvedTheme)
-          .then((thumb) => {
-            setThumbnails((prev) => ({ ...prev, [activePageId]: thumb }))
-          })
-          .catch(() => {
-            // Keep the last good thumbnail if this render fails.
-          })
-      },
+      flush: () => refreshThumbnail(scene, activePageId),
     })
     const unsub = scene.subscribe(() => saver.schedule())
     return () => {
       unsub()
       saver.dispose()
     }
-  }, [scene, activePageId, canvasBg, resolvedTheme])
+  }, [scene, activePageId, refreshThumbnail])
   useEffect(() => {
     return attachShortcuts({
       scene,
@@ -315,6 +308,16 @@ function Inner(): React.ReactElement {
     setLibraryItems(await getAllLibraryItems())
   }, [setLibraryItems])
 
+  const moveTo = (moved: readonly { id: string; x: number; y: number }[]): void => {
+    const byId = new Map(moved.map((p) => [p.id, p]))
+    replaceElements(scene, (el) => {
+      const p = byId.get(el.id)
+      return p && { ...el, x: p.x, y: p.y }
+    })
+  }
+  const reorder = (fn: Parameters<typeof reorderElements>[1]) => (id: string) =>
+    reorderElements(scene, fn, [id])
+
   const handleAddFromSelection = useCallback(async (): Promise<void> => {
     const allEls = scene.getElements()
     const ids = new Set(selectedIds)
@@ -391,11 +394,7 @@ function Inner(): React.ReactElement {
       const element = scene.getElements().find((el) => el.id === elementId)
       const target = pages.find((p) => p.id === targetPageId)
       if (!element || !target) return
-      scene.mutate((draft) => {
-        for (let i = 0; i < draft.length; i += 1) {
-          if (draft[i]!.id === elementId) draft[i] = { ...draft[i]!, isDeleted: true }
-        }
-      })
+      replaceElements(scene, (el) => (el.id === elementId ? { ...el, isDeleted: true } : undefined))
       target.scene.mutate((draft) => {
         draft.push(element)
       })
@@ -405,17 +404,11 @@ function Inner(): React.ReactElement {
       // fires, so it never runs for this mutation. Refresh the source page's
       // thumbnail explicitly, the same way onAdd/onDuplicate below refresh a
       // freshly created page's.
-      void renderPageThumbnail(scene, canvasBg, resolvedTheme)
-        .then((thumb) => {
-          setThumbnails((prev) => ({ ...prev, [activePageId]: thumb }))
-        })
-        .catch(() => {
-          // Leave the source page's last-good thumbnail in place if this render fails.
-        })
+      refreshThumbnail(scene, activePageId)
       switchToPage(targetPageId)
       useAppStore.getState().setSelection([elementId])
     },
-    [scene, pages, activePageId, canvasBg, resolvedTheme, switchToPage],
+    [scene, pages, activePageId, refreshThumbnail, switchToPage],
   )
 
   return (
@@ -479,23 +472,13 @@ function Inner(): React.ReactElement {
             <PropertiesPanel
               t={t}
               selectedElements={selectedElements}
-              onChange={(patch) => {
-                scene.mutate((draft) => {
-                  for (let i = 0; i < draft.length; i += 1) {
-                    if (selectedIds.includes(draft[i]!.id)) {
-                      draft[i] = applyPropertiesPatch(draft[i]!, patch)
-                    }
-                  }
-                })
-              }}
+              onChange={(patch) =>
+                replaceElements(scene, (el) =>
+                  selectedIds.includes(el.id) ? applyPropertiesPatch(el, patch) : undefined,
+                )
+              }
               onDelete={() => {
-                scene.mutate((draft) => {
-                  for (let i = 0; i < draft.length; i += 1) {
-                    if (selectedIds.includes(draft[i]!.id)) {
-                      draft[i] = { ...draft[i]!, isDeleted: true }
-                    }
-                  }
-                })
+                deleteElements(scene, selectedIds)
                 useAppStore.getState().setSelection([])
               }}
               onDuplicate={() => {
@@ -511,53 +494,12 @@ function Inner(): React.ReactElement {
                       .map((c) => c.id),
                   )
               }}
-              onAlign={(edge) => {
-                const byId = new Map(alignElements(selectedElements, edge).map((p) => [p.id, p]))
-                scene.mutate((draft) => {
-                  for (let i = 0; i < draft.length; i += 1) {
-                    const p = byId.get(draft[i]!.id)
-                    if (p) draft[i] = { ...draft[i]!, x: p.x, y: p.y }
-                  }
-                })
-              }}
-              onDistribute={(axis) => {
-                const byId = new Map(
-                  distributeElements(selectedElements, axis).map((p) => [p.id, p]),
-                )
-                scene.mutate((draft) => {
-                  for (let i = 0; i < draft.length; i += 1) {
-                    const p = byId.get(draft[i]!.id)
-                    if (p) draft[i] = { ...draft[i]!, x: p.x, y: p.y }
-                  }
-                })
-              }}
-              onGroup={() => {
-                const byId = new Map(
-                  groupElements(selectedElements, selectedIds, crypto.randomUUID()).map((el) => [
-                    el.id,
-                    el,
-                  ]),
-                )
-                if (byId.size === 0) return
-                scene.mutate((draft) => {
-                  for (let i = 0; i < draft.length; i += 1) {
-                    const p = byId.get(draft[i]!.id)
-                    if (p) draft[i] = p
-                  }
-                })
-              }}
-              onUngroup={() => {
-                const byId = new Map(
-                  ungroupElements(selectedElements, selectedIds).map((el) => [el.id, el]),
-                )
-                if (byId.size === 0) return
-                scene.mutate((draft) => {
-                  for (let i = 0; i < draft.length; i += 1) {
-                    const p = byId.get(draft[i]!.id)
-                    if (p) draft[i] = p
-                  }
-                })
-              }}
+              onAlign={(edge) => moveTo(alignElements(selectedElements, edge))}
+              onDistribute={(axis) => moveTo(distributeElements(selectedElements, axis))}
+              onGroup={() =>
+                patchScene(scene, groupElements(selectedElements, selectedIds, crypto.randomUUID()))
+              }
+              onUngroup={() => patchScene(scene, ungroupElements(selectedElements, selectedIds))}
               onLock={() => {
                 patchScene(scene, lockElements(scene.getElements(), selectedIds))
                 useAppStore.getState().setSelection([])
@@ -582,34 +524,10 @@ function Inner(): React.ReactElement {
                 useAppStore.getState().setSelection(hitIds)
               }
             }}
-            onSendToBack={(id) => {
-              scene.mutate((draft) => {
-                const next = sendToBack(draft, [id])
-                draft.length = 0
-                draft.push(...next)
-              })
-            }}
-            onSendBackward={(id) => {
-              scene.mutate((draft) => {
-                const next = sendBackward(draft, [id])
-                draft.length = 0
-                draft.push(...next)
-              })
-            }}
-            onBringForward={(id) => {
-              scene.mutate((draft) => {
-                const next = bringForward(draft, [id])
-                draft.length = 0
-                draft.push(...next)
-              })
-            }}
-            onBringToFront={(id) => {
-              scene.mutate((draft) => {
-                const next = bringToFront(draft, [id])
-                draft.length = 0
-                draft.push(...next)
-              })
-            }}
+            onSendToBack={reorder(sendToBack)}
+            onSendBackward={reorder(sendBackward)}
+            onBringForward={reorder(bringForward)}
+            onBringToFront={reorder(bringToFront)}
           />
 
           <LibraryPanel
@@ -639,13 +557,7 @@ function Inner(): React.ReactElement {
               const created = updated[updated.length - 1]!
               setPages(updated)
               setActivePageId(created.id)
-              void renderPageThumbnail(created.scene, canvasBg, resolvedTheme)
-                .then((thumb) => {
-                  setThumbnails((prev) => ({ ...prev, [created.id]: thumb }))
-                })
-                .catch(() => {
-                  // Leave the cache untouched if this render fails.
-                })
+              refreshThumbnail(created.scene, created.id)
             }}
             onDelete={(id) => {
               if (id === activePageId) {
@@ -666,13 +578,7 @@ function Inner(): React.ReactElement {
               const created = updated[index + 1]!
               setPages(updated)
               setActivePageId(created.id)
-              void renderPageThumbnail(created.scene, canvasBg, resolvedTheme)
-                .then((thumb) => {
-                  setThumbnails((prev) => ({ ...prev, [created.id]: thumb }))
-                })
-                .catch(() => {
-                  // Leave the cache untouched if this render fails.
-                })
+              refreshThumbnail(created.scene, created.id)
             }}
             onReorder={(id, direction) => setPages(reorderPage(pages, id, direction))}
             onMove={(id, toIndex) => setPages(movePage(pages, id, toIndex))}
@@ -720,17 +626,7 @@ function Inner(): React.ReactElement {
               type="button"
               data-testid="zoom-out"
               aria-label={t("shortcuts:zoomOut")}
-              onClick={() => {
-                const s = useAppStore.getState()
-                const anchor = { x: window.innerWidth / 2, y: window.innerHeight / 2 }
-                s.setView(
-                  zoomToPoint(
-                    { scrollX: s.scrollX, scrollY: s.scrollY, zoom: s.zoom },
-                    anchor,
-                    s.zoom / 1.1,
-                  ),
-                )
-              }}
+              onClick={() => zoomAboutCentre((z) => z / 1.1)}
               className="rounded px-1.5 py-0.5 hover:bg-gray-100"
             >
               −
@@ -739,13 +635,7 @@ function Inner(): React.ReactElement {
               type="button"
               data-testid="zoom-reset"
               aria-label={t("shortcuts:zoomReset")}
-              onClick={() => {
-                const s = useAppStore.getState()
-                const anchor = { x: window.innerWidth / 2, y: window.innerHeight / 2 }
-                s.setView(
-                  zoomToPoint({ scrollX: s.scrollX, scrollY: s.scrollY, zoom: s.zoom }, anchor, 1),
-                )
-              }}
+              onClick={() => zoomAboutCentre(() => 1)}
               className="min-w-[3.5rem] rounded px-1.5 py-0.5 text-center hover:bg-gray-100"
             >
               {Math.round(zoom * 100)}%
@@ -754,17 +644,7 @@ function Inner(): React.ReactElement {
               type="button"
               data-testid="zoom-in"
               aria-label={t("shortcuts:zoomIn")}
-              onClick={() => {
-                const s = useAppStore.getState()
-                const anchor = { x: window.innerWidth / 2, y: window.innerHeight / 2 }
-                s.setView(
-                  zoomToPoint(
-                    { scrollX: s.scrollX, scrollY: s.scrollY, zoom: s.zoom },
-                    anchor,
-                    s.zoom * 1.1,
-                  ),
-                )
-              }}
+              onClick={() => zoomAboutCentre((z) => z * 1.1)}
               className="rounded px-1.5 py-0.5 hover:bg-gray-100"
             >
               +

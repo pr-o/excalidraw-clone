@@ -58,6 +58,8 @@ export function FindOverlay({
   }
 
   const disabled = matchCount === 0
+  const navButton =
+    "flex h-7 w-7 items-center justify-center rounded text-sm hover:bg-panel-hover disabled:opacity-40 disabled:hover:bg-transparent"
 
   // Centred just under the toolbar: both screen corners are already taken —
   // the right by PropertiesPanel (which appears on every successful jump) and
@@ -92,7 +94,7 @@ export function FindOverlay({
         disabled={disabled}
         aria-label={t("find.prev")}
         data-testid="find-prev"
-        className="flex h-7 w-7 items-center justify-center rounded text-sm hover:bg-panel-hover disabled:opacity-40 disabled:hover:bg-transparent"
+        className={navButton}
       >
         ‹
       </button>
@@ -102,7 +104,7 @@ export function FindOverlay({
         disabled={disabled}
         aria-label={t("find.next")}
         data-testid="find-next"
-        className="flex h-7 w-7 items-center justify-center rounded text-sm hover:bg-panel-hover disabled:opacity-40 disabled:hover:bg-transparent"
+        className={navButton}
       >
         ›
       </button>

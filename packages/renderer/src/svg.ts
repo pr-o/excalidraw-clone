@@ -51,6 +51,26 @@ export interface SVGRenderOptions {
 
 const SVG_NS = "http://www.w3.org/2000/svg"
 
+function svgEl<K extends string>(
+  doc: Document,
+  tag: K,
+  attrs: Record<string, string | number>,
+): Element {
+  const node = doc.createElementNS(SVG_NS, tag)
+  for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, String(v))
+  return node
+}
+
+const measureElText = (measure: TextMeasure, el: ExcalidrawTextElement, text = el.text) =>
+  measure(
+    text,
+    el.fontSize,
+    el.fontFamily,
+    el.lineHeight,
+    el.fontWeight ?? "normal",
+    el.fontStyle ?? "normal",
+  )
+
 export function renderToSVG(scene: Scene, opts: SVGRenderOptions = {}): string {
   const padding = opts.padding ?? 20
   const theme = opts.theme ?? "light"
@@ -66,13 +86,15 @@ export function renderToSVG(scene: Scene, opts: SVGRenderOptions = {}): string {
   root.setAttribute("viewBox", `${bbox.x} ${bbox.y} ${width} ${height}`)
 
   if (opts.background && opts.background !== "transparent") {
-    const rect = doc.createElementNS(SVG_NS, "rect")
-    rect.setAttribute("x", String(bbox.x))
-    rect.setAttribute("y", String(bbox.y))
-    rect.setAttribute("width", String(width))
-    rect.setAttribute("height", String(height))
-    rect.setAttribute("fill", resolveColor(opts.background, theme))
-    root.appendChild(rect)
+    root.appendChild(
+      svgEl(doc, "rect", {
+        x: bbox.x,
+        y: bbox.y,
+        width,
+        height,
+        fill: resolveColor(opts.background, theme),
+      }),
+    )
   }
 
   const rsvg = new RoughSVG(root as unknown as SVGSVGElement)
@@ -101,15 +123,7 @@ export function renderToSVG(scene: Scene, opts: SVGRenderOptions = {}): string {
             { width: el.width, height: el.height },
             el.fontSize,
             el.lineHeight,
-            (s) =>
-              measure(
-                s,
-                el.fontSize,
-                el.fontFamily,
-                el.lineHeight,
-                el.fontWeight ?? "normal",
-                el.fontStyle ?? "normal",
-              ).width,
+            (s) => measureElText(measure, el, s).width,
           )
         : undefined
     const node = renderElement(doc, el, rsvg, opts.files, theme, backing, labelLayout)
@@ -132,44 +146,36 @@ function renderElement(
     const href = el.fileId === null ? undefined : files?.get(el.fileId)
     if (href === undefined) return null
     const group = createGroup(doc, el)
-    const image = doc.createElementNS(SVG_NS, "image")
-    image.setAttribute("href", href)
-    image.setAttribute("width", String(el.width))
-    image.setAttribute("height", String(el.height))
-    group.appendChild(image)
+    group.appendChild(svgEl(doc, "image", { href, width: el.width, height: el.height }))
     return group
   }
   const group = createGroup(doc, el)
 
   if (el.type === "text") {
     if (backing && el.text.length > 0) {
-      const size = backing.measure(
-        el.text,
-        el.fontSize,
-        el.fontFamily,
-        el.lineHeight,
-        el.fontWeight ?? "normal",
-        el.fontStyle ?? "normal",
+      const size = measureElText(backing.measure, el)
+      group.appendChild(
+        svgEl(doc, "rect", {
+          x: el.width / 2 - size.width / 2 - OCCLUSION_PADDING,
+          y: el.height / 2 - size.height / 2 - OCCLUSION_PADDING,
+          width: size.width + 2 * OCCLUSION_PADDING,
+          height: size.height + 2 * OCCLUSION_PADDING,
+          fill: backing.background,
+        }),
       )
-      const rect = doc.createElementNS(SVG_NS, "rect")
-      rect.setAttribute("x", String(el.width / 2 - size.width / 2 - OCCLUSION_PADDING))
-      rect.setAttribute("y", String(el.height / 2 - size.height / 2 - OCCLUSION_PADDING))
-      rect.setAttribute("width", String(size.width + 2 * OCCLUSION_PADDING))
-      rect.setAttribute("height", String(size.height + 2 * OCCLUSION_PADDING))
-      rect.setAttribute("fill", backing.background)
-      group.appendChild(rect)
     }
     group.appendChild(textNode(doc, el, theme, layout))
     return group
   }
 
   if (el.type === "frame") {
-    const name = doc.createElementNS(SVG_NS, "text")
-    name.setAttribute("font-family", fontFamilyName(2))
-    name.setAttribute("font-size", "12")
-    name.setAttribute("fill", resolveColor("#868e96", theme))
-    name.setAttribute("x", "0")
-    name.setAttribute("y", "-4")
+    const name = svgEl(doc, "text", {
+      "font-family": fontFamilyName(2),
+      "font-size": 12,
+      fill: resolveColor("#868e96", theme),
+      x: 0,
+      y: -4,
+    })
     name.textContent = el.name ?? "Frame"
     group.appendChild(name)
   }
@@ -211,16 +217,17 @@ function textNode(
   el: ExcalidrawTextElement,
   theme: Theme,
   layout?: LabelLayout,
-): SVGTextElement {
+): Element {
   const fontSize = el.fontSize * (layout?.scale ?? 1)
-  const text = doc.createElementNS(SVG_NS, "text")
-  text.setAttribute("font-family", fontFamilyName(el.fontFamily))
-  text.setAttribute("font-size", String(fontSize))
-  text.setAttribute("font-weight", el.fontWeight ?? "normal")
-  text.setAttribute("font-style", el.fontStyle ?? "normal")
-  text.setAttribute("fill", resolveColor(el.strokeColor, theme))
-  text.setAttribute("text-anchor", anchorFor(el.textAlign))
-  text.setAttribute("dominant-baseline", "text-before-edge")
+  const text = svgEl(doc, "text", {
+    "font-family": fontFamilyName(el.fontFamily),
+    "font-size": fontSize,
+    "font-weight": el.fontWeight ?? "normal",
+    "font-style": el.fontStyle ?? "normal",
+    fill: resolveColor(el.strokeColor, theme),
+    "text-anchor": anchorFor(el.textAlign),
+    "dominant-baseline": "text-before-edge",
+  })
 
   const lines = layout?.lines ?? el.text.split("\n")
   const lineHeightPx = fontSize * el.lineHeight
@@ -229,9 +236,7 @@ function textNode(
   const x = horizontalAnchorX(el)
 
   for (let i = 0; i < lines.length; i += 1) {
-    const tspan = doc.createElementNS(SVG_NS, "tspan")
-    tspan.setAttribute("x", String(x))
-    tspan.setAttribute("y", String(baseY + i * lineHeightPx))
+    const tspan = svgEl(doc, "tspan", { x, y: baseY + i * lineHeightPx })
     tspan.textContent = lines[i] ?? ""
     text.appendChild(tspan)
   }

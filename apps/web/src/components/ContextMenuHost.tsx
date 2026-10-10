@@ -21,7 +21,7 @@ import { useTranslation } from "react-i18next"
 import { buildPaste, copyPayload } from "../driver/clipboard"
 import { commitElementLink } from "../driver/link"
 import { canMoveElementToPage } from "../driver/moveToPage"
-import { patchScene } from "../driver/patchScene"
+import { deleteElements, patchScene, reorderElements } from "../driver/patchScene"
 import { useAppStore } from "../store"
 
 // Same predicate as apps/web/src/keyboard/clipboard.ts's private selectableIds —
@@ -53,28 +53,30 @@ export function ContextMenuHost({
   // outside it or the flyout would never get a chance to render.
   const [flyout, setFlyout] = useState<{ elementId: string; x: number; y: number } | null>(null)
 
+  const pasteItem = (at: { x: number; y: number }): ContextMenuItem => ({
+    id: "paste",
+    label: t("contextMenu.paste"),
+    perform: () => {
+      void navigator.clipboard
+        ?.readText()
+        .then((text) => {
+          const pasted = buildPaste(text, at)
+          if (pasted.length === 0) return
+          scene.mutate((draft) => {
+            draft.push(...pasted)
+          })
+          useAppStore.getState().setSelection(selectableIds(pasted))
+        })
+        .catch(() => {})
+    },
+  })
+
   const items: ContextMenuItem[] = []
 
   if (contextMenu) {
     if (contextMenu.target === "canvas") {
       const { scenePoint } = contextMenu
-      items.push({
-        id: "paste",
-        label: t("contextMenu.paste"),
-        perform: () => {
-          void navigator.clipboard
-            ?.readText()
-            .then((text) => {
-              const pasted = buildPaste(text, scenePoint)
-              if (pasted.length === 0) return
-              scene.mutate((draft) => {
-                draft.push(...pasted)
-              })
-              useAppStore.getState().setSelection(selectableIds(pasted))
-            })
-            .catch(() => {})
-        },
-      })
+      items.push(pasteItem(scenePoint))
       items.push({
         id: "select-all",
         label: t("contextMenu.selectAll"),
@@ -126,32 +128,11 @@ export function ContextMenuHost({
             const payload = copyPayload(scene.getElements(), elementIds)
             if (!payload) return
             void navigator.clipboard?.writeText(payload.text).catch(() => {})
-            const doomed = new Set(payload.ids)
-            scene.mutate((draft) => {
-              for (let i = 0; i < draft.length; i += 1) {
-                if (doomed.has(draft[i]!.id)) draft[i] = { ...draft[i]!, isDeleted: true }
-              }
-            })
+            deleteElements(scene, payload.ids)
             useAppStore.getState().setSelection([])
           },
         })
-        items.push({
-          id: "paste",
-          label: t("contextMenu.paste"),
-          perform: () => {
-            void navigator.clipboard
-              ?.readText()
-              .then((text) => {
-                const pasted = buildPaste(text, scenePoint)
-                if (pasted.length === 0) return
-                scene.mutate((draft) => {
-                  draft.push(...pasted)
-                })
-                useAppStore.getState().setSelection(selectableIds(pasted))
-              })
-              .catch(() => {})
-          },
-        })
+        items.push(pasteItem(scenePoint))
         items.push({
           id: "duplicate",
           label: t("properties.duplicate"),
@@ -210,95 +191,43 @@ export function ContextMenuHost({
           id: "delete",
           label: t("properties.delete"),
           perform: () => {
-            scene.mutate((draft) => {
-              for (let i = 0; i < draft.length; i += 1) {
-                if (elementIds.includes(draft[i]!.id)) draft[i] = { ...draft[i]!, isDeleted: true }
-              }
-            })
+            deleteElements(scene, elementIds)
             useAppStore.getState().setSelection([])
           },
         })
         items.push({
           id: "bring-to-front",
           label: t("properties.bringToFront"),
-          perform: () => {
-            scene.mutate((draft) => {
-              const next = bringToFront(draft, elementIds)
-              draft.length = 0
-              draft.push(...next)
-            })
-          },
+          perform: () => reorderElements(scene, bringToFront, elementIds),
         })
         items.push({
           id: "bring-forward",
           label: t("properties.bringForward"),
-          perform: () => {
-            scene.mutate((draft) => {
-              const next = bringForward(draft, elementIds)
-              draft.length = 0
-              draft.push(...next)
-            })
-          },
+          perform: () => reorderElements(scene, bringForward, elementIds),
         })
         items.push({
           id: "send-backward",
           label: t("properties.sendBackward"),
-          perform: () => {
-            scene.mutate((draft) => {
-              const next = sendBackward(draft, elementIds)
-              draft.length = 0
-              draft.push(...next)
-            })
-          },
+          perform: () => reorderElements(scene, sendBackward, elementIds),
         })
         items.push({
           id: "send-to-back",
           label: t("properties.sendToBack"),
-          perform: () => {
-            scene.mutate((draft) => {
-              const next = sendToBack(draft, elementIds)
-              draft.length = 0
-              draft.push(...next)
-            })
-          },
+          perform: () => reorderElements(scene, sendToBack, elementIds),
         })
         if (elementIds.length >= 2) {
           items.push({
             id: "group",
             label: t("properties.group"),
-            perform: () => {
-              const byId = new Map(
-                groupElements(selectedElements, elementIds, crypto.randomUUID()).map((el) => [
-                  el.id,
-                  el,
-                ]),
-              )
-              if (byId.size === 0) return
-              scene.mutate((draft) => {
-                for (let i = 0; i < draft.length; i += 1) {
-                  const p = byId.get(draft[i]!.id)
-                  if (p) draft[i] = p
-                }
-              })
-            },
+            perform: () =>
+              patchScene(scene, groupElements(selectedElements, elementIds, crypto.randomUUID())),
           })
         }
         if (selectedElements.some((el) => el.groupIds.length > 0)) {
           items.push({
             id: "ungroup",
             label: t("properties.ungroup"),
-            perform: () => {
-              const byId = new Map(
-                ungroupElements(selectedElements, elementIds).map((el) => [el.id, el]),
-              )
-              if (byId.size === 0) return
-              scene.mutate((draft) => {
-                for (let i = 0; i < draft.length; i += 1) {
-                  const p = byId.get(draft[i]!.id)
-                  if (p) draft[i] = p
-                }
-              })
-            },
+            perform: () => patchScene(scene, ungroupElements(selectedElements, elementIds)),
           })
         }
         items.push({

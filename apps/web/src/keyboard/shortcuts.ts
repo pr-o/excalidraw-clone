@@ -1,5 +1,4 @@
 "use client"
-import { zoomToPoint } from "@excalidraw-clone/geometry"
 import {
   expandIdsToFrameMembers,
   flipElements,
@@ -9,7 +8,8 @@ import {
   ungroupElements,
 } from "@excalidraw-clone/scene"
 import type { ToolName } from "@excalidraw-clone/tools"
-import { patchScene } from "../driver/patchScene"
+import { deleteElements, patchScene, replaceElements } from "../driver/patchScene"
+import { zoomAboutCentre } from "../driver/zoom"
 import { useAppStore } from "../store"
 import { type ChainDirection, createChainedShape } from "./flowchartChain"
 import { applyStyle, extractStyle, type StyleClipboard } from "./styleClipboard"
@@ -125,37 +125,22 @@ export function attachShortcuts({
       if (ids.length === 0) return
       e.preventDefault()
       const targets = new Set(ids)
-      scene.mutate((draft) => {
-        for (let i = 0; i < draft.length; i += 1) {
-          const el = draft[i]!
-          if (targets.has(el.id)) draft[i] = applyStyle(el, clip)
-        }
-      })
+      replaceElements(scene, (el) => (targets.has(el.id) ? applyStyle(el, clip) : undefined))
       return
     }
     if (isMeta && key === "0") {
       e.preventDefault()
-      const s = useAppStore.getState()
-      const anchor = { x: window.innerWidth / 2, y: window.innerHeight / 2 }
-      s.setView(zoomToPoint({ scrollX: s.scrollX, scrollY: s.scrollY, zoom: s.zoom }, anchor, 1))
+      zoomAboutCentre(() => 1)
       return
     }
     if (isMeta && (key === "+" || key === "=")) {
       e.preventDefault()
-      const s = useAppStore.getState()
-      const anchor = { x: window.innerWidth / 2, y: window.innerHeight / 2 }
-      s.setView(
-        zoomToPoint({ scrollX: s.scrollX, scrollY: s.scrollY, zoom: s.zoom }, anchor, s.zoom * 1.1),
-      )
+      zoomAboutCentre((z) => z * 1.1)
       return
     }
     if (isMeta && key === "-") {
       e.preventDefault()
-      const s = useAppStore.getState()
-      const anchor = { x: window.innerWidth / 2, y: window.innerHeight / 2 }
-      s.setView(
-        zoomToPoint({ scrollX: s.scrollX, scrollY: s.scrollY, zoom: s.zoom }, anchor, s.zoom / 1.1),
-      )
+      zoomAboutCentre((z) => z / 1.1)
       return
     }
     if (isMeta && key === "'") {
@@ -214,11 +199,7 @@ export function attachShortcuts({
       const ids = useAppStore.getState().selectedIds
       if (ids.length === 0) return
       e.preventDefault()
-      scene.mutate((draft) => {
-        for (let i = 0; i < draft.length; i += 1) {
-          if (ids.includes(draft[i]!.id)) draft[i] = { ...draft[i]!, isDeleted: true }
-        }
-      })
+      deleteElements(scene, ids)
       useAppStore.getState().setSelection([])
       return
     }
@@ -254,12 +235,9 @@ export function attachShortcuts({
       const dx = key === "arrowleft" ? -step : key === "arrowright" ? step : 0
       const dy = key === "arrowup" ? -step : key === "arrowdown" ? step : 0
       const moved = new Set(expandIdsToFrameMembers(ids, scene.getElements()))
-      scene.mutate((draft) => {
-        for (let i = 0; i < draft.length; i += 1) {
-          const el = draft[i]!
-          if (moved.has(el.id)) draft[i] = { ...el, x: el.x + dx, y: el.y + dy }
-        }
-      })
+      replaceElements(scene, (el) =>
+        moved.has(el.id) ? { ...el, x: el.x + dx, y: el.y + dy } : undefined,
+      )
       return
     }
     // Must precede the TOOL_KEYS dispatch: Shift+V would otherwise fall through

@@ -32,31 +32,22 @@ const BINDING_HIGHLIGHT: Record<Theme, string> = {
   dark: "#a8a5ff",
 }
 
-const ALIGNMENT_GUIDE_STROKE: Record<Theme, string> = {
-  light: "#6965db",
-  dark: "#a5a5ff",
-}
-
 export interface MarqueeBox {
   start: Point
   end: Point
 }
 
+const cornersOf = (b: Bounds): Point[] => [
+  { x: b.x, y: b.y },
+  { x: b.x + b.width, y: b.y },
+  { x: b.x + b.width, y: b.y + b.height },
+  { x: b.x, y: b.y + b.height },
+]
+
 const elementCorners = (e: ExcalidrawElement): readonly Point[] => {
-  const bounds: Bounds = {
-    x: e.x,
-    y: e.y,
-    width: e.width,
-    height: e.height,
-  }
-  const corners: Point[] = [
-    { x: bounds.x, y: bounds.y },
-    { x: bounds.x + bounds.width, y: bounds.y },
-    { x: bounds.x + bounds.width, y: bounds.y + bounds.height },
-    { x: bounds.x, y: bounds.y + bounds.height },
-  ]
+  const corners = cornersOf(e)
   if (e.angle === 0) return corners
-  const center: Point = { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 }
+  const center: Point = { x: e.x + e.width / 2, y: e.y + e.height / 2 }
   return corners.map((c) => rotatePoint(c, center, e.angle))
 }
 
@@ -66,6 +57,37 @@ const midPoint = (a: Point, b: Point): Point => ({
 })
 
 const isLinear = (e: ExcalidrawElement): boolean => e.type === "arrow" || e.type === "line"
+
+const linearViewportPoints = (e: ExcalidrawElement, view: ViewTransform): Point[] =>
+  (e as { points: readonly Point[] }).points.map((p) =>
+    sceneToViewport({ x: e.x + p.x, y: e.y + p.y }, view),
+  )
+
+/** Stroke the closed polygon through `pts` (viewport space). */
+const strokePolygon = (
+  ctx: CanvasRenderingContext2D,
+  pts: readonly Point[],
+  theme: Theme,
+): void => {
+  ctx.strokeStyle = SELECTION_STROKE[theme]
+  ctx.lineWidth = 1
+  ctx.beginPath()
+  pts.forEach((p, i) => (i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)))
+  ctx.closePath()
+  ctx.stroke()
+}
+
+/** Four corners (clockwise from top-left) plus the four edge midpoints. */
+const cornerAndEdgeHandles = ([c0, c1, c2, c3]: readonly Point[]): Point[] => [
+  c0!,
+  c1!,
+  c2!,
+  c3!,
+  midPoint(c0!, c1!),
+  midPoint(c1!, c2!),
+  midPoint(c2!, c3!),
+  midPoint(c3!, c0!),
+]
 
 const drawHandle = (ctx: CanvasRenderingContext2D, p: Point, theme: Theme): void => {
   ctx.fillStyle = SELECTION_FILL[theme]
@@ -88,26 +110,20 @@ const drawElementOutline = (
   theme: Theme,
 ): void => {
   if (isLinear(e)) {
-    const pts = (e as { points: readonly Point[] }).points
-    const absV = pts.map((p) => sceneToViewport({ x: e.x + p.x, y: e.y + p.y }, view))
+    // An open polyline, not a closed polygon.
+    const pts = linearViewportPoints(e, view)
     ctx.strokeStyle = SELECTION_STROKE[theme]
     ctx.lineWidth = 1
     ctx.beginPath()
-    ctx.moveTo(absV[0]!.x, absV[0]!.y)
-    for (let i = 1; i < absV.length; i += 1) ctx.lineTo(absV[i]!.x, absV[i]!.y)
+    pts.forEach((p, i) => (i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)))
     ctx.stroke()
     return
   }
-  const corners = elementCorners(e).map((p) => sceneToViewport(p, view))
-  ctx.strokeStyle = SELECTION_STROKE[theme]
-  ctx.lineWidth = 1
-  ctx.beginPath()
-  ctx.moveTo(corners[0]!.x, corners[0]!.y)
-  for (let i = 1; i < corners.length; i += 1) {
-    ctx.lineTo(corners[i]!.x, corners[i]!.y)
-  }
-  ctx.closePath()
-  ctx.stroke()
+  strokePolygon(
+    ctx,
+    elementCorners(e).map((p) => sceneToViewport(p, view)),
+    theme,
+  )
 }
 
 const drawElementChrome = (
@@ -117,8 +133,7 @@ const drawElementChrome = (
   theme: Theme,
 ): void => {
   if (isLinear(e)) {
-    const pts = (e as { points: readonly Point[] }).points
-    const absV = pts.map((p) => sceneToViewport({ x: e.x + p.x, y: e.y + p.y }, view))
+    const absV = linearViewportPoints(e, view)
     // Ghost midpoints first so solid handles paint on top.
     for (let k = 0; k < absV.length - 1; k += 1) {
       drawGhostHandle(ctx, midPoint(absV[k]!, absV[k + 1]!), theme)
@@ -128,31 +143,17 @@ const drawElementChrome = (
   }
   drawElementOutline(ctx, e, view, theme)
   const corners = elementCorners(e).map((p) => sceneToViewport(p, view))
-  const c0 = corners[0]!
-  const c1 = corners[1]!
-  const c2 = corners[2]!
-  const c3 = corners[3]!
-  const handles: Point[] = [
-    c0,
-    c1,
-    c2,
-    c3,
-    midPoint(c0, c1),
-    midPoint(c1, c2),
-    midPoint(c2, c3),
-    midPoint(c3, c0),
-  ]
-  for (const h of handles) drawHandle(ctx, h, theme)
+  for (const h of cornerAndEdgeHandles(corners)) drawHandle(ctx, h, theme)
 
+  const [c0, c1] = corners as [Point, Point]
   const topMid = midPoint(c0, c1)
   const dx = c1.x - c0.x
   const dy = c1.y - c0.y
   const len = Math.hypot(dx, dy) || 1
-  const nx = -dy / len
-  const ny = dx / len
+  // Unit normal pointing out of the top edge.
   const rotPoint: Point = {
-    x: topMid.x + nx * -ROTATION_HANDLE_OFFSET,
-    y: topMid.y + ny * -ROTATION_HANDLE_OFFSET,
+    x: topMid.x + (dy / len) * ROTATION_HANDLE_OFFSET,
+    y: topMid.y - (dx / len) * ROTATION_HANDLE_OFFSET,
   }
   ctx.fillStyle = SELECTION_FILL[theme]
   ctx.strokeStyle = SELECTION_STROKE[theme]
@@ -170,30 +171,9 @@ const drawGroupResizeChrome = (
 ): void => {
   const bounds = getElementsBounds(elements)
   if (!bounds) return
-  const nw = sceneToViewport({ x: bounds.x, y: bounds.y }, view)
-  const ne = sceneToViewport({ x: bounds.x + bounds.width, y: bounds.y }, view)
-  const se = sceneToViewport({ x: bounds.x + bounds.width, y: bounds.y + bounds.height }, view)
-  const sw = sceneToViewport({ x: bounds.x, y: bounds.y + bounds.height }, view)
-  ctx.strokeStyle = SELECTION_STROKE[theme]
-  ctx.lineWidth = 1
-  ctx.beginPath()
-  ctx.moveTo(nw.x, nw.y)
-  ctx.lineTo(ne.x, ne.y)
-  ctx.lineTo(se.x, se.y)
-  ctx.lineTo(sw.x, sw.y)
-  ctx.closePath()
-  ctx.stroke()
-  const handles: Point[] = [
-    nw,
-    ne,
-    se,
-    sw,
-    midPoint(nw, ne),
-    midPoint(ne, se),
-    midPoint(se, sw),
-    midPoint(sw, nw),
-  ]
-  for (const h of handles) drawHandle(ctx, h, theme)
+  const corners = cornersOf(bounds).map((p) => sceneToViewport(p, view))
+  strokePolygon(ctx, corners, theme)
+  for (const h of cornerAndEdgeHandles(corners)) drawHandle(ctx, h, theme)
 }
 
 export interface DrawSelectionChromeOptions {
@@ -214,8 +194,8 @@ export const drawSelectionChrome = (
 ): void => {
   ctx.setTransform(1, 0, 0, 1, 0, 0)
   if (options.clearBackground) ctx.clearRect(0, 0, canvas.width, canvas.height)
+  const byId = new Map(elements.map((e) => [e.id, e]))
   if (highlightIds.length > 0) {
-    const byId = new Map(elements.map((e) => [e.id, e]))
     for (const id of highlightIds) {
       const e = byId.get(id)
       if (!e) continue
@@ -229,7 +209,6 @@ export const drawSelectionChrome = (
     }
   }
   if (selection.length > 0) {
-    const byId = new Map(elements.map((e) => [e.id, e]))
     const selectedElements = selection
       .map((id) => byId.get(id))
       .filter((e): e is ExcalidrawElement => !!e)
@@ -237,10 +216,7 @@ export const drawSelectionChrome = (
       for (const e of selectedElements) drawElementOutline(ctx, e, view, theme)
       drawGroupResizeChrome(ctx, selectedElements, view, theme)
     } else {
-      for (const e of selectedElements) {
-        void getElementBounds(e)
-        drawElementChrome(ctx, e, view, theme)
-      }
+      for (const e of selectedElements) drawElementChrome(ctx, e, view, theme)
     }
   }
   if (marquee) {
@@ -266,7 +242,7 @@ export const drawAlignmentGuides = (
 ): void => {
   if (guides.length === 0) return
   ctx.save()
-  ctx.strokeStyle = ALIGNMENT_GUIDE_STROKE[theme]
+  ctx.strokeStyle = SELECTION_STROKE[theme]
   ctx.lineWidth = 1
   ctx.setLineDash([4, 4])
   for (const g of guides) {

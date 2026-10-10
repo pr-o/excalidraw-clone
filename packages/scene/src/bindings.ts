@@ -107,27 +107,54 @@ const liveTarget = (
   return t
 }
 
+/** Re-anchor an arrow to the bounding box of its absolute points. */
+const patchFromAbsolutePoints = (
+  arrow: ExcalidrawElement,
+  abs: readonly Point[],
+  startBinding: PointBinding | null,
+  endBinding: PointBinding | null,
+): ExcalidrawElement => {
+  const xs = abs.map((p) => p.x)
+  const ys = abs.map((p) => p.y)
+  const minX = Math.min(...xs)
+  const minY = Math.min(...ys)
+  return {
+    ...arrow,
+    x: minX,
+    y: minY,
+    width: Math.max(...xs) - minX,
+    height: Math.max(...ys) - minY,
+    points: abs.map((p) => ({ x: p.x - minX, y: p.y - minY })),
+    startBinding,
+    endBinding,
+  } as ExcalidrawElement
+}
+
 export const reconcileBindings = (draft: ExcalidrawElement[]): void => {
   const byId = new Map(draft.map((e) => [e.id, e]))
   for (let i = 0; i < draft.length; i += 1) {
     const arrow = draft[i]!
     if (arrow.type !== "arrow") continue
+    if (!arrow.elbowed && !arrow.startBinding && !arrow.endBinding) continue
+
+    // Drop bindings whose target is gone or no longer bindable.
+    const startTarget = liveTarget(arrow.startBinding, byId)
+    const endTarget = liveTarget(arrow.endBinding, byId)
+    const startBinding = startTarget ? arrow.startBinding : null
+    const endBinding = endTarget ? arrow.endBinding : null
+
+    const pts = arrow.points
+    if (pts.length < 2) {
+      if (startBinding !== arrow.startBinding || endBinding !== arrow.endBinding) {
+        draft[i] = { ...arrow, startBinding, endBinding }
+      }
+      continue
+    }
+    const abs: Point[] = pts.map((p) => ({ x: arrow.x + p.x, y: arrow.y + p.y }))
+    let startAbs = abs[0]!
+    let endAbs = abs[abs.length - 1]!
 
     if (arrow.elbowed) {
-      const startTarget = liveTarget(arrow.startBinding, byId)
-      const endTarget = liveTarget(arrow.endBinding, byId)
-      const startBinding = startTarget ? arrow.startBinding : null
-      const endBinding = endTarget ? arrow.endBinding : null
-      const pts = arrow.points
-      if (pts.length < 2) {
-        if (startBinding !== arrow.startBinding || endBinding !== arrow.endBinding) {
-          draft[i] = { ...arrow, startBinding, endBinding }
-        }
-        continue
-      }
-      const abs: Point[] = pts.map((p) => ({ x: arrow.x + p.x, y: arrow.y + p.y }))
-      let startAbs = abs[0]!
-      let endAbs = abs[abs.length - 1]!
       const startRef = endTarget ? boundsCenter(getElementBounds(endTarget)) : endAbs
       const endRef = startTarget ? boundsCenter(getElementBounds(startTarget)) : startAbs
       let startSide: Side | null = null
@@ -144,52 +171,20 @@ export const reconcileBindings = (draft: ExcalidrawElement[]): void => {
       }
       const routed = routeElbow(startAbs, endAbs, startSide, endSide)
       if (routed.length < 2) continue
-      const xs = routed.map((p) => p.x)
-      const ys = routed.map((p) => p.y)
-      const minX = Math.min(...xs)
-      const minY = Math.min(...ys)
-      const rel = routed.map((p) => ({ x: p.x - minX, y: p.y - minY }))
+      const next = patchFromAbsolutePoints(arrow, routed, startBinding, endBinding)
       const unchanged =
         startBinding === arrow.startBinding &&
         endBinding === arrow.endBinding &&
-        arrow.x === minX &&
-        arrow.y === minY &&
-        rel.length === pts.length &&
-        rel.every((p, k) => p.x === pts[k]!.x && p.y === pts[k]!.y)
-      if (unchanged) continue
-      draft[i] = {
-        ...arrow,
-        x: minX,
-        y: minY,
-        width: Math.max(...xs) - minX,
-        height: Math.max(...ys) - minY,
-        points: rel,
-        startBinding,
-        endBinding,
-      }
+        next.x === arrow.x &&
+        next.y === arrow.y &&
+        next.type === "arrow" &&
+        next.points.length === pts.length &&
+        next.points.every((p, k) => p.x === pts[k]!.x && p.y === pts[k]!.y)
+      if (!unchanged) draft[i] = next
       continue
     }
 
-    if (!arrow.startBinding && !arrow.endBinding) continue
-
-    const startTarget = liveTarget(arrow.startBinding, byId)
-    const endTarget = liveTarget(arrow.endBinding, byId)
-    const startBinding = startTarget ? arrow.startBinding : null
-    const endBinding = endTarget ? arrow.endBinding : null
-
-    const pts = arrow.points
-    if (pts.length < 2) {
-      if (startBinding !== arrow.startBinding || endBinding !== arrow.endBinding) {
-        draft[i] = { ...arrow, startBinding, endBinding }
-      }
-      continue
-    }
-
-    const abs: Point[] = pts.map((p) => ({ x: arrow.x + p.x, y: arrow.y + p.y }))
     const hasBends = abs.length > 2
-    let startAbs = abs[0]!
-    let endAbs = abs[abs.length - 1]!
-
     if (startTarget) {
       const toward = hasBends
         ? abs[1]!
@@ -206,21 +201,11 @@ export const reconcileBindings = (draft: ExcalidrawElement[]): void => {
           : startAbs
       endAbs = computeBoundEndpoint(endTarget, toward, endBinding!.gap, endBinding!.focus)
     }
-
-    const newAbs: Point[] = [startAbs, ...abs.slice(1, abs.length - 1), endAbs]
-    const xs = newAbs.map((p) => p.x)
-    const ys = newAbs.map((p) => p.y)
-    const minX = Math.min(...xs)
-    const minY = Math.min(...ys)
-    draft[i] = {
-      ...arrow,
-      x: minX,
-      y: minY,
-      width: Math.max(...xs) - minX,
-      height: Math.max(...ys) - minY,
-      points: newAbs.map((p) => ({ x: p.x - minX, y: p.y - minY })),
+    draft[i] = patchFromAbsolutePoints(
+      arrow,
+      [startAbs, ...abs.slice(1, abs.length - 1), endAbs],
       startBinding,
       endBinding,
-    }
+    )
   }
 }

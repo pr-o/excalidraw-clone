@@ -1,5 +1,10 @@
 "use client"
-import { sceneToViewport, type GridSnap } from "@excalidraw-clone/geometry"
+import {
+  sceneToViewport,
+  type GridSnap,
+  type Point,
+  type ViewTransform,
+} from "@excalidraw-clone/geometry"
 import { putFile } from "@excalidraw-clone/persistence"
 import { CanvasRenderer } from "@excalidraw-clone/renderer"
 import {
@@ -160,6 +165,14 @@ export function useDrawingDriver({
       }
     }
 
+    const viewOf = (s: ReturnType<typeof useAppStore.getState>): ViewTransform => ({
+      scrollX: s.scrollX,
+      scrollY: s.scrollY,
+      zoom: s.zoom,
+    })
+    const snappedScenePoint = (e: PointerEvent | MouseEvent): Point =>
+      snapScenePoint(clientToScene(canvas, viewOf(useAppStore.getState()), e), resolveGrid(), e)
+
     const dispatch = (event: AnyToolEvent, modifiers: Modifiers): void => {
       const store = useAppStore.getState()
       const toolName = store.activeTool
@@ -168,7 +181,7 @@ export function useDrawingDriver({
       const ctx: ToolContext = {
         readElements: () => scene.getElements(),
         hitTest: (at) => pickElementAtPoint(scene.getElements(), at),
-        viewTransform: { scrollX: store.scrollX, scrollY: store.scrollY, zoom: store.zoom },
+        viewTransform: viewOf(store),
         modifiers,
         selectedIds: store.selectedIds,
         grid: resolveGrid(),
@@ -199,13 +212,7 @@ export function useDrawingDriver({
       // Presentation mode is read-only. The laser pointer is the one exception:
       // it is a presentation aid and writes nothing to the scene.
       if (store.presenting && store.activeTool !== "laser") return
-      const event = pointerEventToToolEvent(
-        type,
-        canvas,
-        { scrollX: store.scrollX, scrollY: store.scrollY, zoom: store.zoom },
-        resolveGrid(),
-        e,
-      )
+      const event = pointerEventToToolEvent(type, canvas, viewOf(store), resolveGrid(), e)
       if ("at" in event) store.setLastScenePointer(event.at)
       dispatch(event, modifiersOf(e))
     }
@@ -215,12 +222,7 @@ export function useDrawingDriver({
       if (useAppStore.getState().presenting) return
       e.preventDefault()
       const store = useAppStore.getState()
-      const next = applyWheel(
-        canvas,
-        { scrollX: store.scrollX, scrollY: store.scrollY, zoom: store.zoom },
-        e,
-      )
-      store.setView(next)
+      store.setView(applyWheel(canvas, viewOf(store), e))
     }
 
     const isTypingTarget = (t: EventTarget | null): boolean => {
@@ -287,12 +289,7 @@ export function useDrawingDriver({
       if (pending) {
         // Read-only while presenting: placing a library item mutates the scene.
         if (store.presenting) return
-        const raw = clientToScene(
-          canvas,
-          { scrollX: store.scrollX, scrollY: store.scrollY, zoom: store.zoom },
-          e,
-        )
-        const at = snapScenePoint(raw, resolveGrid(), e)
+        const at = snappedScenePoint(e)
         placeLibraryItem(pending, at.x, at.y, scene)
         store.clearPendingItem()
         overlay.getContext("2d")?.clearRect(0, 0, overlay.width, overlay.height)
@@ -306,11 +303,7 @@ export function useDrawingDriver({
       const isApple = /Mac|iPhone|iPad|iPod/.test(navigator.platform)
       const openModifier = isApple ? e.metaKey : e.ctrlKey
       if (store.activeTool === "selection" && openModifier) {
-        const at = clientToScene(
-          canvas,
-          { scrollX: store.scrollX, scrollY: store.scrollY, zoom: store.zoom },
-          e,
-        )
+        const at = clientToScene(canvas, viewOf(store), e)
         const hit = pickElementAtPoint(scene.getElements(), at)
         // Only an *openable* link swallows the click; a present-but-unopenable
         // one (typo, rejected scheme) falls through to normal selection rather
@@ -342,17 +335,7 @@ export function useDrawingDriver({
       if (pending) {
         // Read-only while presenting: no ghost preview on the overlay.
         if (store.presenting) return
-        const raw = clientToScene(
-          canvas,
-          { scrollX: store.scrollX, scrollY: store.scrollY, zoom: store.zoom },
-          e,
-        )
-        const at = snapScenePoint(raw, resolveGrid(), e)
-        drawGhost(overlay, pending, at, {
-          scrollX: store.scrollX,
-          scrollY: store.scrollY,
-          zoom: store.zoom,
-        })
+        drawGhost(overlay, pending, snappedScenePoint(e), viewOf(store))
         return
       }
       dispatchPointer("pointerMove", e)
@@ -378,14 +361,7 @@ export function useDrawingDriver({
     const onDoubleClick = (e: MouseEvent): void => {
       // Read-only while presenting (laser has no double-click behaviour).
       if (useAppStore.getState().presenting) return
-      const store = useAppStore.getState()
-      const raw = clientToScene(
-        canvas,
-        { scrollX: store.scrollX, scrollY: store.scrollY, zoom: store.zoom },
-        e,
-      )
-      const at = snapScenePoint(raw, resolveGrid(), e)
-      dispatch({ type: "doubleClick", at }, modifiersOf(e))
+      dispatch({ type: "doubleClick", at: snappedScenePoint(e) }, modifiersOf(e))
     }
 
     const onContextMenu = (e: MouseEvent): void => {
@@ -393,11 +369,7 @@ export function useDrawingDriver({
       if (useAppStore.getState().presenting) return
       e.preventDefault()
       const store = useAppStore.getState()
-      const scenePoint = clientToScene(
-        canvas,
-        { scrollX: store.scrollX, scrollY: store.scrollY, zoom: store.zoom },
-        e,
-      )
+      const scenePoint = clientToScene(canvas, viewOf(store), e)
       const hit = pickElementAtPoint(scene.getElements(), scenePoint, { includeLocked: true })
       if (!hit) {
         store.setContextMenu({ x: e.clientX, y: e.clientY, scenePoint, target: "canvas" })

@@ -1,4 +1,4 @@
-import { snapPointToGrid } from "@excalidraw-clone/geometry"
+import { snapPointToGrid, type Point } from "@excalidraw-clone/geometry"
 import {
   type ExcalidrawElement,
   bindingTargetAt,
@@ -25,7 +25,7 @@ import {
   buildEndpointRevertEffect,
   snapshotLinear,
 } from "./endpoint"
-import { findHandleAt } from "./handles"
+import { findHandleAt, type HandleHit } from "./handles"
 import {
   buildGroupResizeCommitEffect,
   buildGroupResizeMoveEffect,
@@ -54,104 +54,167 @@ export { findHandleAt } from "./handles"
 export type { HandleHit } from "./handles"
 export type { ResizeHandle } from "./types"
 
-const reduceIdle = (
-  event: ToolEvent,
-  ctx: ToolContext,
-): [SelectionState, readonly ToolEffect[]] => {
+type Transition = [SelectionState, readonly ToolEffect[]]
+
+/** Begin the gesture for a pressed handle, or null if its element is gone. */
+const startHandleDrag = (
+  handle: HandleHit,
+  at: Point,
+  elements: readonly ExcalidrawElement[],
+): Transition | null => {
+  if (handle.kind === "groupResize") {
+    const selected = handle.ids
+      .map((id) => elements.find((el) => el.id === id))
+      .filter((el): el is ExcalidrawElement => !!el && !el.isDeleted)
+    const bounds = getElementsBounds(selected)
+    // Defensive: findHandleAt already required 2+ non-deleted members to
+    // produce this hit from this same `elements` snapshot, so `bounds`
+    // is never actually null here — kept for the same reason similar
+    // guards are kept elsewhere in this codebase (cheap insurance).
+    if (!bounds) return [{ phase: "idle" }, []]
+    return [
+      {
+        phase: "groupResizing",
+        handle: handle.handle,
+        ids: handle.ids,
+        origin: {
+          x: bounds.x,
+          y: bounds.y,
+          width: bounds.width,
+          height: bounds.height,
+          angle: 0,
+        },
+        originalElements: selected,
+        start: at,
+      },
+      [],
+    ]
+  }
+  const e = elements.find((el) => el.id === handle.elementId)
+  if (e && handle.kind === "resize") {
+    return [
+      {
+        phase: "resizing",
+        handle: handle.handle,
+        elementId: handle.elementId,
+        origin: snapshotElementBox(e),
+        start: at,
+      },
+      [],
+    ]
+  }
+  if (e && handle.kind === "rotate") {
+    const center = elementCenter(e)
+    return [
+      {
+        phase: "rotating",
+        elementId: handle.elementId,
+        origin: { angle: e.angle },
+        center,
+        pointerAngleAtStart: pointerAngle(center, at),
+      },
+      [],
+    ]
+  }
+  if (e && handle.kind === "endpoint") {
+    return [
+      {
+        phase: "endpointDragging",
+        elementId: handle.elementId,
+        end: handle.end,
+        origin: snapshotLinear(e),
+        candidateBindId: null,
+      },
+      [],
+    ]
+  }
+  if (e && handle.kind === "bend") {
+    return [
+      {
+        phase: "bendDragging",
+        elementId: handle.elementId,
+        index: handle.index,
+        origin: snapshotLinear(e),
+      },
+      [],
+    ]
+  }
+  if (e && handle.kind === "bendAdd") {
+    return [
+      {
+        phase: "bendDragging",
+        elementId: handle.elementId,
+        index: handle.segmentIndex + 1,
+        origin: snapshotLinear(e),
+      },
+      [buildBendInsertEffect(handle.elementId, handle.segmentIndex + 1, handle.at)],
+    ]
+  }
+  return null
+}
+
+const reduceDoubleClick = (at: Point, ctx: ToolContext): Transition => {
+  const bendHandle = findHandleAt(at, ctx.selectedIds, ctx.readElements(), ctx.viewTransform)
+  if (bendHandle && bendHandle.kind === "bend") {
+    return [{ phase: "idle" }, [buildBendRemoveEffect(bendHandle.elementId, bendHandle.index)]]
+  }
+  const hit = ctx.hitTest(at)
+  if (hit) {
+    const soleSelection = ctx.selectedIds.length === 1 && ctx.selectedIds[0] === hit.id
+    if (hit.groupIds.length > 0 && !soleSelection) {
+      return [{ phase: "idle" }, [{ kind: "select", ids: [hit.id] }]]
+    }
+    if (hit.type === "frame") {
+      return [
+        { phase: "idle" },
+        [
+          { kind: "select", ids: [hit.id] },
+          { kind: "startTextEdit", elementId: hit.id },
+        ],
+      ]
+    }
+    if (hit.type === "text") {
+      return [{ phase: "idle" }, [{ kind: "startTextEdit", elementId: hit.id }]]
+    }
+    const textRef = hit.boundElements?.find((b) => b.type === "text")
+    if (textRef) {
+      return [{ phase: "idle" }, [{ kind: "startTextEdit", elementId: textRef.id }]]
+    }
+    const isLinear = hit.type === "arrow" || hit.type === "line"
+    if (LABELABLE_TYPES.has(hit.type) || isLinear) {
+      const label = isLinear ? newLabelForLinear(hit) : newLabelFor(hit)
+      return [
+        { phase: "idle" },
+        [
+          {
+            kind: "mutation",
+            apply: (draft) => {
+              const i = draft.findIndex((e) => e.id === hit.id)
+              if (i < 0) return
+              const c = draft[i]!
+              draft[i] = {
+                ...c,
+                boundElements: [...(c.boundElements ?? []), { id: label.id, type: "text" }],
+              }
+              draft.push(label)
+            },
+            skipHistory: true,
+          },
+          { kind: "select", ids: [hit.id] },
+          { kind: "startTextEdit", elementId: label.id },
+        ],
+      ]
+    }
+  }
+  return [{ phase: "idle" }, []]
+}
+
+const reduceIdle = (event: ToolEvent, ctx: ToolContext): Transition => {
   if (event.type === "pointerDown") {
     // Prefer handle hits if they occur on a single-selected element.
     const handle = findHandleAt(event.at, ctx.selectedIds, ctx.readElements(), ctx.viewTransform)
-    if (handle) {
-      const elements = ctx.readElements()
-      if (handle.kind === "groupResize") {
-        const selected = handle.ids
-          .map((id) => elements.find((el) => el.id === id))
-          .filter((el): el is ExcalidrawElement => !!el && !el.isDeleted)
-        const bounds = getElementsBounds(selected)
-        // Defensive: findHandleAt already required 2+ non-deleted members to
-        // produce this hit from this same `elements` snapshot, so `bounds`
-        // is never actually null here — kept for the same reason similar
-        // guards are kept elsewhere in this codebase (cheap insurance).
-        if (!bounds) return [{ phase: "idle" }, []]
-        return [
-          {
-            phase: "groupResizing",
-            handle: handle.handle,
-            ids: handle.ids,
-            origin: {
-              x: bounds.x,
-              y: bounds.y,
-              width: bounds.width,
-              height: bounds.height,
-              angle: 0,
-            },
-            originalElements: selected,
-            start: event.at,
-          },
-          [],
-        ]
-      }
-      const e = elements.find((el) => el.id === handle.elementId)
-      if (e && handle.kind === "resize") {
-        return [
-          {
-            phase: "resizing",
-            handle: handle.handle,
-            elementId: handle.elementId,
-            origin: snapshotElementBox(e),
-            start: event.at,
-          },
-          [],
-        ]
-      }
-      if (e && handle.kind === "rotate") {
-        const center = elementCenter(e)
-        return [
-          {
-            phase: "rotating",
-            elementId: handle.elementId,
-            origin: { angle: e.angle },
-            center,
-            pointerAngleAtStart: pointerAngle(center, event.at),
-          },
-          [],
-        ]
-      }
-      if (e && handle.kind === "endpoint") {
-        return [
-          {
-            phase: "endpointDragging",
-            elementId: handle.elementId,
-            end: handle.end,
-            origin: snapshotLinear(e),
-            candidateBindId: null,
-          },
-          [],
-        ]
-      }
-      if (e && handle.kind === "bend") {
-        return [
-          {
-            phase: "bendDragging",
-            elementId: handle.elementId,
-            index: handle.index,
-            origin: snapshotLinear(e),
-          },
-          [],
-        ]
-      }
-      if (e && handle.kind === "bendAdd") {
-        return [
-          {
-            phase: "bendDragging",
-            elementId: handle.elementId,
-            index: handle.segmentIndex + 1,
-            origin: snapshotLinear(e),
-          },
-          [buildBendInsertEffect(handle.elementId, handle.segmentIndex + 1, handle.at)],
-        ]
-      }
-    }
+    const started = handle && startHandleDrag(handle, event.at, ctx.readElements())
+    if (started) return started
     const hit = ctx.hitTest(event.at)
     if (!hit) {
       return [
@@ -215,66 +278,7 @@ const reduceIdle = (
     if (ctx.selectedIds.length === 0) return [{ phase: "idle" }, []]
     return [{ phase: "idle" }, [{ kind: "select", ids: [] }]]
   }
-  if (event.type === "doubleClick") {
-    const bendHandle = findHandleAt(
-      event.at,
-      ctx.selectedIds,
-      ctx.readElements(),
-      ctx.viewTransform,
-    )
-    if (bendHandle && bendHandle.kind === "bend") {
-      return [{ phase: "idle" }, [buildBendRemoveEffect(bendHandle.elementId, bendHandle.index)]]
-    }
-    const hit = ctx.hitTest(event.at)
-    if (hit) {
-      const soleSelection = ctx.selectedIds.length === 1 && ctx.selectedIds[0] === hit.id
-      if (hit.groupIds.length > 0 && !soleSelection) {
-        return [{ phase: "idle" }, [{ kind: "select", ids: [hit.id] }]]
-      }
-      if (hit.type === "frame") {
-        return [
-          { phase: "idle" },
-          [
-            { kind: "select", ids: [hit.id] },
-            { kind: "startTextEdit", elementId: hit.id },
-          ],
-        ]
-      }
-      if (hit.type === "text") {
-        return [{ phase: "idle" }, [{ kind: "startTextEdit", elementId: hit.id }]]
-      }
-      const textRef = hit.boundElements?.find((b) => b.type === "text")
-      if (textRef) {
-        return [{ phase: "idle" }, [{ kind: "startTextEdit", elementId: textRef.id }]]
-      }
-      const isLinear = hit.type === "arrow" || hit.type === "line"
-      if (LABELABLE_TYPES.has(hit.type) || isLinear) {
-        const label = isLinear ? newLabelForLinear(hit) : newLabelFor(hit)
-        return [
-          { phase: "idle" },
-          [
-            {
-              kind: "mutation",
-              apply: (draft) => {
-                const i = draft.findIndex((e) => e.id === hit.id)
-                if (i < 0) return
-                const c = draft[i]!
-                draft[i] = {
-                  ...c,
-                  boundElements: [...(c.boundElements ?? []), { id: label.id, type: "text" }],
-                }
-                draft.push(label)
-              },
-              skipHistory: true,
-            },
-            { kind: "select", ids: [hit.id] },
-            { kind: "startTextEdit", elementId: label.id },
-          ],
-        ]
-      }
-    }
-    return [{ phase: "idle" }, []]
-  }
+  if (event.type === "doubleClick") return reduceDoubleClick(event.at, ctx)
   return [{ phase: "idle" }, []]
 }
 
@@ -282,7 +286,7 @@ const reduceDragging = (
   state: Extract<SelectionState, { phase: "dragging" }>,
   event: ToolEvent,
   ctx: ToolContext,
-): [SelectionState, readonly ToolEffect[]] => {
+): Transition => {
   switch (event.type) {
     case "pointerMove": {
       if (state.firstMove && ctx.grid.enabled) {
@@ -366,7 +370,7 @@ const reduceMarquee = (
   state: Extract<SelectionState, { phase: "marquee" }>,
   event: ToolEvent,
   ctx: ToolContext,
-): [SelectionState, readonly ToolEffect[]] => {
+): Transition => {
   if (event.type === "pointerMove") {
     return [{ ...state, current: event.at }, []]
   }
@@ -392,7 +396,7 @@ const reduceResizing = (
   state: Extract<SelectionState, { phase: "resizing" }>,
   event: ToolEvent,
   ctx: ToolContext,
-): [SelectionState, readonly ToolEffect[]] => {
+): Transition => {
   switch (event.type) {
     case "pointerMove": {
       return [
@@ -422,7 +426,7 @@ const reduceGroupResizing = (
   state: Extract<SelectionState, { phase: "groupResizing" }>,
   event: ToolEvent,
   ctx: ToolContext,
-): [SelectionState, readonly ToolEffect[]] => {
+): Transition => {
   switch (event.type) {
     case "pointerMove": {
       return [
@@ -453,7 +457,7 @@ const reduceRotating = (
   state: Extract<SelectionState, { phase: "rotating" }>,
   event: ToolEvent,
   ctx: ToolContext,
-): [SelectionState, readonly ToolEffect[]] => {
+): Transition => {
   switch (event.type) {
     case "pointerMove": {
       const current = pointerAngle(state.center, event.at)
@@ -478,7 +482,7 @@ const reduceEndpoint = (
   state: Extract<SelectionState, { phase: "endpointDragging" }>,
   event: ToolEvent,
   ctx: ToolContext,
-): [SelectionState, readonly ToolEffect[]] => {
+): Transition => {
   switch (event.type) {
     case "pointerMove": {
       const candidate = bindingTargetAt(event.at, ctx.readElements())
@@ -499,7 +503,7 @@ const reduceEndpoint = (
 const reduceBend = (
   state: Extract<SelectionState, { phase: "bendDragging" }>,
   event: ToolEvent,
-): [SelectionState, readonly ToolEffect[]] => {
+): Transition => {
   switch (event.type) {
     case "pointerMove":
       return [state, [buildBendMoveEffect(state.elementId, state.index, event.at)]]

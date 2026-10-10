@@ -162,96 +162,92 @@ export function LibraryPanel(props: LibraryPanelProps): React.ReactElement {
     <aside
       aria-label={props.t("library.title")}
       data-testid="library-panel"
-      className={`fixed right-0 top-16 z-30 flex h-[calc(100%-5rem)] flex-col bg-panel shadow-lg transition-all ${
-        props.open ? "w-72" : "w-10"
-      }`}
+      className="fixed right-0 top-16 z-30 flex h-[calc(100%-5rem)] w-72 flex-col bg-panel shadow-lg transition-all"
     >
       <button
         type="button"
         onClick={props.onToggle}
         aria-label={props.t("library.toggle")}
-        aria-expanded={props.open}
+        aria-expanded
         data-testid="library-toggle"
         className="flex h-10 w-10 items-center justify-center self-end border-b text-sm"
       >
-        {props.open ? "›" : "‹"}
+        ›
       </button>
 
-      {props.open && (
-        <>
-          <div className="flex items-center justify-between border-b px-3 py-2">
-            <span className="text-sm font-medium">{props.t("library.title")}</span>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={props.onImport}
-                data-testid="library-import"
-                className="rounded px-2 py-1 text-xs hover:bg-panel-hover"
-              >
-                {props.t("library.import")}
-              </button>
-              <button
-                type="button"
-                onClick={props.onExport}
-                data-testid="library-export"
-                className="rounded px-2 py-1 text-xs hover:bg-panel-hover"
-              >
-                {props.t("library.export")}
-              </button>
-            </div>
+      <>
+        <div className="flex items-center justify-between border-b px-3 py-2">
+          <span className="text-sm font-medium">{props.t("library.title")}</span>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={props.onImport}
+              data-testid="library-import"
+              className="rounded px-2 py-1 text-xs hover:bg-panel-hover"
+            >
+              {props.t("library.import")}
+            </button>
+            <button
+              type="button"
+              onClick={props.onExport}
+              data-testid="library-export"
+              className="rounded px-2 py-1 text-xs hover:bg-panel-hover"
+            >
+              {props.t("library.export")}
+            </button>
           </div>
+        </div>
 
-          <button
-            type="button"
-            disabled={props.selectedCount === 0}
-            onClick={props.onAddFromSelection}
-            data-testid="library-add"
-            className="m-3 rounded border px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            + {props.t("library.addFromSelection")}
-          </button>
+        <button
+          type="button"
+          disabled={props.selectedCount === 0}
+          onClick={props.onAddFromSelection}
+          data-testid="library-add"
+          className="m-3 rounded border px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          + {props.t("library.addFromSelection")}
+        </button>
 
-          <div className="flex-1 overflow-y-auto px-3 pb-3">
-            {props.templates.length > 0 && (
-              <>
-                <p className="px-1 pb-1 pt-2 text-xs font-medium uppercase text-muted">
-                  {props.t("library.templates")}
-                </p>
-                <ul className="grid grid-cols-3 gap-2">
-                  {props.templates.map((item) => (
-                    <ItemTile
-                      key={item.id}
-                      item={item}
-                      testId={`template-item-${item.id}`}
-                      readOnly
-                      {...tileCommon}
-                    />
-                  ))}
-                </ul>
-              </>
-            )}
-
-            <p className="px-1 pb-1 pt-3 text-xs font-medium uppercase text-muted">
-              {props.t("library.myItems")}
-            </p>
-            {props.items.length === 0 ? (
-              <p className="px-2 py-4 text-center text-sm text-muted">{props.t("library.empty")}</p>
-            ) : (
+        <div className="flex-1 overflow-y-auto px-3 pb-3">
+          {props.templates.length > 0 && (
+            <>
+              <p className="px-1 pb-1 pt-2 text-xs font-medium uppercase text-muted">
+                {props.t("library.templates")}
+              </p>
               <ul className="grid grid-cols-3 gap-2">
-                {props.items.map((item) => (
+                {props.templates.map((item) => (
                   <ItemTile
                     key={item.id}
                     item={item}
-                    testId={`library-item-${item.id}`}
-                    readOnly={false}
+                    testId={`template-item-${item.id}`}
+                    readOnly
                     {...tileCommon}
                   />
                 ))}
               </ul>
-            )}
-          </div>
-        </>
-      )}
+            </>
+          )}
+
+          <p className="px-1 pb-1 pt-3 text-xs font-medium uppercase text-muted">
+            {props.t("library.myItems")}
+          </p>
+          {props.items.length === 0 ? (
+            <p className="px-2 py-4 text-center text-sm text-muted">{props.t("library.empty")}</p>
+          ) : (
+            <ul className="grid grid-cols-3 gap-2">
+              {props.items.map((item) => (
+                <ItemTile
+                  key={item.id}
+                  item={item}
+                  testId={`library-item-${item.id}`}
+                  readOnly={false}
+                  {...tileCommon}
+                />
+              ))}
+            </ul>
+          )}
+        </div>
+      </>
     </aside>
   )
 }

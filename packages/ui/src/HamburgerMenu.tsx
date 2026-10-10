@@ -103,7 +103,7 @@ export function HamburgerMenu(props: HamburgerMenuProps): React.ReactElement {
             ]}
             value={props.theme}
             onChange={(v) => {
-              props.onThemeChange(v as Theme)
+              props.onThemeChange(v)
               close()
             }}
           />
@@ -115,7 +115,7 @@ export function HamburgerMenu(props: HamburgerMenuProps): React.ReactElement {
             ]}
             value={props.locale}
             onChange={(v) => {
-              props.onLocaleChange(v as Locale)
+              props.onLocaleChange(v)
               close()
             }}
           />
@@ -177,14 +177,14 @@ function Separator(): React.ReactElement {
   return <div className="my-1 h-px bg-panel-active" aria-hidden />
 }
 
-function ChoiceRow({
+function ChoiceRow<T extends string>({
   options,
   value,
   onChange,
 }: {
-  options: ReadonlyArray<{ value: string; label: string; testId: string }>
-  value: string
-  onChange: (v: string) => void
+  options: ReadonlyArray<{ value: T; label: string; testId: string }>
+  value: T
+  onChange: (v: T) => void
 }): React.ReactElement {
   return (
     <div className="flex gap-1 px-3 py-1">

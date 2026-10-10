@@ -100,21 +100,15 @@ export function ExportDialog({
   const handleCopy = (): void => {
     if (!onCopy) return
     setCopyStatus("copying")
-    let pending: Promise<void> | undefined
     try {
       // Clipboard images are PNG-only, whatever the format toggle says.
-      pending = onCopy({ ...currentOptions(), format: "png" })
+      void onCopy({ ...currentOptions(), format: "png" }).then(
+        () => setCopyStatus("copied"),
+        () => setCopyStatus("error"),
+      )
     } catch {
-      pending = undefined
-    }
-    if (pending === undefined) {
       setCopyStatus("error")
-      return
     }
-    void pending.then(
-      () => setCopyStatus("copied"),
-      () => setCopyStatus("error"),
-    )
   }
 
   return (
