@@ -7,11 +7,12 @@ import type {
 } from "@excalidraw-clone/scene"
 import { RoughSVG } from "roughjs/bin/svg"
 import { generateShape } from "./shapes"
-import { OCCLUSION_PADDING } from "./shapes/text"
+import { isFixedWidthText, OCCLUSION_PADDING } from "./shapes/text"
 import {
   fontFamilyName,
   layoutLabel,
   measureText,
+  wrapLines,
   type FontStyle,
   type FontWeight,
   type LabelLayout,
@@ -125,7 +126,12 @@ export function renderToSVG(scene: Scene, opts: SVGRenderOptions = {}): string {
             el.lineHeight,
             (s) => measureElText(measure, el, s).width,
           )
-        : undefined
+        : el.type === "text" && measure && isFixedWidthText(el)
+          ? {
+              lines: wrapLines(el.text, el.width, (s) => measureElText(measure, el, s).width),
+              scale: 1,
+            }
+          : undefined
     const node = renderElement(doc, el, rsvg, opts.files, theme, backing, labelLayout)
     if (node) root.appendChild(node)
   }

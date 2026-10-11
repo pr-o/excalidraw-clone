@@ -200,6 +200,19 @@ describe("renderToSVG shape label auto-shrink", () => {
     expect(svg).toContain('font-size="20"')
   })
 
+  it("wraps a fixed-width free text into tspans", () => {
+    const t = { ...newText({ x: 0, y: 0, text: "hello world" }), autoResize: false, width: 60 }
+    const svg = renderToSVG(new Scene([t]), { measure: stubMeasure })
+    expect(svg.match(/<tspan/g)).toHaveLength(2)
+    expect(svg).toContain('font-size="20"')
+  })
+
+  it("does not wrap an auto-resizing free text", () => {
+    const t = { ...newText({ x: 0, y: 0, text: "hello world" }), width: 60 }
+    const svg = renderToSVG(new Scene([t]), { measure: stubMeasure })
+    expect(svg.match(/<tspan/g)).toHaveLength(1)
+  })
+
   it("does not wrap when no measurer is available", () => {
     const svg = renderToSVG(labeledRectScene("hello world"))
     expect(svg.match(/<tspan/g)).toHaveLength(1)

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { fontSpec, layoutLabel, measureText } from "../src/text-metrics"
+import { fontSpec, layoutLabel, measureText, wrapLines } from "../src/text-metrics"
 
 // mirrors the mock canvas: every character is 10px wide
 const m = (s: string): number => s.length * 10
@@ -83,5 +83,21 @@ describe("measureText", () => {
     measureText(ctx, "hi", 20, 1, 1.25, "bold", "italic")
     expect(fonts[0]).toBe('italic bold 20px "Caveat", cursive')
     expect(ctx.font).toBe("prev")
+  })
+})
+
+describe("wrapLines", () => {
+  it("greedy-wraps on spaces and keeps manual newlines", () => {
+    expect(wrapLines("aa bb cc\ndd", 50, m)).toEqual(["aa bb", "cc", "dd"])
+  })
+})
+
+describe("measureText with wrapWidth", () => {
+  it("measures the wrapped block height", () => {
+    const fake = { font: "", measureText: (line: string) => ({ width: line.length * 10 }) }
+    const ctx = fake as unknown as CanvasRenderingContext2D
+    const size = measureText(ctx, "hello world", 20, 1, 1.25, "normal", "normal", 60)
+    expect(size.height).toBe(2 * 20 * 1.25)
+    expect(size.width).toBe(50)
   })
 })

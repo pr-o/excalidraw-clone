@@ -1,5 +1,5 @@
 import type { ExcalidrawTextElement } from "@excalidraw-clone/scene"
-import { fontSpec, layoutLabel } from "../text-metrics"
+import { fontSpec, layoutLabel, wrapLines } from "../text-metrics"
 
 const horizontalOffset = (e: ExcalidrawTextElement, lineWidth: number): number => {
   switch (e.textAlign) {
@@ -25,6 +25,11 @@ const verticalOffset = (e: ExcalidrawTextElement, totalHeight: number): number =
       return 0
   }
 }
+
+/** Free text the user gave a fixed width (side-handle resize): it word-wraps
+ *  at e.width. Missing autoResize (old documents) counts as auto-resizing. */
+export const isFixedWidthText = (e: ExcalidrawTextElement): boolean =>
+  e.containerId === null && e.autoResize === false
 
 /** Padding (px) around a linear-element label's occlusion backing rect. */
 export const OCCLUSION_PADDING = 4
@@ -71,6 +76,8 @@ export const drawText = (
       fontSize = e.fontSize * layout.scale
       ctx.font = fontSpec(fontSize, e.fontFamily, weight, style)
     }
+  } else if (isFixedWidthText(e)) {
+    lines = wrapLines(e.text, e.width, (s) => ctx.measureText(s).width)
   }
   const lineHeightPx = fontSize * e.lineHeight
   const totalHeight = lines.length * lineHeightPx

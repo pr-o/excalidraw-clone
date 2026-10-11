@@ -4,6 +4,21 @@ import { drawText } from "../src/shapes/text"
 import { createMockCanvas } from "../src/test-utils/mock-canvas"
 
 describe("drawText", () => {
+  it("wraps a fixed-width (autoResize false) free text at its width", () => {
+    const { ctx } = createMockCanvas()
+    const t = { ...newText({ x: 0, y: 0, text: "hello world" }), autoResize: false, width: 60 }
+    drawText(ctx as unknown as CanvasRenderingContext2D, t)
+    const lines = ctx.__calls.filter((c) => c.method === "fillText").map((c) => c.args[0])
+    expect(lines).toEqual(["hello", "world"])
+  })
+
+  it("does not wrap auto-resizing text", () => {
+    const { ctx } = createMockCanvas()
+    const t = { ...newText({ x: 0, y: 0, text: "hello world" }), width: 60 }
+    drawText(ctx as unknown as CanvasRenderingContext2D, t)
+    expect(ctx.__calls.filter((c) => c.method === "fillText").length).toBe(1)
+  })
+
   it("writes one fillText per non-empty line", () => {
     const { ctx } = createMockCanvas()
     const t = { ...newText({ x: 0, y: 0, text: "hello\nworld" }) }

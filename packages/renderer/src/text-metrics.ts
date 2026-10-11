@@ -29,17 +29,13 @@ export interface LabelLayout {
   scale: number
 }
 
-/** Display layout for a shape label: greedy space-only wrap of each logical
- *  line at box.width (a word wider than the box stays whole), then the
- *  combined shrink scale — min(1, width bound, height bound) — for the
- *  wrapped block. measureWidth must measure at the natural font size. */
-export const layoutLabel = (
+/** Greedy space-only wrap of each logical line at maxWidth (a word wider
+ *  than maxWidth stays whole). Manual newlines are kept. */
+export const wrapLines = (
   text: string,
-  box: { width: number; height: number },
-  fontSize: number,
-  lineHeight: number,
+  maxWidth: number,
   measureWidth: (s: string) => number,
-): LabelLayout => {
+): string[] => {
   const lines: string[] = []
   for (const logical of text.split("\n")) {
     const words = logical.split(" ").filter((w) => w.length > 0)
@@ -50,7 +46,7 @@ export const layoutLabel = (
     let current = words[0]!
     for (let i = 1; i < words.length; i += 1) {
       const candidate = `${current} ${words[i]!}`
-      if (measureWidth(candidate) <= box.width) {
+      if (measureWidth(candidate) <= maxWidth) {
         current = candidate
       } else {
         lines.push(current)
@@ -59,6 +55,20 @@ export const layoutLabel = (
     }
     lines.push(current)
   }
+  return lines
+}
+
+/** Display layout for a shape label: wrapLines at box.width, then the
+ *  combined shrink scale — min(1, width bound, height bound) — for the
+ *  wrapped block. measureWidth must measure at the natural font size. */
+export const layoutLabel = (
+  text: string,
+  box: { width: number; height: number },
+  fontSize: number,
+  lineHeight: number,
+  measureWidth: (s: string) => number,
+): LabelLayout => {
+  const lines = wrapLines(text, box.width, measureWidth)
   let widest = 0
   for (const line of lines) widest = Math.max(widest, measureWidth(line))
   const totalHeight = lines.length * fontSize * lineHeight
@@ -78,10 +88,15 @@ export const measureText = (
   lineHeight: number,
   weight: FontWeight = "normal",
   style: FontStyle = "normal",
+  /** When set, lines are word-wrapped at this width (fixed-width text). */
+  wrapWidth?: number,
 ): TextSize => {
   const prevFont = ctx.font
   ctx.font = fontSpec(fontSize, family, weight, style)
-  const lines = text.split("\n")
+  const lines =
+    wrapWidth === undefined
+      ? text.split("\n")
+      : wrapLines(text, wrapWidth, (s) => ctx.measureText(s).width)
   let width = 0
   for (const line of lines) {
     const m = ctx.measureText(line)
