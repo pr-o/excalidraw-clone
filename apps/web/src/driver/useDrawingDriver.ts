@@ -17,6 +17,7 @@ import {
 import {
   TOOLS,
   type AnyToolEvent,
+  type EraserState,
   type LassoState,
   type LinearState,
   type Modifiers,
@@ -156,7 +157,12 @@ export function useDrawingDriver({
       if (s.selectedIds !== prev.selectedIds) renderer.setSelection(s.selectedIds)
       if (s.activeGuides !== prev.activeGuides) renderer.setGuides(s.activeGuides)
       if (s.activeTool !== prev.activeTool && prev.activeTool === "laser") laser.clear()
-      if (s.activeTool !== prev.activeTool && prev.activeTool === "lasso") renderer.setLasso([])
+      if (
+        s.activeTool !== prev.activeTool &&
+        (prev.activeTool === "lasso" || prev.activeTool === "eraser")
+      ) {
+        renderer.setLasso([])
+      }
     })
 
     const resolveGrid = (): GridSnap => {
@@ -198,6 +204,10 @@ export function useDrawingDriver({
       if (toolName === "lasso") {
         const lasso = next as LassoState
         renderer.setLasso(lasso.phase === "drawing" ? lasso.points : [])
+      }
+      if (toolName === "eraser") {
+        const eraser = next as EraserState
+        renderer.setLasso(eraser.phase === "erasing" ? eraser.trail : [])
       }
       if (toolName === "arrow" && (next as LinearState).phase === "drawing") {
         const cand = (next as Extract<LinearState, { phase: "drawing" }>).endBindId
