@@ -65,6 +65,14 @@ describe("HelpDialog", () => {
     expect(screen.getByText("shortcuts:laser")).toBeInTheDocument()
   })
 
+  it("lists the lasso and eraser shortcuts", () => {
+    render(<HelpDialog t={t} open onClose={() => {}} />)
+    expect(screen.getByText("S")).toBeInTheDocument()
+    expect(screen.getByText("shortcuts:lasso")).toBeInTheDocument()
+    expect(screen.getByText("E")).toBeInTheDocument()
+    expect(screen.getByText("shortcuts:eraser")).toBeInTheDocument()
+  })
+
   it("emits onClose when the close button is clicked", async () => {
     const onClose = vi.fn()
     render(<HelpDialog t={t} open onClose={onClose} />)
