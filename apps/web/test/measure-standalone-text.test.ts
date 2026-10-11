@@ -31,6 +31,16 @@ describe("measureStandaloneText — with a 2D context", () => {
     expect(bold.width).toBeGreaterThan(normal.width)
   })
 
+  it("wraps fixed-width text at its width, keeping the width", () => {
+    const el = {
+      ...newText({ x: 0, y: 0, text: "hello world", fontSize: 20 }),
+      autoResize: false,
+      width: 60,
+    }
+    // "hello" = 50 fits in 60, "hello world" = 110 does not → 2 lines × 25
+    expect(measureStandaloneText(el)).toEqual({ width: 60, height: 50 })
+  })
+
   it("treats a legacy element without fontWeight/fontStyle as normal", () => {
     const { fontWeight: _w, fontStyle: _s, ...legacy } = newText({ x: 0, y: 0, text: "hello" })
     const normal = measureStandaloneText(newText({ x: 0, y: 0, text: "hello" }))

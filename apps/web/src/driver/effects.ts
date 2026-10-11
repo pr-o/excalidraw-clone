@@ -2,6 +2,7 @@ import type { Point } from "@excalidraw-clone/geometry"
 import type { Scene } from "@excalidraw-clone/scene"
 import type { ToolEffect } from "@excalidraw-clone/tools"
 import { useAppStore } from "../store"
+import { reflowFixedWidthText } from "./measureStandaloneText"
 
 export function applyEffects(
   scene: Scene,
@@ -10,13 +11,19 @@ export function applyEffects(
 ): void {
   for (const eff of effects) {
     switch (eff.kind) {
-      case "mutation":
+      case "mutation": {
+        const before = scene.getElementsIncludingDeleted()
+        const apply = (draft: Parameters<typeof eff.apply>[0]): void => {
+          eff.apply(draft)
+          reflowFixedWidthText(before, draft)
+        }
         if (eff.skipHistory) {
-          scene.mutate(eff.apply, { skipHistory: true })
+          scene.mutate(apply, { skipHistory: true })
         } else {
-          scene.mutate(eff.apply)
+          scene.mutate(apply)
         }
         break
+      }
       case "select":
         useAppStore.getState().setSelection(eff.ids)
         break

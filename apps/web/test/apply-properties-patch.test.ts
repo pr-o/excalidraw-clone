@@ -158,6 +158,14 @@ describe("applyPropertiesPatch — default measurer (real measureText via stubbe
     expect(out.height).toBe(35)
   })
 
+  it("re-wraps a fixed-width text on a font change, keeping its width", () => {
+    const fixed = staleText({ text: "hello world", autoResize: false, width: 60 })
+    // stub at 20px: "hello world" = 110 > 60 → 2 lines; at 28px "hello" = 70 > 60 still 2 lines
+    const out = applyPropertiesPatch(fixed, { fontSize: 28 })
+    expect(out.width).toBe(60)
+    expect(out.height).toBe(2 * 28 * 1.25)
+  })
+
   it("bold makes the default-measured box wider", () => {
     const normal = applyPropertiesPatch(staleText(), { fontWeight: "normal" })
     const bold = applyPropertiesPatch(staleText(), { fontWeight: "bold" })

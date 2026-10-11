@@ -1,6 +1,7 @@
-import { Scene, newRectangle } from "@excalidraw-clone/scene"
+import { Scene, newRectangle, newText, type ExcalidrawTextElement } from "@excalidraw-clone/scene"
 import type { ToolEffect } from "@excalidraw-clone/tools"
 import { describe, expect, it, vi } from "vitest"
+import { createFontAwareStubContext } from "./fontAwareCanvasStub"
 import { applyEffects } from "../src/driver/effects"
 import { useAppStore } from "../src/store"
 
@@ -59,5 +60,71 @@ describe("applyEffects", () => {
     const guides = [{ axis: "y" as const, position: 5, start: 0, end: 10 }]
     applyEffects(scene, [{ kind: "setGuides", guides }])
     expect(useAppStore.getState().activeGuides).toEqual(guides)
+  })
+})
+
+describe("applyEffects — fixed-width text reflow", () => {
+  const withCanvas = (fn: () => void): void => {
+    const spy = vi
+      .spyOn(HTMLCanvasElement.prototype, "getContext")
+      .mockImplementation(() => createFontAwareStubContext())
+    try {
+      fn()
+    } finally {
+      spy.mockRestore()
+    }
+  }
+  const setWidth = (id: string, patch: Partial<ExcalidrawTextElement>): ToolEffect => ({
+    kind: "mutation",
+    apply: (draft) => {
+      const i = draft.findIndex((e) => e.id === id)
+      draft[i] = { ...draft[i]!, ...patch } as ExcalidrawTextElement
+    },
+  })
+
+  it("re-wraps the height when a fixed-width text's width changes", () => {
+    withCanvas(() => {
+      const t = {
+        ...newText({ x: 0, y: 0, text: "hello world", fontSize: 20 }),
+        width: 110,
+        height: 25,
+      }
+      const scene = new Scene([t])
+      applyEffects(scene, [setWidth(t.id, { width: 60, autoResize: false })])
+      const out = scene.getElements()[0] as ExcalidrawTextElement
+      expect(out.width).toBe(60)
+      expect(out.height).toBe(50)
+    })
+  })
+
+  it("re-measures the natural width when autoResize is turned back on", () => {
+    withCanvas(() => {
+      const t = {
+        ...newText({ x: 0, y: 0, text: "hello world", fontSize: 20 }),
+        width: 60,
+        height: 50,
+        autoResize: false,
+      }
+      const scene = new Scene([t])
+      applyEffects(scene, [setWidth(t.id, { autoResize: true })])
+      const out = scene.getElements()[0] as ExcalidrawTextElement
+      expect(out.width).toBe(110)
+      expect(out.height).toBe(25)
+    })
+  })
+
+  it("leaves auto-resizing text box changes (corner resize) alone", () => {
+    withCanvas(() => {
+      const t = {
+        ...newText({ x: 0, y: 0, text: "hello world", fontSize: 20 }),
+        width: 110,
+        height: 25,
+      }
+      const scene = new Scene([t])
+      applyEffects(scene, [setWidth(t.id, { width: 200, height: 80 })])
+      const out = scene.getElements()[0] as ExcalidrawTextElement
+      expect(out.width).toBe(200)
+      expect(out.height).toBe(80)
+    })
   })
 })
