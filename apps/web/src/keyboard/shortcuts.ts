@@ -217,11 +217,12 @@ export function attachShortcuts({
       return
     }
     // Must precede the nudge branch below, which has no isMeta guard.
-    if (isMeta && CHAIN_DIRECTIONS[key]) {
+    const chainDir = isMeta ? CHAIN_DIRECTIONS[key] : undefined
+    if (chainDir) {
       const ids = useAppStore.getState().selectedIds
       const source =
         ids.length === 1 ? scene.getElements().find((el) => el.id === ids[0]) : undefined
-      const newId = source ? createChainedShape(scene, source, CHAIN_DIRECTIONS[key]) : null
+      const newId = source ? createChainedShape(scene, source, chainDir) : null
       if (newId) {
         e.preventDefault()
         useAppStore.getState().setSelection([newId])
