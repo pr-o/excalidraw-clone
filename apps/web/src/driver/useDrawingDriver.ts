@@ -163,8 +163,15 @@ export function useDrawingDriver({
       ) {
         renderer.setLasso([])
       }
-      // A drag abandoned by a tool switch must not leave a stale "erasing" state behind.
+      // Switching away mid-drag cancels the erase like Escape (restores live erasures, no history).
       if (s.activeTool !== prev.activeTool && prev.activeTool === "eraser") {
+        if ((s.toolStates.eraser as EraserState | undefined)?.phase === "erasing") {
+          dispatch(
+            { type: "escape" },
+            { shift: false, alt: false, ctrl: false, meta: false },
+            "eraser",
+          )
+        }
         useAppStore.getState().resetToolState("eraser")
       }
     })
@@ -185,9 +192,12 @@ export function useDrawingDriver({
     const snappedScenePoint = (e: PointerEvent | MouseEvent): Point =>
       snapScenePoint(clientToScene(canvas, viewOf(useAppStore.getState()), e), resolveGrid(), e)
 
-    const dispatch = (event: AnyToolEvent, modifiers: Modifiers): void => {
+    const dispatch = (
+      event: AnyToolEvent,
+      modifiers: Modifiers,
+      toolName = useAppStore.getState().activeTool,
+    ): void => {
       const store = useAppStore.getState()
-      const toolName = store.activeTool
       const tool = TOOLS[toolName]
       const currentState = store.toolStates[toolName] ?? tool.initial
       const ctx: ToolContext = {

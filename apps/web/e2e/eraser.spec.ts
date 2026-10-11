@@ -53,3 +53,20 @@ test("Escape mid-erase restores everything erased so far", async ({ page }) => {
   await page.mouse.up()
   expect(await liveCount(page)).toBe(2)
 })
+
+test("switching tools mid-erase cancels it like Escape, with no history entry", async ({
+  page,
+}) => {
+  const box = await setup(page)
+  await page.mouse.move(box.x + 80, box.y + 180)
+  await page.mouse.down()
+  await page.mouse.move(box.x + 400, box.y + 180, { steps: 8 })
+  expect(await liveCount(page)).toBe(0)
+  await page.keyboard.press("r")
+  await page.mouse.up()
+  expect(await liveCount(page)).toBe(2)
+
+  // Undo must hit the second rect's creation, not a phantom erase step.
+  await page.keyboard.press(process.platform === "darwin" ? "Meta+Z" : "Control+Z")
+  expect(await liveCount(page)).toBe(1)
+})
