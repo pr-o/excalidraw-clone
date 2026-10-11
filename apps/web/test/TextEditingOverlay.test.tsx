@@ -216,3 +216,27 @@ describe("TextEditingOverlay — standalone text is sized from its content on co
     expect(after.height).toBe(before.height)
   })
 })
+
+describe("TextEditingOverlay — fixed-width text", () => {
+  it("sizes the textarea to the fixed width and wraps", async () => {
+    const scene = new Scene()
+    const text = { ...newText({ x: 0, y: 0, text: "hello world" }), autoResize: false, width: 60 }
+    scene.mutate((d) => d.push(text))
+    useAppStore.getState().setView({ scrollX: 0, scrollY: 0, zoom: 2 })
+    useAppStore.getState().setTextEditElementId(text.id)
+    const { container } = renderOverlay(scene)
+    const textarea = await focusedTextarea(container)
+    expect(textarea.style.width).toBe("120px")
+    expect(textarea.style.whiteSpace).toBe("pre-wrap")
+  })
+
+  it("leaves auto-resizing text without a fixed width", async () => {
+    const scene = new Scene()
+    const text = newText({ x: 0, y: 0, text: "hello world" })
+    scene.mutate((d) => d.push(text))
+    useAppStore.getState().setTextEditElementId(text.id)
+    const { container } = renderOverlay(scene)
+    const textarea = await focusedTextarea(container)
+    expect(textarea.style.width).toBe("")
+  })
+})

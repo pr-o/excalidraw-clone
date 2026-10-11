@@ -76,6 +76,15 @@ export function TextEditingOverlay({ scene }: { scene: Scene }): React.ReactElem
   const left = (el.x + scrollX) * zoom
   const top = (el.y + scrollY) * zoom
   const fontSize = el.fontSize * zoom
+  // Fixed-width text wraps inside its box while editing, as it renders.
+  const fixedWidth =
+    el.containerId === null && el.autoResize === false
+      ? {
+          width: `${el.width * zoom}px`,
+          boxSizing: "content-box" as const,
+          whiteSpace: "pre-wrap" as const,
+        }
+      : {}
 
   const commit = (): void => {
     const noVisibleChange = value === "" && (el?.text ?? "") === ""
@@ -120,6 +129,7 @@ export function TextEditingOverlay({ scene }: { scene: Scene }): React.ReactElem
         border: "1px solid #999",
         outline: "none",
         resize: "none",
+        ...fixedWidth,
       }}
       className="z-40"
     />
