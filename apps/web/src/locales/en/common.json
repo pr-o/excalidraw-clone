@@ -91,6 +91,10 @@
     "fontSize_m": "M",
     "fontSize_l": "L",
     "fontSize_xl": "XL",
+    "textAlign": "Text align",
+    "textAlign_left": "Left",
+    "textAlign_center": "Center",
+    "textAlign_right": "Right",
     "lock": "Lock",
     "flip_horizontal": "Flip horizontal",
     "flip_vertical": "Flip vertical"

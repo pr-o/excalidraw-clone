@@ -91,6 +91,10 @@
     "fontSize_m": "중",
     "fontSize_l": "대",
     "fontSize_xl": "특대",
+    "textAlign": "텍스트 정렬",
+    "textAlign_left": "왼쪽",
+    "textAlign_center": "가운데",
+    "textAlign_right": "오른쪽",
     "lock": "잠금",
     "flip_horizontal": "좌우 반전",
     "flip_vertical": "상하 반전"
