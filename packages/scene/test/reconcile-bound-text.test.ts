@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { newRectangle, newText, newTriangle } from "../src/factories"
+import { newArrow, newRectangle, newText, newTriangle } from "../src/factories"
 import { NOTE_PADDING, reconcileBoundText } from "../src/reconcile-bound-text"
 import type { ExcalidrawElement } from "../src/types"
 
@@ -14,7 +14,7 @@ const makeNotePair = (): { container: ExcalidrawElement; text: ExcalidrawElement
 }
 
 describe("reconcileBoundText", () => {
-  it("sizes bound text to container box minus padding and centers it", () => {
+  it("sizes bound text to container box minus padding and middle-aligns it", () => {
     const { container, text } = makeNotePair()
     const draft: ExcalidrawElement[] = [container, text]
     reconcileBoundText(draft)
@@ -24,9 +24,40 @@ describe("reconcileBoundText", () => {
     expect(t.width).toBe(60 - 2 * NOTE_PADDING)
     expect(t.height).toBe(40 - 2 * NOTE_PADDING)
     if (t.type === "text") {
-      expect(t.textAlign).toBe("center")
+      expect(t.textAlign).toBe("left") // shape labels keep their own textAlign
       expect(t.verticalAlign).toBe("middle")
     }
+  })
+
+  it("keeps a shape label's own textAlign", () => {
+    const text = newText({ x: 0, y: 0, text: "hi", containerId: "C", textAlign: "right" })
+    const container = {
+      ...newRectangle({ x: 0, y: 0, width: 100, height: 60 }),
+      id: "C",
+      boundElements: [{ id: text.id, type: "text" as const }],
+    }
+    const draft: ExcalidrawElement[] = [container, text]
+    reconcileBoundText(draft)
+    const t = draft.find((e) => e.id === text.id)!
+    expect(t.type === "text" && t.textAlign).toBe("right")
+    expect(t.type === "text" && t.verticalAlign).toBe("middle")
+  })
+
+  it("still forces an arrow label to center", () => {
+    const text = newText({ x: 0, y: 0, text: "hi", containerId: "A", textAlign: "left" })
+    const arrow = {
+      ...newArrow({ x: 0, y: 0, width: 100, height: 0 }),
+      id: "A",
+      points: [
+        { x: 0, y: 0 },
+        { x: 100, y: 0 },
+      ],
+      boundElements: [{ id: text.id, type: "text" as const }],
+    }
+    const draft: ExcalidrawElement[] = [arrow, text]
+    reconcileBoundText(draft)
+    const t = draft.find((e) => e.id === text.id)!
+    expect(t.type === "text" && t.textAlign).toBe("center")
   })
 
   it("marks bound text deleted when its container is deleted", () => {

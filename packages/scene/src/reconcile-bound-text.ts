@@ -47,7 +47,8 @@ const innerBoxFor = (
 /**
  * Enforce the container↔bound-text invariant in place on a mutation draft:
  * each non-deleted shape container keeps its bound text sized to the
- * shape-aware inner label box and center/middle aligned; a linear
+ * shape-aware inner label box and vertically centered (its textAlign is
+ * left to the user); a linear
  * (arrow/line) container keeps its bound text recentered on the path
  * midpoint without resizing. A deleted container cascades isDeleted to its
  * text. Text content is never modified. Idempotent and O(n). Safe to run
@@ -90,10 +91,10 @@ export function reconcileBoundText(draft: ExcalidrawElement[]): void {
       text.y !== y ||
       text.width !== width ||
       text.height !== height ||
-      text.textAlign !== "center" ||
       text.verticalAlign !== "middle"
     ) {
-      draft[ti] = { ...text, x, y, width, height, textAlign: "center", verticalAlign: "middle" }
+      // textAlign is the user's choice for shape labels; only the box and vertical centering are owned here.
+      draft[ti] = { ...text, x, y, width, height, verticalAlign: "middle" }
     }
   }
 }

@@ -132,6 +132,21 @@ describe("renderToSVG linear label backing", () => {
     expect(svg).not.toContain("<rect")
   })
 
+  it("anchors a right-aligned shape label at the end of its box", () => {
+    const rect = newRectangle({ x: 0, y: 0, width: 100, height: 80 })
+    const label = {
+      ...newText({ x: 8, y: 8, width: 84, height: 64, text: "box", textAlign: "right" }),
+      containerId: rect.id,
+    }
+    const scene = new Scene([
+      { ...rect, boundElements: [{ id: label.id, type: "text" as const }] },
+      label,
+    ])
+    const svg = renderToSVG(scene, { measure: stubMeasure })
+    expect(svg).toContain('text-anchor="end"')
+    expect(svg).toContain('x="84"')
+  })
+
   it("skips the backing gracefully when no measurer is available", () => {
     // jsdom's canvas.getContext returns null → default measurer unavailable
     const svg = renderToSVG(labeledArrowScene())
