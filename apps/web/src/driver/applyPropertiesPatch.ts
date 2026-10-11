@@ -28,3 +28,28 @@ export function applyPropertiesPatch(
   const size = measure(merged)
   return size ? { ...merged, width: size.width, height: size.height } : merged
 }
+
+/** Patch keys a selected container forwards to its bound label. */
+const LABEL_KEYS = ["fontFamily", "fontSize", "fontWeight", "fontStyle", "textAlign"] as const
+
+/** One element's result for a PropertiesPanel patch over the selection, or
+ *  undefined to leave it untouched. Selected elements get the full patch.
+ *  Labels are not selectable, so a selected container passes the text-style
+ *  part of the patch on to its bound label (never measured: reconcile owns it). */
+export function applySelectionPatch(
+  el: ExcalidrawElement,
+  patch: Partial<ExcalidrawElement>,
+  selectedIds: readonly string[],
+  measure: Measurer = measureStandaloneText,
+): ExcalidrawElement | undefined {
+  if (selectedIds.includes(el.id)) return applyPropertiesPatch(el, patch, measure)
+  if (el.type !== "text" || el.containerId === null || !selectedIds.includes(el.containerId)) {
+    return undefined
+  }
+  const labelPatch = Object.fromEntries(
+    LABEL_KEYS.filter((key) => key in patch).map((key) => [key, patch[key as keyof typeof patch]]),
+  ) as Partial<ExcalidrawElement>
+  return Object.keys(labelPatch).length > 0
+    ? applyPropertiesPatch(el, labelPatch, measure)
+    : undefined
+}

@@ -14,7 +14,11 @@ import {
   type MockInstance,
   vi,
 } from "vitest"
-import { applyPropertiesPatch, type Measurer } from "../src/driver/applyPropertiesPatch"
+import {
+  applyPropertiesPatch,
+  applySelectionPatch,
+  type Measurer,
+} from "../src/driver/applyPropertiesPatch"
 import { createFontAwareStubContext } from "./fontAwareCanvasStub"
 
 /** Deterministic fake: width = chars × fontSize × 0.5 (× 1.2 if bold);
@@ -158,5 +162,43 @@ describe("applyPropertiesPatch — default measurer (real measureText via stubbe
     const normal = applyPropertiesPatch(staleText(), { fontWeight: "normal" })
     const bold = applyPropertiesPatch(staleText(), { fontWeight: "bold" })
     expect(bold.width).toBeGreaterThan(normal.width)
+  })
+})
+
+describe("applySelectionPatch", () => {
+  const rect = { ...newRectangle({ x: 0, y: 0, width: 100, height: 60 }), id: "R" }
+  const label = { ...newLabelFor(rect), width: 7, height: 9 }
+
+  it("patches a selected element like applyPropertiesPatch", () => {
+    const measure = fakeMeasure()
+    const text = staleText({ id: "T" })
+    const out = applySelectionPatch(text, { fontSize: 36 }, ["T"], measure)
+    expect(out).toEqual(applyPropertiesPatch(text, { fontSize: 36 }, measure))
+  })
+
+  it("forwards text-style keys to a selected container's label without measuring it", () => {
+    const measure = fakeMeasure()
+    const out = applySelectionPatch(
+      label,
+      { fontFamily: 3, textAlign: "right" },
+      ["R"],
+      measure,
+    ) as ExcalidrawTextElement
+    expect(out.fontFamily).toBe(3)
+    expect(out.textAlign).toBe("right")
+    expect([out.width, out.height]).toEqual([7, 9])
+    expect(measure).not.toHaveBeenCalled()
+  })
+
+  it("does not forward non-text keys to a label", () => {
+    expect(applySelectionPatch(label, { strokeColor: "#e03131" }, ["R"])).toBeUndefined()
+  })
+
+  it("leaves labels of unselected containers alone", () => {
+    expect(applySelectionPatch(label, { fontFamily: 3 }, ["OTHER"])).toBeUndefined()
+  })
+
+  it("leaves unselected non-label elements alone", () => {
+    expect(applySelectionPatch(rect, { fontFamily: 3 }, ["OTHER"])).toBeUndefined()
   })
 })

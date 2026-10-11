@@ -45,7 +45,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { I18nextProvider, useTranslation } from "react-i18next"
 import { startAutoSave } from "../driver/autoSave"
-import { applyPropertiesPatch } from "../driver/applyPropertiesPatch"
+import { applySelectionPatch } from "../driver/applyPropertiesPatch"
 import { hydratePages, hydrateUI } from "../driver/hydration"
 import { pickAndUploadImage } from "../driver/imageUpload"
 import {
@@ -473,9 +473,7 @@ function Inner(): React.ReactElement {
               t={t}
               selectedElements={selectedElements}
               onChange={(patch) =>
-                replaceElements(scene, (el) =>
-                  selectedIds.includes(el.id) ? applyPropertiesPatch(el, patch) : undefined,
-                )
+                replaceElements(scene, (el) => applySelectionPatch(el, patch, selectedIds))
               }
               onDelete={() => {
                 deleteElements(scene, selectedIds)
