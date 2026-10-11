@@ -1,122 +1,99 @@
-import type { ExcalidrawElement } from "@excalidraw-clone/scene"
-import { newRectangle } from "@excalidraw-clone/scene"
+import { type ExcalidrawElement, newLine, newRectangle } from "@excalidraw-clone/scene"
 import { describe, expect, it } from "vitest"
-import { eraserTool } from "../src"
+import { type EraserState, eraserTool } from "../src"
 import { applyMutation, makeCtx, point } from "./test-utils"
 
+type Effects = ReturnType<typeof eraserTool.reduce>[1]
+
+const rect = (x: number, extra: Partial<ExcalidrawElement> = {}): ExcalidrawElement =>
+  ({ ...newRectangle({ x, y: 0, width: 10, height: 10 }), ...extra }) as ExcalidrawElement
+
+/** Drive one drag through `path`, applying effects to a draft the way the scene
+ *  would (readElements sees live elements only). Optionally end with pointerUp/escape. */
+const drag = (
+  elements: readonly ExcalidrawElement[],
+  path: readonly { x: number; y: number }[],
+  end: "pointerUp" | "escape" | null = null,
+) => {
+  const draft = [...elements]
+  const ctx = makeCtx({ readElements: () => draft.filter((e) => !e.isDeleted) })
+  let state: EraserState = eraserTool.initial
+  let effects: Effects = []
+  for (const at of path) {
+    const type = state.phase === "idle" ? "pointerDown" : "pointerMove"
+    ;[state, effects] = eraserTool.reduce(state, { type, at }, ctx)
+    applyMutation(effects, draft)
+  }
+  if (end) {
+    const event =
+      end === "escape" ? ({ type: "escape" } as const) : { type: end, at: path[path.length - 1]! }
+    ;[state, effects] = eraserTool.reduce(state, event, ctx)
+    applyMutation(effects, draft)
+  }
+  const isDeleted = (id: string) => draft.find((e) => e.id === id)?.isDeleted
+  return { state, effects, isDeleted }
+}
+
 describe("eraser tool", () => {
-  it("pointerDown over an element soft-deletes it (skipHistory)", () => {
-    const r = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
-    const draft: ExcalidrawElement[] = [r]
-    const ctx = makeCtx({
-      readElements: () => [r],
-      hitTest: () => r,
-    })
-    const [_state, effects] = eraserTool.reduce(
-      eraserTool.initial,
-      { type: "pointerDown", at: point(5, 5) },
-      ctx,
-    )
-    applyMutation(effects, draft)
-    expect(draft[0]?.isDeleted).toBe(true)
-    const mut = effects.find((e) => e.kind === "mutation")
-    if (mut?.kind === "mutation") expect(mut.skipHistory).toBe(true)
+  it("pointerDown over an element soft-deletes it live, outside history", () => {
+    const r = rect(0)
+    const { effects, isDeleted } = drag([r], [point(5, 5)])
+    expect(isDeleted(r.id)).toBe(true)
+    expect(effects).toMatchObject([{ kind: "mutation", skipHistory: true }])
   })
 
-  it("pointerDown over empty space stays in erasing with no erased ids", () => {
-    const ctx = makeCtx({ hitTest: () => null })
-    const r = eraserTool.reduce(eraserTool.initial, { type: "pointerDown", at: point(0, 0) }, ctx)
-    expect(r[0].phase).toBe("erasing")
-    if (r[0].phase === "erasing") expect(r[0].erasedIds).toEqual([])
-    expect(r[1]).toEqual([])
+  it("a fast straight drag erases a thin line it jumps across", () => {
+    const line = { ...newLine({ x: 50, y: 0 }), points: [point(0, 0), point(0, 100)] }
+    const { isDeleted } = drag([line], [point(0, 50), point(100, 50)])
+    expect(isDeleted(line.id)).toBe(true)
   })
 
-  it("pointerMove across multiple elements soft-deletes each one once", () => {
-    const a = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
-    const b = newRectangle({ x: 20, y: 0, width: 10, height: 10 })
-    const draft: ExcalidrawElement[] = [a, b]
-    let elements: readonly ExcalidrawElement[] = [a, b]
-    const ctx = makeCtx({
-      readElements: () => elements,
-      hitTest: (at) => {
-        if (at.x < 10) return a
-        if (at.x >= 20) return b
-        return null
-      },
-    })
-    let s = eraserTool.reduce(eraserTool.initial, { type: "pointerDown", at: point(5, 5) }, ctx)
-    applyMutation(s[1], draft)
-    elements = draft.filter((e) => !e.isDeleted)
-    s = eraserTool.reduce(s[0], { type: "pointerMove", at: point(25, 5) }, ctx)
-    applyMutation(s[1], draft)
-    expect(draft[0]?.isDeleted).toBe(true)
-    expect(draft[1]?.isDeleted).toBe(true)
+  it("erases every element under the path, not just the topmost", () => {
+    const below = rect(0)
+    const above = rect(0)
+    const { isDeleted } = drag([below, above], [point(5, 5)])
+    expect(isDeleted(below.id)).toBe(true)
+    expect(isDeleted(above.id)).toBe(true)
   })
 
-  it("pointerUp commits a single history-tracked mutation", () => {
-    const r = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
-    const draft: ExcalidrawElement[] = [r]
-    const ctx = makeCtx({ hitTest: () => r })
-    const down = eraserTool.reduce(
-      eraserTool.initial,
-      { type: "pointerDown", at: point(5, 5) },
-      ctx,
-    )
-    applyMutation(down[1], draft)
-    const up = eraserTool.reduce(down[0], { type: "pointerUp", at: point(5, 5) }, ctx)
-    applyMutation(up[1], draft)
-    expect(up[0].phase).toBe("idle")
-    const muts = up[1].filter((e) => e.kind === "mutation")
-    expect(muts.length).toBe(1)
-    if (muts[0]?.kind === "mutation") expect(muts[0].skipHistory).toBeUndefined()
+  it("skips locked elements and bound labels", () => {
+    const locked = rect(0, { locked: true })
+    const label = rect(0, { type: "text", containerId: "some-box" })
+    const { isDeleted } = drag([locked, label], [point(5, 5)])
+    expect(isDeleted(locked.id)).toBe(false)
+    expect(isDeleted(label.id)).toBe(false)
   })
 
-  it("escape mid-erase un-soft-deletes everything erased so far", () => {
-    const r = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
-    const draft: ExcalidrawElement[] = [r]
-    const ctx = makeCtx({ hitTest: () => r })
-    const down = eraserTool.reduce(
-      eraserTool.initial,
-      { type: "pointerDown", at: point(5, 5) },
-      ctx,
-    )
-    applyMutation(down[1], draft)
-    expect(draft[0]?.isDeleted).toBe(true)
-    const esc = eraserTool.reduce(down[0], { type: "escape" }, ctx)
-    applyMutation(esc[1], draft)
-    expect(esc[0].phase).toBe("idle")
-    expect(draft[0]?.isDeleted).toBe(false)
+  it("erasing one group member erases the whole group, except locked members", () => {
+    const hit = rect(0, { groupIds: ["g"] })
+    const mate = rect(100, { groupIds: ["g"] })
+    const lockedMate = rect(200, { groupIds: ["g"], locked: true })
+    const { isDeleted } = drag([hit, mate, lockedMate], [point(5, 5)])
+    expect(isDeleted(hit.id)).toBe(true)
+    expect(isDeleted(mate.id)).toBe(true)
+    expect(isDeleted(lockedMate.id)).toBe(false)
   })
 
-  it("does not erase locked elements when hitTest honors locked (mirrors the driver)", () => {
-    const r = { ...newRectangle({ x: 0, y: 0, width: 10, height: 10 }), locked: true }
-    const draft: ExcalidrawElement[] = [r]
-    const ctx = makeCtx({
-      readElements: () => [r],
-      hitTest: () => (r.locked ? null : r),
-    })
-    const [state, effects] = eraserTool.reduce(
-      eraserTool.initial,
-      { type: "pointerDown", at: point(5, 5) },
-      ctx,
-    )
-    applyMutation(effects, draft)
-    expect(state.phase).toBe("erasing")
-    expect(draft[0]?.isDeleted).toBe(false)
+  it("erases each element once", () => {
+    const r = rect(0)
+    const { state, effects } = drag([r], [point(5, 5), point(6, 6)])
+    expect(effects).toEqual([])
+    expect(state.phase === "erasing" && state.erasedIds).toEqual([r.id])
   })
 
-  it("does not erase the same element twice", () => {
-    const r = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
-    const draft: ExcalidrawElement[] = [r]
-    const ctx = makeCtx({ hitTest: () => r })
-    const down = eraserTool.reduce(
-      eraserTool.initial,
-      { type: "pointerDown", at: point(5, 5) },
-      ctx,
-    )
-    applyMutation(down[1], draft)
-    const move = eraserTool.reduce(down[0], { type: "pointerMove", at: point(5, 6) }, ctx)
-    expect(move[1]).toEqual([])
-    if (move[0].phase === "erasing") expect(move[0].erasedIds.length).toBe(1)
+  it("pointerUp commits one history-tracked mutation; an empty drag commits nothing", () => {
+    const r = rect(0)
+    const hit = drag([r], [point(5, 5)], "pointerUp")
+    expect(hit.state.phase).toBe("idle")
+    expect(hit.effects).toHaveLength(1)
+    expect(hit.effects[0]).not.toHaveProperty("skipHistory")
+    expect(drag([r], [point(50, 50)], "pointerUp").effects).toEqual([])
+  })
+
+  it("escape mid-erase brings back everything erased so far", () => {
+    const r = rect(0)
+    const { state, isDeleted } = drag([r], [point(5, 5)], "escape")
+    expect(state.phase).toBe("idle")
+    expect(isDeleted(r.id)).toBe(false)
   })
 })
