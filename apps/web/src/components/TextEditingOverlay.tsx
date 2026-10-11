@@ -81,6 +81,7 @@ export function TextEditingOverlay({ scene }: { scene: Scene }): React.ReactElem
     el.containerId === null && el.autoResize === false
       ? {
           width: `${el.width * zoom}px`,
+          height: `${el.height * zoom}px`,
           boxSizing: "content-box" as const,
           whiteSpace: "pre-wrap" as const,
         }
@@ -125,10 +126,13 @@ export function TextEditingOverlay({ scene }: { scene: Scene }): React.ReactElem
         fontWeight: el.fontWeight ?? "normal",
         fontStyle: el.fontStyle ?? "normal",
         textAlign: el.textAlign,
+        lineHeight: el.lineHeight,
         background: "transparent",
         border: "1px solid #999",
         outline: "none",
         resize: "none",
+        padding: 0,
+        margin: 0,
         ...fixedWidth,
       }}
       className="z-40"
