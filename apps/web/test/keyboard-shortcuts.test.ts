@@ -4,10 +4,17 @@ import {
   ZOOM_MAX,
   type ViewTransform,
 } from "@excalidraw-clone/geometry"
-import { newRectangle, newText, newTriangle, Scene } from "@excalidraw-clone/scene"
+import {
+  type ExcalidrawTextElement,
+  newRectangle,
+  newText,
+  newTriangle,
+  Scene,
+} from "@excalidraw-clone/scene"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { attachShortcuts } from "../src/keyboard/shortcuts"
 import { useAppStore } from "../src/store"
+import { createFontAwareStubContext } from "./fontAwareCanvasStub"
 
 const press = (init: KeyboardEventInit): void => {
   window.dispatchEvent(new KeyboardEvent("keydown", init))
@@ -418,6 +425,33 @@ describe("style clipboard shortcuts", () => {
     useAppStore.getState().setActiveTool("rectangle")
     paste()
     expect(useAppStore.getState().activeTool).toBe("rectangle")
+  })
+
+  it("Ctrl+Alt+V re-measures a free text whose font family changes", () => {
+    const getContextSpy = vi
+      .spyOn(HTMLCanvasElement.prototype, "getContext")
+      .mockImplementation(() => createFontAwareStubContext())
+    try {
+      const source = newText({ x: 0, y: 0, text: "src", fontFamily: 3, fontSize: 20 })
+      const target = {
+        ...newText({ x: 0, y: 50, text: "hello", fontFamily: 1, fontSize: 20 }),
+        width: 1,
+        height: 1,
+      }
+      scene.mutate((draft) => {
+        draft.push(source, target)
+      })
+      useAppStore.getState().setSelection([source.id])
+      copy()
+      useAppStore.getState().setSelection([target.id])
+      paste()
+      const out = scene.getElements().find((e) => e.id === target.id) as ExcalidrawTextElement
+      expect(out.fontFamily).toBe(3)
+      // stub: 5 chars × 20px × 0.6 (Cascadia) = 60
+      expect(out.width).toBe(60)
+    } finally {
+      getContextSpy.mockRestore()
+    }
   })
 })
 

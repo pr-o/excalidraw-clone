@@ -8,6 +8,7 @@ import {
   ungroupElements,
 } from "@excalidraw-clone/scene"
 import type { ToolName } from "@excalidraw-clone/tools"
+import { applyPropertiesPatch } from "../driver/applyPropertiesPatch"
 import { deleteElements, patchScene, replaceElements } from "../driver/patchScene"
 import { zoomAboutCentre } from "../driver/zoom"
 import { useAppStore } from "../store"
@@ -126,7 +127,9 @@ export function attachShortcuts({
       if (ids.length === 0) return
       e.preventDefault()
       const targets = new Set(ids)
-      replaceElements(scene, (el) => (targets.has(el.id) ? applyStyle(el, clip) : undefined))
+      replaceElements(scene, (el) =>
+        targets.has(el.id) ? applyPropertiesPatch(el, applyStyle(el, clip)) : undefined,
+      )
       return
     }
     if (isMeta && key === "0") {
