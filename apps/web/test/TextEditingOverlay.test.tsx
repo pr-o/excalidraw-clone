@@ -108,6 +108,18 @@ describe("TextEditingOverlay — WYSIWYG font styling", () => {
     expect(textarea.style.fontStyle).toBe("italic")
   })
 
+  it("aligns the textarea like the element", async () => {
+    const scene = new Scene()
+    const text = newText({ x: 10, y: 10, text: "a\nlonger", textAlign: "right" })
+    scene.mutate((d) => d.push(text))
+    useAppStore.getState().setTextEditElementId(text.id)
+
+    const { container } = renderOverlay(scene)
+    const textarea = await focusedTextarea(container)
+
+    expect(textarea.style.textAlign).toBe("right")
+  })
+
   it("defaults a legacy element without weight/style to normal", async () => {
     const scene = new Scene()
     const { fontWeight: _w, fontStyle: _s, ...legacy } = newText({ x: 10, y: 10, text: "old" })

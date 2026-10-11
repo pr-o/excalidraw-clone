@@ -115,6 +115,7 @@ export function TextEditingOverlay({ scene }: { scene: Scene }): React.ReactElem
         fontFamily: fontFamilyName(el.fontFamily),
         fontWeight: el.fontWeight ?? "normal",
         fontStyle: el.fontStyle ?? "normal",
+        textAlign: el.textAlign,
         background: "transparent",
         border: "1px solid #999",
         outline: "none",
