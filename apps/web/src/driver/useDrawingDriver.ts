@@ -163,6 +163,10 @@ export function useDrawingDriver({
       ) {
         renderer.setLasso([])
       }
+      // A drag abandoned by a tool switch must not leave a stale "erasing" state behind.
+      if (s.activeTool !== prev.activeTool && prev.activeTool === "eraser") {
+        useAppStore.getState().resetToolState("eraser")
+      }
     })
 
     const resolveGrid = (): GridSnap => {

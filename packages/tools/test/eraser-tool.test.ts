@@ -110,6 +110,29 @@ describe("eraser tool", () => {
     expect(drag([frame], [point(100, 100), point(150, 100)]).isDeleted(frame.id)).toBe(false)
     expect(drag([frame], [point(100, 100), point(198, 100)]).isDeleted(frame.id)).toBe(true)
   })
+
+  it("the frame border band is FRAME_EDGE_PX screen px, so it narrows in world units at zoom 2", () => {
+    const frame = newFrame({ x: 0, y: 0, width: 200, height: 200 })
+    const zoomed = makeCtx({
+      readElements: () => [frame],
+      viewTransform: { scrollX: 0, scrollY: 0, zoom: 2 },
+    })
+    const at = (x: number) =>
+      eraserTool.reduce(eraserTool.initial, { type: "pointerDown", at: point(x, 100) }, zoomed)[1]
+    // 6 screen px = 3 world units at zoom 2: x=196 (4 inside) misses, x=198 (2 inside) hits.
+    expect(at(196)).toEqual([])
+    expect(at(198)).toHaveLength(1)
+  })
+
+  it("a pointerDown while a stale erasing state lingers starts fresh, not from the old trail", () => {
+    const between = rect(50) // sits on the stale segment from (5,5) to (100,5)
+    const ctx = makeCtx({ readElements: () => [between] })
+    const stale: EraserState = { phase: "erasing", before: [], erasedIds: [], trail: [point(5, 5)] }
+    const [state, down] = eraserTool.reduce(stale, { type: "pointerDown", at: point(100, 5) }, ctx)
+    const [, move] = eraserTool.reduce(state, { type: "pointerMove", at: point(101, 5) }, ctx)
+    expect([...down, ...move]).toEqual([])
+    expect(state.phase === "erasing" && state.trail).toEqual([point(100, 5)])
+  })
 })
 
 const run = (scene: Scene, effects: Effects): void => {

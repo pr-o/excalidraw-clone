@@ -109,14 +109,15 @@ export const eraserTool: Tool<EraserState, ToolEvent> = {
   name: "eraser",
   initial: ERASER_INITIAL,
   reduce(state, event, ctx) {
-    if (state.phase === "idle") {
-      if (event.type !== "pointerDown") return [state, NO_EFFECTS]
+    // Any pointerDown starts a fresh gesture, even over a stale erasing state.
+    if (event.type === "pointerDown") {
       return eraseAt(
         { phase: "erasing", before: ctx.readElements(), erasedIds: [], trail: [event.at] },
         [event.at],
         ctx,
       )
     }
+    if (state.phase === "idle") return [state, NO_EFFECTS]
     switch (event.type) {
       case "pointerMove": {
         const last = state.trail[state.trail.length - 1] ?? event.at
