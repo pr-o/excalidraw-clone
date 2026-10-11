@@ -2,6 +2,7 @@ import {
   type ExcalidrawElement,
   Scene,
   newArrow,
+  newFrame,
   newLine,
   newRectangle,
   newText,
@@ -102,6 +103,12 @@ describe("eraser tool", () => {
     const { state, isDeleted } = drag([r], [point(5, 5)], "escape")
     expect(state.phase).toBe("idle")
     expect(isDeleted(r.id)).toBe(false)
+  })
+
+  it("sweeping a frame's interior keeps the frame; crossing its border erases it", () => {
+    const frame = newFrame({ x: 0, y: 0, width: 200, height: 200 })
+    expect(drag([frame], [point(100, 100), point(150, 100)]).isDeleted(frame.id)).toBe(false)
+    expect(drag([frame], [point(100, 100), point(198, 100)]).isDeleted(frame.id)).toBe(true)
   })
 })
 

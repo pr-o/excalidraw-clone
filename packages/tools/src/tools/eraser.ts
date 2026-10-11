@@ -1,4 +1,4 @@
-import type { Point } from "@excalidraw-clone/geometry"
+import { type Point, pointInRectangle } from "@excalidraw-clone/geometry"
 import { type ExcalidrawElement, expandIdsToGroups, hitTestElement } from "@excalidraw-clone/scene"
 import type { Tool, ToolContext, ToolEffect, ToolEvent } from "../types"
 import { NO_EFFECTS } from "../types"
@@ -20,6 +20,22 @@ const ERASER_INITIAL: EraserState = { phase: "idle" }
 /** Hit-test spacing along a drag, in screen px, so fast drags can't jump over thin lines. */
 const STEP_PX = 4
 
+/** How close (screen px) the path must pass to a frame's border to erase the frame,
+ *  so sweeping through a frame to erase its contents leaves the frame alone. */
+const FRAME_EDGE_PX = 6
+
+const inset = (e: ExcalidrawElement, d: number) => ({
+  x: e.x + d,
+  y: e.y + d,
+  width: e.width - 2 * d,
+  height: e.height - 2 * d,
+})
+
+const touches = (e: ExcalidrawElement, p: Point, edge: number): boolean =>
+  e.type === "frame"
+    ? pointInRectangle(p, inset(e, -edge), e.angle) && !pointInRectangle(p, inset(e, edge), e.angle)
+    : hitTestElement(e, p)
+
 /** Points from `a` (exclusive) to `b` (inclusive), at most `step` apart. */
 const samplesBetween = (a: Point, b: Point, step: number): Point[] => {
   const n = Math.max(1, Math.ceil(Math.hypot(b.x - a.x, b.y - a.y) / step))
@@ -38,9 +54,10 @@ const idsUnder = (
   points: readonly Point[],
   elements: readonly ExcalidrawElement[],
   skip: ReadonlySet<string>,
+  edge: number,
 ): string[] => {
   const hit = elements
-    .filter((e) => !skip.has(e.id) && erasable(e) && points.some((p) => hitTestElement(e, p)))
+    .filter((e) => !skip.has(e.id) && erasable(e) && points.some((p) => touches(e, p, edge)))
     .map((e) => e.id)
   if (hit.length === 0) return []
   const byId = new Map(elements.map((e) => [e.id, e]))
@@ -75,7 +92,12 @@ const eraseAt = (
   points: readonly Point[],
   ctx: ToolContext,
 ): [EraserState, readonly ToolEffect[]] => {
-  const ids = idsUnder(points, ctx.readElements(), new Set(state.erasedIds))
+  const ids = idsUnder(
+    points,
+    ctx.readElements(),
+    new Set(state.erasedIds),
+    FRAME_EDGE_PX / ctx.viewTransform.zoom,
+  )
   if (ids.length === 0) return [state, NO_EFFECTS]
   return [
     { ...state, erasedIds: [...state.erasedIds, ...ids] },
