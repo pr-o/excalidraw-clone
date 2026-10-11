@@ -5,6 +5,9 @@ import { NO_EFFECTS } from "../types"
 
 type Erasing = {
   phase: "erasing"
+  /** Live elements at pointerDown. Escape puts them back verbatim, which also restores
+   *  the labels, arrow bindings and frame membership the scene's reconcile pass dropped. */
+  before: readonly ExcalidrawElement[]
   erasedIds: readonly string[]
   /** Every pointer position of this drag; drawn as the overlay trail. */
   trail: readonly Point[]
@@ -57,6 +60,16 @@ const markDeleted =
     }
   }
 
+const restore =
+  (before: readonly ExcalidrawElement[]) =>
+  (draft: ExcalidrawElement[]): void => {
+    const byId = new Map(before.map((e) => [e.id, e]))
+    for (let i = 0; i < draft.length; i += 1) {
+      const original = byId.get(draft[i]!.id)
+      if (original) draft[i] = original
+    }
+  }
+
 const eraseAt = (
   state: Erasing,
   points: readonly Point[],
@@ -76,7 +89,11 @@ export const eraserTool: Tool<EraserState, ToolEvent> = {
   reduce(state, event, ctx) {
     if (state.phase === "idle") {
       if (event.type !== "pointerDown") return [state, NO_EFFECTS]
-      return eraseAt({ phase: "erasing", erasedIds: [], trail: [event.at] }, [event.at], ctx)
+      return eraseAt(
+        { phase: "erasing", before: ctx.readElements(), erasedIds: [], trail: [event.at] },
+        [event.at],
+        ctx,
+      )
     }
     switch (event.type) {
       case "pointerMove": {
@@ -92,25 +109,13 @@ export const eraserTool: Tool<EraserState, ToolEvent> = {
             ? NO_EFFECTS
             : [{ kind: "mutation", apply: markDeleted(state.erasedIds) }],
         ]
-      case "escape": {
-        const ids = new Set(state.erasedIds)
-        if (ids.size === 0) return [ERASER_INITIAL, NO_EFFECTS]
+      case "escape":
         return [
           ERASER_INITIAL,
-          [
-            {
-              kind: "mutation",
-              apply: (draft) => {
-                for (let i = 0; i < draft.length; i += 1) {
-                  const e = draft[i]!
-                  if (ids.has(e.id)) draft[i] = { ...e, isDeleted: false }
-                }
-              },
-              skipHistory: true,
-            },
-          ],
+          state.erasedIds.length === 0
+            ? NO_EFFECTS
+            : [{ kind: "mutation", apply: restore(state.before), skipHistory: true }],
         ]
-      }
       default:
         return [state, NO_EFFECTS]
     }

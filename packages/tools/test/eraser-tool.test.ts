@@ -1,4 +1,11 @@
-import { type ExcalidrawElement, newLine, newRectangle } from "@excalidraw-clone/scene"
+import {
+  type ExcalidrawElement,
+  Scene,
+  newArrow,
+  newLine,
+  newRectangle,
+  newText,
+} from "@excalidraw-clone/scene"
 import { describe, expect, it } from "vitest"
 import { type EraserState, eraserTool } from "../src"
 import { applyMutation, makeCtx, point } from "./test-utils"
@@ -95,5 +102,74 @@ describe("eraser tool", () => {
     const { state, isDeleted } = drag([r], [point(5, 5)], "escape")
     expect(state.phase).toBe("idle")
     expect(isDeleted(r.id)).toBe(false)
+  })
+})
+
+const run = (scene: Scene, effects: Effects): void => {
+  for (const e of effects) {
+    if (e.kind === "mutation")
+      scene.mutate(e.apply, e.skipHistory ? { skipHistory: true } : undefined)
+  }
+}
+
+describe("eraser tool against a real Scene", () => {
+  it("escape restores an erased shape together with its label and arrow binding", () => {
+    const base = newRectangle({ x: 0, y: 0, width: 40, height: 40 })
+    const label = newText({ x: 0, y: 0, text: "hi", containerId: base.id })
+    const arrow = {
+      ...newArrow({ x: 100, y: 20 }),
+      points: [point(0, 0), point(-56, 0)],
+      endBinding: { elementId: base.id, focus: 0, gap: 4 },
+    }
+    const box = {
+      ...base,
+      boundElements: [
+        { id: label.id, type: "text" as const },
+        { id: arrow.id, type: "arrow" as const },
+      ],
+    }
+    const scene = new Scene([box, label, arrow])
+    const ctx = makeCtx({ readElements: () => scene.getElements() })
+    const get = (id: string) => scene.getElementsIncludingDeleted().find((e) => e.id === id)!
+
+    const [erasing, down] = eraserTool.reduce(
+      eraserTool.initial,
+      { type: "pointerDown", at: point(20, 20) },
+      ctx,
+    )
+    run(scene, down)
+    // Same side effects as the Delete key: label cascades, arrow survives unbound.
+    expect(get(label.id).isDeleted).toBe(true)
+    expect(get(arrow.id).isDeleted).toBe(false)
+    const unbound = get(arrow.id)
+    expect(unbound.type === "arrow" ? unbound.endBinding : "not an arrow").toBeNull()
+
+    const [, esc] = eraserTool.reduce(erasing, { type: "escape" }, ctx)
+    run(scene, esc)
+    expect(get(box.id).isDeleted).toBe(false)
+    expect(get(label.id).isDeleted).toBe(false)
+    const rebound = get(arrow.id)
+    expect(rebound.type === "arrow" ? rebound.endBinding?.elementId : null).toBe(box.id)
+  })
+
+  it("a whole drag is one undo step", () => {
+    const a = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
+    const b = newRectangle({ x: 100, y: 0, width: 10, height: 10 })
+    const scene = new Scene([a, b])
+    const ctx = makeCtx({ readElements: () => scene.getElements() })
+    let [state, effects] = eraserTool.reduce(
+      eraserTool.initial,
+      { type: "pointerDown", at: point(5, 5) },
+      ctx,
+    )
+    run(scene, effects)
+    ;[state, effects] = eraserTool.reduce(state, { type: "pointerMove", at: point(105, 5) }, ctx)
+    run(scene, effects)
+    ;[, effects] = eraserTool.reduce(state, { type: "pointerUp", at: point(105, 5) }, ctx)
+    run(scene, effects)
+    expect(scene.getElements()).toHaveLength(0)
+    scene.undo()
+    expect(scene.getElements()).toHaveLength(2)
+    expect(scene.canUndo()).toBe(false)
   })
 })
