@@ -9,6 +9,8 @@ export interface ResizeOrigin {
   width: number
   height: number
   angle: number
+  /** Free text only: autoResize before the gesture, restored on revert. */
+  autoResize?: boolean
 }
 
 export const computeResize = (
@@ -102,7 +104,11 @@ export const buildResizeMoveEffect = (
     apply: (draft) => {
       const i = draft.findIndex((e) => e.id === elementId)
       if (i < 0) return
-      draft[i] = { ...draft[i]!, ...box }
+      const e = draft[i]!
+      // A side handle on free text turns it into a fixed-width wrapping box.
+      const fixWidth =
+        (handle === "e" || handle === "w") && e.type === "text" && e.containerId === null
+      draft[i] = fixWidth ? { ...e, ...box, autoResize: false } : { ...e, ...box }
     },
     skipHistory: true,
   }
@@ -123,7 +129,11 @@ export const buildResizeRevertEffect = (elementId: string, origin: ResizeOrigin)
     const i = draft.findIndex((e) => e.id === elementId)
     if (i < 0) return
     const e = draft[i]!
-    draft[i] = { ...e, x: origin.x, y: origin.y, width: origin.width, height: origin.height }
+    const box = { x: origin.x, y: origin.y, width: origin.width, height: origin.height }
+    draft[i] =
+      e.type === "text" && origin.autoResize !== undefined
+        ? { ...e, ...box, autoResize: origin.autoResize }
+        : { ...e, ...box }
   },
   skipHistory: true,
 })
@@ -134,4 +144,5 @@ export const snapshotElementBox = (element: ExcalidrawElement): ResizeOrigin => 
   width: element.width,
   height: element.height,
   angle: element.angle,
+  ...(element.type === "text" ? { autoResize: element.autoResize } : {}),
 })

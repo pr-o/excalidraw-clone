@@ -154,9 +154,28 @@ const startHandleDrag = (
 }
 
 const reduceDoubleClick = (at: Point, ctx: ToolContext): Transition => {
-  const bendHandle = findHandleAt(at, ctx.selectedIds, ctx.readElements(), ctx.viewTransform)
-  if (bendHandle && bendHandle.kind === "bend") {
-    return [{ phase: "idle" }, [buildBendRemoveEffect(bendHandle.elementId, bendHandle.index)]]
+  const handle = findHandleAt(at, ctx.selectedIds, ctx.readElements(), ctx.viewTransform)
+  if (handle && handle.kind === "bend") {
+    return [{ phase: "idle" }, [buildBendRemoveEffect(handle.elementId, handle.index)]]
+  }
+  if (handle && handle.kind === "resize") {
+    const id = handle.elementId
+    const e = ctx.readElements().find((el) => el.id === id)
+    if (e && e.type === "text" && e.containerId === null && e.autoResize === false) {
+      // The host re-measures the natural width once autoResize flips back on.
+      return [
+        { phase: "idle" },
+        [
+          {
+            kind: "mutation",
+            apply: (draft) => {
+              const i = draft.findIndex((el) => el.id === id)
+              if (i >= 0) draft[i] = { ...draft[i]!, autoResize: true } as ExcalidrawElement
+            },
+          },
+        ],
+      ]
+    }
   }
   const hit = ctx.hitTest(at)
   if (hit) {
