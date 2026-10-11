@@ -3,12 +3,14 @@ import type {
   Arrowhead,
   DistributeAxis,
   ExcalidrawElement,
+  ExcalidrawTextElement,
   FillStyle,
   FontFamily,
   Roughness,
   Roundness,
   StrokeStyle,
   StrokeWidth,
+  TextAlign,
 } from "@excalidraw-clone/scene"
 
 const STROKE_COLORS = ["#1e1e1e", "#e03131", "#2f9e44", "#1971c2", "#f08c00"] as const
@@ -30,6 +32,7 @@ const FONT_SIZES: readonly (readonly [number, string])[] = [
   [28, "l"],
   [36, "xl"],
 ]
+const TEXT_ALIGNS: readonly TextAlign[] = ["left", "center", "right"]
 const ARROWHEAD_KINDS: readonly (Arrowhead | null)[] = [
   null,
   "arrow",
@@ -55,6 +58,8 @@ const ALIGN_GLYPH: Record<AlignEdge, string> = {
 export interface PropertiesPanelProps {
   t: (key: string) => string
   selectedElements: readonly ExcalidrawElement[]
+  /** Bound labels of the selected containers (labels are not selectable). */
+  labelElements?: readonly ExcalidrawTextElement[]
   onChange: (patch: Partial<ExcalidrawElement>) => void
   onDelete: () => void
   onDuplicate: () => void
@@ -96,6 +101,7 @@ function Choice({
 export function PropertiesPanel({
   t,
   selectedElements,
+  labelElements = [],
   onChange,
   onDelete,
   onDuplicate,
@@ -118,8 +124,15 @@ export function PropertiesPanel({
   const isSharp = roundness !== undefined && !isRound
   const allLinear = selectedElements.every((e) => e.type === "arrow" || e.type === "line")
   const allArrow = selectedElements.every((e) => e.type === "arrow")
-  const allText = selectedElements.every((e) => e.type === "text")
-  const textElements = selectedElements.flatMap((e) => (e.type === "text" ? [e] : []))
+  const labelled = new Set(labelElements.map((l) => l.containerId))
+  // Text section: every selected element is text or carries a bound label.
+  const allText = selectedElements.every((e) => e.type === "text" || labelled.has(e.id))
+  const textElements = [
+    ...selectedElements.flatMap((e) => (e.type === "text" ? [e] : [])),
+    ...labelElements,
+  ]
+  // Arrow/line labels are zero-width and always centered.
+  const canAlignText = !selectedElements.some((e) => e.type === "arrow" || e.type === "line")
   // Legacy elements may lack fontWeight/fontStyle; absent ⟺ "normal".
   const isBold =
     commonValue(
@@ -139,8 +152,9 @@ export function PropertiesPanel({
     field: string,
     items: readonly (readonly [value: V, testId: string, label: React.ReactNode])[],
     group?: string,
+    from: readonly object[] = selectedElements,
   ): React.ReactElement => {
-    const current = common<V>(field)
+    const current = commonValue<V>(from, field)
     return (
       <div
         className={`flex gap-1${group ? " mt-1" : ""}`}
@@ -280,6 +294,7 @@ export function PropertiesPanel({
               t(`properties.fontFamily_${key}`),
             ]),
             t("properties.fontFamily"),
+            textElements,
           )}
           <div className="mt-1 flex gap-1">
             <Choice
@@ -307,7 +322,15 @@ export function PropertiesPanel({
               t(`properties.fontSize_${key}`),
             ]),
             t("properties.fontSize"),
+            textElements,
           )}
+          {canAlignText &&
+            row(
+              "textAlign",
+              TEXT_ALIGNS.map((a) => [a, `text-align-${a}`, t(`properties.textAlign_${a}`)]),
+              t("properties.textAlign"),
+              textElements,
+            )}
         </Section>
       )}
 

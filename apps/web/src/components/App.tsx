@@ -9,6 +9,7 @@ import {
   computeStats,
   distributeElements,
   duplicateElements,
+  type ExcalidrawTextElement,
   expandIdsToGroups,
   flipElements,
   groupElements,
@@ -273,6 +274,15 @@ function Inner(): React.ReactElement {
     const ids = new Set(selectedIds)
     return scene.getElements().filter((e) => ids.has(e.id))
   }, [selectedIds, scene, sceneRevision])
+  const selectedLabels = useMemo(() => {
+    const ids = new Set(selectedIds)
+    return scene
+      .getElements()
+      .filter(
+        (e): e is ExcalidrawTextElement =>
+          e.type === "text" && e.containerId !== null && ids.has(e.containerId),
+      )
+  }, [selectedIds, scene, sceneRevision])
   const hasLockedElements = useMemo(
     () => scene.getElements().some((e) => e.locked),
     [scene, sceneRevision],
@@ -472,6 +482,7 @@ function Inner(): React.ReactElement {
             <PropertiesPanel
               t={t}
               selectedElements={selectedElements}
+              labelElements={selectedLabels}
               onChange={(patch) =>
                 replaceElements(scene, (el) => applySelectionPatch(el, patch, selectedIds))
               }

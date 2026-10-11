@@ -1,4 +1,4 @@
-import { newArrow, newLine, newRectangle, newText } from "@excalidraw-clone/scene"
+import { newArrow, newLabelFor, newLine, newRectangle, newText } from "@excalidraw-clone/scene"
 import { render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { describe, expect, it, vi } from "vitest"
@@ -349,6 +349,61 @@ describe("PropertiesPanel — Text section", () => {
     const b = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
     render(<PropertiesPanel t={t} selectedElements={[a, b]} {...handlers} />)
     expect(screen.queryByTestId("font-family-1")).toBeNull()
+  })
+
+  it("shows the Text section for a labelled shape", () => {
+    const rect = newRectangle({ x: 0, y: 0, width: 100, height: 60 })
+    const label = { ...newLabelFor(rect), text: "hi" }
+    render(
+      <PropertiesPanel t={t} selectedElements={[rect]} labelElements={[label]} {...handlers} />,
+    )
+    expect(screen.getByTestId("font-family-1")).toBeInTheDocument()
+    expect(screen.getByTestId("text-align-center")).toBeInTheDocument()
+  })
+
+  it("marks the label's font family and alignment as pressed for a labelled shape", () => {
+    const rect = newRectangle({ x: 0, y: 0, width: 100, height: 60 })
+    const label = {
+      ...newLabelFor(rect),
+      text: "hi",
+      fontFamily: 3 as const,
+      textAlign: "right" as const,
+    }
+    render(
+      <PropertiesPanel t={t} selectedElements={[rect]} labelElements={[label]} {...handlers} />,
+    )
+    expect(screen.getByTestId("font-family-3")).toHaveAttribute("aria-pressed", "true")
+    expect(screen.getByTestId("text-align-right")).toHaveAttribute("aria-pressed", "true")
+    expect(screen.getByTestId("text-align-center")).toHaveAttribute("aria-pressed", "false")
+  })
+
+  it.each(["left", "center", "right"] as const)(
+    "emits onChange({ textAlign: %s }) from its labelled button",
+    async (align) => {
+      const el = newText({ x: 0, y: 0, text: "a" })
+      const onChange = vi.fn()
+      render(<PropertiesPanel t={t} selectedElements={[el]} {...handlers} onChange={onChange} />)
+      const button = screen.getByTestId(`text-align-${align}`)
+      expect(button).toHaveTextContent(`properties.textAlign_${align}`)
+      await userEvent.click(button)
+      expect(onChange).toHaveBeenCalledWith({ textAlign: align })
+    },
+  )
+
+  it("groups the align buttons under an accessible label", () => {
+    const el = newText({ x: 0, y: 0, text: "a" })
+    render(<PropertiesPanel t={t} selectedElements={[el]} {...handlers} />)
+    expect(screen.getByRole("group", { name: "properties.textAlign" })).toBeInTheDocument()
+  })
+
+  it("hides the align row when an arrow is selected", () => {
+    const arrow = newArrow({ x: 0, y: 0 })
+    const label = { ...newText({ x: 0, y: 0, text: "hi" }), containerId: arrow.id }
+    render(
+      <PropertiesPanel t={t} selectedElements={[arrow]} labelElements={[label]} {...handlers} />,
+    )
+    expect(screen.getByTestId("font-family-1")).toBeInTheDocument()
+    expect(screen.queryByTestId("text-align-left")).toBeNull()
   })
 
   it.each([
