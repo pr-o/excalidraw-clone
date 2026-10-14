@@ -155,6 +155,9 @@ export function useDrawingDriver({
         renderer.setGrid({ enabled: s.gridEnabled, size: s.gridSize })
       }
       if (s.selectedIds !== prev.selectedIds) renderer.setSelection(s.selectedIds)
+      if (s.textEditElementId !== prev.textEditElementId) {
+        renderer.setHiddenElement(s.textEditElementId)
+      }
       if (s.activeGuides !== prev.activeGuides) renderer.setGuides(s.activeGuides)
       if (s.activeTool !== prev.activeTool && prev.activeTool === "laser") laser.clear()
       if (

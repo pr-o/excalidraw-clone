@@ -31,6 +31,7 @@ export class CanvasRenderer {
   private readonly overlayCtx: CanvasRenderingContext2D | null
   private marquee: MarqueeBox | null = null
   private highlight: readonly string[] = []
+  private hiddenId: string | null = null
   private guides: readonly AlignmentGuide[] = []
   private lasso: readonly Point[] = []
 
@@ -118,6 +119,12 @@ export class CanvasRenderer {
     this.requestRedraw()
   }
 
+  /** Skip drawing one element (the text being edited in the DOM overlay). */
+  setHiddenElement(id: string | null): void {
+    this.hiddenId = id
+    this.requestRedraw()
+  }
+
   setGuides(guides: readonly AlignmentGuide[]): void {
     this.guides = guides
     this.requestRedraw()
@@ -183,7 +190,7 @@ export class CanvasRenderer {
       this.theme,
     )
     for (const element of elements) {
-      if (!isElementVisible(element, view)) continue
+      if (element.id === this.hiddenId || !isElementVisible(element, view)) continue
       const container =
         element.type === "text" && element.containerId !== null
           ? byId.get(element.containerId)
