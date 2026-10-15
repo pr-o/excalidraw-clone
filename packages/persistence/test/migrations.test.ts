@@ -71,6 +71,21 @@ describe("migrate — image crop normalisation", () => {
     expect(load(crop)).toEqual({ x: 0.1, y: 0.1, width: 0.3, height: 0.4 })
   })
 
+  it("converts a crop saved by upstream excalidraw.com (real file values)", () => {
+    const c = load({
+      x: 18.640776699028816,
+      y: 10.252430739911931,
+      width: 160.54365139563112,
+      height: 171.4174674321149,
+      naturalWidth: 200,
+      naturalHeight: 200,
+    }) as { x: number; y: number; width: number; height: number }
+    expect(c.x).toBeCloseTo(0.0932, 4)
+    expect(c.y).toBeCloseTo(0.0513, 4)
+    expect(c.width).toBeCloseTo(0.8027, 4)
+    expect(c.height).toBeCloseTo(0.8571, 4)
+  })
+
   it("clamps a pixel crop that overshoots the natural size", () => {
     const crop = { x: 150, y: 0, width: 100, height: 100, naturalWidth: 200, naturalHeight: 100 }
     expect(load(crop)).toEqual({ x: 0.75, y: 0, width: 0.25, height: 1 })
