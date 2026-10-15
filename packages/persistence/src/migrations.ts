@@ -59,7 +59,39 @@ export function migrate(raw: unknown): ExcalidrawData {
     if (!fn) throw new Error(`migrate: no migration registered for version ${cur.version}`)
     cur = fn(cur)
   }
-  return cur as unknown as ExcalidrawData
+  return normalizeImageCrops(cur) as unknown as ExcalidrawData
+}
+
+const clamp01 = (n: number): number => Math.min(1, Math.max(0, n))
+
+/** Crop is stored as 0..1 fractions; upstream files use pixels + natural size, or omit it. */
+function normalizeCrop(crop: unknown): unknown {
+  if (crop === undefined || crop === null) return null
+  const c = crop as Record<string, number>
+  const { naturalWidth: nw, naturalHeight: nh } = c
+  if (typeof nw !== "number" || typeof nh !== "number") return crop
+  if (!(nw > 0 && nh > 0 && c.width! > 0 && c.height! > 0)) return null
+  const x = clamp01(c.x! / nw)
+  const y = clamp01(c.y! / nh)
+  return {
+    x,
+    y,
+    width: Math.min(c.width! / nw, 1 - x),
+    height: Math.min(c.height! / nh, 1 - y),
+  }
+}
+
+function normalizeImageCrops(data: AnyData): AnyData {
+  const pages = (data.pages as { elements: Record<string, unknown>[] }[] | undefined) ?? []
+  return {
+    ...data,
+    pages: pages.map((page) => ({
+      ...page,
+      elements: page.elements.map((el) =>
+        el.type === "image" ? { ...el, crop: normalizeCrop(el.crop) } : el,
+      ),
+    })),
+  }
 }
 
 function isAnyData(v: unknown): v is AnyData {
