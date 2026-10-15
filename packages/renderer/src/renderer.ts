@@ -2,6 +2,7 @@ import type { AlignmentGuide, Bounds, Point, ViewTransform } from "@excalidraw-c
 import { LABELABLE_TYPES, LINEAR_LABELABLE_TYPES } from "@excalidraw-clone/scene"
 import type { ExcalidrawElement, Scene } from "@excalidraw-clone/scene"
 import { RoughCanvas } from "roughjs/bin/canvas"
+import { drawCropDim } from "./crop-overlay"
 import { isElementVisible } from "./culling"
 import { drawElement } from "./draw-element"
 import { drawGrid } from "./grid"
@@ -32,6 +33,7 @@ export class CanvasRenderer {
   private marquee: MarqueeBox | null = null
   private highlight: readonly string[] = []
   private hiddenId: string | null = null
+  private cropId: string | null = null
   private guides: readonly AlignmentGuide[] = []
   private lasso: readonly Point[] = []
 
@@ -122,6 +124,12 @@ export class CanvasRenderer {
   /** Skip drawing one element (the text being edited in the DOM overlay). */
   setHiddenElement(id: string | null): void {
     this.hiddenId = id
+    this.requestRedraw()
+  }
+
+  /** Crop mode: ghost the hidden part of this image on the overlay. */
+  setCropElement(id: string | null): void {
+    this.cropId = id
     this.requestRedraw()
   }
 
@@ -218,7 +226,8 @@ export class CanvasRenderer {
       !this.marquee &&
       this.highlight.length === 0 &&
       this.guides.length === 0 &&
-      this.lasso.length === 0
+      this.lasso.length === 0 &&
+      this.cropId === null
     ) {
       return
     }
@@ -236,5 +245,11 @@ export class CanvasRenderer {
     )
     drawAlignmentGuides(ctx, this.guides, this.viewTransform, this.theme)
     drawLasso(ctx, this.lasso, this.viewTransform, this.theme)
+    const cropEl = this.cropId === null ? undefined : elements.find((e) => e.id === this.cropId)
+    if (cropEl?.type === "image" && cropEl.fileId !== null) {
+      const img = this.imageMap.get(cropEl.fileId)
+      if (img && img.complete && img.naturalWidth > 0)
+        drawCropDim(ctx, cropEl, img, this.viewTransform)
+    }
   }
 }

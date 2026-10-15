@@ -158,6 +158,18 @@ export function useDrawingDriver({
       if (s.textEditElementId !== prev.textEditElementId) {
         renderer.setHiddenElement(s.textEditElementId)
       }
+      if (s.cropElementId !== prev.cropElementId) renderer.setCropElement(s.cropElementId)
+      // Crop mode lasts only while that one image stays the sole selection on the
+      // selection tool; page switches, tool switches and clicking away all break it.
+      if (
+        s.cropElementId !== null &&
+        (s.activeTool !== "selection" ||
+          s.selectedIds.length !== 1 ||
+          s.selectedIds[0] !== s.cropElementId)
+      ) {
+        s.setCropElementId(null)
+        s.resetToolState("selection")
+      }
       if (s.activeGuides !== prev.activeGuides) renderer.setGuides(s.activeGuides)
       if (s.activeTool !== prev.activeTool && prev.activeTool === "laser") laser.clear()
       if (

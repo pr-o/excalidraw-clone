@@ -31,6 +31,7 @@ const RECORDABLE_METHODS = [
   "ellipse",
   "fill",
   "stroke",
+  "clip",
   "fillText",
   "strokeText",
   "setLineDash",
@@ -48,6 +49,7 @@ const RECORDABLE_PROPS = [
   "lineCap",
   "lineJoin",
   "lineDashOffset",
+  "globalCompositeOperation",
 ] as const
 
 export const createMockContext = (): MockCanvasContext => {

@@ -40,6 +40,9 @@ export function applyEffects(
       case "startTextEdit":
         useAppStore.getState().setTextEditElementId(eff.elementId)
         break
+      case "setCrop":
+        useAppStore.getState().setCropElementId(eff.elementId)
+        break
       case "laserMove":
         laser?.push(eff.at)
         break
