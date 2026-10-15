@@ -198,6 +198,25 @@ describe("ExportDialog — selection scope", () => {
     expect(onExport).toHaveBeenCalledWith(expect.objectContaining({ scope: "page" }))
   })
 
+  it("starts on the selection scope when defaultScope says so", async () => {
+    const onExport = vi.fn()
+    render(
+      <ExportDialog
+        t={t}
+        open
+        onClose={() => {}}
+        onExport={onExport}
+        pages={ONE_PAGE}
+        activePageId="p1"
+        hasSelection
+        defaultScope="selection"
+      />,
+    )
+    expect(screen.getByTestId("scope-selection")).toHaveAttribute("aria-pressed", "true")
+    await userEvent.click(confirm())
+    expect(onExport).toHaveBeenCalledWith(expect.objectContaining({ scope: "selection" }))
+  })
+
   it("exports scope 'selection' when chosen", async () => {
     const onExport = vi.fn()
     render(

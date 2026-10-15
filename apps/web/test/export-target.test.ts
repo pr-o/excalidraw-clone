@@ -55,6 +55,31 @@ describe("resolveExportTarget — page scope", () => {
   })
 })
 
+describe("resolveExportTarget — single frame", () => {
+  it("names the export after a lone selected frame", () => {
+    const f = { ...newFrame({ x: 0, y: 0, width: 100, height: 100 }), name: "Intro" }
+    const p = createPageRecord("Page 1", [f])
+    const out = resolveExportTarget([p], p.id, [f.id], { pageId: p.id, scope: "selection" })
+    expect(out.pageName).toBe("Intro")
+    expect(exportFilename(out.pageName, out.scope, "png")).toBe("Intro-selection.png")
+  })
+
+  it("keeps the page name for an unnamed frame or a multi-selection", () => {
+    const f = newFrame({ x: 0, y: 0, width: 100, height: 100 })
+    const r = newRectangle({ x: 5, y: 5, width: 10, height: 10 })
+    const p = createPageRecord("Page 1", [f, r])
+    expect(
+      resolveExportTarget([p], p.id, [f.id], { pageId: p.id, scope: "selection" }).pageName,
+    ).toBe("Page 1")
+    const named = { ...f, name: "Intro" }
+    const p2 = createPageRecord("Page 1", [named, r])
+    expect(
+      resolveExportTarget([p2], p2.id, [named.id, r.id], { pageId: p2.id, scope: "selection" })
+        .pageName,
+    ).toBe("Page 1")
+  })
+})
+
 describe("resolveExportTarget — selection scope", () => {
   it("exports only the selected elements of the active page", () => {
     const { b, p1, pages } = twoPages()

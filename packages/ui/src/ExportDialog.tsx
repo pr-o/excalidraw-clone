@@ -34,6 +34,8 @@ export interface ExportDialogProps {
   activePageId: string
   /** True when the active page has a non-empty selection. */
   hasSelection?: boolean
+  /** Scope preselected on open (still only shown when there is a selection). */
+  defaultScope?: ExportOptions["scope"]
   defaultBackground?: ExportOptions["background"]
   className?: string
 }
@@ -51,6 +53,7 @@ export function ExportDialog({
   pages,
   activePageId,
   hasSelection = false,
+  defaultScope = "page",
   defaultBackground,
   className,
 }: ExportDialogProps): React.ReactElement | null {
@@ -70,11 +73,11 @@ export function ExportDialog({
   useEffect(() => {
     if (!open) return
     setBackground(defaultBackground ?? "white")
-    setScope("page")
+    setScope(defaultScope)
     setPageId(activePageId)
     setAllPages(false)
     setCopyStatus("idle")
-  }, [open, defaultBackground, activePageId])
+  }, [open, defaultBackground, defaultScope, activePageId])
 
   if (!open) return null
 

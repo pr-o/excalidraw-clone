@@ -34,7 +34,12 @@ export function resolveExportTarget(
   const all = page.scene.getElements()
   if (request.scope === "selection" && page.id === activePageId) {
     const closure = expandIdsToCopyClosure(selectedIds, all)
-    if (closure.length > 0) return { elements: closure, pageName: page.name, scope: "selection" }
+    if (closure.length > 0) {
+      // A lone named frame exports under its own name.
+      const only = selectedIds.length === 1 ? all.find((e) => e.id === selectedIds[0]) : undefined
+      const frameName = only?.type === "frame" ? only.name?.trim() : undefined
+      return { elements: closure, pageName: frameName || page.name, scope: "selection" }
+    }
   }
   return { elements: all, pageName: page.name, scope: "page" }
 }

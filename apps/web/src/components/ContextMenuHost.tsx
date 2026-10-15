@@ -155,6 +155,13 @@ export function ContextMenuHost({
           label: t("properties.flip_vertical"),
           perform: () => patchScene(scene, flipElements(scene.getElements(), elementIds, "y")),
         })
+        if (selectedElements.length === 1 && selectedElements[0]?.type === "frame") {
+          items.push({
+            id: "export-frame",
+            label: t("contextMenu.exportFrame"),
+            perform: () => useAppStore.getState().setOpenDialog("export"),
+          })
+        }
         if (resetCrop(scene.getElements(), elementIds).length > 0) {
           items.push({
             id: "reset-crop",

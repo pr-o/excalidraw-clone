@@ -136,3 +136,25 @@ test("dragging a member out clears frameId; deleting the frame releases members"
   expect(rects.length).toBe(2)
   expect(rects.every((r) => r.frameId === null)).toBe(true)
 })
+
+test("right-click a frame → Export frame… opens the export dialog on the selection", async ({
+  page,
+}) => {
+  await freshCanvas(page)
+  await drawRect(page, { x: 120, y: 120 }, { x: 160, y: 160 })
+  await drawRect(page, { x: 600, y: 400 }, { x: 640, y: 440 }) // outside the frame
+  await drawSurroundingFrame(page)
+  await page.locator('[data-testid="toolbar-selection"]').click()
+
+  const box = (await page.locator("canvas").first().boundingBox())!
+  await page.mouse.click(box.x + 270, box.y + 190, { button: "right" })
+  await page.getByRole("menuitem", { name: "Export frame…" }).click()
+
+  await expect(page.locator('[data-testid="scope-selection"]')).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  )
+  const downloadPromise = page.waitForEvent("download")
+  await page.getByRole("button", { name: "Export", exact: true }).click()
+  expect((await downloadPromise).suggestedFilename()).toMatch(/-selection\.png$/)
+})

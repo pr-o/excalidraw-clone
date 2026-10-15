@@ -39,6 +39,12 @@ export function Dialogs({ scene, pages, activePageId }: DialogsProps): React.Rea
   // Only computed while the dialog is open; the closure check walks the page.
   const hasSelection = exportOpen && hasExportableSelection(scene.getElements(), selectedIds)
 
+  // A lone selected frame opens the dialog scoped to it ("Export frame…").
+  const frameSelected =
+    hasSelection &&
+    selectedIds.length === 1 &&
+    scene.getElements().some((e) => e.id === selectedIds[0] && e.type === "frame")
+
   const targetFor = (opts: ExportOptions): ExportTarget =>
     resolveExportTarget(pages, activePageId, selectedIds, opts)
 
@@ -80,6 +86,7 @@ export function Dialogs({ scene, pages, activePageId }: DialogsProps): React.Rea
         pages={pages.map((p) => ({ id: p.id, name: p.name }))}
         activePageId={activePageId}
         hasSelection={hasSelection}
+        defaultScope={frameSelected ? "selection" : "page"}
         defaultBackground={resolvedTheme === "dark" ? "dark" : "white"}
       />
       <ResetCanvasDialog
