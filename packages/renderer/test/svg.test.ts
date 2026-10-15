@@ -32,6 +32,14 @@ describe("renderToSVG", () => {
     expect(svg).toContain('height="40"')
   })
 
+  it("treats an image with no crop key as uncropped", () => {
+    const { crop: _c, ...rest } = newImage({ x: 5, y: 6, width: 80, height: 40, fileId: "f1" })
+    const files = new Map([["f1", "data:image/png;base64,AAAA"]])
+    const svg = renderToSVG(new Scene([rest as unknown as ReturnType<typeof newImage>]), { files })
+    expect(svg).toContain("<image")
+    expect(svg).not.toContain("<clipPath")
+  })
+
   it("omits image elements whose file is not provided", () => {
     const el = newImage({ x: 5, y: 6, width: 80, height: 40, fileId: "f1" })
     const svg = renderToSVG(new Scene([el]))

@@ -43,7 +43,8 @@ export const drawElement = (
     const img = element.fileId === null ? undefined : getImage(element.fileId)
     if (img && img.complete && img.naturalWidth > 0) {
       const c = element.crop
-      if (c === null) {
+      // imported elements may omit `crop`
+      if (c == null) {
         ctx.drawImage(img, 0, 0, element.width, element.height)
       } else {
         const { naturalWidth: nw, naturalHeight: nh } = img

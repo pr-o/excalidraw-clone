@@ -33,6 +33,14 @@ describe("drawElement image branch", () => {
     expect(callsOf(ctx, "translate")[0]?.args).toEqual([30, 40])
   })
 
+  it("treats an image with no crop key as uncropped", () => {
+    const { ctx, draw } = setup()
+    const img = loadedImage()
+    const { crop: _c, ...rest } = newImage({ x: 0, y: 0, width: 200, height: 100, fileId: "f1" })
+    draw(rest as unknown as ReturnType<typeof newImage>, () => img)
+    expect(callsOf(ctx, "drawImage")[0]?.args).toEqual([img, 0, 0, 200, 100])
+  })
+
   it("rotates around the element center before drawing", () => {
     const { ctx, draw } = setup()
     const el = {

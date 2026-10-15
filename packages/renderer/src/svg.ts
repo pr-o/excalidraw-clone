@@ -153,7 +153,8 @@ function renderElement(
     if (href === undefined) return null
     const group = createGroup(doc, el)
     const c = el.crop
-    if (c === null) {
+    // imported elements may omit `crop`
+    if (c == null) {
       group.appendChild(svgEl(doc, "image", { href, width: el.width, height: el.height }))
     } else {
       const kx = el.width / c.width
