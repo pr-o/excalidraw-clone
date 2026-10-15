@@ -13,6 +13,13 @@ import type {
   TextAlign,
 } from "@excalidraw-clone/scene"
 
+// Chromium-only; the button is simply absent elsewhere.
+interface EyeDropperApi {
+  open: () => Promise<{ sRGBHex: string }>
+}
+const eyeDropperCtor = (): (new () => EyeDropperApi) | undefined =>
+  (globalThis as { EyeDropper?: new () => EyeDropperApi }).EyeDropper
+
 const STROKE_COLORS = ["#1e1e1e", "#e03131", "#2f9e44", "#1971c2", "#f08c00"] as const
 const BG_COLORS = ["transparent", "#ffc9c9", "#b2f2bb", "#a5d8ff", "#ffec99"] as const
 const STROKE_WIDTHS: readonly StrokeWidth[] = [1, 2, 4]
@@ -194,6 +201,25 @@ export function PropertiesPanel({
           onClick={() => onChange({ [field]: c })}
         />
       ))}
+      {eyeDropperCtor() && (
+        <button
+          type="button"
+          data-testid={`${prefix}-eyedropper`}
+          aria-label={t("properties.eyedropper")}
+          title={t("properties.eyedropper")}
+          className="h-6 w-6 rounded border border-panel text-xs"
+          onClick={() => {
+            const Ctor = eyeDropperCtor()
+            // Escape rejects the promise; nothing to apply.
+            void new Ctor!()
+              .open()
+              .then(({ sRGBHex }) => onChange({ [field]: sRGBHex }))
+              .catch(() => {})
+          }}
+        >
+          💧
+        </button>
+      )}
     </div>
   )
 

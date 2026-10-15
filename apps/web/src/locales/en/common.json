@@ -98,7 +98,8 @@
     "lock": "Lock",
     "flip_horizontal": "Flip horizontal",
     "flip_vertical": "Flip vertical",
-    "reset_crop": "Reset crop"
+    "reset_crop": "Reset crop",
+    "eyedropper": "Pick colour from screen"
   },
   "menu": {
     "label": "Menu",

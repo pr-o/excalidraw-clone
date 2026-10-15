@@ -6,9 +6,9 @@ import {
   newRectangle,
   newText,
 } from "@excalidraw-clone/scene"
-import { render, screen } from "@testing-library/react"
+import { render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import { describe, expect, it, vi } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 import { PropertiesPanel } from "../src/PropertiesPanel"
 
 const t = (key: string): string => key
@@ -254,6 +254,42 @@ describe("PropertiesPanel", () => {
     expect(onFlip).toHaveBeenCalledWith("x")
     await userEvent.click(screen.getByTestId("flip-y"))
     expect(onFlip).toHaveBeenCalledWith("y")
+  })
+
+  describe("eyedropper", () => {
+    const el = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
+    const stub = (open: () => Promise<{ sRGBHex: string }>) => {
+      ;(globalThis as Record<string, unknown>).EyeDropper = class {
+        open = open
+      }
+    }
+    afterEach(() => {
+      delete (globalThis as Record<string, unknown>).EyeDropper
+    })
+
+    it("applies the picked colour to stroke and background", async () => {
+      stub(() => Promise.resolve({ sRGBHex: "#123456" }))
+      const onChange = vi.fn()
+      render(<PropertiesPanel t={t} selectedElements={[el]} {...handlers} onChange={onChange} />)
+      await userEvent.click(screen.getByTestId("stroke-eyedropper"))
+      await waitFor(() => expect(onChange).toHaveBeenCalledWith({ strokeColor: "#123456" }))
+      await userEvent.click(screen.getByTestId("bg-eyedropper"))
+      await waitFor(() => expect(onChange).toHaveBeenCalledWith({ backgroundColor: "#123456" }))
+    })
+
+    it("does nothing when the pick is cancelled", async () => {
+      stub(() => Promise.reject(new Error("cancelled")))
+      const onChange = vi.fn()
+      render(<PropertiesPanel t={t} selectedElements={[el]} {...handlers} onChange={onChange} />)
+      await userEvent.click(screen.getByTestId("stroke-eyedropper"))
+      await new Promise((r) => setTimeout(r, 0))
+      expect(onChange).not.toHaveBeenCalled()
+    })
+
+    it("is hidden when the browser has no EyeDropper", () => {
+      render(<PropertiesPanel t={t} selectedElements={[el]} {...handlers} />)
+      expect(screen.queryByTestId("stroke-eyedropper")).toBeNull()
+    })
   })
 
   it("offers Reset crop only for a single cropped image", async () => {

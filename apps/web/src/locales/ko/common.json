@@ -98,7 +98,8 @@
     "lock": "잠금",
     "flip_horizontal": "좌우 반전",
     "flip_vertical": "상하 반전",
-    "reset_crop": "자르기 초기화"
+    "reset_crop": "자르기 초기화",
+    "eyedropper": "화면에서 색상 선택"
   },
   "menu": {
     "label": "메뉴",
