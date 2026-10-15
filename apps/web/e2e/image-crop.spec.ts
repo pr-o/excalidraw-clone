@@ -124,3 +124,42 @@ test("a cropped image exports clipped to SVG and exports to PDF", async ({ page 
   )
   expect(content).toMatch(/140\. 0\. l\n140\. 200\. l\n0\. 200\. l\nh\nW\nn[\s\S]*\/I0 Do/)
 })
+
+test("Shift on a corner handle keeps the aspect ratio while cropping", async ({ page }) => {
+  await placeAndCropImage(page) // now 140x200 at (260,150)
+  const box = (await page.locator("canvas").first().boundingBox())!
+  await page.mouse.click(box.x + 330, box.y + 250)
+  await page.mouse.dblclick(box.x + 330, box.y + 250)
+  await page.waitForTimeout(100)
+  await page.keyboard.down("Shift")
+  await dragOnCanvas(page, { x: 260, y: 150 }, { x: 300, y: 160 })
+  await page.keyboard.up("Shift")
+  await page.keyboard.press("Escape")
+  await page.waitForTimeout(700)
+
+  const [img] = (await readImages(page)) as (SceneEl & { height: number })[]
+  expect(img!.width / img!.height).toBeCloseTo(0.7, 2)
+  expect(img!.width).toBeLessThan(140)
+})
+
+test("Reset crop restores the full image from the properties panel and undoes", async ({
+  page,
+}) => {
+  await placeAndCropImage(page)
+  const box = (await page.locator("canvas").first().boundingBox())!
+  await page.mouse.click(box.x + 330, box.y + 250)
+  await page.locator('[data-testid="reset-crop"]').click()
+  await page.waitForTimeout(700)
+
+  let [img] = await readImages(page)
+  expect(img!.crop ?? null).toBeNull()
+  expect(img!.x).toBeCloseTo(200, 0)
+  expect(img!.width).toBeCloseTo(200, 0)
+  await expect(page.locator('[data-testid="reset-crop"]')).toHaveCount(0)
+
+  await page.keyboard.press("ControlOrMeta+z")
+  await page.waitForTimeout(700)
+  ;[img] = await readImages(page)
+  expect(img!.crop!.x).toBeCloseTo(0.3, 2)
+  expect(img!.width).toBeCloseTo(140, 0)
+})

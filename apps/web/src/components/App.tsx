@@ -12,6 +12,7 @@ import {
   type ExcalidrawTextElement,
   expandIdsToGroups,
   flipElements,
+  resetCrop,
   groupElements,
   type LibraryItem,
   lockElements,
@@ -516,6 +517,7 @@ function Inner(): React.ReactElement {
               onFlip={(axis) => {
                 patchScene(scene, flipElements(scene.getElements(), selectedIds, axis))
               }}
+              onResetCrop={() => patchScene(scene, resetCrop(scene.getElements(), selectedIds))}
             />
           </div>
 

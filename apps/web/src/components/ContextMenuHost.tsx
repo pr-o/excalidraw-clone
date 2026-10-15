@@ -6,6 +6,7 @@ import {
   duplicateElements,
   type ExcalidrawElement,
   flipElements,
+  resetCrop,
   getElementsBounds,
   groupElements,
   lockElements,
@@ -154,6 +155,13 @@ export function ContextMenuHost({
           label: t("properties.flip_vertical"),
           perform: () => patchScene(scene, flipElements(scene.getElements(), elementIds, "y")),
         })
+        if (resetCrop(scene.getElements(), elementIds).length > 0) {
+          items.push({
+            id: "reset-crop",
+            label: t("properties.reset_crop"),
+            perform: () => patchScene(scene, resetCrop(scene.getElements(), elementIds)),
+          })
+        }
         if (elementIds.length === 1 && pages.length > 0) {
           const el = selectedElements[0]
           if (el && canMoveElementToPage(el, scene.getElements())) {

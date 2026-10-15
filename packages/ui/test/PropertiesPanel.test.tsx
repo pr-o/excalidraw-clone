@@ -1,4 +1,11 @@
-import { newArrow, newLabelFor, newLine, newRectangle, newText } from "@excalidraw-clone/scene"
+import {
+  newArrow,
+  newImage,
+  newLabelFor,
+  newLine,
+  newRectangle,
+  newText,
+} from "@excalidraw-clone/scene"
 import { render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { describe, expect, it, vi } from "vitest"
@@ -247,6 +254,26 @@ describe("PropertiesPanel", () => {
     expect(onFlip).toHaveBeenCalledWith("x")
     await userEvent.click(screen.getByTestId("flip-y"))
     expect(onFlip).toHaveBeenCalledWith("y")
+  })
+
+  it("offers Reset crop only for a single cropped image", async () => {
+    const onResetCrop = vi.fn()
+    const img = newImage({ x: 0, y: 0, width: 10, height: 10 })
+    const cropped = { ...img, crop: { x: 0.1, y: 0, width: 0.9, height: 1 } }
+    const { rerender } = render(
+      <PropertiesPanel t={t} selectedElements={[img]} {...handlers} onResetCrop={onResetCrop} />,
+    )
+    expect(screen.queryByTestId("reset-crop")).toBeNull()
+    rerender(
+      <PropertiesPanel
+        t={t}
+        selectedElements={[cropped]}
+        {...handlers}
+        onResetCrop={onResetCrop}
+      />,
+    )
+    await userEvent.click(screen.getByTestId("reset-crop"))
+    expect(onResetCrop).toHaveBeenCalled()
   })
 
   it("hides the flip row when every selected element is locked", () => {

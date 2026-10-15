@@ -97,7 +97,8 @@
     "textAlign_right": "오른쪽",
     "lock": "잠금",
     "flip_horizontal": "좌우 반전",
-    "flip_vertical": "상하 반전"
+    "flip_vertical": "상하 반전",
+    "reset_crop": "자르기 초기화"
   },
   "menu": {
     "label": "메뉴",

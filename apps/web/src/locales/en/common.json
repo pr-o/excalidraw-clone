@@ -97,7 +97,8 @@
     "textAlign_right": "Right",
     "lock": "Lock",
     "flip_horizontal": "Flip horizontal",
-    "flip_vertical": "Flip vertical"
+    "flip_vertical": "Flip vertical",
+    "reset_crop": "Reset crop"
   },
   "menu": {
     "label": "Menu",

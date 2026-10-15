@@ -69,6 +69,8 @@ export interface PropertiesPanelProps {
   onUngroup: () => void
   onLock: () => void
   onFlip: (axis: "x" | "y") => void
+  /** Shown only for a single unlocked, cropped image. */
+  onResetCrop?: () => void
   className?: string
 }
 
@@ -111,6 +113,7 @@ export function PropertiesPanel({
   onUngroup,
   onLock,
   onFlip,
+  onResetCrop,
   className,
 }: PropertiesPanelProps): React.ReactElement | null {
   if (selectedElements.length === 0) return null
@@ -440,6 +443,16 @@ export function PropertiesPanel({
           ))}
         </div>
       )}
+
+      {onResetCrop &&
+        selectedElements.length === 1 &&
+        selectedElements[0]?.type === "image" &&
+        selectedElements[0].crop &&
+        !selectedElements[0].locked && (
+          <button type="button" data-testid="reset-crop" onClick={onResetCrop} className={ACTION}>
+            {t("properties.reset_crop")}
+          </button>
+        )}
 
       <button
         type="button"
