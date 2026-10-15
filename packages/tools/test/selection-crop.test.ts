@@ -82,3 +82,50 @@ describe("computeCrop", () => {
     expect(r.crop.height).toBeCloseTo(0.6)
   })
 })
+
+describe("computeCrop — aspect lock (Shift)", () => {
+  const wide = () => origin({ width: 200, height: 100 })
+
+  it("corner drag keeps the box ratio, following the dominant axis", () => {
+    const r = computeCrop(wide(), "nw", p(0, 0), p(40, 5), true)
+    expect(r.width / r.height).toBeCloseTo(2)
+    expect(r.width).toBeCloseTo(160)
+    expect(r.height).toBeCloseTo(80)
+  })
+
+  it("without Shift the same drag is free", () => {
+    const r = computeCrop(wide(), "nw", p(0, 0), p(40, 5))
+    expect(r.width).toBe(160)
+    expect(r.height).toBe(95)
+  })
+
+  it("clamps at the image edge on the tighter axis and keeps the ratio", () => {
+    const c = origin({
+      width: 160,
+      height: 100,
+      x: 40,
+      crop: { x: 0.2, y: 0, width: 0.8, height: 1 },
+    })
+    // dragging nw outward: x has 40px of room, y none
+    const r = computeCrop(c, "nw", p(40, 0), p(-100, -100), true)
+    expect(r.width).toBeCloseTo(160)
+    expect(r.height).toBeCloseTo(100)
+  })
+
+  it("clamps to the minimum size on both axes", () => {
+    const r = computeCrop(wide(), "nw", p(0, 0), p(900, 900), true)
+    expect(r.height).toBeCloseTo(10)
+    expect(r.width).toBeCloseTo(20)
+  })
+
+  it("edge handles ignore Shift", () => {
+    const r = computeCrop(wide(), "w", p(0, 50), p(40, 50), true)
+    expect(r.width).toBe(160)
+    expect(r.height).toBe(100)
+  })
+
+  it("rotated image: ratio holds in local axes", () => {
+    const r = computeCrop(origin({ angle: Math.PI / 2 }), "se", p(100, 100), p(100, 80), true)
+    expect(r.width).toBeCloseTo(r.height)
+  })
+})

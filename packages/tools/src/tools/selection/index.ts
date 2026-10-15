@@ -585,13 +585,23 @@ const reduceCropping = (
 const reduceCropDragging = (
   state: Extract<SelectionState, { phase: "cropDragging" }>,
   event: ToolEvent,
+  ctx: ToolContext,
 ): Transition => {
   const back: SelectionState = { phase: "cropping", elementId: state.elementId }
   switch (event.type) {
     case "pointerMove":
       return [
         state,
-        [buildCropMoveEffect(state.elementId, state.origin, state.handle, state.start, event.at)],
+        [
+          buildCropMoveEffect(
+            state.elementId,
+            state.origin,
+            state.handle,
+            state.start,
+            event.at,
+            ctx.modifiers.shift,
+          ),
+        ],
       ]
     case "pointerUp":
       return [back, [buildCropCommitEffect(state.elementId)]]
@@ -626,7 +636,7 @@ export const selectionTool: Tool<SelectionState, ToolEvent> = {
       case "cropping":
         return reduceCropping(state, event, ctx)
       case "cropDragging":
-        return reduceCropDragging(state, event)
+        return reduceCropDragging(state, event, ctx)
     }
   },
 }

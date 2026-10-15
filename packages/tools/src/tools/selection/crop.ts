@@ -62,11 +62,38 @@ const cropAxis = (
   }
 }
 
+/** Shift on a corner: one scale factor for both axes, clamped so neither axis
+ *  runs out of image or under the minimum. Returns the lock-adjusted deltas. */
+const lockedDeltas = (
+  origin: CropOrigin,
+  handle: ResizeHandle,
+  c0: Crop,
+  dx: number,
+  dy: number,
+): [number, number] => {
+  const { width: w, height: h } = origin
+  const loX = handle.includes("w")
+  const loY = handle.includes("n")
+  const room = (size: number, c: number, cs: number, mirrored: boolean, lo: boolean) =>
+    ((mirrored === lo ? 1 - c - cs : c) * size) / cs
+  const fx = (w + (loX ? -dx : dx)) / w
+  const fy = (h + (loY ? -dy : dy)) / h
+  const raw = Math.abs(fx - 1) >= Math.abs(fy - 1) ? fx : fy
+  const max = Math.min(
+    (w + room(w, c0.x, c0.width, origin.mirror[0] < 0, loX)) / w,
+    (h + room(h, c0.y, c0.height, origin.mirror[1] < 0, loY)) / h,
+  )
+  const min = Math.max(Math.min(MIN_CROP_SIZE, w) / w, Math.min(MIN_CROP_SIZE, h) / h)
+  const f = Math.max(Math.min(raw, max), min)
+  return [(loX ? -1 : 1) * (f - 1) * w, (loY ? -1 : 1) * (f - 1) * h]
+}
+
 export const computeCrop = (
   origin: CropOrigin,
   handle: ResizeHandle,
   start: Point,
   at: Point,
+  lockAspect = false,
 ): { x: number; y: number; width: number; height: number; crop: Crop } => {
   const c0 = origin.crop ?? FULL_CROP
   const cos = Math.cos(origin.angle)
@@ -74,8 +101,10 @@ export const computeCrop = (
   // Pointer travel in the image's local (unrotated) axes.
   const wx = at.x - start.x
   const wy = at.y - start.y
-  const dx = wx * cos + wy * sin
-  const dy = -wx * sin + wy * cos
+  let dx = wx * cos + wy * sin
+  let dy = -wx * sin + wy * cos
+  // Edge handles move one axis only, so a locked ratio is ambiguous: ignore Shift.
+  if (lockAspect && handle.length === 2) [dx, dy] = lockedDeltas(origin, handle, c0, dx, dy)
   const xa = cropAxis(
     origin.width,
     c0.x,
@@ -126,9 +155,10 @@ export const buildCropMoveEffect = (
   handle: ResizeHandle,
   start: Point,
   at: Point,
+  lockAspect = false,
 ): ToolEffect => ({
   kind: "mutation",
-  apply: patchImage(id, computeCrop(origin, handle, start, at)),
+  apply: patchImage(id, computeCrop(origin, handle, start, at, lockAspect)),
   skipHistory: true,
 })
 
