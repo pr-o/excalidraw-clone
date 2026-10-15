@@ -163,3 +163,23 @@ test("Reset crop restores the full image from the properties panel and undoes", 
   expect(img!.crop!.x).toBeCloseTo(0.3, 2)
   expect(img!.width).toBeCloseTo(140, 0)
 })
+
+test("Escape leaves crop mode but keeps the image selected; context menu resets the crop", async ({
+  page,
+}) => {
+  await placeAndCropImage(page)
+  const box = (await page.locator("canvas").first().boundingBox())!
+  await page.mouse.click(box.x + 330, box.y + 250)
+  await page.mouse.dblclick(box.x + 330, box.y + 250)
+  await page.keyboard.press("Escape")
+  await page.waitForTimeout(200)
+  // Still selected: the panel's reset button is available.
+  await expect(page.locator('[data-testid="reset-crop"]')).toHaveCount(1)
+
+  await page.mouse.click(box.x + 330, box.y + 250, { button: "right" })
+  await page.getByRole("menuitem", { name: "Reset crop" }).click()
+  await page.waitForTimeout(700)
+  const [img] = await readImages(page)
+  expect(img!.crop ?? null).toBeNull()
+  expect(img!.width).toBeCloseTo(200, 0)
+})

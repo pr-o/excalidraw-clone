@@ -192,7 +192,8 @@ export function attachShortcuts({
       // resize, in-progress shape draw, etc.) before the blanket state below.
       store.dispatchToolEvent?.({ type: "escape" })
       if (store.activeTool === "laser") store.setActiveTool("selection")
-      store.setSelection([])
+      // Crop mode owns Escape (revert the drag, or leave crop); keep the image selected.
+      if (store.cropElementId === null) store.setSelection([])
       return
     }
     if (key === "?" || (e.shiftKey && key === "/")) {
