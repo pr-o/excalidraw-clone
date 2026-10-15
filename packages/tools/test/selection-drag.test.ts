@@ -1,6 +1,13 @@
 import type { GridSnap } from "@excalidraw-clone/geometry"
 import type { ExcalidrawArrowElement, ExcalidrawElement } from "@excalidraw-clone/scene"
-import { BINDING_GAP, newArrow, newFrame, newRectangle, newText } from "@excalidraw-clone/scene"
+import {
+  BINDING_GAP,
+  newArrow,
+  newFrame,
+  newLabelFor,
+  newRectangle,
+  newText,
+} from "@excalidraw-clone/scene"
 import { describe, expect, it } from "vitest"
 import { selectionTool } from "../src"
 import { translateElements } from "../src/tools/selection/drag"
@@ -480,5 +487,94 @@ describe("translateElements — binding teardown", () => {
     translateElements(draft, ["ar", "t"], 10, 10)
     const arrow = draft.find((e) => e.id === "ar") as ExcalidrawArrowElement
     expect(arrow.endBinding?.elementId).toBe("t")
+  })
+})
+
+describe("selection — Alt-drag duplicates", () => {
+  const altCtx = (draft: ExcalidrawElement[], r: ExcalidrawElement, over = {}) =>
+    makeCtx({
+      hitTest: () => r,
+      readElements: () => draft,
+      selectedIds: [r.id],
+      modifiers: withModifiers({ alt: true }),
+      ...over,
+    })
+  const move = (
+    s: ReturnType<typeof pressAt>,
+    ctx: ReturnType<typeof makeCtx>,
+    x: number,
+    y: number,
+  ) => selectionTool.reduce(s[0], { type: "pointerMove", at: point(x, y) }, ctx)
+
+  it("copies on the first move, selects the copy, then drags only the copy", () => {
+    const r = newRectangle({ x: 0, y: 0, width: 50, height: 50 })
+    const draft: ExcalidrawElement[] = [r]
+    const ctx = altCtx(draft, r)
+    let s = pressAt(ctx, 10, 10)
+    applyMutation(s[1], draft)
+    expect(draft).toHaveLength(1) // nothing yet: press alone creates no copy
+    s = move(s, ctx, 12, 12)
+    applyMutation(s[1], draft)
+    expect(draft).toHaveLength(2)
+    const copy = draft[1]!
+    expect(copy.id).not.toBe(r.id)
+    expect([copy.x, copy.y]).toEqual([0, 0]) // starts exactly on the original
+    const sel = s[1].find((e) => e.kind === "select")
+    expect(sel?.kind === "select" && sel.ids).toEqual([copy.id])
+    s = move(s, ctx, 110, 90)
+    applyMutation(s[1], draft)
+    expect([draft[0]!.x, draft[0]!.y]).toEqual([0, 0])
+    expect([draft[1]!.x, draft[1]!.y]).toEqual([100, 80])
+  })
+
+  it("an Alt-click without moving creates nothing", () => {
+    const r = newRectangle({ x: 0, y: 0, width: 50, height: 50 })
+    const draft: ExcalidrawElement[] = [r]
+    const ctx = altCtx(draft, r)
+    let s = pressAt(ctx, 10, 10)
+    s = selectionTool.reduce(s[0], { type: "pointerUp", at: point(10, 10) }, ctx)
+    applyMutation(s[1], draft)
+    expect(draft).toHaveLength(1)
+  })
+
+  it("escape removes the copy and restores the original selection", () => {
+    const r = newRectangle({ x: 0, y: 0, width: 50, height: 50 })
+    const draft: ExcalidrawElement[] = [r]
+    const ctx = altCtx(draft, r)
+    let s = pressAt(ctx, 10, 10)
+    s = move(s, ctx, 12, 12)
+    applyMutation(s[1], draft)
+    s = move(s, ctx, 40, 30)
+    applyMutation(s[1], draft)
+    s = selectionTool.reduce(s[0], { type: "escape" }, ctx)
+    applyMutation(s[1], draft)
+    expect(draft.filter((e) => !e.isDeleted).map((e) => e.id)).toEqual([r.id])
+    const sel = s[1].find((e) => e.kind === "select")
+    expect(sel?.kind === "select" && sel.ids).toEqual([r.id])
+  })
+
+  it("a labelled shape copies with its label and selects only the container copy", () => {
+    const box = newRectangle({ x: 0, y: 0, width: 80, height: 40 })
+    const label = { ...newLabelFor(box), text: "hi" }
+    const container = { ...box, boundElements: [{ id: label.id, type: "text" as const }] }
+    const draft: ExcalidrawElement[] = [container, label]
+    const ctx = altCtx(draft, container)
+    let s = pressAt(ctx, 10, 10)
+    s = move(s, ctx, 12, 12)
+    applyMutation(s[1], draft)
+    expect(draft).toHaveLength(4)
+    const sel = s[1].find((e) => e.kind === "select")
+    const copyContainer = draft.find((e) => e.id !== container.id && e.type === "rectangle")!
+    expect(sel?.kind === "select" && sel.ids).toEqual([copyContainer.id])
+  })
+
+  it("without Alt nothing is copied", () => {
+    const r = newRectangle({ x: 0, y: 0, width: 50, height: 50 })
+    const draft: ExcalidrawElement[] = [r]
+    const ctx = altCtx(draft, r, { modifiers: withModifiers({}) })
+    let s = pressAt(ctx, 10, 10)
+    s = move(s, ctx, 40, 30)
+    applyMutation(s[1], draft)
+    expect(draft).toHaveLength(1)
   })
 })

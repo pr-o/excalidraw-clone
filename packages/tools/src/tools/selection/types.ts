@@ -23,6 +23,12 @@ export type SelectionState =
        *  part of raw pointer travel or `alignDx`/`alignDy`. */
       gridSnapDx: number
       gridSnapDy: number
+      /** Alt was held at press: copy `movedIds` on the first move instead. */
+      dupPending?: boolean
+      /** Ids of the copies once made (`movedIds` then points at them). */
+      dupIds?: readonly string[]
+      /** Selection to restore if Escape discards the copies. */
+      dupRestore?: readonly string[]
     }
   | {
       phase: "resizing"

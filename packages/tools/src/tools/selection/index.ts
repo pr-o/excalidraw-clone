@@ -2,6 +2,7 @@ import { snapPointToGrid, type Point } from "@excalidraw-clone/geometry"
 import {
   type ExcalidrawElement,
   bindingTargetAt,
+  duplicateElements,
   expandIdsToFrameMembers,
   expandIdsToGroups,
   getElementsBounds,
@@ -285,6 +286,7 @@ const reduceIdle = (event: ToolEvent, ctx: ToolContext): Transition => {
         alignDy: 0,
         gridSnapDx: 0,
         gridSnapDy: 0,
+        ...(ctx.modifiers.alt ? { dupPending: true, dupRestore: baseMovedIds } : {}),
       },
       selectionEffects,
     ]
@@ -323,6 +325,26 @@ const reduceDragging = (
 ): Transition => {
   switch (event.type) {
     case "pointerMove": {
+      if (state.dupPending) {
+        // Alt-drag: leave the originals in place and drag fresh copies. Spending
+        // this move on creation loses no distance — the next one measures from `last`.
+        const copies = duplicateElements(ctx.readElements(), state.movedIds, 0)
+        const dupIds = copies.map((c) => c.id)
+        const selectable = copies.filter((c) => !(c.type === "text" && c.containerId !== null))
+        return [
+          { ...state, dupPending: false, dupIds, movedIds: dupIds },
+          [
+            {
+              kind: "mutation",
+              apply: (draft) => {
+                draft.push(...copies)
+              },
+              skipHistory: true,
+            },
+            { kind: "select", ids: selectable.map((c) => c.id) },
+          ],
+        ]
+      }
       if (state.firstMove && ctx.grid.enabled) {
         const elements = ctx.readElements()
         const anchor = elements.find((e) => state.movedIds.includes(e.id))
@@ -383,6 +405,25 @@ const reduceDragging = (
       ]
     }
     case "escape": {
+      if (state.dupIds) {
+        const dupIds = state.dupIds
+        return [
+          { phase: "idle" },
+          [
+            {
+              kind: "mutation",
+              apply: (draft) => {
+                for (let i = draft.length - 1; i >= 0; i -= 1) {
+                  if (dupIds.includes(draft[i]!.id)) draft.splice(i, 1)
+                }
+              },
+              skipHistory: true,
+            },
+            { kind: "select", ids: state.dupRestore ?? [] },
+            { kind: "setGuides", guides: [] },
+          ],
+        ]
+      }
       return [
         { phase: "idle" },
         [
