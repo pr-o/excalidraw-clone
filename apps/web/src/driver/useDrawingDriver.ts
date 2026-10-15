@@ -37,6 +37,7 @@ import {
   pointerEventToToolEvent,
   snapScenePoint,
 } from "./events"
+import { pinchView } from "./pinch"
 
 const GHOST_STROKE = "#6b46c1"
 
@@ -307,8 +308,48 @@ export function useDrawingDriver({
       canvas.style.cursor = ""
     }
 
+    // Two-finger pan/zoom. Once a second touch lands the one-finger gesture is
+    // cancelled and every touch is swallowed until all fingers lift.
+    const touches = new Map<number, Point>()
+    let pinch: { ids: [number, number]; view: ViewTransform; from: [Point, Point] } | null = null
+    let touchDead = false
+    const canvasPoint = (e: PointerEvent): Point => {
+      const r = canvas.getBoundingClientRect()
+      return { x: e.clientX - r.left, y: e.clientY - r.top }
+    }
+    /** Returns true when the event was consumed by the touch gesture layer. */
+    const handleTouch = (type: "down" | "move" | "up", e: PointerEvent): boolean => {
+      if (e.pointerType !== "touch" || useAppStore.getState().presenting) return false
+      if (type === "up") {
+        touches.delete(e.pointerId)
+        pinch = null
+        const consumed = touchDead
+        if (touches.size === 0) touchDead = false
+        if (consumed) canvas.releasePointerCapture(e.pointerId)
+        return consumed
+      }
+      touches.set(e.pointerId, canvasPoint(e))
+      if (type === "down" && !touchDead && touches.size === 2) {
+        dispatch({ type: "escape" }, { shift: false, alt: false, ctrl: false, meta: false })
+        touchDead = true
+        const [a, b] = [...touches.keys()] as [number, number]
+        const from: [Point, Point] = [touches.get(a)!, touches.get(b)!]
+        pinch = { ids: [a, b], view: viewOf(useAppStore.getState()), from }
+        canvas.setPointerCapture(e.pointerId)
+        return true
+      }
+      if (touchDead && pinch) {
+        const [a, b] = pinch.ids
+        const pa = touches.get(a)
+        const pb = touches.get(b)
+        if (pa && pb) useAppStore.getState().setView(pinchView(pinch.view, pinch.from, [pa, pb]))
+      }
+      return touchDead
+    }
+
     const onPointerDown = (e: PointerEvent): void => {
       if (e.button !== 0) return
+      if (handleTouch("down", e)) return
       if (useAppStore.getState().contextMenu) {
         useAppStore.getState().setContextMenu(null)
         return
@@ -366,6 +407,7 @@ export function useDrawingDriver({
       dispatchPointer("pointerDown", e)
     }
     const onPointerMove = (e: PointerEvent): void => {
+      if (handleTouch("move", e)) return
       if (orphanedPointerRef.current === e.pointerId) return
       const drag = panDragRef.current
       if (drag) {
@@ -390,6 +432,7 @@ export function useDrawingDriver({
       dispatchPointer("pointerMove", e)
     }
     const onPointerUp = (e: PointerEvent): void => {
+      if (handleTouch("up", e)) return
       if (orphanedPointerRef.current === e.pointerId) {
         // End of the orphaned gesture: clear the mark so a fresh press works
         // normally, and swallow this up so no down-less pointerUp is dispatched.
@@ -456,6 +499,7 @@ export function useDrawingDriver({
     canvas.addEventListener("pointerdown", onPointerDown)
     canvas.addEventListener("pointermove", onPointerMove)
     canvas.addEventListener("pointerup", onPointerUp)
+    canvas.addEventListener("pointercancel", onPointerUp)
     canvas.addEventListener("dblclick", onDoubleClick)
     canvas.addEventListener("contextmenu", onContextMenu)
     canvas.addEventListener("pointerenter", onPointerEnter)
@@ -474,6 +518,7 @@ export function useDrawingDriver({
       canvas.removeEventListener("pointerdown", onPointerDown)
       canvas.removeEventListener("pointermove", onPointerMove)
       canvas.removeEventListener("pointerup", onPointerUp)
+      canvas.removeEventListener("pointercancel", onPointerUp)
       canvas.removeEventListener("dblclick", onDoubleClick)
       canvas.removeEventListener("contextmenu", onContextMenu)
       canvas.removeEventListener("pointerenter", onPointerEnter)
