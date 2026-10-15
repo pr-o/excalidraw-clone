@@ -42,7 +42,23 @@ export const drawElement = (
   if (element.type === "image") {
     const img = element.fileId === null ? undefined : getImage(element.fileId)
     if (img && img.complete && img.naturalWidth > 0) {
-      ctx.drawImage(img, 0, 0, element.width, element.height)
+      const c = element.crop
+      if (c === null) {
+        ctx.drawImage(img, 0, 0, element.width, element.height)
+      } else {
+        const { naturalWidth: nw, naturalHeight: nh } = img
+        ctx.drawImage(
+          img,
+          c.x * nw,
+          c.y * nh,
+          c.width * nw,
+          c.height * nh,
+          0,
+          0,
+          element.width,
+          element.height,
+        )
+      }
     }
     ctx.restore()
     return

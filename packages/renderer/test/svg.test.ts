@@ -37,6 +37,37 @@ describe("renderToSVG", () => {
     const svg = renderToSVG(new Scene([el]))
     expect(svg).not.toContain("<image")
   })
+
+  it("clips a cropped image and offsets it by the crop fraction", () => {
+    const el = {
+      ...newImage({ x: 5, y: 6, width: 80, height: 40, fileId: "f1" }),
+      crop: { x: 0.25, y: 0.5, width: 0.5, height: 0.5 },
+    }
+    const files = new Map([["f1", "data:image/png;base64,AAAA"]])
+    const svg = renderToSVG(new Scene([el]), { files })
+    // kx = 80/0.5 = 160, ky = 40/0.5 = 80 → offset (-40, -40), full size 160x80
+    expect(svg).toContain("<clipPath")
+    expect(svg).toContain(`clip-path="url(#crop-${el.id})"`)
+    expect(svg).toContain('x="-40"')
+    expect(svg).toContain('y="-40"')
+    expect(svg).toContain('width="160"')
+    expect(svg).toContain('height="80"')
+  })
+
+  it("uses a distinct clip id per cropped image", () => {
+    const a = {
+      ...newImage({ x: 0, y: 0, width: 10, height: 10, fileId: "f1" }),
+      crop: { x: 0, y: 0, width: 0.5, height: 0.5 },
+    }
+    const b = {
+      ...newImage({ x: 0, y: 0, width: 10, height: 10, fileId: "f1" }),
+      crop: { x: 0, y: 0, width: 0.5, height: 0.5 },
+    }
+    const files = new Map([["f1", "data:image/png;base64,AAAA"]])
+    const svg = renderToSVG(new Scene([a, b]), { files })
+    expect(svg).toContain(`id="crop-${a.id}"`)
+    expect(svg).toContain(`id="crop-${b.id}"`)
+  })
 })
 
 describe("renderToSVG theming", () => {

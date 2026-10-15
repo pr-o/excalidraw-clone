@@ -152,7 +152,28 @@ function renderElement(
     const href = el.fileId === null ? undefined : files?.get(el.fileId)
     if (href === undefined) return null
     const group = createGroup(doc, el)
-    group.appendChild(svgEl(doc, "image", { href, width: el.width, height: el.height }))
+    const c = el.crop
+    if (c === null) {
+      group.appendChild(svgEl(doc, "image", { href, width: el.width, height: el.height }))
+    } else {
+      const kx = el.width / c.width
+      const ky = el.height / c.height
+      const clipId = `crop-${el.id}`
+      const clip = svgEl(doc, "clipPath", { id: clipId })
+      clip.appendChild(svgEl(doc, "rect", { width: el.width, height: el.height }))
+      group.appendChild(clip)
+      group.appendChild(
+        svgEl(doc, "image", {
+          href,
+          x: -c.x * kx,
+          y: -c.y * ky,
+          width: kx,
+          height: ky,
+          preserveAspectRatio: "none",
+          "clip-path": `url(#${clipId})`,
+        }),
+      )
+    }
     return group
   }
   const group = createGroup(doc, el)

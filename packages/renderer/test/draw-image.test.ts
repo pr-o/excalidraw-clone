@@ -86,4 +86,15 @@ describe("drawElement image branch", () => {
     expect(callsOf(ctx, "save")).toHaveLength(1)
     expect(callsOf(ctx, "restore")).toHaveLength(1)
   })
+
+  it("draws only the cropped sub-rect, scaled to the element box", () => {
+    const { ctx, draw } = setup()
+    const img = loadedImage()
+    const el = {
+      ...newImage({ x: 0, y: 0, width: 200, height: 100, fileId: "f1" }),
+      crop: { x: 0.25, y: 0.5, width: 0.5, height: 0.5 },
+    }
+    draw(el, () => img)
+    expect(callsOf(ctx, "drawImage")[0]?.args).toEqual([img, 2, 4, 4, 4, 0, 0, 200, 100])
+  })
 })

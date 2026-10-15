@@ -166,6 +166,7 @@ export interface ExcalidrawImageElement extends ExcalidrawElementBase {
   fileId: string | null
   status: "pending" | "saved" | "error"
   scale: readonly [number, number]
+  /** Visible sub-rect as fractions (0..1) of the natural image; null = uncropped. */
   crop: { x: number; y: number; width: number; height: number } | null
 }
 
