@@ -1,5 +1,6 @@
 import type { Point } from "@excalidraw-clone/geometry"
 import type { ExcalidrawElement } from "@excalidraw-clone/scene"
+import type { CropOrigin } from "./crop"
 import type { LinearSnapshot } from "./endpoint"
 
 export type ResizeHandle = "nw" | "n" | "ne" | "e" | "se" | "s" | "sw" | "w"
@@ -57,6 +58,14 @@ export type SelectionState =
       elementId: string
       index: number
       origin: LinearSnapshot
+    }
+  | { phase: "cropping"; elementId: string }
+  | {
+      phase: "cropDragging"
+      elementId: string
+      handle: ResizeHandle
+      origin: CropOrigin
+      start: Point
     }
   | { phase: "marquee"; start: Point; current: Point; baseSelection: readonly string[] }
 

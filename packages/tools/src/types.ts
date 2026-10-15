@@ -68,6 +68,7 @@ export type ToolEffect =
   | { kind: "switchTool"; tool: ToolName }
   | { kind: "laserMove"; at: Point }
   | { kind: "setGuides"; guides: readonly AlignmentGuide[] }
+  | { kind: "setCrop"; elementId: string | null }
 
 export interface Tool<S, E = ToolEvent> {
   readonly name: ToolName

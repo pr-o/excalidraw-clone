@@ -12,6 +12,12 @@ import {
 import type { Tool, ToolContext, ToolEffect, ToolEvent } from "../../types"
 import { computeDragAlignment } from "./alignment"
 import {
+  buildCropCommitEffect,
+  buildCropMoveEffect,
+  buildCropRevertEffect,
+  snapshotCrop,
+} from "./crop"
+import {
   buildBendCommitEffect,
   buildBendInsertEffect,
   buildBendMoveEffect,
@@ -194,6 +200,15 @@ const reduceDoubleClick = (at: Point, ctx: ToolContext): Transition => {
     }
     if (hit.type === "text") {
       return [{ phase: "idle" }, [{ kind: "startTextEdit", elementId: hit.id }]]
+    }
+    if (hit.type === "image" && hit.fileId !== null) {
+      return [
+        { phase: "cropping", elementId: hit.id },
+        [
+          { kind: "select", ids: [hit.id] },
+          { kind: "setCrop", elementId: hit.id },
+        ],
+      ]
     }
     const textRef = hit.boundElements?.find((b) => b.type === "text")
     if (textRef) {
@@ -535,6 +550,58 @@ const reduceBend = (
   }
 }
 
+const EXIT_CROP: ToolEffect = { kind: "setCrop", elementId: null }
+
+const reduceCropping = (
+  state: Extract<SelectionState, { phase: "cropping" }>,
+  event: ToolEvent,
+  ctx: ToolContext,
+): Transition => {
+  if (event.type === "escape") return [{ phase: "idle" }, [EXIT_CROP]]
+  if (event.type === "pointerDown") {
+    const elements = ctx.readElements()
+    const handle = findHandleAt(event.at, ctx.selectedIds, elements, ctx.viewTransform)
+    const e = elements.find((el) => el.id === state.elementId)
+    if (handle?.kind === "resize" && handle.elementId === state.elementId && e?.type === "image") {
+      return [
+        {
+          phase: "cropDragging",
+          elementId: state.elementId,
+          handle: handle.handle,
+          origin: snapshotCrop(e),
+          start: event.at,
+        },
+        [],
+      ]
+    }
+  }
+  if (event.type === "pointerDown" || event.type === "delete") {
+    const [next, effects] = reduceIdle(event, ctx)
+    return [next, [EXIT_CROP, ...effects]]
+  }
+  return [state, []]
+}
+
+const reduceCropDragging = (
+  state: Extract<SelectionState, { phase: "cropDragging" }>,
+  event: ToolEvent,
+): Transition => {
+  const back: SelectionState = { phase: "cropping", elementId: state.elementId }
+  switch (event.type) {
+    case "pointerMove":
+      return [
+        state,
+        [buildCropMoveEffect(state.elementId, state.origin, state.handle, state.start, event.at)],
+      ]
+    case "pointerUp":
+      return [back, [buildCropCommitEffect(state.elementId)]]
+    case "escape":
+      return [back, [buildCropRevertEffect(state.elementId, state.origin)]]
+    default:
+      return [state, []]
+  }
+}
+
 export const selectionTool: Tool<SelectionState, ToolEvent> = {
   name: "selection",
   initial: SELECTION_INITIAL,
@@ -556,6 +623,10 @@ export const selectionTool: Tool<SelectionState, ToolEvent> = {
         return reduceEndpoint(state, event, ctx)
       case "bendDragging":
         return reduceBend(state, event)
+      case "cropping":
+        return reduceCropping(state, event, ctx)
+      case "cropDragging":
+        return reduceCropDragging(state, event)
     }
   },
 }
