@@ -21,6 +21,7 @@ const handlers = {
   onDuplicate: vi.fn(),
   onAlign: noop,
   onDistribute: noop,
+  onTidy: noop,
   onGroup: vi.fn(),
   onUngroup: vi.fn(),
   onLock: vi.fn(),
@@ -172,6 +173,16 @@ describe("PropertiesPanel", () => {
     expect(btn).toBeEnabled()
     await userEvent.click(btn)
     expect(onDistribute).toHaveBeenCalledWith("horizontal")
+  })
+
+  it("fires Tidy up from the Arrange section", async () => {
+    const mk = (x: number) => newRectangle({ x, y: 0, width: 10, height: 10 })
+    const onTidy = vi.fn()
+    render(
+      <PropertiesPanel t={t} selectedElements={[mk(0), mk(50)]} {...handlers} onTidy={onTidy} />,
+    )
+    await userEvent.click(screen.getByTestId("tidy-up"))
+    expect(onTidy).toHaveBeenCalledTimes(1)
   })
 
   it("enables Group and disables Ungroup for 2 ungrouped elements", () => {

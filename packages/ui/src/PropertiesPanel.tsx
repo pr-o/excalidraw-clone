@@ -72,6 +72,7 @@ export interface PropertiesPanelProps {
   onDuplicate: () => void
   onAlign: (edge: AlignEdge) => void
   onDistribute: (axis: DistributeAxis) => void
+  onTidy: () => void
   onGroup: () => void
   onUngroup: () => void
   onLock: () => void
@@ -116,6 +117,7 @@ export function PropertiesPanel({
   onDuplicate,
   onAlign,
   onDistribute,
+  onTidy,
   onGroup,
   onUngroup,
   onLock,
@@ -444,6 +446,15 @@ export function PropertiesPanel({
                 {axis === "horizontal" ? "⇿" : "⇳"}
               </button>
             ))}
+            <button
+              type="button"
+              data-testid="tidy-up"
+              aria-label={t("properties.tidy_up")}
+              onClick={onTidy}
+              className={ACTION}
+            >
+              ▦
+            </button>
           </div>
         </Section>
       )}

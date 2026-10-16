@@ -20,6 +20,7 @@ import {
   Scene,
   sendBackward,
   sendToBack,
+  tidyElements,
   ungroupElements,
   unlockAll,
 } from "@excalidraw-clone/scene"
@@ -506,6 +507,7 @@ function Inner(): React.ReactElement {
               }}
               onAlign={(edge) => moveTo(alignElements(selectedElements, edge))}
               onDistribute={(axis) => moveTo(distributeElements(selectedElements, axis))}
+              onTidy={() => moveTo(tidyElements(selectedElements))}
               onGroup={() =>
                 patchScene(scene, groupElements(selectedElements, selectedIds, crypto.randomUUID()))
               }
