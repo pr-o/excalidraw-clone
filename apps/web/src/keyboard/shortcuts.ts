@@ -11,6 +11,7 @@ import type { ToolName } from "@excalidraw-clone/tools"
 import { applyPropertiesPatch } from "../driver/applyPropertiesPatch"
 import { deleteElements, patchScene, replaceElements } from "../driver/patchScene"
 import { zoomAboutCentre } from "../driver/zoom"
+import { toggleViewMode } from "../driver/viewMode"
 import { useAppStore } from "../store"
 import { type ChainDirection, createChainedShape } from "./flowchartChain"
 import { applyStyle, extractStyle, type StyleClipboard } from "./styleClipboard"
@@ -78,6 +79,25 @@ export function attachShortcuts({
 
     const isMeta = e.metaKey || e.ctrlKey
     const key = e.key.toLowerCase()
+
+    // Before tool-key dispatch (R would pick the rectangle); `code` covers
+    // layouts where Alt+R yields a symbol such as "®".
+    if (e.altKey && !isMeta && (e.code === "KeyR" || key === "r")) {
+      e.preventDefault()
+      toggleViewMode()
+      return
+    }
+    // View mode: only navigation, find, help and the laser survive.
+    if (useAppStore.getState().viewMode) {
+      const allowed =
+        (isMeta && ["0", "+", "=", "-", "/", "f"].includes(key)) ||
+        (e.altKey && (key === "pagedown" || key === "pageup")) ||
+        (!isMeta && !e.altKey && key === "k") ||
+        key === "escape" ||
+        key === "?" ||
+        (e.shiftKey && key === "/")
+      if (!allowed) return
+    }
 
     if (isMeta && key === "z" && !e.shiftKey) {
       e.preventDefault()

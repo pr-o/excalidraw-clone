@@ -132,7 +132,7 @@ function RulerStrip({ side, scene }: { side: "top" | "left"; scene: Scene }): Re
 /** Rulers along the canvas's top and left edges. Pointer events land only on
  *  the two strips; the corner square just covers their overlap. */
 export function Rulers({ scene }: { scene: Scene }): React.ReactElement | null {
-  const visible = useAppStore((s) => s.rulersVisible && !s.presenting)
+  const visible = useAppStore((s) => s.rulersVisible && !s.presenting && !s.viewMode)
   if (!visible) return null
   return (
     <>

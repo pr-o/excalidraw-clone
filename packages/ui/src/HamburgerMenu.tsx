@@ -18,6 +18,8 @@ export interface HamburgerMenuProps {
   onCanvasBgChange: (color: string) => void
   zenMode: boolean
   onZenModeToggle: () => void
+  viewMode?: boolean
+  onViewModeToggle?: () => void
   rulersVisible?: boolean
   onRulersToggle?: () => void
   onOpenFile: () => void
@@ -67,15 +69,19 @@ export function HamburgerMenu(props: HamburgerMenuProps): React.ReactElement {
           role="menu"
           className="absolute left-0 top-11 z-50 w-56 rounded-lg bg-panel p-2 shadow-lg"
         >
-          <MenuItem onClick={wrap(props.onOpenFile)}>{props.t("menu.open")}</MenuItem>
+          {!props.viewMode && (
+            <MenuItem onClick={wrap(props.onOpenFile)}>{props.t("menu.open")}</MenuItem>
+          )}
           <MenuItem onClick={wrap(props.onSaveFile)}>{props.t("menu.saveAs")}</MenuItem>
-          {props.onSnapshots && (
+          {props.onSnapshots && !props.viewMode && (
             <MenuItem onClick={wrap(props.onSnapshots)}>{props.t("menu.snapshots")}</MenuItem>
           )}
           <MenuItem onClick={wrap(props.onExport)}>{props.t("menu.export")}</MenuItem>
-          <MenuItem onClick={wrap(props.onImportMermaid)} testId="menu-import-mermaid">
-            {props.t("menu.importMermaid")}
-          </MenuItem>
+          {!props.viewMode && (
+            <MenuItem onClick={wrap(props.onImportMermaid)} testId="menu-import-mermaid">
+              {props.t("menu.importMermaid")}
+            </MenuItem>
+          )}
           {props.canPresent ? (
             <button
               type="button"
@@ -103,7 +109,20 @@ export function HamburgerMenu(props: HamburgerMenuProps): React.ReactElement {
           <MenuItem onClick={wrap(props.onZenModeToggle)}>
             {props.zenMode ? props.t("menu.exitZen") : props.t("menu.enterZen")}
           </MenuItem>
-          {props.onRulersToggle && (
+          {props.onViewModeToggle && (
+            <button
+              type="button"
+              role="menuitemcheckbox"
+              aria-checked={props.viewMode ?? false}
+              data-testid="menu-view-mode"
+              onClick={wrap(props.onViewModeToggle)}
+              className="flex w-full items-center justify-between rounded px-3 py-2 text-left text-sm hover:bg-panel-hover"
+            >
+              {props.t("menu.viewMode")}
+              <span className="text-xs text-muted">{props.viewMode ? "✓" : ""}</span>
+            </button>
+          )}
+          {props.onRulersToggle && !props.viewMode && (
             <button
               type="button"
               role="menuitemcheckbox"
@@ -142,29 +161,35 @@ export function HamburgerMenu(props: HamburgerMenuProps): React.ReactElement {
               close()
             }}
           />
-          <MenuLabel>{props.t("menu.canvasBg")}</MenuLabel>
-          <div className="flex gap-1 px-3 py-1">
-            {CANVAS_BG_COLORS.map((c) => (
-              <button
-                key={c}
-                type="button"
-                data-testid={`canvas-bg-${c.replace("#", "")}`}
-                aria-pressed={props.canvasBg === c}
-                aria-label={c}
-                onClick={() => {
-                  props.onCanvasBgChange(c)
-                  close()
-                }}
-                className={`h-8 w-8 rounded border-2 ${props.canvasBg === c ? "border-accent" : "border-panel"}`}
-                style={{ backgroundColor: c }}
-              />
-            ))}
-          </div>
+          {!props.viewMode && (
+            <>
+              <MenuLabel>{props.t("menu.canvasBg")}</MenuLabel>
+              <div className="flex gap-1 px-3 py-1">
+                {CANVAS_BG_COLORS.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    data-testid={`canvas-bg-${c.replace("#", "")}`}
+                    aria-pressed={props.canvasBg === c}
+                    aria-label={c}
+                    onClick={() => {
+                      props.onCanvasBgChange(c)
+                      close()
+                    }}
+                    className={`h-8 w-8 rounded border-2 ${props.canvasBg === c ? "border-accent" : "border-panel"}`}
+                    style={{ backgroundColor: c }}
+                  />
+                ))}
+              </div>
+            </>
+          )}
           <Separator />
           <MenuItem onClick={wrap(props.onHelp)}>{props.t("menu.help")}</MenuItem>
-          <MenuItem onClick={wrap(props.onReset)} variant="danger">
-            {props.t("menu.reset")}
-          </MenuItem>
+          {!props.viewMode && (
+            <MenuItem onClick={wrap(props.onReset)} variant="danger">
+              {props.t("menu.reset")}
+            </MenuItem>
+          )}
         </div>
       )}
     </div>

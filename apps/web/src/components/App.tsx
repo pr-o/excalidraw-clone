@@ -65,6 +65,7 @@ import {
   type PageRecord,
 } from "../driver/pages"
 import { zoomAboutCentre } from "../driver/zoom"
+import { toggleViewMode } from "../driver/viewMode"
 import { renderPageThumbnail } from "../driver/pageThumbnails"
 import { useSceneRevision } from "../hooks/useSceneRevision"
 import { openExcalidrawFromPicker } from "../driver/openFile"
@@ -230,6 +231,7 @@ function Inner(): React.ReactElement {
   const armLibraryItem = useAppStore((s) => s.armLibraryItem)
   const clearPendingItem = useAppStore((s) => s.clearPendingItem)
   const presenting = useAppStore((s) => s.presenting)
+  const viewMode = useAppStore((s) => s.viewMode)
   const [menuOpen, setMenuOpen] = useState(false)
   const [libraryOpen, setLibraryOpen] = useState(false)
   const [layersOpen, setLayersOpen] = useState(false)
@@ -449,6 +451,8 @@ function Inner(): React.ReactElement {
               onCanvasBgChange={setCanvasBg}
               zenMode={zenMode}
               onZenModeToggle={toggleZenMode}
+              viewMode={viewMode}
+              onViewModeToggle={toggleViewMode}
               rulersVisible={rulersVisible}
               onRulersToggle={toggleRulers}
               onOpenFile={() => {
@@ -473,98 +477,107 @@ function Inner(): React.ReactElement {
             />
           </div>
 
-          <div className="absolute left-1/2 top-3 z-30 -translate-x-1/2">
-            <Toolbar
-              t={t}
-              activeTool={activeTool}
-              onSelectTool={setActiveTool}
-              lockActiveTool={lockActiveTool}
-              onToggleLock={() => toggleLockActiveTool()}
-              moreShapesOpen={moreShapesOpen}
-              onMoreShapesOpenChange={setMoreShapesOpen}
-            />
-          </div>
+          {!viewMode && (
+            <>
+              <div className="absolute left-1/2 top-3 z-30 -translate-x-1/2">
+                <Toolbar
+                  t={t}
+                  activeTool={activeTool}
+                  onSelectTool={setActiveTool}
+                  lockActiveTool={lockActiveTool}
+                  onToggleLock={() => toggleLockActiveTool()}
+                  moreShapesOpen={moreShapesOpen}
+                  onMoreShapesOpenChange={setMoreShapesOpen}
+                />
+              </div>
 
-          {/* Right offset clears the HistoryPanel: its closed toggle occupies
+              {/* Right offset clears the HistoryPanel: its closed toggle occupies
               right:12px–48px, and its open panel occupies right:0–256px. */}
-          <div className={`absolute ${historyOpen ? "right-[280px]" : "right-14"} top-3 z-30`}>
-            <PropertiesPanel
-              t={t}
-              selectedElements={selectedElements}
-              labelElements={selectedLabels}
-              onChange={(patch) =>
-                replaceElements(scene, (el) => applySelectionPatch(el, patch, selectedIds))
-              }
-              onDelete={() => {
-                deleteElements(scene, selectedIds)
-                useAppStore.getState().setSelection([])
-              }}
-              onDuplicate={() => {
-                const copies = duplicateElements(scene.getElements(), selectedIds)
-                scene.mutate((draft) => {
-                  draft.push(...copies)
-                })
-                useAppStore
-                  .getState()
-                  .setSelection(
-                    copies
-                      .filter((c) => !(c.type === "text" && c.containerId !== null))
-                      .map((c) => c.id),
-                  )
-              }}
-              onAlign={(edge) => moveTo(alignElements(selectedElements, edge))}
-              onDistribute={(axis) => moveTo(distributeElements(selectedElements, axis))}
-              onTidy={() => moveTo(tidyElements(selectedElements))}
-              onGroup={() =>
-                patchScene(scene, groupElements(selectedElements, selectedIds, crypto.randomUUID()))
-              }
-              onUngroup={() => patchScene(scene, ungroupElements(selectedElements, selectedIds))}
-              onLock={() => {
-                patchScene(scene, lockElements(scene.getElements(), selectedIds))
-                useAppStore.getState().setSelection([])
-              }}
-              onFlip={(axis) => {
-                patchScene(scene, flipElements(scene.getElements(), selectedIds, axis))
-              }}
-              onResetCrop={() => patchScene(scene, resetCrop(scene.getElements(), selectedIds))}
-            />
-          </div>
+              <div className={`absolute ${historyOpen ? "right-[280px]" : "right-14"} top-3 z-30`}>
+                <PropertiesPanel
+                  t={t}
+                  selectedElements={selectedElements}
+                  labelElements={selectedLabels}
+                  onChange={(patch) =>
+                    replaceElements(scene, (el) => applySelectionPatch(el, patch, selectedIds))
+                  }
+                  onDelete={() => {
+                    deleteElements(scene, selectedIds)
+                    useAppStore.getState().setSelection([])
+                  }}
+                  onDuplicate={() => {
+                    const copies = duplicateElements(scene.getElements(), selectedIds)
+                    scene.mutate((draft) => {
+                      draft.push(...copies)
+                    })
+                    useAppStore
+                      .getState()
+                      .setSelection(
+                        copies
+                          .filter((c) => !(c.type === "text" && c.containerId !== null))
+                          .map((c) => c.id),
+                      )
+                  }}
+                  onAlign={(edge) => moveTo(alignElements(selectedElements, edge))}
+                  onDistribute={(axis) => moveTo(distributeElements(selectedElements, axis))}
+                  onTidy={() => moveTo(tidyElements(selectedElements))}
+                  onGroup={() =>
+                    patchScene(
+                      scene,
+                      groupElements(selectedElements, selectedIds, crypto.randomUUID()),
+                    )
+                  }
+                  onUngroup={() =>
+                    patchScene(scene, ungroupElements(selectedElements, selectedIds))
+                  }
+                  onLock={() => {
+                    patchScene(scene, lockElements(scene.getElements(), selectedIds))
+                    useAppStore.getState().setSelection([])
+                  }}
+                  onFlip={(axis) => {
+                    patchScene(scene, flipElements(scene.getElements(), selectedIds, axis))
+                  }}
+                  onResetCrop={() => patchScene(scene, resetCrop(scene.getElements(), selectedIds))}
+                />
+              </div>
 
-          <LayersPanel
-            t={t}
-            elements={layerElements}
-            selectedIds={selectedIds}
-            open={layersOpen}
-            onToggle={() => setLayersOpen((v) => !v)}
-            onSelect={(id, opts) => {
-              const hitIds = expandIdsToGroups([id], scene.getElements())
-              if (opts.additive) {
-                if (!selectedIds.includes(id)) useAppStore.getState().addToSelection(hitIds)
-              } else {
-                useAppStore.getState().setSelection(hitIds)
-              }
-            }}
-            onSendToBack={reorder(sendToBack)}
-            onSendBackward={reorder(sendBackward)}
-            onBringForward={reorder(bringForward)}
-            onBringToFront={reorder(bringToFront)}
-          />
+              <LayersPanel
+                t={t}
+                elements={layerElements}
+                selectedIds={selectedIds}
+                open={layersOpen}
+                onToggle={() => setLayersOpen((v) => !v)}
+                onSelect={(id, opts) => {
+                  const hitIds = expandIdsToGroups([id], scene.getElements())
+                  if (opts.additive) {
+                    if (!selectedIds.includes(id)) useAppStore.getState().addToSelection(hitIds)
+                  } else {
+                    useAppStore.getState().setSelection(hitIds)
+                  }
+                }}
+                onSendToBack={reorder(sendToBack)}
+                onSendBackward={reorder(sendBackward)}
+                onBringForward={reorder(bringForward)}
+                onBringToFront={reorder(bringToFront)}
+              />
 
-          <LibraryPanel
-            t={t}
-            open={libraryOpen}
-            onToggle={() => setLibraryOpen((v) => !v)}
-            items={libraryItems}
-            templates={BUILTIN_TEMPLATES}
-            selectedCount={selectedIds.length}
-            onAddFromSelection={() => void handleAddFromSelection()}
-            onItemClick={armLibraryItem}
-            onImport={handleImport}
-            onExport={() => void handleExport()}
-            onRename={(id, name) => void handleRename(id, name)}
-            onDelete={(id) => void handleDelete(id)}
-            renderThumbnail={renderThumbnail}
-          />
+              <LibraryPanel
+                t={t}
+                open={libraryOpen}
+                onToggle={() => setLibraryOpen((v) => !v)}
+                items={libraryItems}
+                templates={BUILTIN_TEMPLATES}
+                selectedCount={selectedIds.length}
+                onAddFromSelection={() => void handleAddFromSelection()}
+                onItemClick={armLibraryItem}
+                onImport={handleImport}
+                onExport={() => void handleExport()}
+                onRename={(id, name) => void handleRename(id, name)}
+                onDelete={(id) => void handleDelete(id)}
+                renderThumbnail={renderThumbnail}
+              />
+            </>
+          )}
 
           <PagesTabBar
             t={t}
@@ -602,43 +615,48 @@ function Inner(): React.ReactElement {
             }}
             onReorder={(id, direction) => setPages(reorderPage(pages, id, direction))}
             onMove={(id, toIndex) => setPages(movePage(pages, id, toIndex))}
+            readOnly={viewMode}
           />
 
-          <StatsPanel
-            t={t}
-            open={statsOpen}
-            stats={stats}
-            onChange={(patch) => {
-              if (stats.kind !== "single") return
-              const id = stats.id
-              scene.mutate((draft) => {
-                const i = draft.findIndex((e) => e.id === id)
-                if (i >= 0) draft[i] = { ...draft[i]!, ...patch }
-              })
-            }}
-          />
+          {!viewMode && (
+            <>
+              <StatsPanel
+                t={t}
+                open={statsOpen}
+                stats={stats}
+                onChange={(patch) => {
+                  if (stats.kind !== "single") return
+                  const id = stats.id
+                  scene.mutate((draft) => {
+                    const i = draft.findIndex((e) => e.id === id)
+                    if (i >= 0) draft[i] = { ...draft[i]!, ...patch }
+                  })
+                }}
+              />
 
-          <HistoryPanel
-            // i18next's TFunction overloads aren't directly assignable to the
-            // panel's `(key, options?)` shape under exactOptionalPropertyTypes.
-            t={(key, options) => (options ? t(key, options) : t(key))}
-            history={historyEntries}
-            currentIndex={scene.getHistoryIndex()}
-            open={historyOpen}
-            onToggle={() => setHistoryOpen((v) => !v)}
-            onJump={(index) => scene.jumpToHistory(index)}
-          />
+              <HistoryPanel
+                // i18next's TFunction overloads aren't directly assignable to the
+                // panel's `(key, options?)` shape under exactOptionalPropertyTypes.
+                t={(key, options) => (options ? t(key, options) : t(key))}
+                history={historyEntries}
+                currentIndex={scene.getHistoryIndex()}
+                open={historyOpen}
+                onToggle={() => setHistoryOpen((v) => !v)}
+                onJump={(index) => scene.jumpToHistory(index)}
+              />
 
-          {hasLockedElements && (
-            <button
-              type="button"
-              data-testid="unlock-all"
-              aria-label={t("canvas.unlockAll")}
-              onClick={() => patchScene(scene, unlockAll(scene.getElements()))}
-              className="absolute bottom-3 left-3 z-30 rounded-lg bg-white px-3 py-2 text-xs shadow"
-            >
-              🔓 {t("canvas.unlockAll")}
-            </button>
+              {hasLockedElements && (
+                <button
+                  type="button"
+                  data-testid="unlock-all"
+                  aria-label={t("canvas.unlockAll")}
+                  onClick={() => patchScene(scene, unlockAll(scene.getElements()))}
+                  className="absolute bottom-3 left-3 z-30 rounded-lg bg-white px-3 py-2 text-xs shadow"
+                >
+                  🔓 {t("canvas.unlockAll")}
+                </button>
+              )}
+            </>
           )}
 
           <div className="absolute bottom-3 right-3 z-30 flex items-center gap-1 rounded-lg bg-white px-2 py-1 text-xs shadow">
@@ -671,6 +689,17 @@ function Inner(): React.ReactElement {
             </button>
           </div>
         </>
+      )}
+
+      {viewMode && !presenting && (
+        <button
+          type="button"
+          data-testid="view-mode-exit"
+          onClick={toggleViewMode}
+          className="absolute left-1/2 top-3 z-40 -translate-x-1/2 rounded-full bg-panel px-4 py-1.5 text-xs shadow hover:bg-panel-hover"
+        >
+          {t("viewMode.label")} · {t("viewMode.exit")}
+        </button>
       )}
 
       {presenting && <PresentationHost scene={scene} rootEl={rootRef} />}

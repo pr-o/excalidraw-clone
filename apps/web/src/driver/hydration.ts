@@ -28,6 +28,7 @@ export function hydrateUI(): void {
   if (typeof ui.rulersVisible === "boolean" && ui.rulersVisible !== store.rulersVisible) {
     store.toggleRulers()
   }
+  if (ui.viewMode === true) store.setViewMode(true)
   if (typeof ui.canvasBg === "string") store.setCanvasBg(ui.canvasBg)
   if (typeof ui.zenMode === "boolean" && ui.zenMode !== store.zenMode) store.toggleZenMode()
   if (typeof ui.activeTool === "string") store.setActiveTool(ui.activeTool as ToolName)

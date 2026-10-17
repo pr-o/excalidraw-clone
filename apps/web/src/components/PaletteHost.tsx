@@ -3,6 +3,7 @@ import { lockElements, type Scene, unlockAll } from "@excalidraw-clone/scene"
 import { CommandPalette, type PaletteCommand } from "@excalidraw-clone/ui"
 import { useTranslation } from "react-i18next"
 import { patchScene } from "../driver/patchScene"
+import { toggleViewMode } from "../driver/viewMode"
 import { useAppStore } from "../store"
 
 export function PaletteHost({ scene }: { scene: Scene }): React.ReactElement {
@@ -11,7 +12,9 @@ export function PaletteHost({ scene }: { scene: Scene }): React.ReactElement {
   const setOpen = useAppStore((s) => s.setPaletteOpen)
   const setOpenDialog = useAppStore((s) => s.setOpenDialog)
 
-  const commands: PaletteCommand[] = [
+  const viewMode = useAppStore((s) => s.viewMode)
+
+  const allCommands: PaletteCommand[] = [
     { id: "undo", label: t("shortcuts.undo"), hint: "Cmd+Z", perform: () => scene.undo() },
     { id: "redo", label: t("shortcuts.redo"), hint: "Cmd+Shift+Z", perform: () => scene.redo() },
     {
@@ -57,6 +60,12 @@ export function PaletteHost({ scene }: { scene: Scene }): React.ReactElement {
       perform: () => useAppStore.getState().toggleRulers(),
     },
     {
+      id: "view-mode",
+      label: t("menu.viewMode"),
+      hint: "Alt+R",
+      perform: toggleViewMode,
+    },
+    {
       id: "lock-selection",
       label: t("palette.lockSelection"),
       hint: "Ctrl+Shift+L",
@@ -73,6 +82,11 @@ export function PaletteHost({ scene }: { scene: Scene }): React.ReactElement {
       perform: () => patchScene(scene, unlockAll(scene.getElements())),
     },
   ]
+
+  // View mode is read-only: keep only the commands that cannot touch the scene.
+  const commands = viewMode
+    ? allCommands.filter((c) => ["help", "export", "view-mode"].includes(c.id))
+    : allCommands
 
   return <CommandPalette t={t} open={open} onClose={() => setOpen(false)} commands={commands} />
 }

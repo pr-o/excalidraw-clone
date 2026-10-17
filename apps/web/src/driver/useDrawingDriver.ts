@@ -27,6 +27,7 @@ import {
 } from "@excalidraw-clone/tools"
 import { useEffect, useRef, type RefObject } from "react"
 import { useAppStore } from "../store"
+import { isReadOnly } from "./viewMode"
 import { applyEffects } from "./effects"
 import { pickElementAtPoint } from "./hitTest"
 import { LaserTrail } from "./laserTrail"
@@ -145,7 +146,7 @@ export function useDrawingDriver({
       canvasBg: initial.canvasBg,
     })
     rendererRef.current = renderer
-    renderer.setShowUserGuides(initial.rulersVisible && !initial.presenting)
+    renderer.setShowUserGuides(initial.rulersVisible && !isReadOnly(initial))
     renderer.start()
     onReady?.(renderer)
 
@@ -175,8 +176,12 @@ export function useDrawingDriver({
         s.resetToolState("selection")
       }
       if (s.activeGuides !== prev.activeGuides) renderer.setGuides(s.activeGuides)
-      if (s.rulersVisible !== prev.rulersVisible || s.presenting !== prev.presenting) {
-        renderer.setShowUserGuides(s.rulersVisible && !s.presenting)
+      if (
+        s.rulersVisible !== prev.rulersVisible ||
+        s.presenting !== prev.presenting ||
+        s.viewMode !== prev.viewMode
+      ) {
+        renderer.setShowUserGuides(s.rulersVisible && !isReadOnly(s))
       }
       if (s.activeTool !== prev.activeTool && prev.activeTool === "laser") laser.clear()
       if (
@@ -269,7 +274,7 @@ export function useDrawingDriver({
       const store = useAppStore.getState()
       // Presentation mode is read-only. The laser pointer is the one exception:
       // it is a presentation aid and writes nothing to the scene.
-      if (store.presenting && store.activeTool !== "laser") return
+      if (isReadOnly(store) && store.activeTool !== "laser") return
       const event = pointerEventToToolEvent(type, canvas, viewOf(store), resolveGrid(), e)
       if ("at" in event) store.setLastScenePointer(event.at)
       dispatch(event, modifiersOf(e))
@@ -362,7 +367,7 @@ export function useDrawingDriver({
     let guideCursor = false
     const guideAt = (e: MouseEvent): { axis: "x" | "y"; index: number } | null => {
       const store = useAppStore.getState()
-      if (!store.rulersVisible || store.presenting || store.activeTool !== "selection") return null
+      if (!store.rulersVisible || isReadOnly(store) || store.activeTool !== "selection") return null
       const at = clientToScene(canvas, viewOf(store), e)
       return hitTestUserGuide(scene.getGuides(), at, store.zoom)
     }
@@ -381,7 +386,18 @@ export function useDrawingDriver({
       if (orphanedPointerRef.current === e.pointerId) orphanedPointerRef.current = null
       // `spaceHeldRef` can still be set from a Space held down before
       // presentation started, so gate the pan gesture here too.
-      if (spaceHeldRef.current && !useAppStore.getState().presenting) {
+      const vs = useAppStore.getState()
+      if (vs.viewMode && !vs.presenting && vs.activeTool !== "laser") {
+        // View mode: a click on a linked element opens it (no modifier needed).
+        const hit = pickElementAtPoint(scene.getElements(), clientToScene(canvas, viewOf(vs), e))
+        if (hit && sanitizeLinkHref(hit.link)) {
+          openLink(hit.link)
+          return
+        }
+      }
+      // Left-drag on empty canvas pans in view mode (hand-tool behaviour).
+      const panWanted = spaceHeldRef.current || (vs.viewMode && vs.activeTool !== "laser")
+      if (panWanted && !vs.presenting) {
         canvas.setPointerCapture(e.pointerId)
         const store = useAppStore.getState()
         panDragRef.current = {
@@ -404,7 +420,7 @@ export function useDrawingDriver({
       const pending = store.pendingItem
       if (pending) {
         // Read-only while presenting: placing a library item mutates the scene.
-        if (store.presenting) return
+        if (isReadOnly(store)) return
         const at = snappedScenePoint(e)
         placeLibraryItem(pending, at.x, at.y, scene)
         store.clearPendingItem()
@@ -465,10 +481,12 @@ export function useDrawingDriver({
       const pending = store.pendingItem
       if (pending) {
         // Read-only while presenting: no ghost preview on the overlay.
-        if (store.presenting) return
+        if (isReadOnly(store)) return
         drawGhost(overlay, pending, snappedScenePoint(e), viewOf(store))
         return
       }
+      // Hover feeds the link indicator; the tool dispatch below is gated off.
+      if (store.viewMode) store.setLastScenePointer(clientToScene(canvas, viewOf(store), e))
       dispatchPointer("pointerMove", e)
     }
     const onPointerUp = (e: PointerEvent): void => {
@@ -497,7 +515,7 @@ export function useDrawingDriver({
     }
     const onDoubleClick = (e: MouseEvent): void => {
       // Read-only while presenting (laser has no double-click behaviour).
-      if (useAppStore.getState().presenting) return
+      if (isReadOnly(useAppStore.getState())) return
       const guideHit = guideAt(e)
       if (guideHit) {
         applyGuideDrag(scene, guideHit, null)
@@ -508,7 +526,11 @@ export function useDrawingDriver({
 
     const onContextMenu = (e: MouseEvent): void => {
       // No editor context menu while presenting; let the browser handle it.
-      if (useAppStore.getState().presenting) return
+      if (isReadOnly(useAppStore.getState())) {
+        // View mode hides the editor menu outright; presenting leaves the browser's.
+        if (useAppStore.getState().viewMode) e.preventDefault()
+        return
+      }
       e.preventDefault()
       const store = useAppStore.getState()
       const scenePoint = clientToScene(canvas, viewOf(store), e)

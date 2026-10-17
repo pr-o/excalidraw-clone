@@ -123,7 +123,12 @@
     "themeSystem": "System",
     "language": "Language",
     "canvasBg": "Canvas background",
-    "rulers": "Rulers"
+    "rulers": "Rulers",
+    "viewMode": "View mode"
+  },
+  "viewMode": {
+    "label": "View mode",
+    "exit": "Exit"
   },
   "common": {
     "close": "Close"

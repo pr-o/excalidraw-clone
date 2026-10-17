@@ -1,6 +1,7 @@
 "use client"
 import type { Scene } from "@excalidraw-clone/scene"
 import { buildPaste, copyPayload, selectableIds } from "../driver/clipboard"
+import { isReadOnly } from "../driver/viewMode"
 import { useAppStore } from "../store"
 
 interface Bindings {
@@ -31,6 +32,7 @@ export function attachClipboard({ scene }: Bindings): () => void {
   }
 
   const onCut = (e: ClipboardEvent): void => {
+    if (isReadOnly(useAppStore.getState())) return
     const ids = writeSelection(e)
     if (ids === null) return
     const doomed = new Set(ids)
@@ -43,6 +45,7 @@ export function attachClipboard({ scene }: Bindings): () => void {
   }
 
   const onPaste = (e: ClipboardEvent): void => {
+    if (isReadOnly(useAppStore.getState())) return
     if (isEditableTarget(e.target)) return
     const text = e.clipboardData?.getData("text/plain") ?? ""
     const store = useAppStore.getState()

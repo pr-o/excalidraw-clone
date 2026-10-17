@@ -564,3 +564,61 @@ describe("Ctrl/Cmd+Arrow flowchart chaining", () => {
     expect(scene.getElements()[0]!.x).toBe(1)
   })
 })
+
+describe("view mode (read-only editor)", () => {
+  let detach: () => void
+  let scene: Scene
+  beforeEach(() => {
+    scene = new Scene([newRectangle({ x: 0, y: 0, width: 10, height: 10 })])
+    detach = attachShortcuts({ scene })
+    const s = useAppStore.getState()
+    s.exitPresentation()
+    s.setViewMode(false)
+    s.setActiveTool("selection")
+    s.setSelection([scene.getElements()[0]!.id])
+  })
+  afterEach(() => {
+    detach()
+    useAppStore.getState().setViewMode(false)
+  })
+
+  it("Alt+R toggles view mode, clears selection, and does not switch tool", () => {
+    press({ key: "®", code: "KeyR", altKey: true })
+    const s = useAppStore.getState()
+    expect(s.viewMode).toBe(true)
+    expect(s.selectedIds).toEqual([])
+    expect(s.activeTool).toBe("selection")
+    press({ key: "r", code: "KeyR", altKey: true })
+    expect(useAppStore.getState().viewMode).toBe(false)
+  })
+
+  it("is ignored while presenting", () => {
+    useAppStore.getState().enterPresentation()
+    press({ key: "r", code: "KeyR", altKey: true })
+    expect(useAppStore.getState().viewMode).toBe(false)
+    useAppStore.getState().exitPresentation()
+  })
+
+  it("mutating and tool shortcuts are no-ops in view mode", () => {
+    const id = scene.getElements()[0]!.id
+    useAppStore.getState().setViewMode(true)
+    useAppStore.getState().setSelection([id])
+    press({ key: "Delete" })
+    press({ key: "z", ctrlKey: true })
+    press({ key: "ArrowRight" })
+    press({ key: "h", shiftKey: true })
+    press({ key: "g", ctrlKey: true })
+    press({ key: "r" })
+    expect(scene.getElements()[0]).toMatchObject({ id, x: 0, isDeleted: false })
+    expect(useAppStore.getState().activeTool).toBe("selection")
+  })
+
+  it("laser, find and zoom shortcuts still work", () => {
+    useAppStore.getState().setViewMode(true)
+    press({ key: "k" })
+    expect(useAppStore.getState().activeTool).toBe("laser")
+    press({ key: "f", ctrlKey: true })
+    expect(useAppStore.getState().findOpen).toBe(true)
+    useAppStore.getState().setFindOpen(false)
+  })
+})

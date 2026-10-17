@@ -12,6 +12,8 @@ export interface PagesTabBarProps {
   onDuplicate: (id: string) => void
   onReorder: (id: string, direction: "left" | "right") => void
   onMove: (id: string, toIndex: number) => void
+  /** View mode: tabs only switch pages; add/rename/delete/reorder/duplicate are hidden. */
+  readOnly?: boolean
   className?: string
 }
 
@@ -33,6 +35,7 @@ export function PagesTabBar({
   onDuplicate,
   onReorder,
   onMove,
+  readOnly = false,
   className,
 }: PagesTabBarProps): React.ReactElement {
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -54,7 +57,7 @@ export function PagesTabBar({
     (id: string) =>
     (e: React.PointerEvent<HTMLDivElement>): void => {
       const target = e.target as HTMLElement
-      if (target.closest("button, input")) return
+      if (readOnly || target.closest("button, input")) return
       setDrag({ draggedId: id, overIndex: null, dropLineLeft: 0 })
     }
 
@@ -121,16 +124,18 @@ export function PagesTabBar({
               active ? "bg-accent-soft" : "hover:bg-panel-subtle"
             }`}
           >
-            <button
-              type="button"
-              data-testid={`page-reorder-left-${page.id}`}
-              aria-label={t("pages.moveLeft")}
-              disabled={index === 0}
-              onClick={() => onReorder(page.id, "left")}
-              className="rounded px-0.5 disabled:opacity-30"
-            >
-              ◀
-            </button>
+            {!readOnly && (
+              <button
+                type="button"
+                data-testid={`page-reorder-left-${page.id}`}
+                aria-label={t("pages.moveLeft")}
+                disabled={index === 0}
+                onClick={() => onReorder(page.id, "left")}
+                className="rounded px-0.5 disabled:opacity-30"
+              >
+                ◀
+              </button>
+            )}
 
             {thumb ? (
               <img
@@ -147,7 +152,7 @@ export function PagesTabBar({
               />
             )}
 
-            {editing ? (
+            {editing && !readOnly ? (
               <input
                 autoFocus
                 data-testid={`page-rename-input-${page.id}`}
@@ -165,60 +170,66 @@ export function PagesTabBar({
                 type="button"
                 data-testid={`page-switch-${page.id}`}
                 onClick={() => onSwitch(page.id)}
-                onDoubleClick={() => startRename(page.id, page.name)}
+                onDoubleClick={readOnly ? undefined : () => startRename(page.id, page.name)}
                 className="max-w-[8rem] truncate"
               >
                 {page.name}
               </button>
             )}
 
-            <button
-              type="button"
-              data-testid={`page-reorder-right-${page.id}`}
-              aria-label={t("pages.moveRight")}
-              disabled={index === pages.length - 1}
-              onClick={() => onReorder(page.id, "right")}
-              className="rounded px-0.5 disabled:opacity-30"
-            >
-              ▶
-            </button>
+            {!readOnly && (
+              <>
+                <button
+                  type="button"
+                  data-testid={`page-reorder-right-${page.id}`}
+                  aria-label={t("pages.moveRight")}
+                  disabled={index === pages.length - 1}
+                  onClick={() => onReorder(page.id, "right")}
+                  className="rounded px-0.5 disabled:opacity-30"
+                >
+                  ▶
+                </button>
 
-            <button
-              type="button"
-              data-testid={`page-duplicate-${page.id}`}
-              aria-label={t("pages.duplicate")}
-              title={t("pages.duplicate")}
-              onClick={() => onDuplicate(page.id)}
-              className="rounded px-0.5 hover:bg-panel-hover"
-            >
-              ⧉
-            </button>
+                <button
+                  type="button"
+                  data-testid={`page-duplicate-${page.id}`}
+                  aria-label={t("pages.duplicate")}
+                  title={t("pages.duplicate")}
+                  onClick={() => onDuplicate(page.id)}
+                  className="rounded px-0.5 hover:bg-panel-hover"
+                >
+                  ⧉
+                </button>
 
-            <button
-              type="button"
-              data-testid={`page-delete-${page.id}`}
-              aria-label={t("pages.delete")}
-              title={t("pages.delete")}
-              disabled={pages.length === 1}
-              onClick={() => onDelete(page.id)}
-              className="rounded px-0.5 hover:bg-panel-hover disabled:opacity-30"
-            >
-              ✕
-            </button>
+                <button
+                  type="button"
+                  data-testid={`page-delete-${page.id}`}
+                  aria-label={t("pages.delete")}
+                  title={t("pages.delete")}
+                  disabled={pages.length === 1}
+                  onClick={() => onDelete(page.id)}
+                  className="rounded px-0.5 hover:bg-panel-hover disabled:opacity-30"
+                >
+                  ✕
+                </button>
+              </>
+            )}
           </div>
         )
       })}
 
-      <button
-        type="button"
-        data-testid="page-add"
-        aria-label={t("pages.add")}
-        title={t("pages.add")}
-        onClick={onAdd}
-        className="shrink-0 rounded px-2 py-1 text-xs hover:bg-panel-hover"
-      >
-        +
-      </button>
+      {!readOnly && (
+        <button
+          type="button"
+          data-testid="page-add"
+          aria-label={t("pages.add")}
+          title={t("pages.add")}
+          onClick={onAdd}
+          className="shrink-0 rounded px-2 py-1 text-xs hover:bg-panel-hover"
+        >
+          +
+        </button>
+      )}
     </nav>
   )
 }

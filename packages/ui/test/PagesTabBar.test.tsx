@@ -204,3 +204,14 @@ describe("PagesTabBar", () => {
     expect(screen.queryByTestId("page-drop-line")).not.toBeInTheDocument()
   })
 })
+
+describe("PagesTabBar readOnly (view mode)", () => {
+  it("keeps page switching but hides add/delete/duplicate/reorder", () => {
+    render(<PagesTabBar t={t} pages={pages} activePageId="p1" {...handlers} readOnly />)
+    expect(screen.getByTestId("page-switch-p2")).toBeInTheDocument()
+    expect(screen.queryByTestId("page-add")).toBeNull()
+    expect(screen.queryByTestId("page-delete-p1")).toBeNull()
+    expect(screen.queryByTestId("page-duplicate-p1")).toBeNull()
+    expect(screen.queryByTestId("page-reorder-left-p1")).toBeNull()
+  })
+})

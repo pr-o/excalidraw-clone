@@ -22,6 +22,7 @@ export function startAutoSave(pages: readonly PageRecord[], activePageId: string
         rulersVisible: s.rulersVisible,
         canvasBg: s.canvasBg,
         zenMode: s.zenMode,
+        viewMode: s.viewMode,
         activeTool: s.activeTool,
       })
     },

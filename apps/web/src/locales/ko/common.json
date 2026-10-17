@@ -123,7 +123,12 @@
     "themeSystem": "시스템",
     "language": "언어",
     "canvasBg": "캔버스 배경",
-    "rulers": "눈금자"
+    "rulers": "눈금자",
+    "viewMode": "보기 모드"
+  },
+  "viewMode": {
+    "label": "보기 모드",
+    "exit": "나가기"
   },
   "common": { "close": "닫기" },
   "palette": {

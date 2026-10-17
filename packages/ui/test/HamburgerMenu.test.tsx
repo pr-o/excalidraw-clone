@@ -185,4 +185,20 @@ describe("HamburgerMenu", () => {
     await userEvent.keyboard("{Escape}")
     expect(onOpenChange).not.toHaveBeenCalled()
   })
+
+  it("view mode entry toggles and edit-oriented entries are hidden while on", async () => {
+    const onViewModeToggle = vi.fn()
+    const { rerender } = render(
+      <HamburgerMenu {...baseProps()} open onViewModeToggle={onViewModeToggle} />,
+    )
+    await userEvent.click(screen.getByTestId("menu-view-mode"))
+    expect(onViewModeToggle).toHaveBeenCalledTimes(1)
+    rerender(<HamburgerMenu {...baseProps()} open viewMode onViewModeToggle={onViewModeToggle} />)
+    expect(screen.queryByText("menu.open")).toBeNull()
+    expect(screen.queryByText("menu.importMermaid")).toBeNull()
+    expect(screen.queryByText("menu.reset")).toBeNull()
+    expect(screen.queryByTestId("canvas-bg-ffffff")).toBeNull()
+    expect(screen.getByText("menu.export")).toBeInTheDocument()
+    expect(screen.getByText("menu.help")).toBeInTheDocument()
+  })
 })
