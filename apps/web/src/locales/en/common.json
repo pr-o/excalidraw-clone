@@ -109,6 +109,7 @@
     "open": "Open…",
     "saveAs": "Save as…",
     "export": "Export image…",
+    "importMermaid": "Import Mermaid…",
     "presentation": "Start presentation",
     "presentationHint": "Add a frame to present",
     "reset": "Reset the canvas",
@@ -173,6 +174,13 @@
     "body": "This will permanently remove all your work. This action cannot be undone.",
     "cancel": "Cancel",
     "confirm": "Reset canvas"
+  },
+  "mermaid": {
+    "title": "Import Mermaid flowchart",
+    "insert": "Insert",
+    "cancel": "Cancel",
+    "error": "Can't read this diagram",
+    "skipped": "Skipped unsupported lines"
   },
   "canvas": {
     "unlockAll": "Unlock all"

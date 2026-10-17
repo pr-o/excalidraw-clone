@@ -1,13 +1,15 @@
 "use client"
 import { clearAllFiles, clearLocal, download } from "@excalidraw-clone/persistence"
-import type { Scene } from "@excalidraw-clone/scene"
+import { layoutFlowchart, type MermaidFlowchart, type Scene } from "@excalidraw-clone/scene"
 import {
   ExportDialog,
   HelpDialog,
+  MermaidImportDialog,
   ResetCanvasDialog,
   type ExportOptions,
 } from "@excalidraw-clone/ui"
 import { useTranslation } from "react-i18next"
+import { centerAt, selectableIds } from "../driver/clipboard"
 import { copyPNGToClipboard } from "../driver/copyImageToClipboard"
 import { buildCombinedPDF } from "../driver/exportPDF"
 import { exportToPNG } from "../driver/exportPNG"
@@ -74,6 +76,21 @@ export function Dialogs({ scene, pages, activePageId }: DialogsProps): React.Rea
     setOpenDialog(null)
   }
 
+  // Same insert-and-select path as paste: one mutate (one undo step), centered on the viewport.
+  const onMermaidInsert = (chart: MermaidFlowchart): void => {
+    const store = useAppStore.getState()
+    const at = {
+      x: window.innerWidth / 2 / store.zoom - store.scrollX,
+      y: window.innerHeight / 2 / store.zoom - store.scrollY,
+    }
+    const inserted = centerAt(layoutFlowchart(chart), at)
+    scene.mutate((draft) => {
+      draft.push(...inserted)
+    })
+    store.setSelection(selectableIds(inserted))
+    setOpenDialog(null)
+  }
+
   return (
     <>
       <HelpDialog t={t} open={openDialog === "help"} onClose={() => setOpenDialog(null)} />
@@ -88,6 +105,12 @@ export function Dialogs({ scene, pages, activePageId }: DialogsProps): React.Rea
         hasSelection={hasSelection}
         defaultScope={frameSelected ? "selection" : "page"}
         defaultBackground={resolvedTheme === "dark" ? "dark" : "white"}
+      />
+      <MermaidImportDialog
+        t={t}
+        open={openDialog === "mermaid-import"}
+        onClose={() => setOpenDialog(null)}
+        onInsert={onMermaidInsert}
       />
       <ResetCanvasDialog
         t={t}

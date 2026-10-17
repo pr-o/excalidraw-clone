@@ -1,6 +1,6 @@
 "use client"
-import type { ExcalidrawElement, Scene } from "@excalidraw-clone/scene"
-import { buildPaste, copyPayload } from "../driver/clipboard"
+import type { Scene } from "@excalidraw-clone/scene"
+import { buildPaste, copyPayload, selectableIds } from "../driver/clipboard"
 import { useAppStore } from "../store"
 
 interface Bindings {
@@ -14,9 +14,6 @@ const isEditableTarget = (t: EventTarget | null): boolean => {
     (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable === true)
   )
 }
-
-const selectableIds = (els: readonly ExcalidrawElement[]): string[] =>
-  els.filter((el) => !(el.type === "text" && el.containerId !== null)).map((el) => el.id)
 
 export function attachClipboard({ scene }: Bindings): () => void {
   const writeSelection = (e: ClipboardEvent): readonly string[] | null => {

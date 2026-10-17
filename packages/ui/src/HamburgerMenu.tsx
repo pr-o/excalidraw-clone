@@ -21,6 +21,7 @@ export interface HamburgerMenuProps {
   onOpenFile: () => void
   onSaveFile: () => void
   onExport: () => void
+  onImportMermaid: () => void
   onStartPresentation: () => void
   canPresent: boolean
   onReset: () => void
@@ -66,6 +67,9 @@ export function HamburgerMenu(props: HamburgerMenuProps): React.ReactElement {
           <MenuItem onClick={wrap(props.onOpenFile)}>{props.t("menu.open")}</MenuItem>
           <MenuItem onClick={wrap(props.onSaveFile)}>{props.t("menu.saveAs")}</MenuItem>
           <MenuItem onClick={wrap(props.onExport)}>{props.t("menu.export")}</MenuItem>
+          <MenuItem onClick={wrap(props.onImportMermaid)} testId="menu-import-mermaid">
+            {props.t("menu.importMermaid")}
+          </MenuItem>
           {props.canPresent ? (
             <button
               type="button"
@@ -151,16 +155,19 @@ export function HamburgerMenu(props: HamburgerMenuProps): React.ReactElement {
 function MenuItem({
   onClick,
   variant,
+  testId,
   children,
 }: {
   onClick: () => void
   variant?: "danger"
+  testId?: string
   children: React.ReactNode
 }): React.ReactElement {
   return (
     <button
       type="button"
       role="menuitem"
+      data-testid={testId}
       onClick={onClick}
       className={`block w-full rounded px-3 py-2 text-left text-sm ${variant === "danger" ? "text-danger hover:bg-danger-soft" : "hover:bg-panel-hover"}`}
     >

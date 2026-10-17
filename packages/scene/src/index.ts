@@ -59,6 +59,15 @@ export { normalizeToOrigin } from "./normalize"
 export { cloneElementsWithNewIds, expandIdsToCopyClosure } from "./clone"
 export { duplicateElements } from "./duplicate"
 export { BUILTIN_TEMPLATES } from "./templates"
+export { layoutFlowchart, parseMermaidFlowchart } from "./mermaid"
+export type {
+  MermaidDirection,
+  MermaidEdge,
+  MermaidEdgeStyle,
+  MermaidFlowchart,
+  MermaidNode,
+  MermaidShape,
+} from "./mermaid"
 export { alignElements, distributeElements, tidyElements } from "./arrange"
 export type { AlignEdge, DistributeAxis, PositionPatch } from "./arrange"
 export { expandIdsToGroups, groupElements, ungroupElements } from "./groups"

@@ -33,6 +33,11 @@ export function PaletteHost({ scene }: { scene: Scene }): React.ReactElement {
     },
     { id: "help", label: t("menu.help"), perform: () => setOpenDialog("help") },
     { id: "export", label: t("menu.export"), perform: () => setOpenDialog("export") },
+    {
+      id: "import-mermaid",
+      label: t("menu.importMermaid"),
+      perform: () => setOpenDialog("mermaid-import"),
+    },
     { id: "reset", label: t("menu.reset"), perform: () => setOpenDialog("reset") },
     {
       id: "zen",

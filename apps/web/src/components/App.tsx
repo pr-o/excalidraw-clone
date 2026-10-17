@@ -459,6 +459,7 @@ function Inner(): React.ReactElement {
                 void saveAsExcalidraw(pages, activePageId)
               }}
               onExport={() => setOpenDialog("export")}
+              onImportMermaid={() => setOpenDialog("mermaid-import")}
               canPresent={frames.length > 0}
               onStartPresentation={() => useAppStore.getState().enterPresentation()}
               onReset={() => setOpenDialog("reset")}

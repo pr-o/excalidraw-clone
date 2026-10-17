@@ -30,6 +30,9 @@ export type { ExportDialogProps, ExportOptions, ExportPageOption } from "./Expor
 export { ResetCanvasDialog } from "./ResetCanvasDialog"
 export type { ResetCanvasDialogProps } from "./ResetCanvasDialog"
 
+export { MermaidImportDialog } from "./MermaidImportDialog"
+export type { MermaidImportDialogProps } from "./MermaidImportDialog"
+
 export { LibraryPanel } from "./LibraryPanel"
 export type { LibraryPanelProps } from "./LibraryPanel"
 

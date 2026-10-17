@@ -54,12 +54,23 @@ export function buildPaste(text: string, at: { x: number; y: number }): Excalidr
     return [newText({ x: at.x, y: at.y, text })]
   }
   if (envelope.elements.length === 0) return []
-  const clones = cloneElementsWithNewIds(envelope.elements)
+  return centerAt(cloneElementsWithNewIds(envelope.elements), at)
+}
+
+/** Ids to select after inserting `els`: everything but bound labels. */
+export const selectableIds = (els: readonly ExcalidrawElement[]): string[] =>
+  els.filter((el) => !(el.type === "text" && el.containerId !== null)).map((el) => el.id)
+
+/** Translates `els` so their combined bounding-box center lands at `at`. */
+export function centerAt(
+  els: readonly ExcalidrawElement[],
+  at: { x: number; y: number },
+): ExcalidrawElement[] {
   let minX = Infinity
   let minY = Infinity
   let maxX = -Infinity
   let maxY = -Infinity
-  for (const el of clones) {
+  for (const el of els) {
     const b = getElementBounds(el)
     minX = Math.min(minX, b.x)
     minY = Math.min(minY, b.y)
@@ -68,5 +79,5 @@ export function buildPaste(text: string, at: { x: number; y: number }): Excalidr
   }
   const dx = at.x - (minX + maxX) / 2
   const dy = at.y - (minY + maxY) / 2
-  return clones.map((el) => ({ ...el, x: el.x + dx, y: el.y + dy }))
+  return els.map((el) => ({ ...el, x: el.x + dx, y: el.y + dy }))
 }

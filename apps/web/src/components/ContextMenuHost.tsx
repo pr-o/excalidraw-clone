@@ -4,7 +4,6 @@ import {
   bringForward,
   bringToFront,
   duplicateElements,
-  type ExcalidrawElement,
   flipElements,
   resetCrop,
   getElementsBounds,
@@ -19,16 +18,11 @@ import {
 import { ContextMenu, type ContextMenuItem, PagePickerFlyout } from "@excalidraw-clone/ui"
 import { useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { buildPaste, copyPayload } from "../driver/clipboard"
+import { buildPaste, copyPayload, selectableIds } from "../driver/clipboard"
 import { commitElementLink } from "../driver/link"
 import { canMoveElementToPage } from "../driver/moveToPage"
 import { deleteElements, patchScene, reorderElements } from "../driver/patchScene"
 import { useAppStore } from "../store"
-
-// Same predicate as apps/web/src/keyboard/clipboard.ts's private selectableIds —
-// pasted/duplicated bound text rides along with its container but isn't itself selectable.
-const selectableIds = (els: readonly ExcalidrawElement[]): string[] =>
-  els.filter((el) => !(el.type === "text" && el.containerId !== null)).map((el) => el.id)
 
 export interface ContextMenuHostProps {
   scene: Scene

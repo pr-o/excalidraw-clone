@@ -22,6 +22,7 @@ const baseProps = (): HamburgerMenuProps => ({
   onExport: vi.fn(),
   onReset: vi.fn(),
   onHelp: vi.fn(),
+  onImportMermaid: vi.fn(),
   onStartPresentation: vi.fn(),
   canPresent: true,
 })
