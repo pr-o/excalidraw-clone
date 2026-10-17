@@ -19,11 +19,15 @@ export function serializeDocument(
   appState?: ExcalidrawAppStateSnapshot,
   files?: ExcalidrawFiles,
 ): ExcalidrawData {
-  const pageData = pages.map((p) => ({
-    id: p.id,
-    name: p.name,
-    elements: p.scene.getElementsIncludingDeleted(),
-  }))
+  const pageData = pages.map((p) => {
+    const guides = p.scene.getGuides()
+    return {
+      id: p.id,
+      name: p.name,
+      elements: p.scene.getElementsIncludingDeleted(),
+      ...(guides.x.length + guides.y.length > 0 ? { guides } : {}),
+    }
+  })
   return buildExcalidrawData(pageData, activePageId, appState, files)
 }
 

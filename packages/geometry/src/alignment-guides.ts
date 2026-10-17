@@ -7,6 +7,13 @@ export interface AlignmentGuide {
   end: number
 }
 
+/** User-placed ruler guides in scene coordinates: `x` holds vertical lines
+ *  (x positions), `y` holds horizontal lines (y positions). */
+export interface UserGuides {
+  x: readonly number[]
+  y: readonly number[]
+}
+
 export interface AlignmentSnapResult {
   dx: number
   dy: number
@@ -48,6 +55,7 @@ const bestAxisMatch = (
   candidateBounds: readonly Bounds[],
   axis: "x" | "y",
   thresholdWorld: number,
+  lines: readonly number[],
 ): AxisMatch | null => {
   const movingTriple = axis === "x" ? xTriple(movingBounds) : yTriple(movingBounds)
   const movingValues = [movingTriple.near, movingTriple.center, movingTriple.far]
@@ -79,23 +87,41 @@ const bestAxisMatch = (
       }
     }
   }
+  // A guide line spans the whole canvas, so its visual just tracks the moving box.
+  for (const line of lines) {
+    for (const mv of movingValues) {
+      const distance = Math.abs(line - mv)
+      if (distance > thresholdWorld) continue
+      if (best === null || distance < best.distance) {
+        best = {
+          distance,
+          correction: line - mv,
+          position: line,
+          perpStart: movingPerpStart,
+          perpEnd: movingPerpEnd,
+        }
+      }
+    }
+  }
   return best
 }
 
 /** Compares the moving bbox's near-edge/center/far-edge against every
  *  candidate's same three values, independently per axis. The closest
  *  match within `thresholdWorld` wins that axis; an axis with no match
- *  contributes zero correction and no guide. */
+ *  contributes zero correction and no guide. `lines` are user guides, which
+ *  compete with element candidates on distance alone. */
 export const computeAlignmentSnap = (
   movingBounds: Bounds,
   candidateBounds: readonly Bounds[],
   thresholdWorld: number,
+  lines: UserGuides = { x: [], y: [] },
 ): AlignmentSnapResult => {
   const guides: AlignmentGuide[] = []
   let dx = 0
   let dy = 0
 
-  const xMatch = bestAxisMatch(movingBounds, candidateBounds, "x", thresholdWorld)
+  const xMatch = bestAxisMatch(movingBounds, candidateBounds, "x", thresholdWorld, lines.x)
   if (xMatch) {
     dx = xMatch.correction
     guides.push({
@@ -106,7 +132,7 @@ export const computeAlignmentSnap = (
     })
   }
 
-  const yMatch = bestAxisMatch(movingBounds, candidateBounds, "y", thresholdWorld)
+  const yMatch = bestAxisMatch(movingBounds, candidateBounds, "y", thresholdWorld, lines.y)
   if (yMatch) {
     dy = yMatch.correction
     guides.push({

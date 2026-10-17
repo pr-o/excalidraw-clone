@@ -11,7 +11,7 @@ import {
   newLabelForLinear,
 } from "@excalidraw-clone/scene"
 import type { Tool, ToolContext, ToolEffect, ToolEvent } from "../../types"
-import { computeDragAlignment } from "./alignment"
+import { computeDragAlignment, snapResizeToUserGuides } from "./alignment"
 import {
   buildCropCommitEffect,
   buildCropMoveEffect,
@@ -474,6 +474,7 @@ const reduceResizing = (
 ): Transition => {
   switch (event.type) {
     case "pointerMove": {
+      const snap = snapResizeToUserGuides(state.origin, state.handle, state.start, event.at, ctx)
       return [
         state,
         [
@@ -482,16 +483,23 @@ const reduceResizing = (
             state.origin,
             state.handle,
             state.start,
-            event.at,
+            snap.at,
             ctx.modifiers,
           ),
+          { kind: "setGuides", guides: snap.guides },
         ],
       ]
     }
     case "pointerUp":
-      return [{ phase: "idle" }, [buildResizeCommitEffect(state.elementId)]]
+      return [
+        { phase: "idle" },
+        [buildResizeCommitEffect(state.elementId), { kind: "setGuides", guides: [] }],
+      ]
     case "escape":
-      return [{ phase: "idle" }, [buildResizeRevertEffect(state.elementId, state.origin)]]
+      return [
+        { phase: "idle" },
+        [buildResizeRevertEffect(state.elementId, state.origin), { kind: "setGuides", guides: [] }],
+      ]
     default:
       return [state, []]
   }

@@ -218,3 +218,41 @@ describe("CanvasRenderer alignment guides", () => {
     ).toBe(true)
   })
 })
+
+describe("CanvasRenderer user guides", () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  const strokes = (ctx: ReturnType<typeof createMockCanvas>["ctx"]): number =>
+    ctx.__calls.filter((c) => c.method === "stroke").length
+
+  it("draws nothing until shown, then one stroke per page guide on the main canvas", () => {
+    const { canvas: main, ctx } = createMockCanvas()
+    const { canvas: overlay } = createMockCanvas()
+    const scene = new Scene([], { x: [10], y: [20, 30] })
+    const r = new CanvasRenderer(main, scene, { overlayCanvas: overlay })
+    r.start()
+    flush()
+    expect(strokes(ctx)).toBe(0)
+    r.setShowUserGuides(true)
+    flush()
+    expect(strokes(ctx)).toBe(3)
+  })
+
+  it("redraws when the scene's guides change", () => {
+    const { canvas: main, ctx } = createMockCanvas()
+    const scene = new Scene()
+    const r = new CanvasRenderer(main, scene)
+    r.setShowUserGuides(true)
+    r.start()
+    flush()
+    expect(strokes(ctx)).toBe(0)
+    scene.setGuides({ x: [5], y: [] })
+    flush()
+    expect(strokes(ctx)).toBe(1)
+  })
+})

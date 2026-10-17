@@ -1,4 +1,10 @@
-import type { AlignmentGuide, GridSnap, Point, ViewTransform } from "@excalidraw-clone/geometry"
+import type {
+  AlignmentGuide,
+  GridSnap,
+  Point,
+  UserGuides,
+  ViewTransform,
+} from "@excalidraw-clone/geometry"
 import type { ExcalidrawElement } from "@excalidraw-clone/scene"
 
 export type ToolName =
@@ -36,6 +42,8 @@ export interface ToolContext {
   modifiers: Modifiers
   selectedIds: readonly string[]
   grid: GridSnap
+  /** Ruler guides on the active page; only supplied while rulers are shown. */
+  userGuides?: UserGuides
 }
 
 export type ToolEvent =

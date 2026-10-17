@@ -37,7 +37,7 @@ export function pagesFromDocument(data: ExcalidrawData): {
   const pages = data.pages.map((p) => ({
     id: p.id,
     name: p.name,
-    scene: new Scene(p.elements),
+    scene: new Scene(p.elements, p.guides),
     viewport: DEFAULT_VIEWPORT,
   }))
   return { pages, activePageId: data.activePageId }
@@ -64,6 +64,7 @@ export function duplicatePage(pages: readonly PageRecord[], id: string): PageRec
     `${source.name} copy`,
     cloneElementsWithNewIds(source.scene.getElements()),
   )
+  copy.scene.setGuides(source.scene.getGuides())
   const next = [...pages]
   next.splice(index + 1, 0, copy)
   return next

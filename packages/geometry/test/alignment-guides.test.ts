@@ -69,3 +69,33 @@ describe("computeAlignmentSnap", () => {
     expect(result).toEqual({ dx: 0, dy: 0, guides: [] })
   })
 })
+
+describe("computeAlignmentSnap with user guide lines", () => {
+  it("snaps the near edge to a vertical user guide within threshold", () => {
+    const moving = { x: 97, y: 10, width: 50, height: 20 }
+    const result = computeAlignmentSnap(moving, [], 8, { x: [100], y: [] })
+    expect(result.dx).toBe(3)
+    expect(result.dy).toBe(0)
+    expect(result.guides).toEqual([{ axis: "x", position: 100, start: 10, end: 30 }])
+  })
+
+  it("snaps the center to a horizontal user guide", () => {
+    const moving = { x: 0, y: 0, width: 40, height: 40 } // center y = 20
+    const result = computeAlignmentSnap(moving, [], 8, { x: [], y: [24] })
+    expect(result.dy).toBe(4)
+    expect(result.guides).toEqual([{ axis: "y", position: 24, start: 0, end: 40 }])
+  })
+
+  it("ignores guides beyond the threshold", () => {
+    const moving = { x: 0, y: 0, width: 40, height: 40 }
+    const result = computeAlignmentSnap(moving, [], 8, { x: [60], y: [-20] })
+    expect(result).toEqual({ dx: 0, dy: 0, guides: [] })
+  })
+
+  it("prefers the closer of a user guide and an element edge", () => {
+    const moving = { x: 0, y: 0, width: 40, height: 40 }
+    const candidate = { x: 45, y: 200, width: 10, height: 10 } // near edge 45 (5 away)
+    const result = computeAlignmentSnap(moving, [candidate], 8, { x: [42], y: [] })
+    expect(result.dx).toBe(2)
+  })
+})

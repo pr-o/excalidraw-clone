@@ -13,6 +13,7 @@ import { createLinkEditorSlice, type LinkEditorSlice } from "./slices/linkEditor
 import { createPaletteSlice, type PaletteSlice } from "./slices/palette"
 import { createPointerSlice, type PointerSlice } from "./slices/pointer"
 import { createPresentationSlice, type PresentationSlice } from "./slices/presentation"
+import { createRulersSlice, type RulersSlice } from "./slices/rulers"
 import { createSelectionSlice, type SelectionSlice } from "./slices/selection"
 import { createTextEditSlice, type TextEditSlice } from "./slices/textEdit"
 import { createThemeSlice, type ThemeSlice } from "./slices/theme"
@@ -24,6 +25,7 @@ export type AppState = ToolSlice &
   ThemeSlice &
   ViewSlice &
   GridSlice &
+  RulersSlice &
   GuidesSlice &
   DialogSlice &
   PaletteSlice &
@@ -46,6 +48,7 @@ export const useAppStore = create<AppState>()((...a) => ({
   ...createThemeSlice(...a),
   ...createViewSlice(...a),
   ...createGridSlice(...a),
+  ...createRulersSlice(...a),
   ...createGuidesSlice(...a),
   ...createDialogSlice(...a),
   ...createPaletteSlice(...a),

@@ -51,6 +51,12 @@ export function PaletteHost({ scene }: { scene: Scene }): React.ReactElement {
       perform: () => useAppStore.getState().toggleGrid(),
     },
     {
+      id: "rulers",
+      label: t("menu.rulers"),
+      hint: "Shift+R",
+      perform: () => useAppStore.getState().toggleRulers(),
+    },
+    {
       id: "lock-selection",
       label: t("palette.lockSelection"),
       hint: "Ctrl+Shift+L",

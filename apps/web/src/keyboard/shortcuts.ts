@@ -255,6 +255,12 @@ export function attachShortcuts({
       patchScene(scene, flipElements(scene.getElements(), ids, key === "h" ? "x" : "y"))
       return
     }
+    // Must precede the TOOL_KEYS dispatch: Shift+R would otherwise pick the rectangle.
+    if (!isMeta && !e.altKey && e.shiftKey && key === "r") {
+      e.preventDefault()
+      useAppStore.getState().toggleRulers()
+      return
+    }
     const tool = TOOL_KEYS[key]
     if (tool) {
       useAppStore.getState().setActiveTool(tool)

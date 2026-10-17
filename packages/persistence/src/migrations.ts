@@ -59,7 +59,7 @@ export function migrate(raw: unknown): ExcalidrawData {
     if (!fn) throw new Error(`migrate: no migration registered for version ${cur.version}`)
     cur = fn(cur)
   }
-  return normalizeImageCrops(cur) as unknown as ExcalidrawData
+  return normalizePages(cur) as unknown as ExcalidrawData
 }
 
 const clamp01 = (n: number): number => Math.min(1, Math.max(0, n))
@@ -81,12 +81,24 @@ function normalizeCrop(crop: unknown): unknown {
   }
 }
 
-function normalizeImageCrops(data: AnyData): AnyData {
-  const pages = (data.pages as { elements: Record<string, unknown>[] }[] | undefined) ?? []
+const numbers = (v: unknown): number[] =>
+  Array.isArray(v) ? v.filter((n): n is number => typeof n === "number" && Number.isFinite(n)) : []
+
+/** Guides come from untrusted files: keep only finite numbers, drop anything else. */
+function normalizeGuides(guides: unknown): { guides?: { x: number[]; y: number[] } } {
+  if (typeof guides !== "object" || guides === null) return {}
+  const g = guides as Record<string, unknown>
+  return { guides: { x: numbers(g.x), y: numbers(g.y) } }
+}
+
+function normalizePages(data: AnyData): AnyData {
+  const pages =
+    (data.pages as { elements: Record<string, unknown>[]; guides?: unknown }[] | undefined) ?? []
   return {
     ...data,
-    pages: pages.map((page) => ({
+    pages: pages.map(({ guides, ...page }) => ({
       ...page,
+      ...normalizeGuides(guides),
       elements: page.elements.map((el) =>
         el.type === "image" ? { ...el, crop: normalizeCrop(el.crop) } : el,
       ),

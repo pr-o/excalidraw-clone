@@ -39,6 +39,7 @@
   "zoomOut": "Zoom out",
   "pan": "Pan",
   "toggleGrid": "Toggle grid",
+  "toggleRulers": "Toggle rulers",
   "commandPalette": "Command palette",
   "find": "Find on canvas",
   "stats": "Toggle stats panel",

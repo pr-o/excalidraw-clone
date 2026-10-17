@@ -3,6 +3,7 @@ import {
   type Bounds,
   type Point,
   type ViewTransform,
+  type UserGuides,
   rotatePoint,
   sceneToViewport,
 } from "@excalidraw-clone/geometry"
@@ -278,5 +279,38 @@ export const drawAlignmentGuides = (
     ctx.stroke()
   }
   ctx.setLineDash([])
+  ctx.restore()
+}
+
+const USER_GUIDE_STROKE: Record<Theme, string> = {
+  light: "#0ea5e9",
+  dark: "#38bdf8",
+}
+
+/** Ruler guides spanning the visible scene rect. Expects `ctx` already in
+ *  scene space (the main canvas's element transform), so 1/zoom is 1 screen px. */
+export const drawUserGuides = (
+  ctx: CanvasRenderingContext2D,
+  guides: UserGuides,
+  view: Bounds,
+  zoom: number,
+  theme: Theme,
+): void => {
+  if (guides.x.length + guides.y.length === 0) return
+  ctx.save()
+  ctx.strokeStyle = USER_GUIDE_STROKE[theme]
+  ctx.lineWidth = 1 / zoom
+  for (const gx of guides.x) {
+    ctx.beginPath()
+    ctx.moveTo(gx, view.y)
+    ctx.lineTo(gx, view.y + view.height)
+    ctx.stroke()
+  }
+  for (const gy of guides.y) {
+    ctx.beginPath()
+    ctx.moveTo(view.x, gy)
+    ctx.lineTo(view.x + view.width, gy)
+    ctx.stroke()
+  }
   ctx.restore()
 }

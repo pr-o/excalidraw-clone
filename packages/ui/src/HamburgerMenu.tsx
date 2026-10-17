@@ -18,6 +18,8 @@ export interface HamburgerMenuProps {
   onCanvasBgChange: (color: string) => void
   zenMode: boolean
   onZenModeToggle: () => void
+  rulersVisible?: boolean
+  onRulersToggle?: () => void
   onOpenFile: () => void
   onSaveFile: () => void
   onSnapshots?: () => void
@@ -101,6 +103,19 @@ export function HamburgerMenu(props: HamburgerMenuProps): React.ReactElement {
           <MenuItem onClick={wrap(props.onZenModeToggle)}>
             {props.zenMode ? props.t("menu.exitZen") : props.t("menu.enterZen")}
           </MenuItem>
+          {props.onRulersToggle && (
+            <button
+              type="button"
+              role="menuitemcheckbox"
+              aria-checked={props.rulersVisible ?? false}
+              data-testid="menu-rulers"
+              onClick={wrap(props.onRulersToggle)}
+              className="flex w-full items-center justify-between rounded px-3 py-2 text-left text-sm hover:bg-panel-hover"
+            >
+              {props.t("menu.rulers")}
+              <span className="text-xs text-muted">{props.rulersVisible ? "✓" : ""}</span>
+            </button>
+          )}
           <Separator />
           <MenuLabel>{props.t("menu.theme")}</MenuLabel>
           <ChoiceRow

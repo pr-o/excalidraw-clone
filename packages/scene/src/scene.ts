@@ -1,3 +1,4 @@
+import type { UserGuides } from "@excalidraw-clone/geometry"
 import { reconcileBindings } from "./bindings"
 import { reconcileFrameMembership } from "./frames"
 import { reconcileBoundText } from "./reconcile-bound-text"
@@ -12,15 +13,22 @@ export interface MutateOptions {
   skipHistory?: boolean
 }
 
+const NO_GUIDES: UserGuides = { x: [], y: [] }
+
 export class Scene {
   private elements: readonly ExcalidrawElement[]
   private listeners = new Set<() => void>()
   private history: readonly (readonly ExcalidrawElement[])[]
   private historyIndex: number
+  /** User ruler guides. Deliberately outside the undo stack: guide
+   *  create/move/delete is view scaffolding, not drawing, so undo/redo and
+   *  history jumps never touch it. */
+  private guides: UserGuides
   private static readonly MAX_HISTORY = 100
 
-  constructor(initial: readonly ExcalidrawElement[] = []) {
+  constructor(initial: readonly ExcalidrawElement[] = [], guides: UserGuides = NO_GUIDES) {
     this.elements = initial
+    this.guides = guides
     this.history = [initial]
     this.historyIndex = 0
   }
@@ -34,6 +42,15 @@ export class Scene {
 
   getElements(): readonly ExcalidrawElement[] {
     return this.elements.filter((e) => !e.isDeleted)
+  }
+
+  getGuides(): UserGuides {
+    return this.guides
+  }
+
+  setGuides(guides: UserGuides): void {
+    this.guides = guides
+    this.notify()
   }
 
   getElementsIncludingDeleted(): readonly ExcalidrawElement[] {

@@ -56,6 +56,7 @@ const VIEW_SHORTCUTS: readonly Shortcut[] = [
   { keys: "Cmd/Ctrl+-", label: "shortcuts:zoomOut" },
   { keys: "Space (hold)", label: "shortcuts:pan" },
   { keys: "Cmd/Ctrl+'", label: "shortcuts:toggleGrid" },
+  { keys: "Shift+R", label: "shortcuts:toggleRulers" },
   { keys: "Cmd/Ctrl+/", label: "shortcuts:commandPalette" },
   { keys: "Cmd/Ctrl+F", label: "shortcuts:find" },
   { keys: "Alt+/", label: "shortcuts:stats" },

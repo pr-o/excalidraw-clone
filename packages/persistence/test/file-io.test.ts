@@ -105,3 +105,49 @@ describe("parseExcalidrawFile", () => {
     expect(out.pages[0]?.elements[0]?.gradient).toEqual({ to: "#a5d8ff", angle: 135 })
   })
 })
+
+describe("user guides persistence", () => {
+  it("round-trips page guides through serialize → JSON → migrate", async () => {
+    const scene = new Scene([], { x: [100, 250], y: [40] })
+    const data = serializeDocument([{ id: "p1", name: "Page 1", scene }], "p1")
+    const file = new File([JSON.stringify(data)], "d.excalidraw")
+    const loaded = await parseExcalidrawFile(file)
+    expect(loaded.pages[0]!.guides).toEqual({ x: [100, 250], y: [40] })
+  })
+
+  it("omits guides for a page without any", () => {
+    const data = serializeDocument([{ id: "p1", name: "Page 1", scene: new Scene() }], "p1")
+    expect("guides" in data.pages[0]!).toBe(false)
+  })
+
+  it("loads an older v3 document that has no guides field", async () => {
+    const old = {
+      type: "excalidraw",
+      version: 3,
+      source: "x",
+      pages: [{ id: "p1", name: "Page 1", elements: [] }],
+      activePageId: "p1",
+    }
+    const loaded = await parseExcalidrawFile(new File([JSON.stringify(old)], "o.excalidraw"))
+    expect(loaded.pages[0]!.guides).toBeUndefined()
+    expect(loaded.pages[0]!.elements).toEqual([])
+  })
+})
+
+describe("user guides validation on load", () => {
+  it("drops non-numeric guide entries and malformed guides", async () => {
+    const doc = {
+      type: "excalidraw",
+      version: 3,
+      source: "x",
+      pages: [
+        { id: "p1", name: "A", elements: [], guides: { x: [1, "2", null, 3], y: "bad" } },
+        { id: "p2", name: "B", elements: [], guides: "junk" },
+      ],
+      activePageId: "p1",
+    }
+    const loaded = await parseExcalidrawFile(new File([JSON.stringify(doc)], "g.excalidraw"))
+    expect(loaded.pages[0]!.guides).toEqual({ x: [1, 3], y: [] })
+    expect(loaded.pages[1]!.guides).toBeUndefined()
+  })
+})

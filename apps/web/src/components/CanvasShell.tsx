@@ -3,6 +3,7 @@ import type { CanvasRenderer } from "@excalidraw-clone/renderer"
 import type { Scene } from "@excalidraw-clone/scene"
 import { useEffect, useRef } from "react"
 import { useDrawingDriver } from "../driver/useDrawingDriver"
+import { Rulers } from "./Rulers"
 
 export interface CanvasShellProps {
   scene: Scene
@@ -60,6 +61,7 @@ export function CanvasShell({
       <canvas ref={canvasRef} className="absolute inset-0 touch-none" />
       <canvas ref={overlayRef} className="pointer-events-none absolute inset-0" />
       <canvas ref={laserRef} className="pointer-events-none absolute inset-0" />
+      <Rulers scene={scene} />
     </div>
   )
 }

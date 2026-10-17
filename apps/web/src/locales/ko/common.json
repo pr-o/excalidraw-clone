@@ -122,7 +122,8 @@
     "themeDark": "어둡게",
     "themeSystem": "시스템",
     "language": "언어",
-    "canvasBg": "캔버스 배경"
+    "canvasBg": "캔버스 배경",
+    "rulers": "눈금자"
   },
   "common": { "close": "닫기" },
   "palette": {

@@ -6,7 +6,13 @@ import { drawCropDim } from "./crop-overlay"
 import { isElementVisible } from "./culling"
 import { drawElement } from "./draw-element"
 import { drawGrid } from "./grid"
-import { type MarqueeBox, drawAlignmentGuides, drawLasso, drawSelectionChrome } from "./overlay"
+import {
+  type MarqueeBox,
+  drawAlignmentGuides,
+  drawLasso,
+  drawSelectionChrome,
+  drawUserGuides,
+} from "./overlay"
 import { ShapeCache } from "./shape-cache"
 import { resolveColor } from "./theme-colors"
 import type { CanvasRendererOptions, GridOptions, Theme } from "./types"
@@ -36,6 +42,7 @@ export class CanvasRenderer {
   private cropId: string | null = null
   private guides: readonly AlignmentGuide[] = []
   private lasso: readonly Point[] = []
+  private showUserGuides = false
 
   private dirty = false
   private rafId: number | null = null
@@ -138,6 +145,12 @@ export class CanvasRenderer {
     this.requestRedraw()
   }
 
+  /** Ruler guides live on the scene; this only toggles their visibility. */
+  setShowUserGuides(show: boolean): void {
+    this.showUserGuides = show
+    this.requestRedraw()
+  }
+
   preloadImage(fileId: string, dataURL: string): Promise<void> {
     const pending = this.imageLoads.get(fileId)
     if (pending) return pending
@@ -213,6 +226,8 @@ export class CanvasRenderer {
               : undefined
       drawElement(ctx, element, this.rough, this.shapeCache, getImage, this.theme, labelOpts)
     }
+    // Main canvas, after elements: above the drawing, below the selection overlay.
+    if (this.showUserGuides) drawUserGuides(ctx, this.scene.getGuides(), view, zoom, this.theme)
     this.renderSelection(elements)
   }
 

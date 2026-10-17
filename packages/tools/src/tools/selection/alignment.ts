@@ -1,6 +1,13 @@
-import { computeAlignmentSnap, type AlignmentGuide } from "@excalidraw-clone/geometry"
+import {
+  computeAlignmentSnap,
+  type AlignmentGuide,
+  type Point,
+  type UserGuides,
+} from "@excalidraw-clone/geometry"
 import { getElementBounds, getElementsBounds } from "@excalidraw-clone/scene"
 import type { ToolContext } from "../../types"
+import type { ResizeOrigin } from "./resize"
+import type { ResizeHandle } from "./types"
 
 const ALIGNMENT_THRESHOLD_SCREEN_PX = 8
 
@@ -67,7 +74,7 @@ export const computeDragAlignment = (
     )
     .map(getElementBounds)
   const threshold = ALIGNMENT_THRESHOLD_SCREEN_PX / ctx.viewTransform.zoom
-  const snap = computeAlignmentSnap(movingBounds, candidateBounds, threshold)
+  const snap = computeAlignmentSnap(movingBounds, candidateBounds, threshold, ctx.userGuides)
   return {
     dx: rawDx + snap.dx - prevAlignDx,
     dy: rawDy + snap.dy - prevAlignDy,
@@ -75,4 +82,65 @@ export const computeDragAlignment = (
     alignDy: snap.dy,
     guides: snap.guides,
   }
+}
+
+const NO_GUIDES: UserGuides = { x: [], y: [] }
+
+const nearestLine = (lines: readonly number[], value: number, threshold: number): number | null => {
+  let best: number | null = null
+  for (const l of lines) {
+    if (
+      Math.abs(l - value) <= threshold &&
+      (best === null || Math.abs(l - value) < Math.abs(best - value))
+    ) {
+      best = l
+    }
+  }
+  return best
+}
+
+/** Single-element resize snapping: nudges the pointer so the edge(s) the
+ *  handle drags land on a nearby user guide. Same bypasses as drag alignment
+ *  (Ctrl/Meta, grid on); skipped for rotated elements and Shift aspect-lock,
+ *  where the dragged edge is not the pointer's axis. */
+export const snapResizeToUserGuides = (
+  origin: ResizeOrigin,
+  handle: ResizeHandle,
+  start: Point,
+  at: Point,
+  ctx: ToolContext,
+): { at: Point; guides: readonly AlignmentGuide[] } => {
+  const guides = ctx.userGuides ?? NO_GUIDES
+  const m = ctx.modifiers
+  if (m.ctrl || m.meta || m.shift || ctx.grid.enabled || origin.angle !== 0) {
+    return { at, guides: [] }
+  }
+  const threshold = ALIGNMENT_THRESHOLD_SCREEN_PX / ctx.viewTransform.zoom
+  const out: AlignmentGuide[] = []
+  let { x, y } = at
+  const xEdge = handle.includes("w")
+    ? origin.x
+    : handle.includes("e")
+      ? origin.x + origin.width
+      : null
+  if (xEdge !== null) {
+    const line = nearestLine(guides.x, xEdge + at.x - start.x, threshold)
+    if (line !== null) {
+      x = line - xEdge + start.x
+      out.push({ axis: "x", position: line, start: origin.y, end: origin.y + origin.height })
+    }
+  }
+  const yEdge = handle.includes("n")
+    ? origin.y
+    : handle.includes("s")
+      ? origin.y + origin.height
+      : null
+  if (yEdge !== null) {
+    const line = nearestLine(guides.y, yEdge + at.y - start.y, threshold)
+    if (line !== null) {
+      y = line - yEdge + start.y
+      out.push({ axis: "y", position: line, start: origin.x, end: origin.x + origin.width })
+    }
+  }
+  return { at: { x, y }, guides: out }
 }

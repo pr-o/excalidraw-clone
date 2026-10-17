@@ -35,7 +35,9 @@ export {
 export { snapPointToGrid } from "./snap"
 export type { GridSnap, SnapModifiers } from "./snap"
 export { computeAlignmentSnap } from "./alignment-guides"
-export type { AlignmentGuide, AlignmentSnapResult } from "./alignment-guides"
+export type { AlignmentGuide, AlignmentSnapResult, UserGuides } from "./alignment-guides"
+export { hitTestUserGuide, rulerTickStep, rulerTicks, USER_GUIDE_HIT_TOLERANCE_PX } from "./rulers"
+export type { RulerTick } from "./rulers"
 export { edgePointToward } from "./binding-edge"
 export type { EdgeKind } from "./binding-edge"
 export {

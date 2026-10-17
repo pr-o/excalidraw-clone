@@ -33,6 +33,15 @@ describe("keyboard shortcuts", () => {
   })
   afterEach(() => detach())
 
+  it("Shift+R toggles rulers without switching tool", () => {
+    const before = useAppStore.getState().rulersVisible
+    press({ key: "R", shiftKey: true })
+    expect(useAppStore.getState().rulersVisible).toBe(!before)
+    expect(useAppStore.getState().activeTool).toBe("selection")
+    press({ key: "R", shiftKey: true })
+    expect(useAppStore.getState().rulersVisible).toBe(before)
+  })
+
   it("'r' switches to rectangle tool", () => {
     press({ key: "r" })
     expect(useAppStore.getState().activeTool).toBe("rectangle")

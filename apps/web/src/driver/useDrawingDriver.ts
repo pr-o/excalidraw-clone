@@ -1,5 +1,6 @@
 "use client"
 import {
+  hitTestUserGuide,
   sceneToViewport,
   type GridSnap,
   type Point,
@@ -38,6 +39,7 @@ import {
   snapScenePoint,
 } from "./events"
 import { pinchView } from "./pinch"
+import { applyGuideDrag, guideValueAt, type GuideDrag } from "./userGuides"
 
 const GHOST_STROKE = "#6b46c1"
 
@@ -143,6 +145,7 @@ export function useDrawingDriver({
       canvasBg: initial.canvasBg,
     })
     rendererRef.current = renderer
+    renderer.setShowUserGuides(initial.rulersVisible && !initial.presenting)
     renderer.start()
     onReady?.(renderer)
 
@@ -172,6 +175,9 @@ export function useDrawingDriver({
         s.resetToolState("selection")
       }
       if (s.activeGuides !== prev.activeGuides) renderer.setGuides(s.activeGuides)
+      if (s.rulersVisible !== prev.rulersVisible || s.presenting !== prev.presenting) {
+        renderer.setShowUserGuides(s.rulersVisible && !s.presenting)
+      }
       if (s.activeTool !== prev.activeTool && prev.activeTool === "laser") laser.clear()
       if (
         s.activeTool !== prev.activeTool &&
@@ -223,6 +229,8 @@ export function useDrawingDriver({
         modifiers,
         selectedIds: store.selectedIds,
         grid: resolveGrid(),
+        // Guides only snap while visible (they show and hide with the rulers).
+        ...(store.rulersVisible ? { userGuides: scene.getGuides() } : {}),
       }
       const [next, effects] = tool.reduce(currentState, event, ctx)
       useAppStore.getState().setToolState(toolName, next)
@@ -347,6 +355,18 @@ export function useDrawingDriver({
       return touchDead
     }
 
+    // Ruler guides on the canvas: only the exact line (4px) captures the
+    // pointer, only with the selection tool and rulers shown, so elements
+    // beneath stay selectable everywhere else.
+    let guideDrag: GuideDrag | null = null
+    let guideCursor = false
+    const guideAt = (e: MouseEvent): { axis: "x" | "y"; index: number } | null => {
+      const store = useAppStore.getState()
+      if (!store.rulersVisible || store.presenting || store.activeTool !== "selection") return null
+      const at = clientToScene(canvas, viewOf(store), e)
+      return hitTestUserGuide(scene.getGuides(), at, store.zoom)
+    }
+
     const onPointerDown = (e: PointerEvent): void => {
       if (e.button !== 0) return
       if (handleTouch("down", e)) return
@@ -372,6 +392,12 @@ export function useDrawingDriver({
           startScrollY: store.scrollY,
         }
         canvas.style.cursor = "grabbing"
+        return
+      }
+      const guideHit = guideAt(e)
+      if (guideHit) {
+        canvas.setPointerCapture(e.pointerId)
+        guideDrag = guideHit
         return
       }
       const store = useAppStore.getState()
@@ -421,6 +447,20 @@ export function useDrawingDriver({
         })
         return
       }
+      if (guideDrag) {
+        const r = canvas.getBoundingClientRect()
+        const vp = { x: e.clientX - r.left, y: e.clientY - r.top }
+        const value = guideValueAt(guideDrag.axis, vp, viewOf(useAppStore.getState()))
+        guideDrag = applyGuideDrag(scene, guideDrag, value)
+        return
+      }
+      if (e.buttons === 0 && !spaceHeldRef.current) {
+        const hover = guideAt(e)
+        if (hover || guideCursor) {
+          canvas.style.cursor = hover ? (hover.axis === "x" ? "col-resize" : "row-resize") : ""
+          guideCursor = hover !== null
+        }
+      }
       const store = useAppStore.getState()
       const pending = store.pendingItem
       if (pending) {
@@ -446,6 +486,11 @@ export function useDrawingDriver({
         canvas.style.cursor = spaceHeldRef.current ? "grab" : ""
         return
       }
+      if (guideDrag) {
+        guideDrag = null
+        canvas.releasePointerCapture(e.pointerId)
+        return
+      }
       if (useAppStore.getState().pendingItem) return
       canvas.releasePointerCapture(e.pointerId)
       dispatchPointer("pointerUp", e)
@@ -453,6 +498,11 @@ export function useDrawingDriver({
     const onDoubleClick = (e: MouseEvent): void => {
       // Read-only while presenting (laser has no double-click behaviour).
       if (useAppStore.getState().presenting) return
+      const guideHit = guideAt(e)
+      if (guideHit) {
+        applyGuideDrag(scene, guideHit, null)
+        return
+      }
       dispatch({ type: "doubleClick", at: snappedScenePoint(e) }, modifiersOf(e))
     }
 

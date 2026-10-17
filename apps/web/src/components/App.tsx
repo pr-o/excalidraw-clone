@@ -220,6 +220,8 @@ function Inner(): React.ReactElement {
   const zenMode = useAppStore((s) => s.zenMode)
   const zoom = useAppStore((s) => s.zoom)
   const toggleZenMode = useAppStore((s) => s.toggleZenMode)
+  const rulersVisible = useAppStore((s) => s.rulersVisible)
+  const toggleRulers = useAppStore((s) => s.toggleRulers)
   const setOpenDialog = useAppStore((s) => s.setOpenDialog)
   const openDialog = useAppStore((s) => s.openDialog)
   const selectedIds = useAppStore((s) => s.selectedIds)
@@ -447,6 +449,8 @@ function Inner(): React.ReactElement {
               onCanvasBgChange={setCanvasBg}
               zenMode={zenMode}
               onZenModeToggle={toggleZenMode}
+              rulersVisible={rulersVisible}
+              onRulersToggle={toggleRulers}
               onOpenFile={() => {
                 void (async () => {
                   const data = await openExcalidrawFromPicker(renderer)

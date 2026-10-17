@@ -122,7 +122,8 @@
     "themeDark": "Dark",
     "themeSystem": "System",
     "language": "Language",
-    "canvasBg": "Canvas background"
+    "canvasBg": "Canvas background",
+    "rulers": "Rulers"
   },
   "common": {
     "close": "Close"

@@ -1,4 +1,4 @@
-import type { Point } from "@excalidraw-clone/geometry"
+import type { Point, UserGuides } from "@excalidraw-clone/geometry"
 
 export type ElementType =
   | "rectangle"
@@ -217,6 +217,8 @@ export interface ExcalidrawPage {
   id: string
   name: string
   elements: readonly ExcalidrawElement[]
+  /** Ruler guides; optional so pre-guides documents load unchanged. */
+  guides?: UserGuides
 }
 
 export interface SceneSnapshot {

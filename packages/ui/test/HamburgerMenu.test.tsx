@@ -44,6 +44,15 @@ describe("HamburgerMenu", () => {
     expect(screen.getByText("menu.help")).toBeInTheDocument()
   })
 
+  it("Rulers entry reflects state and toggles", async () => {
+    const onRulersToggle = vi.fn()
+    render(<HamburgerMenu {...baseProps()} open rulersVisible onRulersToggle={onRulersToggle} />)
+    const item = screen.getByTestId("menu-rulers")
+    expect(item).toHaveAttribute("aria-checked", "true")
+    await userEvent.click(item)
+    expect(onRulersToggle).toHaveBeenCalledTimes(1)
+  })
+
   it("clicking the trigger toggles open via onOpenChange", async () => {
     const onOpenChange = vi.fn()
     render(<HamburgerMenu {...baseProps()} onOpenChange={onOpenChange} />)
