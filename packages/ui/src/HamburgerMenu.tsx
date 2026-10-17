@@ -20,6 +20,7 @@ export interface HamburgerMenuProps {
   onZenModeToggle: () => void
   onOpenFile: () => void
   onSaveFile: () => void
+  onSnapshots?: () => void
   onExport: () => void
   onImportMermaid: () => void
   onStartPresentation: () => void
@@ -66,6 +67,9 @@ export function HamburgerMenu(props: HamburgerMenuProps): React.ReactElement {
         >
           <MenuItem onClick={wrap(props.onOpenFile)}>{props.t("menu.open")}</MenuItem>
           <MenuItem onClick={wrap(props.onSaveFile)}>{props.t("menu.saveAs")}</MenuItem>
+          {props.onSnapshots && (
+            <MenuItem onClick={wrap(props.onSnapshots)}>{props.t("menu.snapshots")}</MenuItem>
+          )}
           <MenuItem onClick={wrap(props.onExport)}>{props.t("menu.export")}</MenuItem>
           <MenuItem onClick={wrap(props.onImportMermaid)} testId="menu-import-mermaid">
             {props.t("menu.importMermaid")}

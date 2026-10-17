@@ -1,6 +1,6 @@
 import type { StateCreator } from "zustand"
 
-export type DialogId = null | "help" | "export" | "reset" | "mermaid-import"
+export type DialogId = null | "help" | "export" | "reset" | "mermaid-import" | "snapshots"
 
 export interface DialogSlice {
   openDialog: DialogId

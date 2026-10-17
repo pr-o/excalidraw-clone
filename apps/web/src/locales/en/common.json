@@ -108,6 +108,7 @@
     "label": "Menu",
     "open": "Open…",
     "saveAs": "Save as…",
+    "snapshots": "Snapshots…",
     "export": "Export image…",
     "importMermaid": "Import Mermaid…",
     "presentation": "Start presentation",
@@ -168,6 +169,19 @@
     "copyFailed": "Couldn't copy to the clipboard. Your browser may not allow it — use Export instead.",
     "cancel": "Cancel",
     "confirm": "Export"
+  },
+  "snapshots": {
+    "title": "Snapshots",
+    "name": "Snapshot name",
+    "defaultName": "Snapshot",
+    "save": "Save snapshot",
+    "empty": "No snapshots yet.",
+    "restore": "Restore",
+    "delete": "Delete",
+    "confirmRestore": "Replace current document? A \"Before restore\" snapshot is saved first; this can't be undone with Undo.",
+    "cancel": "Cancel",
+    "confirm": "Replace",
+    "beforeRestore": "Before restore"
   },
   "reset": {
     "title": "Reset the canvas",

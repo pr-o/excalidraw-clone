@@ -29,6 +29,8 @@ export type { ExportDialogProps, ExportOptions, ExportPageOption } from "./Expor
 
 export { ResetCanvasDialog } from "./ResetCanvasDialog"
 export type { ResetCanvasDialogProps } from "./ResetCanvasDialog"
+export { SnapshotsDialog } from "./SnapshotsDialog"
+export type { SnapshotListItem, SnapshotsDialogProps } from "./SnapshotsDialog"
 
 export { MermaidImportDialog } from "./MermaidImportDialog"
 export type { MermaidImportDialogProps } from "./MermaidImportDialog"

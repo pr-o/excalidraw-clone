@@ -39,6 +39,7 @@ export function PaletteHost({ scene }: { scene: Scene }): React.ReactElement {
       perform: () => setOpenDialog("mermaid-import"),
     },
     { id: "reset", label: t("menu.reset"), perform: () => setOpenDialog("reset") },
+    { id: "snapshots", label: t("menu.snapshots"), perform: () => setOpenDialog("snapshots") },
     {
       id: "zen",
       label: t("menu.enterZen"),

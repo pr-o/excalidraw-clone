@@ -82,6 +82,7 @@ import { Dialogs } from "./Dialogs"
 import { FindHost } from "./FindHost"
 import { LinkOverlay } from "./LinkOverlay"
 import { PaletteHost } from "./PaletteHost"
+import { SnapshotsHost } from "./SnapshotsHost"
 import { TextEditingOverlay } from "./TextEditingOverlay"
 
 export function App(): React.ReactElement {
@@ -460,6 +461,7 @@ function Inner(): React.ReactElement {
               }}
               onExport={() => setOpenDialog("export")}
               onImportMermaid={() => setOpenDialog("mermaid-import")}
+              onSnapshots={() => setOpenDialog("snapshots")}
               canPresent={frames.length > 0}
               onStartPresentation={() => useAppStore.getState().enterPresentation()}
               onReset={() => setOpenDialog("reset")}
@@ -671,6 +673,17 @@ function Inner(): React.ReactElement {
 
       <Dialogs scene={scene} pages={pages} activePageId={activePageId} />
       <PaletteHost scene={scene} />
+      <SnapshotsHost
+        pages={pages}
+        activePageId={activePageId}
+        onRestore={(data) => {
+          // Fresh Scenes, so undo history resets exactly as when opening a file.
+          const restored = pagesFromDocument(data)
+          useAppStore.getState().setSelection([])
+          setPages(restored.pages)
+          setActivePageId(restored.activePageId)
+        }}
+      />
       <FindHost scene={scene} />
       <ContextMenuHost
         scene={scene}

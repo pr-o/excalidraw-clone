@@ -44,3 +44,13 @@ export { migrate } from "./migrations"
 // Auto-save controller
 export { createAutoSaver } from "./auto-save"
 export type { AutoSaver, AutoSaverOptions } from "./auto-save"
+
+// IndexedDB named snapshots (version checkpoints)
+export {
+  deleteSnapshot,
+  listSnapshots,
+  loadSnapshot,
+  MAX_SNAPSHOTS,
+  saveSnapshot,
+} from "./snapshot-store"
+export type { Snapshot, SnapshotMeta } from "./snapshot-store"

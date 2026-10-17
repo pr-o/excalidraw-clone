@@ -108,6 +108,7 @@
     "label": "메뉴",
     "open": "열기…",
     "saveAs": "다른 이름으로 저장…",
+    "snapshots": "스냅샷…",
     "export": "이미지 내보내기…",
     "importMermaid": "Mermaid 가져오기…",
     "presentation": "발표 시작",
@@ -166,6 +167,19 @@
     "copyFailed": "클립보드에 복사하지 못했습니다. 브라우저에서 허용하지 않을 수 있습니다. 대신 내보내기를 사용하세요.",
     "cancel": "취소",
     "confirm": "내보내기"
+  },
+  "snapshots": {
+    "title": "스냅샷",
+    "name": "스냅샷 이름",
+    "defaultName": "스냅샷",
+    "save": "스냅샷 저장",
+    "empty": "아직 스냅샷이 없습니다.",
+    "restore": "복원",
+    "delete": "삭제",
+    "confirmRestore": "현재 문서를 바꿀까요? 먼저 \"복원 전\" 스냅샷이 저장되며, 실행 취소로는 되돌릴 수 없습니다.",
+    "cancel": "취소",
+    "confirm": "바꾸기",
+    "beforeRestore": "복원 전"
   },
   "reset": {
     "title": "캔버스 초기화",
