@@ -36,6 +36,8 @@
     "fillStyle_hachure": "빗금",
     "fillStyle_cross-hatch": "교차",
     "fillStyle_solid": "단색",
+    "gradient": "그라데이션",
+    "gradientAngle": "그라데이션 방향",
     "roughness": "거칠기",
     "roughness_0": "건축가",
     "roughness_1": "예술가",

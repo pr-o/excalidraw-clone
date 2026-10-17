@@ -23,6 +23,7 @@ const STYLE_FIELDS: readonly (keyof ExcalidrawElementBase)[] = [
   "strokeStyle",
   "roughness",
   "opacity",
+  "gradient",
 ]
 
 const VOLATILE_FIELDS = ["versionNonce", "updated"] as const

@@ -12,6 +12,7 @@ import type {
   StrokeWidth,
   TextAlign,
 } from "@excalidraw-clone/scene"
+import { LABELABLE_TYPES } from "@excalidraw-clone/scene"
 
 // Chromium-only; the button is simply absent elsewhere.
 interface EyeDropperApi {
@@ -22,6 +23,15 @@ const eyeDropperCtor = (): (new () => EyeDropperApi) | undefined =>
 
 const STROKE_COLORS = ["#1e1e1e", "#e03131", "#2f9e44", "#1971c2", "#f08c00"] as const
 const BG_COLORS = ["transparent", "#ffc9c9", "#b2f2bb", "#a5d8ff", "#ffec99"] as const
+// Gradient end colours: the solid background palette.
+const GRADIENT_COLORS: readonly string[] = BG_COLORS.slice(1)
+// [degrees, glyph]: 0 = left→right, 90 = top→bottom.
+const GRADIENT_ANGLES = [
+  [0, "→"],
+  [45, "↘"],
+  [90, "↓"],
+  [135, "↙"],
+] as const
 const STROKE_WIDTHS: readonly StrokeWidth[] = [1, 2, 4]
 const STROKE_STYLES: readonly StrokeStyle[] = ["solid", "dashed", "dotted"]
 const FILL_STYLES: readonly FillStyle[] = ["hachure", "cross-hatch", "solid"]
@@ -156,6 +166,9 @@ export function PropertiesPanel({
       textElements.map((e) => ({ fontStyle: e.fontStyle ?? "normal" })),
       "fontStyle",
     ) === "italic"
+  // Gradient-capable shapes are the labelable closed shapes (see renderer gradientLine).
+  const gradientTarget = selectedElements.find((e) => LABELABLE_TYPES.has(e.type))
+  const gradient = gradientTarget?.gradient
   const canGroup = selectedElements.length >= 2
   const canUngroup = selectedElements.some((el) => el.groupIds.length > 0)
 
@@ -190,7 +203,7 @@ export function PropertiesPanel({
   const swatches = (
     colors: readonly string[],
     current: string | undefined,
-    field: string,
+    pick: (color: string) => void,
     prefix: string,
   ): React.ReactElement => (
     <div className="flex gap-1">
@@ -200,7 +213,7 @@ export function PropertiesPanel({
           color={c}
           active={current === c}
           testId={`${prefix}-${c === "transparent" ? "none" : c.replace("#", "")}`}
-          onClick={() => onChange({ [field]: c })}
+          onClick={() => pick(c)}
         />
       ))}
       {eyeDropperCtor() && (
@@ -215,7 +228,7 @@ export function PropertiesPanel({
             // Escape rejects the promise; nothing to apply.
             void new Ctor!()
               .open()
-              .then(({ sRGBHex }) => onChange({ [field]: sRGBHex }))
+              .then(({ sRGBHex }) => pick(sRGBHex))
               .catch(() => {})
           }}
         >
@@ -231,11 +244,67 @@ export function PropertiesPanel({
       aria-label={t("properties.label")}
     >
       <Section label={t("properties.stroke")}>
-        {swatches(STROKE_COLORS, strokeColor, "strokeColor", "stroke")}
+        {swatches(STROKE_COLORS, strokeColor, (c) => onChange({ strokeColor: c }), "stroke")}
       </Section>
 
       <Section label={t("properties.background")}>
-        {swatches(BG_COLORS, backgroundColor, "backgroundColor", "bg")}
+        {swatches(BG_COLORS, backgroundColor, (c) => onChange({ backgroundColor: c }), "bg")}
+        {gradientTarget && (
+          <Choice
+            data-testid="gradient-toggle"
+            pressed={gradient !== undefined}
+            onClick={() =>
+              onChange(
+                gradient
+                  ? { gradient: undefined }
+                  : {
+                      // Gradients render only over a solid fill.
+                      fillStyle: "solid",
+                      gradient: {
+                        // Next palette colour after the fill (first one for custom fills).
+                        to: GRADIENT_COLORS[
+                          (GRADIENT_COLORS.indexOf(gradientTarget.backgroundColor) + 1) %
+                            GRADIENT_COLORS.length
+                        ]!,
+                        angle: 90,
+                      },
+                    },
+              )
+            }
+            className="mt-1 h-7 w-full text-xs"
+          >
+            {t("properties.gradient")}
+          </Choice>
+        )}
+        {gradient && (
+          <>
+            <div className="mt-1">
+              {swatches(
+                GRADIENT_COLORS,
+                gradient.to,
+                (c) => onChange({ gradient: { ...gradient, to: c } }),
+                "gradient-to",
+              )}
+            </div>
+            <div
+              className="mt-1 flex gap-1"
+              role="group"
+              aria-label={t("properties.gradientAngle")}
+            >
+              {GRADIENT_ANGLES.map(([angle, glyph]) => (
+                <Choice
+                  key={angle}
+                  data-testid={`gradient-angle-${angle}`}
+                  pressed={gradient.angle === angle}
+                  aria-label={`${angle}°`}
+                  onClick={() => onChange({ gradient: { ...gradient, angle } })}
+                >
+                  {glyph}
+                </Choice>
+              ))}
+            </div>
+          </>
+        )}
       </Section>
 
       <Section label={t("properties.strokeWidth")}>

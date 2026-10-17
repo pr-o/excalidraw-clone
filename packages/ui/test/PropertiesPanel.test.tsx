@@ -634,4 +634,53 @@ describe("PropertiesPanel — Text section", () => {
       expect(screen.getByTestId(`font-size-${n}`)).toHaveAttribute("aria-pressed", "false")
     }
   })
+
+  describe("gradient", () => {
+    const filled = () => ({
+      ...newRectangle({ x: 0, y: 0, width: 10, height: 10 }),
+      backgroundColor: "#ffc9c9",
+      fillStyle: "solid" as const,
+    })
+
+    it("is hidden when no selected element can carry a gradient", () => {
+      render(
+        <PropertiesPanel
+          t={t}
+          selectedElements={[newText({ x: 0, y: 0, text: "a" })]}
+          {...handlers}
+        />,
+      )
+      expect(screen.queryByTestId("gradient-toggle")).toBeNull()
+    })
+
+    it("toggling on sets a solid fill and the next palette colour at 90°; no extra rows until on", async () => {
+      const onChange = vi.fn()
+      render(
+        <PropertiesPanel t={t} selectedElements={[filled()]} {...handlers} onChange={onChange} />,
+      )
+      const toggle = screen.getByTestId("gradient-toggle")
+      expect(toggle).toHaveAttribute("aria-pressed", "false")
+      expect(screen.queryByTestId("gradient-angle-90")).toBeNull()
+      await userEvent.click(toggle)
+      expect(onChange).toHaveBeenCalledWith({
+        fillStyle: "solid",
+        gradient: { to: "#b2f2bb", angle: 90 },
+      })
+    })
+
+    it("when on, shows end-colour and angle rows that patch the gradient; toggle removes it", async () => {
+      const onChange = vi.fn()
+      const el = { ...filled(), gradient: { to: "#a5d8ff", angle: 90 } }
+      render(<PropertiesPanel t={t} selectedElements={[el]} {...handlers} onChange={onChange} />)
+      expect(screen.getByTestId("gradient-toggle")).toHaveAttribute("aria-pressed", "true")
+      expect(screen.getByTestId("gradient-to-a5d8ff")).toHaveAttribute("aria-pressed", "true")
+      expect(screen.getByTestId("gradient-angle-90")).toHaveAttribute("aria-pressed", "true")
+      await userEvent.click(screen.getByTestId("gradient-to-ffec99"))
+      expect(onChange).toHaveBeenLastCalledWith({ gradient: { to: "#ffec99", angle: 90 } })
+      await userEvent.click(screen.getByTestId("gradient-angle-45"))
+      expect(onChange).toHaveBeenLastCalledWith({ gradient: { to: "#a5d8ff", angle: 45 } })
+      await userEvent.click(screen.getByTestId("gradient-toggle"))
+      expect(onChange).toHaveBeenLastCalledWith({ gradient: undefined })
+    })
+  })
 })

@@ -138,4 +138,12 @@ describe("applyStyle", () => {
     expect(target.strokeColor).toBe("#0000ff")
     expect(next.strokeColor).toBe("#ff0000")
   })
+
+  it("carries a gradient with the background, and clears it when the source has none", () => {
+    const gradient = { to: "#a5d8ff", angle: 45 }
+    const src = { ...newRectangle({ x: 0, y: 0, width: 10, height: 10 }), gradient }
+    const plain = newEllipse({ x: 0, y: 0, width: 10, height: 10 })
+    expect(applyStyle(plain, extractStyle(src)).gradient).toEqual(gradient)
+    expect(applyStyle(src, extractStyle(plain)).gradient).toBeUndefined()
+  })
 })

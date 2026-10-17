@@ -7,6 +7,7 @@ import type {
 } from "@excalidraw-clone/scene"
 import { RoughSVG } from "roughjs/bin/svg"
 import { generateShape } from "./shapes"
+import { gradientLine, withFill } from "./shapes/gradient"
 import { isFixedWidthText, OCCLUSION_PADDING } from "./shapes/text"
 import {
   fontFamilyName,
@@ -209,8 +210,26 @@ function renderElement(
   }
 
   const drawables = generateShape(themedElement(el, theme), rsvg.generator)
+  const line = gradientLine(el)
+  let fill: string | undefined
+  if (line) {
+    const { to, ...coords } = line
+    fill = `gradient-${el.id}`
+    const grad = svgEl(doc, "linearGradient", {
+      id: fill,
+      gradientUnits: "userSpaceOnUse",
+      ...coords,
+    })
+    grad.appendChild(
+      svgEl(doc, "stop", { offset: 0, "stop-color": resolveColor(el.backgroundColor, theme) }),
+    )
+    grad.appendChild(svgEl(doc, "stop", { offset: 1, "stop-color": resolveColor(to, theme) }))
+    const defs = svgEl(doc, "defs", {})
+    defs.appendChild(grad)
+    group.appendChild(defs)
+  }
   for (const d of drawables) {
-    group.appendChild(rsvg.draw(d))
+    group.appendChild(rsvg.draw(fill ? withFill(d, `url(#${fill})`) : d))
   }
   return group
 }

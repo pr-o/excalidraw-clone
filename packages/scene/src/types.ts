@@ -83,6 +83,16 @@ export interface ExcalidrawElementBase {
    *  for uniformity but render symmetric). Never set on line/arrow/freedraw —
    *  those bake the flip into `points`. */
   mirror?: readonly [1 | -1, 1 | -1]
+
+  /** Linear fill from `backgroundColor` to `to`; `angle` in degrees (0 = left→right,
+   *  90 = top→bottom). Honored only on LABELABLE_TYPES shapes with a solid,
+   *  non-transparent fill. Absent (or undefined) ⟺ flat fill. */
+  gradient?: Gradient | undefined
+}
+
+export interface Gradient {
+  to: string
+  angle: number
 }
 
 export interface ExcalidrawRectangleElement extends ExcalidrawElementBase {

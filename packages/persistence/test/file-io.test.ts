@@ -92,4 +92,16 @@ describe("parseExcalidrawFile", () => {
     })
     await expect(parseExcalidrawFile(file)).rejects.toThrow(/unrecognized/i)
   })
+
+  it("round-trips an element's optional gradient field", async () => {
+    const rect = {
+      ...newRectangle({ x: 0, y: 0, width: 10, height: 10 }),
+      gradient: { to: "#a5d8ff", angle: 135 },
+    }
+    const blob = toExcalidrawBlob(
+      serializeDocument([{ id: "p1", name: "P", scene: new Scene([rect]) }], "p1"),
+    )
+    const out = await parseExcalidrawFile(new File([await blob.text()], "g.excalidraw"))
+    expect(out.pages[0]?.elements[0]?.gradient).toEqual({ to: "#a5d8ff", angle: 135 })
+  })
 })

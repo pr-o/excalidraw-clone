@@ -115,6 +115,7 @@ export type {
   ExcalidrawTriangleElement,
   FillStyle,
   FontFamily,
+  Gradient,
   PointBinding,
   Roughness,
   Roundness,

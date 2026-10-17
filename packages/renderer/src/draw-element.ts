@@ -2,6 +2,7 @@ import { mirrorOf } from "@excalidraw-clone/scene"
 import type { ExcalidrawElement } from "@excalidraw-clone/scene"
 import type { RoughCanvas } from "roughjs/bin/canvas"
 import type { ShapeCache } from "./shape-cache"
+import { gradientLine, withFill } from "./shapes/gradient"
 import { drawText } from "./shapes/text"
 import { fontSpec } from "./text-metrics"
 import { resolveColor } from "./theme-colors"
@@ -74,7 +75,15 @@ export const drawElement = (
     return
   }
   const drawables = cache.get(element, rough.generator, theme)
-  for (const d of drawables) rough.draw(d)
+  const line = gradientLine(element)
+  if (line) {
+    const grad = ctx.createLinearGradient(line.x1, line.y1, line.x2, line.y2)
+    grad.addColorStop(0, resolveColor(element.backgroundColor, theme))
+    grad.addColorStop(1, resolveColor(line.to, theme))
+    for (const d of drawables) rough.draw(withFill(d, grad))
+  } else {
+    for (const d of drawables) rough.draw(d)
+  }
   if (element.type === "frame") {
     ctx.font = fontSpec(12, 2)
     ctx.fillStyle = resolveColor("#868e96", theme)

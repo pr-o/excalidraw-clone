@@ -36,6 +36,8 @@
     "fillStyle_hachure": "Hachure",
     "fillStyle_cross-hatch": "Cross",
     "fillStyle_solid": "Solid",
+    "gradient": "Gradient",
+    "gradientAngle": "Gradient direction",
     "roughness": "Sloppiness",
     "roughness_0": "Architect",
     "roughness_1": "Artist",
