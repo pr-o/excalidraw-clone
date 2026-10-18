@@ -69,6 +69,7 @@ export const hitTestElement = (
     case "text":
     case "image":
     case "frame":
+    case "table":
       return pointInRectangle(point, b, element.angle)
     case "ellipse":
       return pointInEllipse(point, b, element.angle)

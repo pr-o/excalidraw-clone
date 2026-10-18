@@ -2,6 +2,9 @@
 import { fitToContent } from "@excalidraw-clone/geometry"
 import {
   bringForward,
+  cellAtLocal,
+  toTableLocal,
+  TABLE_MAX_TRACKS,
   bringToFront,
   duplicateElements,
   flipElements,
@@ -22,6 +25,7 @@ import { buildPaste, copyPayload, selectableIds } from "../driver/clipboard"
 import { commitElementLink } from "../driver/link"
 import { canMoveElementToPage } from "../driver/moveToPage"
 import { deleteElements, patchScene, reorderElements } from "../driver/patchScene"
+import { applyTableOp, type TableOp } from "../driver/tableOps"
 import { useAppStore } from "../store"
 
 export interface ContextMenuHostProps {
@@ -155,6 +159,28 @@ export function ContextMenuHost({
             label: t("contextMenu.exportFrame"),
             perform: () => useAppStore.getState().setOpenDialog("export"),
           })
+        }
+        const tbl = selectedElements.length === 1 ? selectedElements[0] : undefined
+        if (tbl?.type === "table") {
+          // Target = the cell under the right-click.
+          const cell = cellAtLocal(tbl, toTableLocal(tbl, scenePoint))
+          const tableItem = (op: TableOp, id: string, key: string): void => {
+            items.push({
+              id,
+              label: t(`contextMenu.${key}`),
+              perform: () => scene.mutate((draft) => applyTableOp(draft, tbl.id, op, cell)),
+            })
+          }
+          if (tbl.rows < TABLE_MAX_TRACKS) {
+            tableItem("insertRowAbove", "table-insert-row-above", "tableInsertRowAbove")
+            tableItem("insertRowBelow", "table-insert-row-below", "tableInsertRowBelow")
+          }
+          if (tbl.cols < TABLE_MAX_TRACKS) {
+            tableItem("insertColLeft", "table-insert-col-left", "tableInsertColLeft")
+            tableItem("insertColRight", "table-insert-col-right", "tableInsertColRight")
+          }
+          if (tbl.rows > 1) tableItem("delRow", "table-delete-row", "tableDeleteRow")
+          if (tbl.cols > 1) tableItem("delCol", "table-delete-col", "tableDeleteCol")
         }
         if (resetCrop(scene.getElements(), elementIds).length > 0) {
           items.push({

@@ -15,6 +15,7 @@ import { parallelogramTool } from "./tools/parallelogram"
 import { pentagonTool } from "./tools/pentagon"
 import { rectangleTool } from "./tools/rectangle"
 import { selectionTool } from "./tools/selection"
+import { tableTool } from "./tools/table"
 import { textTool } from "./tools/text"
 import { triangleTool } from "./tools/triangle"
 import type { AnyToolEvent, Tool, ToolName } from "./types"
@@ -39,4 +40,5 @@ export const TOOLS: Record<ToolName, Tool<unknown, AnyToolEvent>> = {
   laser: laserTool,
   lasso: lassoTool,
   note: noteTool,
+  table: tableTool,
 }

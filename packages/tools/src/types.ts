@@ -27,6 +27,7 @@ export type ToolName =
   | "note"
   | "laser"
   | "lasso"
+  | "table"
 
 export interface Modifiers {
   shift: boolean
@@ -72,7 +73,7 @@ export type ToolEffect =
   | { kind: "select"; ids: readonly string[] }
   | { kind: "addToSelection"; ids: readonly string[] }
   | { kind: "removeFromSelection"; ids: readonly string[] }
-  | { kind: "startTextEdit"; elementId: string }
+  | { kind: "startTextEdit"; elementId: string; cell?: { row: number; col: number } }
   | { kind: "switchTool"; tool: ToolName }
   | { kind: "laserMove"; at: Point }
   | { kind: "setGuides"; guides: readonly AlignmentGuide[] }

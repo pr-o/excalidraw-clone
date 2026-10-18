@@ -9,6 +9,7 @@ import {
 } from "@excalidraw-clone/scene"
 import type {
   ExcalidrawElement,
+  ExcalidrawTableElement,
   ExcalidrawTextElement,
   FontFamily,
   Scene,
@@ -17,6 +18,7 @@ import type {
 import { RoughSVG } from "roughjs/bin/svg"
 import { generateShape } from "./shapes"
 import { gradientLine, withFill } from "./shapes/gradient"
+import { layoutTableCells } from "./shapes/table"
 import { isFixedWidthText, OCCLUSION_PADDING } from "./shapes/text"
 import {
   fontFamilyName,
@@ -159,7 +161,7 @@ export function renderToSVG(scene: Scene, opts: SVGRenderOptions = {}): string {
         : el.type === "text" && measure && isFixedWidthText(el)
           ? fixedLayout(el, measure)
           : undefined
-    const node = renderElement(doc, el, rsvg, opts.files, theme, backing, labelLayout)
+    const node = renderElement(doc, el, rsvg, opts.files, theme, backing, labelLayout, measure)
     if (node) root.appendChild(node)
   }
 
@@ -174,6 +176,7 @@ function renderElement(
   theme: Theme,
   backing?: { background: string; measure: TextMeasure },
   layout?: LabelLayout,
+  measure?: TextMeasure | null,
 ): SVGGElement | null {
   if (el.type === "image") {
     const href = el.fileId === null ? undefined : files?.get(el.fileId)
@@ -257,7 +260,35 @@ function renderElement(
   for (const d of drawables) {
     group.appendChild(rsvg.draw(fill ? withFill(d, `url(#${fill})`) : d))
   }
+  if (el.type === "table") appendTableText(doc, group, el, theme, measure)
   return group
+}
+
+/** One <text> per laid-out cell line; without a measurer lines are not wrapped. */
+function appendTableText(
+  doc: Document,
+  group: SVGGElement,
+  t: ExcalidrawTableElement,
+  theme: Theme,
+  measure: TextMeasure | null | undefined,
+): void {
+  const lines = layoutTableCells(t, (s, bold) =>
+    measure ? measure(s, t.fontSize, t.fontFamily, t.fontSize, bold ? "bold" : "normal").width : 0,
+  )
+  for (const l of lines) {
+    const node = svgEl(doc, "text", {
+      x: l.x,
+      y: l.y,
+      "font-family": fontFamilyName(t.fontFamily),
+      "font-size": t.fontSize,
+      "font-weight": l.bold ? "bold" : "normal",
+      fill: resolveColor(t.strokeColor, theme),
+      "text-anchor": anchorFor(t.textAlign),
+      "dominant-baseline": "text-before-edge",
+    })
+    node.textContent = l.text
+    group.appendChild(node)
+  }
 }
 
 function createGroup(doc: Document, el: ExcalidrawElement): SVGGElement {

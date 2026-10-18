@@ -16,6 +16,7 @@ import {
   type Scene,
 } from "@excalidraw-clone/scene"
 import {
+  findHandleAt,
   TOOLS,
   type AnyToolEvent,
   type EraserState,
@@ -160,8 +161,9 @@ export function useDrawingDriver({
         renderer.setGrid({ enabled: s.gridEnabled, size: s.gridSize })
       }
       if (s.selectedIds !== prev.selectedIds) renderer.setSelection(s.selectedIds)
-      if (s.textEditElementId !== prev.textEditElementId) {
-        renderer.setHiddenElement(s.textEditElementId)
+      if (s.textEditElementId !== prev.textEditElementId || s.textEditCell !== prev.textEditCell) {
+        // A table stays drawn while one of its cells is edited; only that cell's text hides.
+        renderer.setHiddenElement(s.textEditElementId, s.textEditCell)
       }
       if (s.cropElementId !== prev.cropElementId) renderer.setCropElement(s.cropElementId)
       // Crop mode lasts only while that one image stays the sole selection on the
@@ -472,9 +474,22 @@ export function useDrawingDriver({
       }
       if (e.buttons === 0 && !spaceHeldRef.current) {
         const hover = guideAt(e)
-        if (hover || guideCursor) {
-          canvas.style.cursor = hover ? (hover.axis === "x" ? "col-resize" : "row-resize") : ""
-          guideCursor = hover !== null
+        // A selected table's column/row border also shows a resize cursor.
+        const vs = useAppStore.getState()
+        const border =
+          !hover && vs.activeTool === "selection" && vs.selectedIds.length === 1
+            ? findHandleAt(
+                clientToScene(canvas, viewOf(vs), e),
+                vs.selectedIds,
+                scene.getElements(),
+                viewOf(vs),
+              )
+            : null
+        const axis = hover ? hover.axis : border?.kind === "tableBorder" ? border.axis : null
+        if (axis !== null || guideCursor) {
+          canvas.style.cursor =
+            axis === null ? "" : axis === "x" || axis === "col" ? "col-resize" : "row-resize"
+          guideCursor = axis !== null
         }
       }
       const store = useAppStore.getState()

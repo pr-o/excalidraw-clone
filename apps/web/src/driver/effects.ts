@@ -38,7 +38,7 @@ export function applyEffects(
         useAppStore.getState().setActiveTool(eff.tool)
         break
       case "startTextEdit":
-        useAppStore.getState().setTextEditElementId(eff.elementId)
+        useAppStore.getState().setTextEditElementId(eff.elementId, eff.cell ?? null)
         break
       case "setCrop":
         useAppStore.getState().setCropElementId(eff.elementId)

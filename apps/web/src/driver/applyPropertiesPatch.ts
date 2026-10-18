@@ -10,6 +10,7 @@ import {
   measureStandaloneText,
   type TextMeasureInput,
 } from "./measureStandaloneText"
+import { growTableRows } from "./tableOps"
 
 export type Measurer = (input: TextMeasureInput) => MeasuredSize | undefined
 
@@ -40,6 +41,10 @@ export function applyPropertiesPatch(
     const { spans: _drop, ...rest } = merged
     const spans = remapSpansForText(el.spans, el.text, merged.text)
     merged = spans ? { ...rest, spans } : rest
+  }
+  // A table whose font changed re-wraps its cells: grow rows to fit (never shrink).
+  if (merged.type === "table") {
+    return "fontSize" in patch || "fontFamily" in patch ? growTableRows(merged) : merged
   }
   if (merged.type !== "text" || merged.containerId !== null) return merged
   if (!FONT_KEYS.some((key) => key in patch)) return merged

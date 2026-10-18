@@ -40,7 +40,7 @@ describe("canBindTo", () => {
     expect(canBindTo(newArrow({ x: 0, y: 0 }))).toBe(false)
     expect(canBindTo(rect({ isDeleted: true }))).toBe(false)
   })
-  it("BINDABLE_TYPES has the ten expected types", () => {
+  it("BINDABLE_TYPES has the eleven expected types", () => {
     expect([...BINDABLE_TYPES].sort()).toEqual([
       "diamond",
       "ellipse",
@@ -50,6 +50,7 @@ describe("canBindTo", () => {
       "parallelogram",
       "pentagon",
       "rectangle",
+      "table",
       "text",
       "triangle",
     ])

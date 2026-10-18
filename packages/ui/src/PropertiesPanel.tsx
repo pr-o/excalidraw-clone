@@ -79,6 +79,8 @@ const ALIGN_GLYPH: Record<AlignEdge, string> = {
   bottom: "⤓",
 }
 
+export type TableAction = "addRow" | "addCol" | "delRow" | "delCol"
+
 export interface PropertiesPanelProps {
   t: (key: string) => string
   selectedElements: readonly ExcalidrawElement[]
@@ -96,6 +98,8 @@ export interface PropertiesPanelProps {
   onFlip: (axis: "x" | "y") => void
   /** Apply/clear a bold|italic span over the whole text of the selected text elements and labels. */
   onSetTextStyle?: (style: SpanStyle, on: boolean) => void
+  /** Structure edit for the single selected table (row/col of its active cell, else the last). */
+  onTableAction?: (action: TableAction) => void
   /** Shown only for a single unlocked, cropped image. */
   onResetCrop?: () => void
   className?: string
@@ -142,6 +146,7 @@ export function PropertiesPanel({
   onLock,
   onFlip,
   onSetTextStyle,
+  onTableAction,
   onResetCrop,
   className,
 }: PropertiesPanelProps): React.ReactElement | null {
@@ -158,11 +163,17 @@ export function PropertiesPanel({
   const allArrow = selectedElements.every((e) => e.type === "arrow")
   const labelled = new Set(labelElements.map((l) => l.containerId))
   // Text section: every selected element is text or carries a bound label.
-  const allText = selectedElements.every((e) => e.type === "text" || labelled.has(e.id))
+  const allText = selectedElements.every(
+    (e) => e.type === "text" || e.type === "table" || labelled.has(e.id),
+  )
   const textElements = [
     ...selectedElements.flatMap((e) => (e.type === "text" ? [e] : [])),
     ...labelElements,
   ]
+  // Tables share fontFamily/fontSize/textAlign with text; bold/italic don't apply (header is bold).
+  const tables = selectedElements.flatMap((e) => (e.type === "table" ? [e] : []))
+  const fontTargets: readonly object[] = [...textElements, ...tables]
+  const soleTable = selectedElements.length === 1 && tables.length === 1 ? tables[0]! : undefined
   // Arrow/line labels are zero-width and always centered.
   const canAlignText = !selectedElements.some((e) => e.type === "arrow" || e.type === "line")
   // Legacy elements may lack fontWeight/fontStyle; absent ⟺ "normal".
@@ -460,27 +471,29 @@ export function PropertiesPanel({
               t(`properties.fontFamily_${key}`),
             ]),
             t("properties.fontFamily"),
-            textElements,
+            fontTargets,
           )}
-          <div className="mt-1 flex gap-1">
-            <Choice
-              data-testid="font-bold"
-              pressed={isBold}
-              onClick={() => onChange({ fontWeight: isBold ? "normal" : "bold" })}
-              className="h-8 flex-1 text-xs font-bold"
-            >
-              {t("properties.bold")}
-            </Choice>
-            <Choice
-              data-testid="font-italic"
-              pressed={isItalic}
-              onClick={() => onChange({ fontStyle: isItalic ? "normal" : "italic" })}
-              className="h-8 flex-1 text-xs italic"
-            >
-              {t("properties.italic")}
-            </Choice>
-          </div>
-          {onSetTextStyle && (
+          {tables.length === 0 && (
+            <div className="mt-1 flex gap-1">
+              <Choice
+                data-testid="font-bold"
+                pressed={isBold}
+                onClick={() => onChange({ fontWeight: isBold ? "normal" : "bold" })}
+                className="h-8 flex-1 text-xs font-bold"
+              >
+                {t("properties.bold")}
+              </Choice>
+              <Choice
+                data-testid="font-italic"
+                pressed={isItalic}
+                onClick={() => onChange({ fontStyle: isItalic ? "normal" : "italic" })}
+                className="h-8 flex-1 text-xs italic"
+              >
+                {t("properties.italic")}
+              </Choice>
+            </div>
+          )}
+          {onSetTextStyle && tables.length === 0 && (
             <div className="mt-1 flex gap-1" role="group" aria-label={t("properties.textStyle")}>
               <Choice
                 data-testid="text-bold"
@@ -508,15 +521,54 @@ export function PropertiesPanel({
               t(`properties.fontSize_${key}`),
             ]),
             t("properties.fontSize"),
-            textElements,
+            fontTargets,
           )}
           {canAlignText &&
             row(
               "textAlign",
               TEXT_ALIGNS.map((a) => [a, `text-align-${a}`, t(`properties.textAlign_${a}`)]),
               t("properties.textAlign"),
-              textElements,
+              fontTargets,
             )}
+        </Section>
+      )}
+
+      {soleTable && onTableAction && (
+        <Section label={t("properties.table")}>
+          <div className="grid grid-cols-2 gap-1">
+            {(
+              [
+                ["addRow", "table-add-row", "properties.tableAddRow"],
+                ["addCol", "table-add-col", "properties.tableAddCol"],
+                ["delRow", "table-del-row", "properties.tableDelRow"],
+                ["delCol", "table-del-col", "properties.tableDelCol"],
+              ] as const
+            ).map(([action, testId, key]) => (
+              <button
+                key={action}
+                type="button"
+                data-testid={testId}
+                disabled={
+                  (action === "delRow" && soleTable.rows <= 1) ||
+                  (action === "delCol" && soleTable.cols <= 1) ||
+                  (action === "addRow" && soleTable.rows >= 50) ||
+                  (action === "addCol" && soleTable.cols >= 50)
+                }
+                onClick={() => onTableAction(action)}
+                className={`${ACTION} disabled:opacity-40`}
+              >
+                {t(key)}
+              </button>
+            ))}
+          </div>
+          <Choice
+            data-testid="table-header-toggle"
+            pressed={soleTable.headerRow}
+            onClick={() => onChange({ headerRow: !soleTable.headerRow })}
+            className="mt-1 h-7 w-full text-xs"
+          >
+            {t("properties.tableHeader")}
+          </Choice>
         </Section>
       )}
 

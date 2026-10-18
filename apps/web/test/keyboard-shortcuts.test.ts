@@ -68,6 +68,11 @@ describe("keyboard shortcuts", () => {
     expect(useAppStore.getState().activeTool).toBe("octagon")
   })
 
+  it("'7' switches to the table tool", () => {
+    press({ key: "7" })
+    expect(useAppStore.getState().activeTool).toBe("table")
+  })
+
   it("Cmd+/ opens command palette", () => {
     press({ key: "/", metaKey: true })
     expect(useAppStore.getState().paletteOpen).toBe(true)

@@ -32,6 +32,12 @@ describe("StatsPanel", () => {
     expect(screen.queryByTestId("stats-x")).not.toBeInTheDocument()
   })
 
+  it("shows rows x cols for a table", () => {
+    const stats: Stats = { ...singleStatsOfType("table"), table: { rows: 4, cols: 2 } } as Stats
+    render(<StatsPanel t={t} open stats={stats} onChange={vi.fn()} />)
+    expect(screen.getByTestId("stats-table")).toHaveTextContent("4 × 2")
+  })
+
   it("multi kind shows a read-only bounding box; inputs are disabled", () => {
     render(<StatsPanel t={t} open stats={multiStats} onChange={vi.fn()} />)
     expect(screen.getByTestId("stats-multi-count")).toHaveTextContent("2")

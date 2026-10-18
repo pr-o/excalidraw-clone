@@ -29,6 +29,7 @@ export const BINDABLE_TYPES: ReadonlySet<ElementType> = new Set<ElementType>([
   "octagon",
   "image",
   "text",
+  "table",
 ])
 
 export const canBindTo = (el: ExcalidrawElement): boolean =>

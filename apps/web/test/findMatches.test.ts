@@ -1,4 +1,4 @@
-import { newFrame, newRectangle, newText } from "@excalidraw-clone/scene"
+import { newFrame, newRectangle, newTable, newText, setCellText } from "@excalidraw-clone/scene"
 import { describe, expect, it } from "vitest"
 import {
   collectSearchableItems,
@@ -16,6 +16,23 @@ describe("collectSearchableItems", () => {
   it("includes a frame's non-null name", () => {
     const frame = newFrame({ x: 0, y: 0, width: 100, height: 80, name: "Login flow" })
     expect(collectSearchableItems([frame])).toEqual([{ id: frame.id, label: "Login flow" }])
+  })
+
+  it("includes a table's cell text and finds it by a cell word", () => {
+    const table = setCellText(
+      setCellText(newTable({ x: 0, y: 0 }), 0, 0, "Quarterly"),
+      2,
+      1,
+      "revenue",
+    )
+    const items = collectSearchableItems([table])
+    expect(items).toHaveLength(1)
+    expect(filterMatches(items, "REVENUE").map((m) => m.id)).toEqual([table.id])
+    expect(filterMatches(items, "nothing")).toEqual([])
+  })
+
+  it("excludes an empty table", () => {
+    expect(collectSearchableItems([newTable({ x: 0, y: 0 })])).toEqual([])
   })
 
   it("excludes a frame with a null name", () => {

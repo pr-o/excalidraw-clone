@@ -21,6 +21,7 @@ import { commitTextEdit } from "../driver/commitTextEdit"
 import { measureStandaloneText } from "../driver/measureStandaloneText"
 import { renameFrame } from "../driver/renameFrame"
 import { useAppStore } from "../store"
+import { TableCellEditor } from "./TableCellEditor"
 
 export function TextEditingOverlay({ scene }: { scene: Scene }): React.ReactElement | null {
   const id = useAppStore((s) => s.textEditElementId)
@@ -28,6 +29,7 @@ export function TextEditingOverlay({ scene }: { scene: Scene }): React.ReactElem
   const scrollX = useAppStore((s) => s.scrollX)
   const scrollY = useAppStore((s) => s.scrollY)
   const zoom = useAppStore((s) => s.zoom)
+  const tableCell = useAppStore((s) => s.textEditCell)
   const ref = useRef<HTMLTextAreaElement | HTMLInputElement | null>(null)
   const [value, setValue] = useState("")
   const [spans, setSpans] = useState<TextSpan[]>([])
@@ -98,6 +100,18 @@ export function TextEditingOverlay({ scene }: { scene: Scene }): React.ReactElem
           outline: "none",
         }}
         className="z-40"
+      />
+    )
+  }
+
+  if (target.type === "table") {
+    if (!tableCell || tableCell.row >= target.rows || tableCell.col >= target.cols) return null
+    return (
+      <TableCellEditor
+        key={`${target.id}:${tableCell.row}:${tableCell.col}`}
+        scene={scene}
+        table={target}
+        cell={tableCell}
       />
     )
   }

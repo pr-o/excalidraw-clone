@@ -2,12 +2,14 @@ import { useEffect } from "react"
 import { IconButton } from "./shared/IconButton"
 import { iconHTML } from "./shared/icons"
 
+type MoreTool = "pentagon" | "octagon" | "table"
+
 export interface MoreShapesMenuProps {
   t: (key: string) => string
   activeTool: string
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSelectTool: (tool: "pentagon" | "octagon") => void
+  onSelectTool: (tool: MoreTool) => void
   className?: string
 }
 
@@ -23,12 +25,12 @@ export function MoreShapesMenu(props: MoreShapesMenuProps): React.ReactElement {
     return () => document.removeEventListener("keydown", onKeyDown)
   }, [open, onOpenChange])
 
-  const select = (tool: "pentagon" | "octagon") => (): void => {
+  const select = (tool: MoreTool) => (): void => {
     props.onSelectTool(tool)
     onOpenChange(false)
   }
 
-  const isActive = props.activeTool === "pentagon" || props.activeTool === "octagon"
+  const isActive = ["pentagon", "octagon", "table"].includes(props.activeTool)
 
   return (
     <div className={`relative ${props.className ?? ""}`}>
@@ -63,6 +65,15 @@ export function MoreShapesMenu(props: MoreShapesMenuProps): React.ReactElement {
             data-testid="toolbar-octagon"
           >
             <span aria-hidden dangerouslySetInnerHTML={{ __html: iconHTML("octagon") }} />
+          </IconButton>
+          <IconButton
+            label={props.t("toolbar.table")}
+            shortcut="7"
+            active={props.activeTool === "table"}
+            onClick={select("table")}
+            data-testid="toolbar-table"
+          >
+            <span aria-hidden dangerouslySetInnerHTML={{ __html: iconHTML("table") }} />
           </IconButton>
         </div>
       )}

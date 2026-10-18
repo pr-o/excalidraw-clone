@@ -8,6 +8,7 @@ import { freedrawShape } from "./freedraw"
 import { lineShape } from "./line"
 import { polygonShape } from "./polygon"
 import { rectangleShape } from "./rectangle"
+import { tableShape } from "./table"
 
 export const generateShape = (
   element: ExcalidrawElement,
@@ -28,6 +29,8 @@ export const generateShape = (
       return freedrawShape(element, gen)
     case "frame":
       return rectangleShape({ ...element, type: "rectangle" }, gen)
+    case "table":
+      return tableShape(element, gen)
     case "triangle":
     case "parallelogram":
     case "hexagon":

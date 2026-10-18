@@ -1,5 +1,5 @@
 import type { Point } from "@excalidraw-clone/geometry"
-import type { ExcalidrawElement } from "@excalidraw-clone/scene"
+import type { ExcalidrawElement, ExcalidrawTableElement } from "@excalidraw-clone/scene"
 import type { CropOrigin } from "./crop"
 import type { LinearSnapshot } from "./endpoint"
 
@@ -64,6 +64,15 @@ export type SelectionState =
       elementId: string
       index: number
       origin: LinearSnapshot
+    }
+  | {
+      phase: "tableResizing"
+      elementId: string
+      axis: "col" | "row"
+      index: number
+      /** The table as it was when the border was grabbed. */
+      original: ExcalidrawTableElement
+      start: Point
     }
   | { phase: "cropping"; elementId: string }
   | {

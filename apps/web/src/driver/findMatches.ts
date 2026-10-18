@@ -1,4 +1,4 @@
-import type { ExcalidrawElement } from "@excalidraw-clone/scene"
+import { tableText, type ExcalidrawElement } from "@excalidraw-clone/scene"
 
 /** One searchable label on the canvas: a text element's text, or a frame's name. */
 export interface SearchableItem {
@@ -14,7 +14,14 @@ export function collectSearchableItems(elements: readonly ExcalidrawElement[]): 
   const items: SearchableItem[] = []
   for (const el of elements) {
     if (el.isDeleted) continue
-    const label = el.type === "text" ? el.text : el.type === "frame" ? el.name : null
+    const label =
+      el.type === "text"
+        ? el.text
+        : el.type === "frame"
+          ? el.name
+          : el.type === "table"
+            ? tableText(el)
+            : null
     if (label === null || label.trim() === "") continue
     items.push({ id: el.id, label })
   }

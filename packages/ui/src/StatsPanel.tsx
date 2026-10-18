@@ -99,6 +99,11 @@ export function StatsPanel({
           {t("stats.selected")}: {stats.count}
         </div>
       )}
+      {stats.kind === "single" && stats.table && (
+        <div data-testid="stats-table" className="mb-2 text-muted">
+          {t("stats.table")}: {stats.table.rows} × {stats.table.cols}
+        </div>
+      )}
       <div>
         <Field
           testId="stats-x"

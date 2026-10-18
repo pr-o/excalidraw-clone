@@ -22,7 +22,7 @@ interface ParsedHex {
 const HEX_SHORT = /^#[0-9a-f]{3}$/i
 const HEX_LONG = /^#[0-9a-f]{6}(?:[0-9a-f]{2})?$/i
 
-const parseHex = (color: string): ParsedHex | null => {
+export const parseHex = (color: string): ParsedHex | null => {
   if (HEX_SHORT.test(color)) {
     const [r, g, b] = [1, 2, 3].map((i) => parseInt(color[i]!.repeat(2), 16))
     return { r: r!, g: g!, b: b!, alphaHex: "" }

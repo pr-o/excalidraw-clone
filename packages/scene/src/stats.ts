@@ -12,6 +12,8 @@ export type Stats =
       width: number
       height: number
       angleDeg: number
+      /** Present for tables. */
+      table?: { rows: number; cols: number }
     }
   | { kind: "multi"; count: number; x: number; y: number; width: number; height: number }
 
@@ -36,6 +38,7 @@ export function computeStats(
       width: el.width,
       height: el.height,
       angleDeg: (el.angle * 180) / Math.PI,
+      ...(el.type === "table" ? { table: { rows: el.rows, cols: el.cols } } : {}),
     }
   }
   // 2+ selected, none deleted (selection state never references deleted

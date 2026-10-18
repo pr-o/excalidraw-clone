@@ -144,3 +144,63 @@ describe("migrate — text spans validation", () => {
     ).toEqual([{ start: 3, end: 5, italic: true }])
   })
 })
+
+describe("migrate — table validation", () => {
+  const load = (el: Record<string, unknown>) => {
+    const data = {
+      type: "excalidraw",
+      version: 3,
+      source: "t",
+      activePageId: "p",
+      pages: [{ id: "p", name: "Page 1", elements: [{ id: "t", type: "table", ...el }] }],
+    }
+    return migrate(data).pages[0]!.elements[0] as unknown as Record<string, unknown>
+  }
+
+  it("round-trips a valid table unchanged", () => {
+    const valid = {
+      rows: 2,
+      cols: 2,
+      colWidths: [100, 150],
+      rowHeights: [40, 60],
+      cells: [
+        ["a", "b"],
+        ["c", "한글"],
+      ],
+      headerRow: false,
+      fontSize: 20,
+      fontFamily: 2,
+      textAlign: "center",
+      width: 250,
+      height: 100,
+    }
+    expect(load(valid)).toMatchObject(valid)
+  })
+
+  it("clamps, pads and coerces a malformed table", () => {
+    const t = load({ rows: 500, cols: -3, colWidths: "x", cells: [[1, null]], headerRow: "yes" })
+    expect(t.rows).toBe(50)
+    expect(t.cols).toBe(1)
+    expect(t.colWidths).toEqual([120])
+    expect((t.rowHeights as number[]).length).toBe(50)
+    expect((t.cells as string[][])[0]).toEqual(["1"])
+    expect((t.cells as string[][]).length).toBe(50)
+    expect(t.headerRow).toBe(true)
+  })
+
+  it("replaces a table with no usable fields by a default 3x3", () => {
+    const t = load({})
+    expect([t.rows, t.cols, t.width, t.height]).toEqual([3, 3, 360, 120])
+  })
+
+  it("old documents without any table load unchanged", () => {
+    const data = {
+      type: "excalidraw",
+      version: 3,
+      source: "t",
+      activePageId: "p",
+      pages: [{ id: "p", name: "P", elements: [{ id: "r", type: "rectangle", x: 1 }] }],
+    }
+    expect(migrate(data).pages[0]!.elements).toEqual([{ id: "r", type: "rectangle", x: 1 }])
+  })
+})

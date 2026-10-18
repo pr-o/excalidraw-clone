@@ -21,7 +21,8 @@
     "frame": "Frame",
     "note": "Sticky note",
     "laser": "Laser pointer",
-    "lasso": "Lasso select"
+    "lasso": "Lasso select",
+    "table": "Table"
   },
   "properties": {
     "label": "Properties",
@@ -110,7 +111,13 @@
     "flip_horizontal": "Flip horizontal",
     "flip_vertical": "Flip vertical",
     "reset_crop": "Reset crop",
-    "eyedropper": "Pick colour from screen"
+    "eyedropper": "Pick colour from screen",
+    "table": "Table",
+    "tableAddRow": "Add row",
+    "tableAddCol": "Add column",
+    "tableDelRow": "Delete row",
+    "tableDelCol": "Delete column",
+    "tableHeader": "Header row"
   },
   "menu": {
     "label": "Menu",
@@ -169,7 +176,8 @@
     "height": "H",
     "angle": "Angle",
     "elements": "Elements",
-    "selected": "Selected"
+    "selected": "Selected",
+    "table": "Table"
   },
   "export": {
     "title": "Export image",
@@ -275,7 +283,13 @@
     "moveToPage": "Move to page",
     "createLink": "Create link",
     "editLink": "Edit link",
-    "removeLink": "Remove link"
+    "removeLink": "Remove link",
+    "tableInsertRowAbove": "Insert row above",
+    "tableInsertRowBelow": "Insert row below",
+    "tableInsertColLeft": "Insert column left",
+    "tableInsertColRight": "Insert column right",
+    "tableDeleteRow": "Delete row",
+    "tableDeleteCol": "Delete column"
   },
   "linkEditor": {
     "placeholder": "Paste or type a link",

@@ -2,6 +2,7 @@ import type { UserGuides } from "@excalidraw-clone/geometry"
 import { reconcileBindings } from "./bindings"
 import { reconcileFrameMembership } from "./frames"
 import { reconcileBoundText } from "./reconcile-bound-text"
+import { reconcileTables } from "./table"
 import type {
   ExcalidrawAppStateSnapshot,
   ExcalidrawElement,
@@ -69,6 +70,7 @@ export class Scene {
     const draft = [...this.elements]
     fn(draft)
     reconcileBoundText(draft)
+    reconcileTables(draft)
     reconcileBindings(draft)
     reconcileFrameMembership(draft)
     this.setElements(draft)

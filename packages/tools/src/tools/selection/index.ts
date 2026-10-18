@@ -9,6 +9,10 @@ import {
   LABELABLE_TYPES,
   newLabelFor,
   newLabelForLinear,
+  cellAtLocal,
+  setTrackSize,
+  toTableLocal,
+  type ExcalidrawTableElement,
 } from "@excalidraw-clone/scene"
 import type { Tool, ToolContext, ToolEffect, ToolEvent } from "../../types"
 import { computeDragAlignment, snapResizeToUserGuides } from "./alignment"
@@ -110,6 +114,19 @@ const startHandleDrag = (
       [],
     ]
   }
+  if (e && e.type === "table" && handle.kind === "tableBorder") {
+    return [
+      {
+        phase: "tableResizing",
+        elementId: handle.elementId,
+        axis: handle.axis,
+        index: handle.index,
+        original: e,
+        start: at,
+      },
+      [],
+    ]
+  }
   if (e && handle.kind === "rotate") {
     const center = elementCenter(e)
     return [
@@ -201,6 +218,16 @@ const reduceDoubleClick = (at: Point, ctx: ToolContext): Transition => {
     }
     if (hit.type === "text") {
       return [{ phase: "idle" }, [{ kind: "startTextEdit", elementId: hit.id }]]
+    }
+    if (hit.type === "table") {
+      const cell = cellAtLocal(hit, toTableLocal(hit, at)) ?? { row: 0, col: 0 }
+      return [
+        { phase: "idle" },
+        [
+          { kind: "select", ids: [hit.id] },
+          { kind: "startTextEdit", elementId: hit.id, cell },
+        ],
+      ]
     }
     if (hit.type === "image" && hit.fileId !== null) {
       return [
@@ -536,6 +563,53 @@ const reduceGroupResizing = (
   }
 }
 
+/** Replace the table with `next` (or its original on revert) in the draft. */
+const putTable = (id: string, next: ExcalidrawTableElement, skipHistory: boolean): ToolEffect => ({
+  kind: "mutation",
+  apply: (draft) => {
+    const i = draft.findIndex((e) => e.id === id)
+    if (i >= 0) draft[i] = { ...next }
+  },
+  skipHistory,
+})
+
+const reduceTableResizing = (
+  state: Extract<SelectionState, { phase: "tableResizing" }>,
+  event: ToolEvent,
+): Transition => {
+  const { elementId, axis, index, original, start } = state
+  switch (event.type) {
+    case "pointerMove": {
+      // Measure along the table's own axes so a rotated table resizes correctly.
+      const a = toTableLocal(original, start)
+      const b = toTableLocal(original, event.at)
+      const delta = axis === "col" ? b.x - a.x : b.y - a.y
+      const track = axis === "col" ? original.colWidths[index]! : original.rowHeights[index]!
+      return [
+        state,
+        [putTable(elementId, setTrackSize(original, axis, index, track + delta), true)],
+      ]
+    }
+    case "pointerUp":
+      return [
+        { phase: "idle" },
+        [
+          {
+            kind: "mutation",
+            apply: (draft) => {
+              const i = draft.findIndex((e) => e.id === elementId)
+              if (i >= 0) draft[i] = { ...draft[i]! }
+            },
+          },
+        ],
+      ]
+    case "escape":
+      return [{ phase: "idle" }, [putTable(elementId, original, true)]]
+    default:
+      return [state, []]
+  }
+}
+
 const reduceRotating = (
   state: Extract<SelectionState, { phase: "rotating" }>,
   event: ToolEvent,
@@ -682,6 +756,8 @@ export const selectionTool: Tool<SelectionState, ToolEvent> = {
         return reduceEndpoint(state, event, ctx)
       case "bendDragging":
         return reduceBend(state, event)
+      case "tableResizing":
+        return reduceTableResizing(state, event)
       case "cropping":
         return reduceCropping(state, event, ctx)
       case "cropDragging":

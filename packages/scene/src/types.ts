@@ -16,6 +16,7 @@ export type ElementType =
   | "text"
   | "image"
   | "frame"
+  | "table"
 
 export type FillStyle = "hachure" | "cross-hatch" | "solid"
 export type StrokeStyle = "solid" | "dashed" | "dotted"
@@ -200,6 +201,22 @@ export interface ExcalidrawFrameElement extends ExcalidrawElementBase {
   isCollapsed: boolean
 }
 
+export interface ExcalidrawTableElement extends ExcalidrawElementBase {
+  type: "table"
+  rows: number
+  cols: number
+  /** width === sum(colWidths); enforced by reconcileTables on every mutate. */
+  colWidths: readonly number[]
+  /** height === sum(rowHeights). */
+  rowHeights: readonly number[]
+  /** cells[row][col], plain text. */
+  cells: readonly (readonly string[])[]
+  headerRow: boolean
+  fontSize: number
+  fontFamily: FontFamily
+  textAlign: TextAlign
+}
+
 export type ExcalidrawElement =
   | ExcalidrawRectangleElement
   | ExcalidrawDiamondElement
@@ -215,6 +232,7 @@ export type ExcalidrawElement =
   | ExcalidrawTextElement
   | ExcalidrawImageElement
   | ExcalidrawFrameElement
+  | ExcalidrawTableElement
 
 export type ExcalidrawAppStateSnapshot = Record<string, unknown>
 

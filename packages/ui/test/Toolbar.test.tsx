@@ -81,6 +81,13 @@ describe("Toolbar", () => {
     expect(screen.getByTestId("toolbar-octagon")).toBeInTheDocument()
   })
 
+  it("offers the table tool in the more-shapes flyout", async () => {
+    const onSelectTool = vi.fn()
+    render(<Toolbar {...baseProps()} onSelectTool={onSelectTool} moreShapesOpen />)
+    await userEvent.click(screen.getByTestId("toolbar-table"))
+    expect(onSelectTool).toHaveBeenCalledWith("table")
+  })
+
   it("clicking the more-shapes trigger calls onMoreShapesOpenChange", async () => {
     const onMoreShapesOpenChange = vi.fn()
     render(<Toolbar {...baseProps()} onMoreShapesOpenChange={onMoreShapesOpenChange} />)

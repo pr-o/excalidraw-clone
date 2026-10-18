@@ -39,6 +39,7 @@ export class CanvasRenderer {
   private marquee: MarqueeBox | null = null
   private highlight: readonly string[] = []
   private hiddenId: string | null = null
+  private hiddenCell: { row: number; col: number } | null = null
   private cropId: string | null = null
   private guides: readonly AlignmentGuide[] = []
   private lasso: readonly Point[] = []
@@ -128,9 +129,11 @@ export class CanvasRenderer {
     this.requestRedraw()
   }
 
-  /** Skip drawing one element (the text being edited in the DOM overlay). */
-  setHiddenElement(id: string | null): void {
+  /** Skip drawing one element (the text being edited in the DOM overlay); with
+   *  `cell`, a table stays drawn and only that cell's text is skipped. */
+  setHiddenElement(id: string | null, cell: { row: number; col: number } | null = null): void {
     this.hiddenId = id
+    this.hiddenCell = cell
     this.requestRedraw()
   }
 
@@ -211,13 +214,17 @@ export class CanvasRenderer {
       this.theme,
     )
     for (const element of elements) {
-      if (element.id === this.hiddenId || !isElementVisible(element, view)) continue
+      const hiddenCell =
+        element.id === this.hiddenId && element.type === "table" ? this.hiddenCell : null
+      if ((element.id === this.hiddenId && !hiddenCell) || !isElementVisible(element, view))
+        continue
       const container =
         element.type === "text" && element.containerId !== null
           ? byId.get(element.containerId)
           : undefined
-      const labelOpts =
-        container === undefined
+      const labelOpts = hiddenCell
+        ? { hiddenCell }
+        : container === undefined
           ? undefined
           : LINEAR_LABELABLE_TYPES.has(container.type)
             ? { occlusionBg: occludeBg }

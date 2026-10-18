@@ -16,6 +16,19 @@ describe("applyEffects", () => {
     expect(scene.getElements().length).toBe(1)
   })
 
+  it("startTextEdit with a cell targets that table cell; plain edits clear it", () => {
+    const scene = new Scene()
+    applyEffects(scene, [{ kind: "startTextEdit", elementId: "T", cell: { row: 1, col: 2 } }])
+    expect(useAppStore.getState().textEditElementId).toBe("T")
+    expect(useAppStore.getState().textEditCell).toEqual({ row: 1, col: 2 })
+    expect(useAppStore.getState().tableActiveCell).toEqual({ elementId: "T", row: 1, col: 2 })
+    applyEffects(scene, [{ kind: "startTextEdit", elementId: "X" }])
+    expect(useAppStore.getState().textEditCell).toBeNull()
+    useAppStore.getState().setTextEditElementId(null)
+    // the last-edited cell survives the edit ending (the Table panel acts on it)
+    expect(useAppStore.getState().tableActiveCell).toEqual({ elementId: "T", row: 1, col: 2 })
+  })
+
   it("select effect updates the selection slice", () => {
     const scene = new Scene()
     useAppStore.getState().setSelection([])

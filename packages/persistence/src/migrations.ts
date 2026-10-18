@@ -1,4 +1,9 @@
-import { SCENE_FORMAT_VERSION, sanitizeSpans, type ExcalidrawData } from "@excalidraw-clone/scene"
+import {
+  SCENE_FORMAT_VERSION,
+  sanitizeSpans,
+  sanitizeTable,
+  type ExcalidrawData,
+} from "@excalidraw-clone/scene"
 
 interface AnyData {
   type: "excalidraw"
@@ -112,7 +117,9 @@ function normalizePages(data: AnyData): AnyData {
           ? { ...el, crop: normalizeCrop(el.crop) }
           : el.type === "text"
             ? normalizeTextSpans(el)
-            : el,
+            : el.type === "table"
+              ? sanitizeTable(el)
+              : el,
       ),
     })),
   }

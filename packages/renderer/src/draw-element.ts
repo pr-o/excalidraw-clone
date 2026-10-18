@@ -1,8 +1,9 @@
 import { elementShadow, mirrorOf } from "@excalidraw-clone/scene"
-import type { ExcalidrawElement } from "@excalidraw-clone/scene"
+import type { ExcalidrawElement, ExcalidrawTableElement } from "@excalidraw-clone/scene"
 import type { RoughCanvas } from "roughjs/bin/canvas"
 import type { ShapeCache } from "./shape-cache"
 import { gradientLine, withFill } from "./shapes/gradient"
+import { layoutTableCells } from "./shapes/table"
 import { drawText } from "./shapes/text"
 import { fontSpec } from "./text-metrics"
 import { resolveColor } from "./theme-colors"
@@ -13,6 +14,8 @@ export type ImageLookup = (fileId: string) => HTMLImageElement | undefined
 export interface LabelDrawOptions {
   occlusionBg?: string
   fit?: boolean
+  /** Table cell being edited in the DOM overlay: its text is not drawn. */
+  hiddenCell?: { row: number; col: number }
 }
 
 /** Canvas shadow offsets/blur ignore the transform, so they are scaled by the view zoom. */
@@ -114,6 +117,7 @@ export const drawElement = (
     clearShadow(ctx)
   }
   paint()
+  if (element.type === "table") drawTableText(ctx, element, theme, labelOpts?.hiddenCell)
   if (element.type === "frame") {
     ctx.font = fontSpec(12, 2)
     ctx.fillStyle = resolveColor("#868e96", theme)
@@ -122,4 +126,26 @@ export const drawElement = (
     ctx.fillText(element.name ?? "Frame", 0, -4)
   }
   ctx.restore()
+}
+
+const drawTableText = (
+  ctx: CanvasRenderingContext2D,
+  t: ExcalidrawTableElement,
+  theme: Theme,
+  hidden: { row: number; col: number } | undefined,
+): void => {
+  const fontOf = (bold: boolean): string =>
+    fontSpec(t.fontSize, t.fontFamily, bold ? "bold" : "normal")
+  const lines = layoutTableCells(t, (s, bold) => {
+    ctx.font = fontOf(bold)
+    return ctx.measureText(s).width
+  })
+  ctx.fillStyle = resolveColor(t.strokeColor, theme)
+  ctx.textBaseline = "top"
+  ctx.textAlign = t.textAlign
+  for (const l of lines) {
+    if (hidden && l.row === hidden.row && l.col === hidden.col) continue
+    ctx.font = fontOf(l.bold)
+    ctx.fillText(l.text, l.x, l.y)
+  }
 }

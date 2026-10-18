@@ -33,6 +33,7 @@ export {
   newParallelogram,
   newPentagon,
   newRectangle,
+  newTable,
   newText,
   newTriangle,
 } from "./factories"
@@ -42,6 +43,7 @@ export type {
   NewElementInput,
   NewFrameInput,
   NewImageInput,
+  NewTableInput,
   NewTextInput,
 } from "./factories"
 export { ELBOW_STUB, routeElbow, sideCenter, sideOf, type Side } from "./elbow"
@@ -120,6 +122,7 @@ export type {
   ExcalidrawParallelogramElement,
   ExcalidrawPentagonElement,
   ExcalidrawRectangleElement,
+  ExcalidrawTableElement,
   ExcalidrawTextElement,
   ExcalidrawTriangleElement,
   FillStyle,
@@ -161,3 +164,31 @@ export type {
   TextRun,
   TextSpan,
 } from "./spans"
+export {
+  autoGrowRows,
+  borderAtLocal,
+  cellAtLocal,
+  cellRect,
+  deleteCol,
+  deleteRow,
+  fitTable,
+  insertCol,
+  insertRow,
+  reconcileTables,
+  sanitizeTable,
+  setCellText,
+  setTrackSize,
+  tableText,
+  toTableLocal,
+  TABLE_DEFAULT_COL,
+  TABLE_DEFAULT_COLS,
+  TABLE_DEFAULT_ROWS,
+  TABLE_DEFAULT_ROW,
+  TABLE_LINE_HEIGHT,
+  TABLE_MAX_TRACKS,
+  TABLE_MIN_COL,
+  TABLE_MIN_ROW,
+  TABLE_PAD_X,
+  TABLE_PAD_Y,
+} from "./table"
+export type { CellRect } from "./table"

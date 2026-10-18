@@ -21,7 +21,8 @@
     "frame": "프레임",
     "note": "메모",
     "laser": "레이저 포인터",
-    "lasso": "올가미 선택"
+    "lasso": "올가미 선택",
+    "table": "표"
   },
   "properties": {
     "label": "속성",
@@ -110,7 +111,13 @@
     "flip_horizontal": "좌우 반전",
     "flip_vertical": "상하 반전",
     "reset_crop": "자르기 초기화",
-    "eyedropper": "화면에서 색상 선택"
+    "eyedropper": "화면에서 색상 선택",
+    "table": "표",
+    "tableAddRow": "행 추가",
+    "tableAddCol": "열 추가",
+    "tableDelRow": "행 삭제",
+    "tableDelCol": "열 삭제",
+    "tableHeader": "머리글 행"
   },
   "menu": {
     "label": "메뉴",
@@ -167,7 +174,8 @@
     "height": "H",
     "angle": "각도",
     "elements": "요소",
-    "selected": "선택됨"
+    "selected": "선택됨",
+    "table": "표"
   },
   "export": {
     "title": "이미지 내보내기",
@@ -259,7 +267,13 @@
     "moveToPage": "페이지로 이동",
     "createLink": "링크 만들기",
     "editLink": "링크 편집",
-    "removeLink": "링크 제거"
+    "removeLink": "링크 제거",
+    "tableInsertRowAbove": "위에 행 삽입",
+    "tableInsertRowBelow": "아래에 행 삽입",
+    "tableInsertColLeft": "왼쪽에 열 삽입",
+    "tableInsertColRight": "오른쪽에 열 삽입",
+    "tableDeleteRow": "행 삭제",
+    "tableDeleteCol": "열 삭제"
   },
   "linkEditor": {
     "placeholder": "링크를 붙여넣거나 입력하세요",

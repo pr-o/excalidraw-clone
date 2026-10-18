@@ -27,6 +27,12 @@ describe("HelpDialog", () => {
     expect(screen.getByText("8")).toBeInTheDocument()
   })
 
+  it("lists the table shortcut", () => {
+    render(<HelpDialog t={t} open onClose={() => {}} />)
+    expect(screen.getByText("7")).toBeInTheDocument()
+    expect(screen.getByText("shortcuts:table")).toBeInTheDocument()
+  })
+
   it("lists the element-link shortcuts", () => {
     render(<HelpDialog t={t} open onClose={() => {}} />)
     expect(screen.getByText("Cmd/Ctrl+K")).toBeInTheDocument()

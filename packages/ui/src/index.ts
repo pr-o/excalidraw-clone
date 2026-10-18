@@ -7,7 +7,7 @@ export { Toolbar } from "./Toolbar"
 export type { ToolbarProps } from "./Toolbar"
 
 export { PropertiesPanel } from "./PropertiesPanel"
-export type { PropertiesPanelProps } from "./PropertiesPanel"
+export type { PropertiesPanelProps, TableAction } from "./PropertiesPanel"
 
 export { HamburgerMenu } from "./HamburgerMenu"
 export type { HamburgerMenuProps, Locale, Theme } from "./HamburgerMenu"

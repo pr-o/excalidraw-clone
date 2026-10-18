@@ -4,12 +4,19 @@ import {
   rotatePoint,
   sceneToViewport,
 } from "@excalidraw-clone/geometry"
-import { type ExcalidrawElement, getElementsBounds } from "@excalidraw-clone/scene"
+import {
+  type ExcalidrawElement,
+  borderAtLocal,
+  getElementsBounds,
+  toTableLocal,
+} from "@excalidraw-clone/scene"
 import type { ResizeHandle } from "./types"
 
 const HANDLE_HIT_HALF = 6
 const ROTATION_HANDLE_OFFSET = 20
 const ROTATION_HANDLE_HIT_RADIUS = 8
+/** Screen px within which a table column/row border is grabbable. */
+const TABLE_BORDER_HIT = 4
 
 export type HandleHit =
   | { kind: "resize"; elementId: string; handle: ResizeHandle }
@@ -18,6 +25,7 @@ export type HandleHit =
   | { kind: "bend"; elementId: string; index: number }
   | { kind: "bendAdd"; elementId: string; segmentIndex: number; at: Point }
   | { kind: "groupResize"; handle: ResizeHandle; ids: readonly string[] }
+  | { kind: "tableBorder"; elementId: string; axis: "col" | "row"; index: number }
 
 const rotatedCorners = (e: ExcalidrawElement): readonly [Point, Point, Point, Point] => {
   const corners: [Point, Point, Point, Point] = [
@@ -146,6 +154,10 @@ export const findHandleAt = (
   ]
   for (const { name, p } of handlePoints) {
     if (within(atV, p)) return { kind: "resize", elementId: id, handle: name }
+  }
+  if (e.type === "table") {
+    const border = borderAtLocal(e, toTableLocal(e, at), TABLE_BORDER_HIT / view.zoom)
+    if (border) return { kind: "tableBorder", elementId: id, ...border }
   }
   return null
 }

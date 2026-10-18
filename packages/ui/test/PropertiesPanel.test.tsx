@@ -5,6 +5,7 @@ import {
   newLabelFor,
   newLine,
   newRectangle,
+  newTable,
   newText,
 } from "@excalidraw-clone/scene"
 import { render, screen, waitFor } from "@testing-library/react"
@@ -778,5 +779,90 @@ describe("PropertiesPanel — whole-text span buttons", () => {
     }
     render(<PropertiesPanel t={t} selectedElements={[el]} {...handlers} onSetTextStyle={vi.fn()} />)
     expect(screen.getByTestId("text-bold")).toHaveAttribute("aria-pressed", "false")
+  })
+})
+
+describe("PropertiesPanel — table", () => {
+  const table = newTable({ x: 0, y: 0 })
+
+  it("shows the Table section for a single table and forwards structure actions", async () => {
+    const onTableAction = vi.fn()
+    render(
+      <PropertiesPanel
+        t={t}
+        selectedElements={[table]}
+        {...handlers}
+        onTableAction={onTableAction}
+      />,
+    )
+    for (const [testId, action] of [
+      ["table-add-row", "addRow"],
+      ["table-add-col", "addCol"],
+      ["table-del-row", "delRow"],
+      ["table-del-col", "delCol"],
+    ] as const) {
+      await userEvent.click(screen.getByTestId(testId))
+      expect(onTableAction).toHaveBeenLastCalledWith(action)
+    }
+  })
+
+  it("toggles the header row through onChange", async () => {
+    const onChange = vi.fn()
+    render(
+      <PropertiesPanel
+        t={t}
+        selectedElements={[table]}
+        {...handlers}
+        onChange={onChange}
+        onTableAction={vi.fn()}
+      />,
+    )
+    const toggle = screen.getByTestId("table-header-toggle")
+    expect(toggle).toHaveAttribute("aria-pressed", "true")
+    await userEvent.click(toggle)
+    expect(onChange).toHaveBeenCalledWith({ headerRow: false })
+  })
+
+  it("disables deleting the last row/column", () => {
+    const one = newTable({ x: 0, y: 0, rows: 1, cols: 1 })
+    render(<PropertiesPanel t={t} selectedElements={[one]} {...handlers} onTableAction={vi.fn()} />)
+    expect(screen.getByTestId("table-del-row")).toBeDisabled()
+    expect(screen.getByTestId("table-del-col")).toBeDisabled()
+  })
+
+  it("hides the Table section for other elements and multi-selection", () => {
+    const rect = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
+    const { rerender } = render(
+      <PropertiesPanel t={t} selectedElements={[rect]} {...handlers} onTableAction={vi.fn()} />,
+    )
+    expect(screen.queryByTestId("table-add-row")).not.toBeInTheDocument()
+    rerender(
+      <PropertiesPanel
+        t={t}
+        selectedElements={[table, rect]}
+        {...handlers}
+        onTableAction={vi.fn()}
+      />,
+    )
+    expect(screen.queryByTestId("table-add-row")).not.toBeInTheDocument()
+  })
+
+  it("offers font family, size and alignment (not bold/italic) for a table", async () => {
+    const onChange = vi.fn()
+    render(
+      <PropertiesPanel
+        t={t}
+        selectedElements={[table]}
+        {...handlers}
+        onChange={onChange}
+        onTableAction={vi.fn()}
+      />,
+    )
+    expect(screen.queryByTestId("font-bold")).not.toBeInTheDocument()
+    await userEvent.click(screen.getByTestId("font-size-28"))
+    expect(onChange).toHaveBeenCalledWith({ fontSize: 28 })
+    await userEvent.click(screen.getByTestId("text-align-center"))
+    expect(onChange).toHaveBeenCalledWith({ textAlign: "center" })
+    expect(screen.getByTestId("font-size-20")).toHaveAttribute("aria-pressed", "true")
   })
 })

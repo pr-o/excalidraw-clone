@@ -15,6 +15,7 @@ const TOOL_SHORTCUTS: readonly Shortcut[] = [
   { keys: "6", label: "shortcuts:hexagon" },
   { keys: "5", label: "shortcuts:pentagon" },
   { keys: "8", label: "shortcuts:octagon" },
+  { keys: "7", label: "shortcuts:table" },
   { keys: "L", label: "shortcuts:line" },
   { keys: "A", label: "shortcuts:arrow" },
   { keys: "P", label: "shortcuts:freedraw" },

@@ -20,6 +20,7 @@ import type {
   ExcalidrawParallelogramElement,
   ExcalidrawPentagonElement,
   ExcalidrawRectangleElement,
+  ExcalidrawTableElement,
   ExcalidrawTextElement,
   ExcalidrawTriangleElement,
   FontFamily,
@@ -42,6 +43,7 @@ import {
 } from "./defaults"
 
 import { NOTE_PADDING } from "./reconcile-bound-text"
+import { emptyCells, TABLE_DEFAULT_COLS, TABLE_DEFAULT_ROWS, tableGeometry } from "./table"
 
 const newSeed = (): number => Math.floor(Math.random() * 2 ** 31)
 
@@ -211,6 +213,37 @@ export const newFrame = (input: NewFrameInput): ExcalidrawFrameElement => ({
   name: input.name ?? null,
   isCollapsed: false,
 })
+
+export interface NewTableInput extends NewElementInput {
+  rows?: number
+  cols?: number
+}
+
+/** A rows x cols table. With a width/height the box is split evenly (grown to
+ *  the minimum cell size); without one it gets the default 120x40 cells. */
+export const newTable = (input: NewTableInput): ExcalidrawTableElement => {
+  const rows = input.rows ?? TABLE_DEFAULT_ROWS
+  const cols = input.cols ?? TABLE_DEFAULT_COLS
+  const geo = tableGeometry(
+    rows,
+    cols,
+    input.width === undefined || input.height === undefined
+      ? undefined
+      : { width: input.width, height: input.height },
+  )
+  return {
+    ...baseElement(input),
+    type: "table",
+    ...geo,
+    rows,
+    cols,
+    cells: emptyCells(rows, cols),
+    headerRow: true,
+    fontSize: DEFAULT_FONT_SIZE,
+    fontFamily: DEFAULT_FONT_FAMILY,
+    textAlign: "left",
+  }
+}
 
 export interface NewNoteInput {
   x: number

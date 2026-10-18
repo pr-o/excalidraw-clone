@@ -50,6 +50,7 @@ import { I18nextProvider, useTranslation } from "react-i18next"
 import { startAutoSave } from "../driver/autoSave"
 import { applySelectionPatch, setWholeTextStyle } from "../driver/applyPropertiesPatch"
 import { hydratePages, hydrateUI } from "../driver/hydration"
+import { applyTableOp } from "../driver/tableOps"
 import { pickAndUploadImage } from "../driver/imageUpload"
 import {
   addPage,
@@ -551,6 +552,14 @@ function Inner(): React.ReactElement {
                   }}
                   onFlip={(axis) => {
                     patchScene(scene, flipElements(scene.getElements(), selectedIds, axis))
+                  }}
+                  onTableAction={(action) => {
+                    const id = selectedIds[0]
+                    if (!id) return
+                    const active = useAppStore.getState().tableActiveCell
+                    scene.mutate((draft) =>
+                      applyTableOp(draft, id, action, active?.elementId === id ? active : null),
+                    )
                   }}
                   onResetCrop={() => patchScene(scene, resetCrop(scene.getElements(), selectedIds))}
                 />

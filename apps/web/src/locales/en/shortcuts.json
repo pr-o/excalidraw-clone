@@ -58,5 +58,6 @@
   "flipVertical": "Flip vertical",
   "presentNext": "Next slide",
   "presentPrev": "Previous slide",
-  "presentExit": "Exit presentation"
+  "presentExit": "Exit presentation",
+  "table": "Table"
 }
