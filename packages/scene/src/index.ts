@@ -136,3 +136,28 @@ export type {
   VerticalAlign,
 } from "./types"
 export { elementShadow, shadowMargin } from "./shadow"
+export {
+  applyBulletEdit,
+  autoBullet,
+  BULLET,
+  diffEdit,
+  enterOnBullet,
+  flagsAt,
+  hasSpans,
+  normalizeSpans,
+  rangeHasStyle,
+  remapSpans,
+  remapSpansForText,
+  sanitizeSpans,
+  sliceRuns,
+  toggleSpanStyle,
+} from "./spans"
+export type {
+  BulletEdit,
+  EditResult,
+  SpanFlags,
+  SpanStyle,
+  TextEdit,
+  TextRun,
+  TextSpan,
+} from "./spans"

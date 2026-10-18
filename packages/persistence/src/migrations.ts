@@ -1,4 +1,4 @@
-import { SCENE_FORMAT_VERSION, type ExcalidrawData } from "@excalidraw-clone/scene"
+import { SCENE_FORMAT_VERSION, sanitizeSpans, type ExcalidrawData } from "@excalidraw-clone/scene"
 
 interface AnyData {
   type: "excalidraw"
@@ -91,6 +91,14 @@ function normalizeGuides(guides: unknown): { guides?: { x: number[]; y: number[]
   return { guides: { x: numbers(g.x), y: numbers(g.y) } }
 }
 
+/** Spans come from untrusted files: validate against the text, drop if invalid. */
+function normalizeTextSpans(el: Record<string, unknown>): Record<string, unknown> {
+  if (!("spans" in el)) return el
+  const { spans, ...rest } = el
+  const clean = sanitizeSpans(spans, typeof el.text === "string" ? el.text.length : 0)
+  return clean ? { ...rest, spans: clean } : rest
+}
+
 function normalizePages(data: AnyData): AnyData {
   const pages =
     (data.pages as { elements: Record<string, unknown>[]; guides?: unknown }[] | undefined) ?? []
@@ -100,7 +108,11 @@ function normalizePages(data: AnyData): AnyData {
       ...page,
       ...normalizeGuides(guides),
       elements: page.elements.map((el) =>
-        el.type === "image" ? { ...el, crop: normalizeCrop(el.crop) } : el,
+        el.type === "image"
+          ? { ...el, crop: normalizeCrop(el.crop) }
+          : el.type === "text"
+            ? normalizeTextSpans(el)
+            : el,
       ),
     })),
   }

@@ -1,4 +1,5 @@
 import type { Point, UserGuides } from "@excalidraw-clone/geometry"
+import type { TextSpan } from "./spans"
 
 export type ElementType =
   | "rectangle"
@@ -173,6 +174,8 @@ export interface ExcalidrawTextElement extends ExcalidrawElementBase {
   fontWeight?: "normal" | "bold"
   /** Absent ⟺ "normal" (elements persisted before italic support). */
   fontStyle?: "normal" | "italic"
+  /** Bold/italic runs over `text` (offsets); absent ⟺ unformatted. */
+  spans?: readonly TextSpan[] | undefined
   textAlign: TextAlign
   verticalAlign: VerticalAlign
   containerId: string | null

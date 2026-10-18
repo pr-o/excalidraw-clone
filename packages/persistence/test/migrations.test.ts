@@ -107,3 +107,40 @@ describe("migrate — image crop normalisation", () => {
     expect(load(crop)).toEqual(crop)
   })
 })
+
+describe("migrate — text spans validation", () => {
+  const load = (el: Record<string, unknown>) => {
+    const data = {
+      type: "excalidraw",
+      version: 3,
+      source: "t",
+      activePageId: "p",
+      pages: [{ id: "p", name: "Page 1", elements: [{ id: "t", type: "text", ...el }] }],
+    }
+    return migrate(data).pages[0]!.elements[0] as unknown as { spans?: unknown }
+  }
+
+  it("round-trips valid spans", () => {
+    expect(load({ text: "hello world", spans: [{ start: 6, end: 11, bold: true }] }).spans).toEqual(
+      [{ start: 6, end: 11, bold: true }],
+    )
+  })
+  it("loads old documents without spans", () => {
+    expect("spans" in load({ text: "hi" })).toBe(false)
+  })
+  it("drops malformed spans and normalizes the rest", () => {
+    expect("spans" in load({ text: "hi", spans: "bold" })).toBe(false)
+    expect("spans" in load({ text: "hi", spans: [null, { start: -1, end: 2, bold: true }] })).toBe(
+      false,
+    )
+    expect(
+      load({
+        text: "hello",
+        spans: [
+          { start: 3, end: 99, italic: true },
+          { start: 2, end: 1 },
+        ],
+      }).spans,
+    ).toEqual([{ start: 3, end: 5, italic: true }])
+  })
+})

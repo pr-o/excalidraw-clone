@@ -1,4 +1,10 @@
-import type { ExcalidrawElement } from "@excalidraw-clone/scene"
+import {
+  rangeHasStyle,
+  remapSpansForText,
+  toggleSpanStyle,
+  type ExcalidrawElement,
+  type SpanStyle,
+} from "@excalidraw-clone/scene"
 import {
   type MeasuredSize,
   measureStandaloneText,
@@ -8,7 +14,7 @@ import {
 export type Measurer = (input: TextMeasureInput) => MeasuredSize | undefined
 
 /** Patch keys that change a text element's rendered size without changing its text. */
-const FONT_KEYS = ["fontSize", "fontFamily", "fontWeight", "fontStyle"] as const
+const FONT_KEYS = ["fontSize", "fontFamily", "fontWeight", "fontStyle", "spans", "text"] as const
 
 /** What one selected element becomes when a PropertiesPanel patch is applied.
  *
@@ -22,7 +28,19 @@ export function applyPropertiesPatch(
   patch: Partial<ExcalidrawElement>,
   measure: Measurer = measureStandaloneText,
 ): ExcalidrawElement {
-  const merged = { ...el, ...patch } as ExcalidrawElement
+  let merged = { ...el, ...patch } as ExcalidrawElement
+  // Rule for text changed outside the editor: remap spans through a text diff
+  // (never leave them pointing at stale offsets) unless the patch sets spans.
+  if (
+    el.type === "text" &&
+    merged.type === "text" &&
+    merged.text !== el.text &&
+    !("spans" in patch)
+  ) {
+    const { spans: _drop, ...rest } = merged
+    const spans = remapSpansForText(el.spans, el.text, merged.text)
+    merged = spans ? { ...rest, spans } : rest
+  }
   if (merged.type !== "text" || merged.containerId !== null) return merged
   if (!FONT_KEYS.some((key) => key in patch)) return merged
   const size = measure(merged)
@@ -52,4 +70,22 @@ export function applySelectionPatch(
   return Object.keys(labelPatch).length > 0
     ? applyPropertiesPatch(el, labelPatch, measure)
     : undefined
+}
+
+/** Apply (`on`) or clear a style over the WHOLE text of a text element.
+ *  Re-measures free text, since bold changes its width. */
+export function setWholeTextStyle(
+  el: ExcalidrawElement,
+  style: SpanStyle,
+  on: boolean,
+  measure: Measurer = measureStandaloneText,
+): ExcalidrawElement {
+  if (el.type !== "text" || el.text.length === 0) return el
+  const len = el.text.length
+  let spans = toggleSpanStyle(el.spans, len, 0, len, style)
+  // A partly-styled text toggles to "all"; flip again when that is the wrong way round.
+  if (rangeHasStyle(spans, len, 0, len, style) !== on) {
+    spans = toggleSpanStyle(spans, len, 0, len, style)
+  }
+  return applyPropertiesPatch(el, { spans: spans.length > 0 ? spans : undefined }, measure)
 }

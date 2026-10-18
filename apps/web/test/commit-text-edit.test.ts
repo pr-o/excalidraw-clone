@@ -88,3 +88,35 @@ describe("commitTextEdit", () => {
     expect(draft[0]!.height).toBe(0)
   })
 })
+
+describe("commitTextEdit — spans", () => {
+  const free = () => newText({ x: 0, y: 0, text: "" })
+  it("stores normalized spans with the committed text", () => {
+    const t = free()
+    const draft: ExcalidrawElement[] = [t]
+    commitTextEdit(draft, t.id, "hello world", undefined, [
+      { start: 6, end: 8, bold: true },
+      { start: 8, end: 99, bold: true },
+    ])
+    expect((draft[0] as ExcalidrawTextElement).spans).toEqual([{ start: 6, end: 11, bold: true }])
+  })
+  it("removes stale spans when none are passed", () => {
+    const t = {
+      ...newText({ x: 0, y: 0, text: "ab" }),
+      spans: [{ start: 0, end: 2, bold: true as const }],
+    }
+    const draft: ExcalidrawElement[] = [t]
+    commitTextEdit(draft, t.id, "abc")
+    expect("spans" in draft[0]!).toBe(false)
+  })
+  it("keeps spans together with measured size", () => {
+    const t = free()
+    const draft: ExcalidrawElement[] = [t]
+    commitTextEdit(draft, t.id, "ab", { width: 7, height: 9 }, [{ start: 0, end: 1, italic: true }])
+    expect(draft[0]).toMatchObject({
+      width: 7,
+      height: 9,
+      spans: [{ start: 0, end: 1, italic: true }],
+    })
+  })
+})

@@ -1,4 +1,4 @@
-import type { ExcalidrawElement } from "@excalidraw-clone/scene"
+import { normalizeSpans, type ExcalidrawElement, type TextSpan } from "@excalidraw-clone/scene"
 
 /** Apply the end of a text-edit session to a mutation draft: commit non-empty
  *  text. An empty bound label is always deleted and unlinked from its
@@ -9,12 +9,16 @@ import type { ExcalidrawElement } from "@excalidraw-clone/scene"
  *
  *  `measuredSize` (the rendered size of `finalText`) is applied to a
  *  free-standing element's width/height so its hit-box tracks its content.
- *  Bound labels ignore it — reconcileBoundText sizes those from the container. */
+ *  Bound labels ignore it — reconcileBoundText sizes those from the container.
+ *
+ *  `spans` (bold/italic runs over finalText) are normalized against the final
+ *  text and stored; none left ⟺ the field is removed. */
 export function commitTextEdit(
   draft: ExcalidrawElement[],
   id: string,
   finalText: string,
   measuredSize?: { width: number; height: number },
+  spans?: readonly TextSpan[],
 ): void {
   const i = draft.findIndex((e) => e.id === id)
   if (i < 0) return
@@ -30,9 +34,11 @@ export function commitTextEdit(
     }
     return
   }
-  if (el.containerId === null && measuredSize) {
-    draft[i] = { ...el, text: finalText, width: measuredSize.width, height: measuredSize.height }
-    return
-  }
-  draft[i] = { ...el, text: finalText }
+  const clean = normalizeSpans(spans, finalText.length)
+  const { spans: _old, ...base } = el
+  const next = { ...base, text: finalText, ...(clean.length > 0 ? { spans: clean } : {}) }
+  draft[i] =
+    el.containerId === null && measuredSize
+      ? { ...next, width: measuredSize.width, height: measuredSize.height }
+      : next
 }

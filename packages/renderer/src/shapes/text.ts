@@ -1,7 +1,16 @@
 import type { ExcalidrawTextElement } from "@excalidraw-clone/scene"
-import { fontSpec, layoutLabel, wrapLines } from "../text-metrics"
+import { sliceRuns } from "@excalidraw-clone/scene"
+import {
+  fontSpec,
+  layoutLabel,
+  makeMeasure,
+  runFont,
+  splitLines,
+  wrapRich,
+  type WrappedLine,
+} from "../text-metrics"
 
-const horizontalOffset = (e: ExcalidrawTextElement, lineWidth: number): number => {
+const horizontalOffset = (e: ExcalidrawTextElement): number => {
   switch (e.textAlign) {
     case "center":
       return e.width / 2
@@ -9,7 +18,6 @@ const horizontalOffset = (e: ExcalidrawTextElement, lineWidth: number): number =
       return e.width
     case "left":
     default:
-      void lineWidth
       return 0
   }
 }
@@ -43,12 +51,6 @@ export interface TextDrawOptions {
   fit?: boolean | undefined
 }
 
-const maxLineWidth = (ctx: CanvasRenderingContext2D, lines: readonly string[]): number => {
-  let max = 0
-  for (const line of lines) max = Math.max(max, ctx.measureText(line).width)
-  return max
-}
-
 export const drawText = (
   ctx: CanvasRenderingContext2D,
   e: ExcalidrawTextElement,
@@ -60,30 +62,34 @@ export const drawText = (
   ctx.save()
   const weight = e.fontWeight ?? "normal"
   const style = e.fontStyle ?? "normal"
-  ctx.font = fontSpec(e.fontSize, e.fontFamily, weight, style)
+  const rich = (e.spans?.length ?? 0) > 0
+  const natural = makeMeasure(ctx, e.text, e.spans, e.fontSize, e.fontFamily, weight, style)
   let fontSize = e.fontSize
-  let lines: readonly string[] = e.text.split("\n")
+  let lines: readonly WrappedLine[]
   if (opts?.fit) {
     const layout = layoutLabel(
       e.text,
       { width: e.width, height: e.height },
       e.fontSize,
       e.lineHeight,
-      (s) => ctx.measureText(s).width,
+      natural,
+      e.spans,
     )
-    lines = layout.lines
-    if (layout.scale < 1) {
-      fontSize = e.fontSize * layout.scale
-      ctx.font = fontSpec(fontSize, e.fontFamily, weight, style)
-    }
+    lines = layout.wrapped
+    fontSize = e.fontSize * layout.scale
   } else if (isFixedWidthText(e)) {
-    lines = wrapLines(e.text, e.width, (s) => ctx.measureText(s).width)
+    lines = wrapRich(e.text, e.spans, e.width, natural)
+  } else {
+    lines = splitLines(e.text)
   }
+  const measure = makeMeasure(ctx, e.text, e.spans, fontSize, e.fontFamily, weight, style)
+  const scale = fontSize / e.fontSize
   const lineHeightPx = fontSize * e.lineHeight
   const totalHeight = lines.length * lineHeightPx
 
   if (opts?.occlude) {
-    const widest = maxLineWidth(ctx, lines)
+    let widest = 0
+    for (const l of lines) widest = Math.max(widest, l.indent * scale + measure(l.text, l.start))
     ctx.fillStyle = opts.occlude.background
     ctx.fillRect(
       e.width / 2 - widest / 2 - OCCLUSION_PADDING,
@@ -94,14 +100,38 @@ export const drawText = (
   }
   ctx.fillStyle = fillColor ?? e.strokeColor
   ctx.textBaseline = "top"
-  ctx.textAlign = e.textAlign
 
   const baseY = verticalOffset(e, totalHeight)
+  if (!rich) {
+    ctx.font = fontSpec(fontSize, e.fontFamily, weight, style)
+    ctx.textAlign = e.textAlign
+    for (let i = 0; i < lines.length; i += 1) {
+      const l = lines[i]!
+      // Hanging indent only makes sense against a left edge.
+      const x = horizontalOffset(e) + (e.textAlign === "left" ? l.indent * scale : 0)
+      ctx.fillText(l.text, x, baseY + i * lineHeightPx)
+    }
+    ctx.restore()
+    return
+  }
+
+  // Rich text: draw run by run left-to-right, aligning the line by its total width.
+  ctx.textAlign = "left"
   for (let i = 0; i < lines.length; i += 1) {
-    const line = lines[i]!
-    const x = horizontalOffset(e, ctx.measureText(line).width)
+    const l = lines[i]!
+    const total = measure(l.text, l.start)
+    let x =
+      e.textAlign === "center"
+        ? e.width / 2 - total / 2
+        : e.textAlign === "right"
+          ? e.width - total
+          : l.indent * scale
     const y = baseY + i * lineHeightPx
-    ctx.fillText(line, x, y)
+    for (const r of sliceRuns(e.text, e.spans, l.start, l.start + l.text.length)) {
+      ctx.font = runFont(fontSize, e.fontFamily, weight, style, r)
+      ctx.fillText(r.text, x, y)
+      x += ctx.measureText(r.text).width
+    }
   }
   ctx.restore()
 }

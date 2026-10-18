@@ -1,15 +1,18 @@
 import {
   elementShadow,
+  hasSpans,
   LABELABLE_TYPES,
   LINEAR_LABELABLE_TYPES,
   mirrorOf,
   shadowMargin,
+  sliceRuns,
 } from "@excalidraw-clone/scene"
 import type {
   ExcalidrawElement,
   ExcalidrawTextElement,
   FontFamily,
   Scene,
+  TextSpan,
 } from "@excalidraw-clone/scene"
 import { RoughSVG } from "roughjs/bin/svg"
 import { generateShape } from "./shapes"
@@ -19,7 +22,8 @@ import {
   fontFamilyName,
   layoutLabel,
   measureText,
-  wrapLines,
+  splitLines,
+  wrapRich,
   type FontStyle,
   type FontWeight,
   type LabelLayout,
@@ -35,14 +39,15 @@ export type TextMeasure = (
   lineHeight: number,
   weight?: FontWeight,
   style?: FontStyle,
+  spans?: readonly TextSpan[],
 ) => TextSize
 
 const defaultMeasure = (): TextMeasure | null => {
   if (typeof document === "undefined") return null
   const ctx = document.createElement("canvas").getContext("2d")
   if (!ctx) return null
-  return (text, fontSize, family, lineHeight, weight, style) =>
-    measureText(ctx, text, fontSize, family, lineHeight, weight, style)
+  return (text, fontSize, family, lineHeight, weight, style, spans) =>
+    measureText(ctx, text, fontSize, family, lineHeight, weight, style, undefined, spans)
 }
 
 export interface SVGRenderOptions {
@@ -69,15 +74,32 @@ function svgEl<K extends string>(
   return node
 }
 
-const measureElText = (measure: TextMeasure, el: ExcalidrawTextElement, text = el.text) =>
-  measure(
-    text,
-    el.fontSize,
-    el.fontFamily,
-    el.lineHeight,
-    el.fontWeight ?? "normal",
-    el.fontStyle ?? "normal",
-  )
+const measureElText = (
+  measure: TextMeasure,
+  el: ExcalidrawTextElement,
+  text = el.text,
+  start = 0,
+): TextSize => {
+  const weight = el.fontWeight ?? "normal"
+  const style = el.fontStyle ?? "normal"
+  if (!hasSpans(el)) {
+    return measure(text, el.fontSize, el.fontFamily, el.lineHeight, weight, style)
+  }
+  // Rich text: per line, sum the width of each style run of the slice at `start`.
+  const lines = splitLines(text)
+  let width = 0
+  for (const l of lines) {
+    let lineWidth = 0
+    const from = start + l.start
+    for (const r of sliceRuns(el.text, el.spans, from, from + l.text.length)) {
+      const w = r.bold ? "bold" : weight
+      const st = r.italic ? "italic" : style
+      lineWidth += measure(r.text, el.fontSize, el.fontFamily, el.lineHeight, w, st).width
+    }
+    width = Math.max(width, lineWidth)
+  }
+  return { width, height: lines.length * el.fontSize * el.lineHeight }
+}
 
 export function renderToSVG(scene: Scene, opts: SVGRenderOptions = {}): string {
   const padding = opts.padding ?? 20
@@ -131,13 +153,11 @@ export function renderToSVG(scene: Scene, opts: SVGRenderOptions = {}): string {
             { width: el.width, height: el.height },
             el.fontSize,
             el.lineHeight,
-            (s) => measureElText(measure, el, s).width,
+            (s, start) => measureElText(measure, el, s, start).width,
+            el.spans,
           )
         : el.type === "text" && measure && isFixedWidthText(el)
-          ? {
-              lines: wrapLines(el.text, el.width, (s) => measureElText(measure, el, s).width),
-              scale: 1,
-            }
+          ? fixedLayout(el, measure)
           : undefined
     const node = renderElement(doc, el, rsvg, opts.files, theme, backing, labelLayout)
     if (node) root.appendChild(node)
@@ -307,6 +327,16 @@ function elementTransform(el: ExcalidrawElement): string {
   return parts.join(" ")
 }
 
+function fixedLayout(el: ExcalidrawTextElement, measure: TextMeasure): LabelLayout {
+  const wrapped = wrapRich(
+    el.text,
+    el.spans,
+    el.width,
+    (s, start) => measureElText(measure, el, s, start).width,
+  )
+  return { lines: wrapped.map((l) => l.text), wrapped, scale: 1 }
+}
+
 function textNode(
   doc: Document,
   el: ExcalidrawTextElement,
@@ -324,15 +354,34 @@ function textNode(
     "dominant-baseline": "text-before-edge",
   })
 
-  const lines = layout?.lines ?? el.text.split("\n")
+  const lines = layout?.wrapped ?? splitLines(el.text)
   const lineHeightPx = fontSize * el.lineHeight
   const totalHeight = lines.length * lineHeightPx
   const baseY = verticalOffset(el, totalHeight)
   const x = horizontalAnchorX(el)
+  const rich = hasSpans(el)
+  if (rich) text.setAttribute("xml:space", "preserve")
 
   for (let i = 0; i < lines.length; i += 1) {
-    const tspan = svgEl(doc, "tspan", { x, y: baseY + i * lineHeightPx })
-    tspan.textContent = lines[i] ?? ""
+    const l = lines[i]!
+    const lx = x + (el.textAlign === "left" ? l.indent * (layout?.scale ?? 1) : 0)
+    const tspan = svgEl(doc, "tspan", { x: lx, y: baseY + i * lineHeightPx })
+    if (rich) {
+      for (const r of sliceRuns(el.text, el.spans, l.start, l.start + l.text.length)) {
+        if (!r.bold && !r.italic) {
+          tspan.appendChild(doc.createTextNode(r.text))
+          continue
+        }
+        const run = svgEl(doc, "tspan", {
+          ...(r.bold ? { "font-weight": "bold" } : {}),
+          ...(r.italic ? { "font-style": "italic" } : {}),
+        })
+        run.textContent = r.text
+        tspan.appendChild(run)
+      }
+    } else {
+      tspan.textContent = l.text
+    }
     text.appendChild(tspan)
   }
   return text

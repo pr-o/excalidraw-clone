@@ -12,7 +12,7 @@ import type {
   StrokeWidth,
   TextAlign,
 } from "@excalidraw-clone/scene"
-import { LABELABLE_TYPES } from "@excalidraw-clone/scene"
+import { LABELABLE_TYPES, rangeHasStyle, type SpanStyle } from "@excalidraw-clone/scene"
 
 // Chromium-only; the button is simply absent elsewhere.
 interface EyeDropperApi {
@@ -94,6 +94,8 @@ export interface PropertiesPanelProps {
   onUngroup: () => void
   onLock: () => void
   onFlip: (axis: "x" | "y") => void
+  /** Apply/clear a bold|italic span over the whole text of the selected text elements and labels. */
+  onSetTextStyle?: (style: SpanStyle, on: boolean) => void
   /** Shown only for a single unlocked, cropped image. */
   onResetCrop?: () => void
   className?: string
@@ -139,6 +141,7 @@ export function PropertiesPanel({
   onUngroup,
   onLock,
   onFlip,
+  onSetTextStyle,
   onResetCrop,
   className,
 }: PropertiesPanelProps): React.ReactElement | null {
@@ -173,6 +176,15 @@ export function PropertiesPanel({
       textElements.map((e) => ({ fontStyle: e.fontStyle ?? "normal" })),
       "fontStyle",
     ) === "italic"
+  const wholeStyled = (style: SpanStyle): boolean => {
+    const filled = textElements.filter((e) => e.text.length > 0)
+    return (
+      filled.length > 0 &&
+      filled.every((e) => rangeHasStyle(e.spans, e.text.length, 0, e.text.length, style))
+    )
+  }
+  const spanBold = wholeStyled("bold")
+  const spanItalic = wholeStyled("italic")
   // Gradient-capable shapes are the labelable closed shapes (see renderer gradientLine).
   const gradientTarget = selectedElements.find((e) => LABELABLE_TYPES.has(e.type))
   const gradient = gradientTarget?.gradient
@@ -468,6 +480,26 @@ export function PropertiesPanel({
               {t("properties.italic")}
             </Choice>
           </div>
+          {onSetTextStyle && (
+            <div className="mt-1 flex gap-1" role="group" aria-label={t("properties.textStyle")}>
+              <Choice
+                data-testid="text-bold"
+                pressed={spanBold}
+                onClick={() => onSetTextStyle("bold", !spanBold)}
+                className="h-8 flex-1 text-xs font-bold"
+              >
+                {t("properties.spanBold")}
+              </Choice>
+              <Choice
+                data-testid="text-italic"
+                pressed={spanItalic}
+                onClick={() => onSetTextStyle("italic", !spanItalic)}
+                className="h-8 flex-1 text-xs italic"
+              >
+                {t("properties.spanItalic")}
+              </Choice>
+            </div>
+          )}
           {row(
             "fontSize",
             FONT_SIZES.map(([size, key]) => [

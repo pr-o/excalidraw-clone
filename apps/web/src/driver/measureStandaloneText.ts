@@ -4,7 +4,7 @@ import type { ExcalidrawElement, ExcalidrawTextElement } from "@excalidraw-clone
 /** The fields that determine a text element's rendered size. */
 export type TextMeasureInput = Pick<
   ExcalidrawTextElement,
-  "text" | "fontSize" | "fontFamily" | "lineHeight" | "fontWeight" | "fontStyle"
+  "text" | "fontSize" | "fontFamily" | "lineHeight" | "fontWeight" | "fontStyle" | "spans"
 > &
   Partial<Pick<ExcalidrawTextElement, "autoResize" | "width">>
 
@@ -32,6 +32,7 @@ export function measureStandaloneText(input: TextMeasureInput): MeasuredSize | u
     input.fontWeight ?? "normal",
     input.fontStyle ?? "normal",
     wrapWidth,
+    input.spans,
   )
   return wrapWidth === undefined ? size : { width: wrapWidth, height: size.height }
 }

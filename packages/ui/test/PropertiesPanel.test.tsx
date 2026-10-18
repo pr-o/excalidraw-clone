@@ -733,3 +733,50 @@ describe("PropertiesPanel — Text section", () => {
     })
   })
 })
+
+describe("PropertiesPanel — whole-text span buttons", () => {
+  it("is absent without a handler", () => {
+    const el = newText({ x: 0, y: 0, text: "abc" })
+    render(<PropertiesPanel t={t} selectedElements={[el]} {...handlers} />)
+    expect(screen.queryByTestId("text-bold")).toBeNull()
+  })
+
+  it("applies bold over the whole text; pressed once fully covered then clears", async () => {
+    const onSetTextStyle = vi.fn()
+    const el = newText({ x: 0, y: 0, text: "abc" })
+    const { rerender } = render(
+      <PropertiesPanel
+        t={t}
+        selectedElements={[el]}
+        {...handlers}
+        onSetTextStyle={onSetTextStyle}
+      />,
+    )
+    expect(screen.getByTestId("text-bold")).toHaveAttribute("aria-pressed", "false")
+    await userEvent.click(screen.getByTestId("text-bold"))
+    expect(onSetTextStyle).toHaveBeenLastCalledWith("bold", true)
+
+    const covered = { ...el, spans: [{ start: 0, end: 3, bold: true as const }] }
+    rerender(
+      <PropertiesPanel
+        t={t}
+        selectedElements={[covered]}
+        {...handlers}
+        onSetTextStyle={onSetTextStyle}
+      />,
+    )
+    expect(screen.getByTestId("text-bold")).toHaveAttribute("aria-pressed", "true")
+    await userEvent.click(screen.getByTestId("text-bold"))
+    expect(onSetTextStyle).toHaveBeenLastCalledWith("bold", false)
+    expect(screen.getByTestId("text-italic")).toHaveAttribute("aria-pressed", "false")
+  })
+
+  it("a partly bold text is not pressed (click applies to all)", () => {
+    const el = {
+      ...newText({ x: 0, y: 0, text: "abc" }),
+      spans: [{ start: 0, end: 1, bold: true as const }],
+    }
+    render(<PropertiesPanel t={t} selectedElements={[el]} {...handlers} onSetTextStyle={vi.fn()} />)
+    expect(screen.getByTestId("text-bold")).toHaveAttribute("aria-pressed", "false")
+  })
+})

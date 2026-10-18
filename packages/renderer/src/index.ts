@@ -8,5 +8,13 @@ export type { CanvasRendererOptions, GridOptions, Theme } from "./types"
 export type { MarqueeBox } from "./overlay"
 export { resolveColor } from "./theme-colors"
 export { renderToSVG } from "./svg"
-export { fontFamilyName, fontSpec, measureText, wrapLines } from "./text-metrics"
+export {
+  fontFamilyName,
+  fontSpec,
+  layoutLabel,
+  measureText,
+  runFont,
+  wrapLines,
+  wrapRich,
+} from "./text-metrics"
 export type { SVGRenderOptions } from "./svg"

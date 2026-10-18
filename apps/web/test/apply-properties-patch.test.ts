@@ -17,6 +17,7 @@ import {
 import {
   applyPropertiesPatch,
   applySelectionPatch,
+  setWholeTextStyle,
   type Measurer,
 } from "../src/driver/applyPropertiesPatch"
 import { createFontAwareStubContext } from "./fontAwareCanvasStub"
@@ -208,5 +209,40 @@ describe("applySelectionPatch", () => {
 
   it("leaves unselected non-label elements alone", () => {
     expect(applySelectionPatch(rect, { fontFamily: 3 }, ["OTHER"])).toBeUndefined()
+  })
+})
+
+describe("rich text spans through patches", () => {
+  const base = {
+    ...newText({ x: 0, y: 0, text: "hello world" }),
+    spans: [{ start: 6, end: 11, bold: true as const }],
+  }
+  const noMeasure = () => undefined
+
+  it("a text patch without spans remaps spans through a diff", () => {
+    const out = applyPropertiesPatch(base, { text: "hello big world" }, noMeasure) as typeof base
+    expect(out.spans).toEqual([{ start: 10, end: 15, bold: true }])
+  })
+  it("a text patch that deletes the styled run drops spans", () => {
+    const out = applyPropertiesPatch(base, { text: "hello" }, noMeasure) as typeof base
+    expect("spans" in out).toBe(false)
+  })
+  it("an explicit spans patch wins and re-measures free text", () => {
+    const measure = vi.fn(() => ({ width: 99, height: 25 }))
+    const out = applyPropertiesPatch(base, { spans: [] }, measure) as typeof base
+    expect(out.spans).toEqual([])
+    expect(measure).toHaveBeenCalled()
+    expect(out.width).toBe(99)
+  })
+  it("setWholeTextStyle applies, clears and leaves other styles", () => {
+    const on = setWholeTextStyle(base, "bold", true, noMeasure) as typeof base
+    expect(on.spans).toEqual([{ start: 0, end: 11, bold: true }])
+    const off = setWholeTextStyle(base, "bold", false, noMeasure) as typeof base
+    expect(off.spans).toBeUndefined()
+    const it = setWholeTextStyle(base, "italic", true, noMeasure) as typeof base
+    expect(it.spans).toEqual([
+      { start: 0, end: 6, italic: true },
+      { start: 6, end: 11, bold: true, italic: true },
+    ])
   })
 })

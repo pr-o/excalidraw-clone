@@ -240,3 +240,88 @@ describe("TextEditingOverlay — fixed-width text", () => {
     expect(textarea.style.width).toBe("")
   })
 })
+
+describe("TextEditingOverlay — rich text", () => {
+  const spansOf = (scene: Scene, id: string) =>
+    (scene.getElements().find((e) => e.id === id) as ExcalidrawTextElement | undefined)?.spans
+
+  const open = async (text: string, spans?: ExcalidrawTextElement["spans"]) => {
+    const scene = new Scene()
+    const t = { ...newText({ x: 10, y: 10, text }), ...(spans ? { spans } : {}) }
+    scene.mutate((d) => d.push(t))
+    useAppStore.getState().setTextEditElementId(t.id)
+    const { container } = renderOverlay(scene)
+    const textarea = await focusedTextarea(container)
+    return { scene, t, container, textarea }
+  }
+
+  it("Ctrl+B on a selection bolds it and commits spans", async () => {
+    const { scene, t, textarea } = await open("hello world")
+    textarea.setSelectionRange(6, 11)
+    fireEvent.keyDown(textarea, { key: "b", ctrlKey: true })
+    fireEvent.keyDown(textarea, { key: "Escape" })
+    expect(spansOf(scene, t.id)).toEqual([{ start: 6, end: 11, bold: true }])
+  })
+
+  it("Ctrl+B again clears it; Cmd+I italicizes", async () => {
+    const { scene, t, textarea } = await open("hello world", [{ start: 6, end: 11, bold: true }])
+    textarea.setSelectionRange(6, 11)
+    fireEvent.keyDown(textarea, { key: "b", ctrlKey: true })
+    textarea.setSelectionRange(0, 5)
+    fireEvent.keyDown(textarea, { key: "i", metaKey: true })
+    fireEvent.keyDown(textarea, { key: "Escape" })
+    expect(spansOf(scene, t.id)).toEqual([{ start: 0, end: 5, italic: true }])
+  })
+
+  it("a bare-caret Ctrl+B sets the typing style for the next characters only", async () => {
+    const { scene, t, textarea } = await open("ab")
+    textarea.setSelectionRange(2, 2)
+    fireEvent.keyDown(textarea, { key: "b", ctrlKey: true })
+    fireEvent.change(textarea, { target: { value: "abcd" } })
+    fireEvent.keyDown(textarea, { key: "Escape" })
+    expect(spansOf(scene, t.id)).toEqual([{ start: 2, end: 4, bold: true }])
+  })
+
+  it("typing inside a bold run extends it; editing before it shifts it", async () => {
+    const { scene, t, textarea } = await open("ab cd", [{ start: 3, end: 5, bold: true }])
+    fireEvent.change(textarea, { target: { value: "ab cXd" } })
+    fireEvent.change(textarea, { target: { value: "ZZab cXd" } })
+    fireEvent.keyDown(textarea, { key: "Escape" })
+    expect(spansOf(scene, t.id)).toEqual([{ start: 5, end: 8, bold: true }])
+  })
+
+  it("IME composition steps keep spans consistent with the final text", async () => {
+    const { scene, t, textarea } = await open("ab", [{ start: 0, end: 2, bold: true }])
+    textarea.setSelectionRange(2, 2)
+    fireEvent.compositionStart(textarea)
+    for (const v of ["abㅎ", "ab하", "ab한"]) fireEvent.change(textarea, { target: { value: v } })
+    fireEvent.compositionEnd(textarea)
+    fireEvent.keyDown(textarea, { key: "Escape" })
+    expect(textOf(scene, t.id)).toBe("ab한")
+    expect(spansOf(scene, t.id)).toEqual([{ start: 0, end: 3, bold: true }])
+  })
+
+  it("converts '- ' to a bullet and Enter continues / ends the list", async () => {
+    const { scene, t, textarea } = await open("")
+    fireEvent.change(textarea, { target: { value: "- " } })
+    expect(textarea.value).toBe("• ")
+    fireEvent.change(textarea, { target: { value: "• item" } })
+    textarea.setSelectionRange(6, 6)
+    fireEvent.keyDown(textarea, { key: "Enter" })
+    expect(textarea.value).toBe("• item\n• ")
+    fireEvent.keyDown(textarea, { key: "Enter" })
+    expect(textarea.value).toBe("• item\n")
+    fireEvent.keyDown(textarea, { key: "Escape" })
+    expect(textOf(scene, t.id)).toBe("• item\n")
+  })
+
+  it("renders a styled mirror only when spans exist", async () => {
+    const plain = await open("abc")
+    expect(plain.container.querySelector("[data-testid=text-mirror]")).toBeNull()
+    cleanup()
+    const rich = await open("abc", [{ start: 0, end: 1, bold: true }])
+    expect(rich.container.querySelector("[data-testid=text-mirror] [data-bold]")?.textContent).toBe(
+      "a",
+    )
+  })
+})

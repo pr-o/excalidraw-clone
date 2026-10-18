@@ -48,7 +48,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { I18nextProvider, useTranslation } from "react-i18next"
 import { startAutoSave } from "../driver/autoSave"
-import { applySelectionPatch } from "../driver/applyPropertiesPatch"
+import { applySelectionPatch, setWholeTextStyle } from "../driver/applyPropertiesPatch"
 import { hydratePages, hydrateUI } from "../driver/hydration"
 import { pickAndUploadImage } from "../driver/imageUpload"
 import {
@@ -505,6 +505,16 @@ function Inner(): React.ReactElement {
                   labelElements={selectedLabels}
                   onChange={(patch) =>
                     replaceElements(scene, (el) => applySelectionPatch(el, patch, selectedIds))
+                  }
+                  onSetTextStyle={(style, on) =>
+                    replaceElements(scene, (el) =>
+                      selectedIds.includes(el.id) ||
+                      (el.type === "text" &&
+                        el.containerId !== null &&
+                        selectedIds.includes(el.containerId))
+                        ? setWholeTextStyle(el, style, on)
+                        : undefined,
+                    )
                   }
                   onDelete={() => {
                     deleteElements(scene, selectedIds)
