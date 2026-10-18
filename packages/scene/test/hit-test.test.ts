@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 import {
+  getElementBounds,
   hitTestElement,
   newDiamond,
   newEllipse,
@@ -174,5 +175,15 @@ describe("polygon shapes", () => {
     // y-flip puts the apex at the bottom: the bottom-left corner empties out
     expect(hitTestElement(flipped, { x: 5, y: 5 })).toBe(true)
     expect(hitTestElement(flipped, { x: 5, y: 55 })).toBe(false)
+  })
+})
+
+describe("drop shadow does not affect geometry", () => {
+  it("hit-testing and bounds ignore the shadow", () => {
+    const plain = newRectangle({ x: 0, y: 0, width: 100, height: 50 })
+    const shadowed = { ...plain, shadow: { color: "#000", blur: 20, offsetX: 30, offsetY: 30 } }
+    expect(hitTestElement(shadowed, { x: 120, y: 25 })).toBe(false)
+    expect(hitTestElement(shadowed, { x: 50, y: 25 })).toBe(true)
+    expect(getElementBounds(shadowed)).toEqual(getElementBounds(plain))
   })
 })

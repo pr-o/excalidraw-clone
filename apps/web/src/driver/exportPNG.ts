@@ -5,6 +5,7 @@ import {
   buildExcalidrawData,
   newPage,
   Scene,
+  shadowMargin,
   type ExcalidrawElement,
 } from "@excalidraw-clone/scene"
 import type { ExportOptions } from "@excalidraw-clone/ui"
@@ -81,10 +82,11 @@ function computeBBox(elements: readonly ExcalidrawElement[]): {
   let maxX = -Infinity
   let maxY = -Infinity
   for (const el of elements) {
-    minX = Math.min(minX, el.x)
-    minY = Math.min(minY, el.y)
-    maxX = Math.max(maxX, el.x + el.width)
-    maxY = Math.max(maxY, el.y + el.height)
+    const m = shadowMargin(el)
+    minX = Math.min(minX, el.x - m)
+    minY = Math.min(minY, el.y - m)
+    maxX = Math.max(maxX, el.x + el.width + m)
+    maxY = Math.max(maxY, el.y + el.height + m)
   }
   return { x: minX, y: minY, width: maxX - minX, height: maxY - minY }
 }

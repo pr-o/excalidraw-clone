@@ -42,6 +42,15 @@ describe("describeHistoryChange — single-category transitions", () => {
     expect(describeHistoryChange([a], [resized])).toEqual({ category: "resized", count: 1 })
   })
 
+  it("labels a shadow change as a restyle", () => {
+    const a = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
+    const shadow = { color: "#000", blur: 6, offsetX: 6, offsetY: 6 }
+    expect(describeHistoryChange([a], [{ ...a, shadow }])).toEqual({
+      category: "restyled",
+      count: 1,
+    })
+  })
+
   it("detects a restyled element (only a style field changed)", () => {
     const a = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
     const restyled = { ...a, strokeColor: "#ff0000" }

@@ -1,5 +1,6 @@
 import {
   newArrow,
+  newFrame,
   newImage,
   newLabelFor,
   newLine,
@@ -681,6 +682,54 @@ describe("PropertiesPanel — Text section", () => {
       expect(onChange).toHaveBeenLastCalledWith({ gradient: { to: "#a5d8ff", angle: 45 } })
       await userEvent.click(screen.getByTestId("gradient-toggle"))
       expect(onChange).toHaveBeenLastCalledWith({ gradient: undefined })
+    })
+  })
+
+  describe("shadow", () => {
+    const rect = () => newRectangle({ x: 0, y: 0, width: 10, height: 10 })
+
+    it("is hidden for frames only", () => {
+      render(
+        <PropertiesPanel
+          t={t}
+          selectedElements={[newFrame({ x: 0, y: 0, width: 10, height: 10 })]}
+          {...handlers}
+        />,
+      )
+      expect(screen.queryByTestId("shadow-toggle")).toBeNull()
+    })
+
+    it("toggling on sets the medium preset; size and colour rows appear only when on", async () => {
+      const onChange = vi.fn()
+      render(
+        <PropertiesPanel t={t} selectedElements={[rect()]} {...handlers} onChange={onChange} />,
+      )
+      expect(screen.queryByTestId("shadow-size-soft")).toBeNull()
+      await userEvent.click(screen.getByTestId("shadow-toggle"))
+      expect(onChange).toHaveBeenCalledWith({
+        shadow: { color: "#00000059", blur: 6, offsetX: 6, offsetY: 6 },
+      })
+    })
+
+    it("when on, size and colour patch the shadow; toggle removes it", async () => {
+      const onChange = vi.fn()
+      const el = { ...rect(), shadow: { color: "#00000059", blur: 6, offsetX: 6, offsetY: 6 } }
+      render(<PropertiesPanel t={t} selectedElements={[el]} {...handlers} onChange={onChange} />)
+      expect(screen.getByTestId("shadow-size-medium")).toHaveAttribute("aria-pressed", "true")
+      await userEvent.click(screen.getByTestId("shadow-size-soft"))
+      expect(onChange).toHaveBeenLastCalledWith({
+        shadow: { color: "#00000059", blur: 12, offsetX: 4, offsetY: 4 },
+      })
+      await userEvent.click(screen.getByTestId("shadow-size-hard"))
+      expect(onChange).toHaveBeenLastCalledWith({
+        shadow: { color: "#00000059", blur: 0, offsetX: 8, offsetY: 8 },
+      })
+      await userEvent.click(screen.getByTestId("shadow-color-00000099"))
+      expect(onChange).toHaveBeenLastCalledWith({
+        shadow: { color: "#00000099", blur: 6, offsetX: 6, offsetY: 6 },
+      })
+      await userEvent.click(screen.getByTestId("shadow-toggle"))
+      expect(onChange).toHaveBeenLastCalledWith({ shadow: undefined })
     })
   })
 })

@@ -50,6 +50,10 @@ const RECORDABLE_PROPS = [
   "lineJoin",
   "lineDashOffset",
   "globalCompositeOperation",
+  "shadowColor",
+  "shadowBlur",
+  "shadowOffsetX",
+  "shadowOffsetY",
 ] as const
 
 export const createMockContext = (): MockCanvasContext => {

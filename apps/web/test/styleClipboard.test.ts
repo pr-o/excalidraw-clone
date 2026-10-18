@@ -146,4 +146,12 @@ describe("applyStyle", () => {
     expect(applyStyle(plain, extractStyle(src)).gradient).toEqual(gradient)
     expect(applyStyle(src, extractStyle(plain)).gradient).toBeUndefined()
   })
+
+  it("carries a shadow and clears the target's when the source has none", () => {
+    const shadow = { color: "#00000059", blur: 12, offsetX: 4, offsetY: 4 }
+    const src = { ...newRectangle({ x: 0, y: 0, width: 10, height: 10 }), shadow }
+    const plain = newEllipse({ x: 0, y: 0, width: 10, height: 10 })
+    expect(applyStyle(plain, extractStyle(src)).shadow).toEqual(shadow)
+    expect(applyStyle(src, extractStyle(plain)).shadow).toBeUndefined()
+  })
 })

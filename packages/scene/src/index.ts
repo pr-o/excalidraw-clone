@@ -125,6 +125,7 @@ export type {
   FillStyle,
   FontFamily,
   Gradient,
+  Shadow,
   PointBinding,
   Roughness,
   Roundness,
@@ -134,3 +135,4 @@ export type {
   TextAlign,
   VerticalAlign,
 } from "./types"
+export { elementShadow, shadowMargin } from "./shadow"

@@ -1,4 +1,10 @@
-import { LABELABLE_TYPES, LINEAR_LABELABLE_TYPES, mirrorOf } from "@excalidraw-clone/scene"
+import {
+  elementShadow,
+  LABELABLE_TYPES,
+  LINEAR_LABELABLE_TYPES,
+  mirrorOf,
+  shadowMargin,
+} from "@excalidraw-clone/scene"
 import type {
   ExcalidrawElement,
   ExcalidrawTextElement,
@@ -240,7 +246,49 @@ function createGroup(doc: Document, el: ExcalidrawElement): SVGGElement {
   if (el.opacity !== 100) {
     group.setAttribute("opacity", String(el.opacity / 100))
   }
+  appendShadowFilter(doc, group, el)
   return group
+}
+
+/** A group-level feDropShadow, so the element's several paths cast one shadow. The scene-space
+ *  offset is mapped into the group's local (rotated, mirrored) space to stay put on screen. */
+function appendShadowFilter(doc: Document, group: SVGGElement, el: ExcalidrawElement): void {
+  const sh = elementShadow(el)
+  if (!sh) return
+  const cos = Math.cos(-el.angle)
+  const sin = Math.sin(-el.angle)
+  const [mx, my] = el.type === "image" || el.type === "text" ? mirrorOf(el) : [1, 1]
+  const r = (n: number): number => Math.round(n * 100) / 100 + 0
+  const dx = r(mx * (sh.offsetX * cos - sh.offsetY * sin))
+  const dy = r(my * (sh.offsetX * sin + sh.offsetY * cos))
+  // Local-space region covering the element, its points and the shadow, so nothing is clipped.
+  const xs = [0, el.width]
+  const ys = [0, el.height]
+  if (el.type === "line" || el.type === "arrow" || el.type === "freedraw") {
+    for (const p of el.points) {
+      xs.push(p.x)
+      ys.push(p.y)
+    }
+  }
+  const m = shadowMargin(el) + el.strokeWidth + 8
+  const x = Math.min(...xs) - m
+  const y = Math.min(...ys) - m
+  const id = `shadow-${el.id}`
+  const filter = svgEl(doc, "filter", {
+    id,
+    filterUnits: "userSpaceOnUse",
+    x,
+    y,
+    width: Math.max(...xs) - Math.min(...xs) + 2 * m,
+    height: Math.max(...ys) - Math.min(...ys) + 2 * m,
+  })
+  filter.appendChild(
+    svgEl(doc, "feDropShadow", { dx, dy, stdDeviation: sh.blur / 2, "flood-color": sh.color }),
+  )
+  const defs = svgEl(doc, "defs", {})
+  defs.appendChild(filter)
+  group.appendChild(defs)
+  group.setAttribute("filter", `url(#${id})`)
 }
 
 function elementTransform(el: ExcalidrawElement): string {
@@ -336,10 +384,11 @@ function computeBBox(
   let maxX = -Infinity
   let maxY = -Infinity
   for (const el of elements) {
-    minX = Math.min(minX, el.x)
-    minY = Math.min(minY, el.y)
-    maxX = Math.max(maxX, el.x + el.width)
-    maxY = Math.max(maxY, el.y + el.height)
+    const m = shadowMargin(el)
+    minX = Math.min(minX, el.x - m)
+    minY = Math.min(minY, el.y - m)
+    maxX = Math.max(maxX, el.x + el.width + m)
+    maxY = Math.max(maxY, el.y + el.height + m)
   }
   return {
     x: minX - padding,

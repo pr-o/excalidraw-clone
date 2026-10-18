@@ -224,7 +224,7 @@ export class CanvasRenderer {
             : LABELABLE_TYPES.has(container.type)
               ? { fit: true }
               : undefined
-      drawElement(ctx, element, this.rough, this.shapeCache, getImage, this.theme, labelOpts)
+      drawElement(ctx, element, this.rough, this.shapeCache, getImage, this.theme, labelOpts, zoom)
     }
     // Main canvas, after elements: above the drawing, below the selection overlay.
     if (this.showUserGuides) drawUserGuides(ctx, this.scene.getGuides(), view, zoom, this.theme)

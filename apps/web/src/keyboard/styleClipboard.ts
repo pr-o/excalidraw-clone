@@ -11,6 +11,7 @@ export type BaseStyle = Pick<
   | "strokeColor"
   | "backgroundColor"
   | "gradient"
+  | "shadow"
   | "fillStyle"
   | "strokeWidth"
   | "strokeStyle"
@@ -44,6 +45,7 @@ export function extractStyle(element: ExcalidrawElement): StyleClipboard {
       strokeColor: element.strokeColor,
       backgroundColor: element.backgroundColor,
       ...(element.gradient && { gradient: element.gradient }),
+      ...(element.shadow && { shadow: element.shadow }),
       fillStyle: element.fillStyle,
       strokeWidth: element.strokeWidth,
       strokeStyle: element.strokeStyle,
@@ -75,8 +77,8 @@ export function extractStyle(element: ExcalidrawElement): StyleClipboard {
  * can't carry them (e.g. a text style pasted onto a rectangle).
  */
 export function applyStyle(element: ExcalidrawElement, clip: StyleClipboard): ExcalidrawElement {
-  // The gradient travels with the fill: a flat-fill style clears the target's.
-  const { gradient: _gradient, ...rest } = element
+  // The gradient travels with the fill: a flat-fill style clears the target's. Same for shadow.
+  const { gradient: _gradient, shadow: _shadow, ...rest } = element
   const next = { ...rest, ...clip.base }
   if (clip.text && next.type === "text") return { ...next, ...clip.text }
   if (clip.linear && (next.type === "arrow" || next.type === "line")) {

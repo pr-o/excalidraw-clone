@@ -88,6 +88,17 @@ export interface ExcalidrawElementBase {
    *  90 = top→bottom). Honored only on LABELABLE_TYPES shapes with a solid,
    *  non-transparent fill. Absent (or undefined) ⟺ flat fill. */
   gradient?: Gradient | undefined
+
+  /** Drop shadow in scene units. Honored on every type except frames and bound
+   *  text labels. Absent (or undefined) ⟺ no shadow. */
+  shadow?: Shadow | undefined
+}
+
+export interface Shadow {
+  color: string
+  blur: number
+  offsetX: number
+  offsetY: number
 }
 
 export interface Gradient {

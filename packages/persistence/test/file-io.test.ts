@@ -150,4 +150,14 @@ describe("user guides validation on load", () => {
     expect(loaded.pages[0]!.guides).toEqual({ x: [1, 3], y: [] })
     expect(loaded.pages[1]!.guides).toBeUndefined()
   })
+
+  it("round-trips an element's optional shadow field", async () => {
+    const shadow = { color: "#00000059", blur: 12, offsetX: 4, offsetY: 4 }
+    const rect = { ...newRectangle({ x: 0, y: 0, width: 10, height: 10 }), shadow }
+    const blob = toExcalidrawBlob(
+      serializeDocument([{ id: "p1", name: "P", scene: new Scene([rect]) }], "p1"),
+    )
+    const out = await parseExcalidrawFile(new File([await blob.text()], "s.excalidraw"))
+    expect(out.pages[0]?.elements[0]?.shadow).toEqual(shadow)
+  })
 })

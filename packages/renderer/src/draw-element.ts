@@ -1,4 +1,4 @@
-import { mirrorOf } from "@excalidraw-clone/scene"
+import { elementShadow, mirrorOf } from "@excalidraw-clone/scene"
 import type { ExcalidrawElement } from "@excalidraw-clone/scene"
 import type { RoughCanvas } from "roughjs/bin/canvas"
 import type { ShapeCache } from "./shape-cache"
@@ -15,6 +15,25 @@ export interface LabelDrawOptions {
   fit?: boolean
 }
 
+/** Canvas shadow offsets/blur ignore the transform, so they are scaled by the view zoom. */
+const setShadow = (ctx: CanvasRenderingContext2D, el: ExcalidrawElement, zoom: number): boolean => {
+  const sh = elementShadow(el)
+  if (!sh) return false
+  // Deliberately not theme-mapped: resolveColor would turn a black shadow into a white glow.
+  ctx.shadowColor = sh.color
+  ctx.shadowBlur = sh.blur * zoom
+  ctx.shadowOffsetX = sh.offsetX * zoom
+  ctx.shadowOffsetY = sh.offsetY * zoom
+  return true
+}
+
+const clearShadow = (ctx: CanvasRenderingContext2D): void => {
+  ctx.shadowColor = "rgba(0,0,0,0)"
+  ctx.shadowBlur = 0
+  ctx.shadowOffsetX = 0
+  ctx.shadowOffsetY = 0
+}
+
 export const drawElement = (
   ctx: CanvasRenderingContext2D,
   element: ExcalidrawElement,
@@ -23,6 +42,7 @@ export const drawElement = (
   getImage: ImageLookup,
   theme: Theme = "light",
   labelOpts?: LabelDrawOptions,
+  zoom = 1,
 ): void => {
   if (element.isDeleted) return
   ctx.save()
@@ -43,6 +63,7 @@ export const drawElement = (
   if (element.type === "image") {
     const img = element.fileId === null ? undefined : getImage(element.fileId)
     if (img && img.complete && img.naturalWidth > 0) {
+      setShadow(ctx, element, zoom)
       const c = element.crop
       // imported elements may omit `crop`
       if (c == null) {
@@ -66,6 +87,7 @@ export const drawElement = (
     return
   }
   if (element.type === "text") {
+    setShadow(ctx, element, zoom)
     drawText(ctx, element, resolveColor(element.strokeColor, theme), {
       occlude:
         labelOpts?.occlusionBg === undefined ? undefined : { background: labelOpts.occlusionBg },
@@ -76,14 +98,22 @@ export const drawElement = (
   }
   const drawables = cache.get(element, rough.generator, theme)
   const line = gradientLine(element)
+  let grad: CanvasGradient | undefined
   if (line) {
-    const grad = ctx.createLinearGradient(line.x1, line.y1, line.x2, line.y2)
+    grad = ctx.createLinearGradient(line.x1, line.y1, line.x2, line.y2)
     grad.addColorStop(0, resolveColor(element.backgroundColor, theme))
     grad.addColorStop(1, resolveColor(line.to, theme))
-    for (const d of drawables) rough.draw(withFill(d, grad))
-  } else {
-    for (const d of drawables) rough.draw(d)
   }
+  const paint = (): void => {
+    for (const d of drawables) rough.draw(grad ? withFill(d, grad) : d)
+  }
+  // Rough emits several overlapping paths (fill, double stroke), each of which would cast its own
+  // shadow over the others. So: one pass that casts the shadow, then a shadowless repaint on top.
+  if (setShadow(ctx, element, zoom)) {
+    paint()
+    clearShadow(ctx)
+  }
+  paint()
   if (element.type === "frame") {
     ctx.font = fontSpec(12, 2)
     ctx.fillStyle = resolveColor("#868e96", theme)
