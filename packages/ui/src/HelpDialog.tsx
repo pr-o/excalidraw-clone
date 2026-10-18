@@ -58,6 +58,7 @@ const VIEW_SHORTCUTS: readonly Shortcut[] = [
   { keys: "Cmd/Ctrl+'", label: "shortcuts:toggleGrid" },
   { keys: "Shift+R", label: "shortcuts:toggleRulers" },
   { keys: "Alt+R", label: "shortcuts:viewMode" },
+  { keys: "Alt+M", label: "shortcuts:toggleMinimap" },
   { keys: "Cmd/Ctrl+/", label: "shortcuts:commandPalette" },
   { keys: "Cmd/Ctrl+F", label: "shortcuts:find" },
   { keys: "Alt+/", label: "shortcuts:stats" },

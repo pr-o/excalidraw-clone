@@ -22,6 +22,8 @@ export interface HamburgerMenuProps {
   onViewModeToggle?: () => void
   rulersVisible?: boolean
   onRulersToggle?: () => void
+  minimapVisible?: boolean
+  onMinimapToggle?: () => void
   onOpenFile: () => void
   onSaveFile: () => void
   onSnapshots?: () => void
@@ -133,6 +135,19 @@ export function HamburgerMenu(props: HamburgerMenuProps): React.ReactElement {
             >
               {props.t("menu.rulers")}
               <span className="text-xs text-muted">{props.rulersVisible ? "✓" : ""}</span>
+            </button>
+          )}
+          {props.onMinimapToggle && (
+            <button
+              type="button"
+              role="menuitemcheckbox"
+              aria-checked={props.minimapVisible ?? false}
+              data-testid="menu-minimap"
+              onClick={wrap(props.onMinimapToggle)}
+              className="flex w-full items-center justify-between rounded px-3 py-2 text-left text-sm hover:bg-panel-hover"
+            >
+              {props.t("menu.minimap")}
+              <span className="text-xs text-muted">{props.minimapVisible ? "✓" : ""}</span>
             </button>
           )}
           <Separator />

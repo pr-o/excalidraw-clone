@@ -42,6 +42,17 @@ describe("keyboard shortcuts", () => {
     expect(useAppStore.getState().rulersVisible).toBe(before)
   })
 
+  it("Alt+M toggles the minimap (code-matched, tool untouched, works in view mode)", () => {
+    const before = useAppStore.getState().minimapVisible
+    press({ key: "µ", code: "KeyM", altKey: true })
+    expect(useAppStore.getState().minimapVisible).toBe(!before)
+    expect(useAppStore.getState().activeTool).toBe("selection")
+    useAppStore.getState().setViewMode(true)
+    press({ key: "m", code: "KeyM", altKey: true })
+    expect(useAppStore.getState().minimapVisible).toBe(before)
+    useAppStore.getState().setViewMode(false)
+  })
+
   it("'r' switches to rectangle tool", () => {
     press({ key: "r" })
     expect(useAppStore.getState().activeTool).toBe("rectangle")

@@ -60,6 +60,12 @@ export function PaletteHost({ scene }: { scene: Scene }): React.ReactElement {
       perform: () => useAppStore.getState().toggleRulers(),
     },
     {
+      id: "minimap",
+      label: t("palette.toggleMinimap"),
+      hint: "Alt+M",
+      perform: () => useAppStore.getState().toggleMinimap(),
+    },
+    {
       id: "view-mode",
       label: t("menu.viewMode"),
       hint: "Alt+R",

@@ -124,7 +124,13 @@
     "language": "Language",
     "canvasBg": "Canvas background",
     "rulers": "Rulers",
-    "viewMode": "View mode"
+    "viewMode": "View mode",
+    "minimap": "Minimap"
+  },
+  "minimap": {
+    "label": "Minimap",
+    "close": "Hide minimap",
+    "empty": "Nothing on this page"
   },
   "viewMode": {
     "label": "View mode",
@@ -137,6 +143,7 @@
     "title": "Command palette",
     "placeholder": "Type a command…",
     "empty": "No matching commands",
+    "toggleMinimap": "Toggle minimap",
     "lockSelection": "Lock selection",
     "unlockAll": "Unlock all elements"
   },

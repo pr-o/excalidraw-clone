@@ -53,6 +53,15 @@ describe("HamburgerMenu", () => {
     expect(onRulersToggle).toHaveBeenCalledTimes(1)
   })
 
+  it("Minimap entry reflects state and toggles", async () => {
+    const onMinimapToggle = vi.fn()
+    render(<HamburgerMenu {...baseProps()} open minimapVisible onMinimapToggle={onMinimapToggle} />)
+    const item = screen.getByTestId("menu-minimap")
+    expect(item).toHaveAttribute("aria-checked", "true")
+    await userEvent.click(item)
+    expect(onMinimapToggle).toHaveBeenCalledTimes(1)
+  })
+
   it("clicking the trigger toggles open via onOpenChange", async () => {
     const onOpenChange = vi.fn()
     render(<HamburgerMenu {...baseProps()} onOpenChange={onOpenChange} />)

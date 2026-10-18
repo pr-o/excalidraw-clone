@@ -10,6 +10,7 @@ import { createGuidesSlice, type GuidesSlice } from "./slices/guides"
 import { createI18nSlice, type I18nSlice } from "./slices/i18n"
 import { createLibrarySlice, type LibrarySlice } from "./slices/library"
 import { createLinkEditorSlice, type LinkEditorSlice } from "./slices/linkEditor"
+import { createMinimapSlice, type MinimapSlice } from "./slices/minimap"
 import { createPaletteSlice, type PaletteSlice } from "./slices/palette"
 import { createPointerSlice, type PointerSlice } from "./slices/pointer"
 import { createPresentationSlice, type PresentationSlice } from "./slices/presentation"
@@ -26,6 +27,7 @@ export type AppState = ToolSlice &
   ViewSlice &
   GridSlice &
   RulersSlice &
+  MinimapSlice &
   GuidesSlice &
   DialogSlice &
   PaletteSlice &
@@ -49,6 +51,7 @@ export const useAppStore = create<AppState>()((...a) => ({
   ...createViewSlice(...a),
   ...createGridSlice(...a),
   ...createRulersSlice(...a),
+  ...createMinimapSlice(...a),
   ...createGuidesSlice(...a),
   ...createDialogSlice(...a),
   ...createPaletteSlice(...a),

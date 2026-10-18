@@ -124,7 +124,13 @@
     "language": "언어",
     "canvasBg": "캔버스 배경",
     "rulers": "눈금자",
-    "viewMode": "보기 모드"
+    "viewMode": "보기 모드",
+    "minimap": "미니맵"
+  },
+  "minimap": {
+    "label": "미니맵",
+    "close": "미니맵 숨기기",
+    "empty": "이 페이지는 비어 있습니다"
   },
   "viewMode": {
     "label": "보기 모드",
@@ -135,6 +141,7 @@
     "title": "명령어 팔레트",
     "placeholder": "명령어 입력…",
     "empty": "일치하는 명령어가 없습니다",
+    "toggleMinimap": "미니맵 토글",
     "lockSelection": "선택 요소 잠금",
     "unlockAll": "모든 잠금 해제"
   },

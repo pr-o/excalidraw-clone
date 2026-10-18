@@ -41,6 +41,7 @@
   "toggleGrid": "격자 토글",
   "toggleRulers": "눈금자 토글",
   "viewMode": "보기 모드 토글",
+  "toggleMinimap": "미니맵 토글",
   "commandPalette": "명령어 팔레트",
   "find": "캔버스에서 찾기",
   "stats": "통계 패널 토글",

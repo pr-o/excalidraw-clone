@@ -87,6 +87,13 @@ export function attachShortcuts({
       toggleViewMode()
       return
     }
+    // Before tool-key dispatch and the view-mode filter (navigation stays available);
+    // `code` covers Mac Alt+M yielding "µ".
+    if (e.altKey && !isMeta && (e.code === "KeyM" || key === "m")) {
+      e.preventDefault()
+      useAppStore.getState().toggleMinimap()
+      return
+    }
     // View mode: only navigation, find, help and the laser survive.
     if (useAppStore.getState().viewMode) {
       const allowed =

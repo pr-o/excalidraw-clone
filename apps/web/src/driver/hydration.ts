@@ -28,6 +28,9 @@ export function hydrateUI(): void {
   if (typeof ui.rulersVisible === "boolean" && ui.rulersVisible !== store.rulersVisible) {
     store.toggleRulers()
   }
+  if (typeof ui.minimapVisible === "boolean" && ui.minimapVisible !== store.minimapVisible) {
+    store.toggleMinimap()
+  }
   if (ui.viewMode === true) store.setViewMode(true)
   if (typeof ui.canvasBg === "string") store.setCanvasBg(ui.canvasBg)
   if (typeof ui.zenMode === "boolean" && ui.zenMode !== store.zenMode) store.toggleZenMode()

@@ -20,6 +20,7 @@ export function startAutoSave(pages: readonly PageRecord[], activePageId: string
         gridEnabled: s.gridEnabled,
         gridSize: s.gridSize,
         rulersVisible: s.rulersVisible,
+        minimapVisible: s.minimapVisible,
         canvasBg: s.canvasBg,
         zenMode: s.zenMode,
         viewMode: s.viewMode,

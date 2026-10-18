@@ -52,3 +52,11 @@ export type { PolygonShapeKind } from "./polygon"
 export { labelInnerBox } from "./label-box"
 export type { LabelShapeKind } from "./label-box"
 export { polylineMidpoint } from "./polyline"
+export {
+  centerViewOn,
+  minimapFit,
+  minimapToScene,
+  sceneToMinimap,
+  viewportSceneRect,
+} from "./minimap"
+export type { MinimapFit } from "./minimap"

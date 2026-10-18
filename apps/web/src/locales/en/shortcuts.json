@@ -41,6 +41,8 @@
   "toggleGrid": "Toggle grid",
   "toggleRulers": "Toggle rulers",
   "viewMode": "Toggle view mode",
+  "toggleMinimap": "Toggle minimap",
+  "toggleMinimap": "Toggle minimap",
   "commandPalette": "Command palette",
   "find": "Find on canvas",
   "stats": "Toggle stats panel",

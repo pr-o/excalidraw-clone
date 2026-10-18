@@ -67,6 +67,7 @@ import {
 import { zoomAboutCentre } from "../driver/zoom"
 import { toggleViewMode } from "../driver/viewMode"
 import { renderPageThumbnail } from "../driver/pageThumbnails"
+import { Minimap } from "./Minimap"
 import { useSceneRevision } from "../hooks/useSceneRevision"
 import { openExcalidrawFromPicker } from "../driver/openFile"
 import { deleteElements, patchScene, reorderElements, replaceElements } from "../driver/patchScene"
@@ -223,6 +224,8 @@ function Inner(): React.ReactElement {
   const toggleZenMode = useAppStore((s) => s.toggleZenMode)
   const rulersVisible = useAppStore((s) => s.rulersVisible)
   const toggleRulers = useAppStore((s) => s.toggleRulers)
+  const minimapVisible = useAppStore((s) => s.minimapVisible)
+  const toggleMinimap = useAppStore((s) => s.toggleMinimap)
   const setOpenDialog = useAppStore((s) => s.setOpenDialog)
   const openDialog = useAppStore((s) => s.openDialog)
   const selectedIds = useAppStore((s) => s.selectedIds)
@@ -455,6 +458,8 @@ function Inner(): React.ReactElement {
               onViewModeToggle={toggleViewMode}
               rulersVisible={rulersVisible}
               onRulersToggle={toggleRulers}
+              minimapVisible={minimapVisible}
+              onMinimapToggle={toggleMinimap}
               onOpenFile={() => {
                 void (async () => {
                   const data = await openExcalidrawFromPicker(renderer)
@@ -658,6 +663,20 @@ function Inner(): React.ReactElement {
               )}
             </>
           )}
+
+          {/* Sits above the zoom widget and the library toggle; slides left of an open side panel. */}
+          <Minimap
+            scene={scene}
+            className={
+              viewMode
+                ? "right-3"
+                : libraryOpen
+                  ? "right-[304px]"
+                  : historyOpen
+                    ? "right-[272px]"
+                    : "right-3"
+            }
+          />
 
           <div className="absolute bottom-3 right-3 z-30 flex items-center gap-1 rounded-lg bg-white px-2 py-1 text-xs shadow">
             <button
