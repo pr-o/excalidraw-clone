@@ -1,5 +1,6 @@
 "use client"
 import {
+  duplicateElements,
   expandIdsToFrameMembers,
   flipElements,
   groupElements,
@@ -144,6 +145,21 @@ export function attachShortcuts({
       if (useAppStore.getState().selectedIds.length > 0) {
         useAppStore.getState().setOpenDialog("array-duplicate")
       }
+      return
+    }
+    if (isMeta && !e.shiftKey && !e.altKey && key === "d") {
+      e.preventDefault()
+      const ids = useAppStore.getState().selectedIds
+      if (ids.length === 0) return
+      const copies = duplicateElements(scene.getElements(), ids)
+      scene.mutate((draft) => {
+        draft.push(...copies)
+      })
+      useAppStore
+        .getState()
+        .setSelection(
+          copies.filter((c) => !(c.type === "text" && c.containerId !== null)).map((c) => c.id),
+        )
       return
     }
     if (isMeta && e.altKey && key === "c") {

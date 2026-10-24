@@ -53,6 +53,19 @@ describe("keyboard shortcuts", () => {
     useAppStore.getState().setViewMode(false)
   })
 
+  it("Ctrl+D duplicates the selection and selects the copy, without picking a tool", () => {
+    const r = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
+    scene.mutate((d) => {
+      d.push(r)
+    })
+    useAppStore.getState().setSelection([r.id])
+    const n = scene.getElements().length
+    press({ key: "d", ctrlKey: true })
+    expect(scene.getElements().length).toBe(n + 1)
+    expect(useAppStore.getState().selectedIds).not.toContain(r.id)
+    expect(useAppStore.getState().activeTool).toBe("selection")
+  })
+
   it("Ctrl+Shift+D opens the array-duplicate dialog for a selection, without picking a tool", () => {
     press({ key: "D", ctrlKey: true, shiftKey: true })
     expect(useAppStore.getState().openDialog).toBeNull()
