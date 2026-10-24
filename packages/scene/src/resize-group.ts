@@ -1,4 +1,5 @@
 import { boundsFromPoints, type Point } from "@excalidraw-clone/geometry"
+import { fitTableBox } from "./table"
 import type { ExcalidrawElement } from "./types"
 
 /** Plain x/y/width/height box — the shape both the pre-drag combined
@@ -32,7 +33,9 @@ const scalePoint = (p: Point, sx: number, sy: number): Point => ({ x: p.x * sx, 
  *  line/arrow/freedraw: points scaled componentwise, width/height
  *  recomputed from the scaled points' bbox rather than multiplied; text:
  *  fontSize scales by the y-axis factor, clamped to a minimum of 4).
- *  `angle` is untouched for every type. Locked, deleted, unknown ids, and
+ *  `angle` is untouched for every type. A table clamped bigger than its
+ *  scaled box (minimum track sizes, auto-grown rows) grows away from the
+ *  `anchor` sides — the group's fixed edges. Locked, deleted, unknown ids, and
  *  passenger bound-text labels are dropped from the result, mirroring
  *  `flipElements`. Returns [] when nothing resizable is selected. */
 export function resizeElements(
@@ -40,6 +43,7 @@ export function resizeElements(
   ids: readonly string[],
   originBounds: ResizeBounds,
   newBounds: ResizeBounds,
+  anchor: { x: "start" | "end"; y: "start" | "end" } = { x: "start", y: "start" },
 ): ExcalidrawElement[] {
   const byId = new Map(elements.map((e) => [e.id, e]))
   const idSet = new Set(ids)
@@ -73,6 +77,8 @@ export function resizeElements(
           const fontSize = Math.max(MIN_FONT_SIZE, el.fontSize * sy)
           return { ...el, x, y, width: el.width * sx, height: el.height * sy, fontSize }
         }
+        case "table":
+          return fitTableBox(el, { x, y, width: el.width * sx, height: el.height * sy }, anchor)
         default:
           return { ...el, x, y, width: el.width * sx, height: el.height * sy }
       }

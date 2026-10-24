@@ -1,5 +1,6 @@
 import { rotatePoint, type Point } from "@excalidraw-clone/geometry"
 import { DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE } from "./defaults"
+import { normalizeSpans, remapSpansForText, sanitizeSpans, type TextSpan } from "./spans"
 import type { ExcalidrawElement, ExcalidrawTableElement } from "./types"
 
 export const TABLE_MIN_ROW = 28
@@ -62,7 +63,9 @@ export const fitTable = (t: ExcalidrawTableElement): ExcalidrawTableElement => {
     t.colWidths?.length === t.cols &&
     t.rowHeights?.length === t.rows &&
     t.cells?.length === t.rows &&
-    t.cells.every((r) => r.length === t.cols)
+    t.cells.every((r) => r.length === t.cols) &&
+    (t.cellSpans === undefined ||
+      (t.cellSpans.length === t.rows && t.cellSpans.every((r) => r.length === t.cols)))
   const base = wellFormed
     ? t
     : (sanitizeTable(t as unknown as Record<string, unknown>) as unknown as ExcalidrawTableElement)
@@ -76,13 +79,102 @@ export const fitTable = (t: ExcalidrawTableElement): ExcalidrawTableElement => {
   return { ...base, colWidths, rowHeights, width, height }
 }
 
-/** Mutate-time invariant: keep every live table's geometry consistent. */
-export const reconcileTables = (draft: ExcalidrawElement[]): void => {
+/** Wrapped line count of one cell's text at `maxWidth` (bold: header row). */
+export type CountLines = (
+  text: string,
+  maxWidth: number,
+  bold: boolean,
+  spans?: readonly TextSpan[],
+) => number
+
+// The scene has no canvas: the host installs its text measurer (per table font).
+let measurer: ((t: ExcalidrawTableElement) => CountLines | null) | null = null
+
+/** Install (or clear with null) the host's per-table line counter, used to grow
+ *  rows when a column narrows on any path that goes through `Scene.mutate`. */
+export const setTableMeasurer = (fn: typeof measurer): void => {
+  measurer = fn
+}
+
+const narrowed = (prev: ExcalidrawTableElement, next: ExcalidrawTableElement): boolean =>
+  prev.cols === next.cols && next.colWidths.some((w, i) => w < prev.colWidths[i]! - EPS)
+
+/** `fitTable`, then — when a column got narrower than in `prev` — rows grown to
+ *  fit their wrapped text (never shrunk). Widening and row-only changes never
+ *  auto-grow, so a row drag can still shrink a row and a revert stays exact. */
+const settleTable = (
+  t: ExcalidrawTableElement,
+  prev: ExcalidrawTableElement | undefined,
+): ExcalidrawTableElement => {
+  const fitted = fitTable(t)
+  const count = prev && measurer && narrowed(prev, fitted) ? measurer(fitted) : null
+  return count ? autoGrowRows(fitted, count) : fitted
+}
+
+/** Mutate-time invariant: keep every live table's geometry consistent, and
+ *  grow rows when a column narrowed relative to `prev` (the pre-mutate scene). */
+export const reconcileTables = (
+  draft: ExcalidrawElement[],
+  prev: readonly ExcalidrawElement[] = [],
+): void => {
+  let before: Map<string, ExcalidrawElement> | null = null
   for (let i = 0; i < draft.length; i += 1) {
     const e = draft[i]!
     if (e.type !== "table") continue
-    const fitted = fitTable(e)
-    if (fitted !== e) draft[i] = fitted
+    before ??= new Map(prev.map((p) => [p.id, p]))
+    const old = before.get(e.id)
+    const settled = settleTable(e, old?.type === "table" && old !== e ? old : undefined)
+    if (settled !== e) draft[i] = settled
+  }
+}
+
+/** The table resized into `box`, settled (min sizes, auto-grown rows); when it
+ *  comes out bigger than `box` it grows away from the anchored sides, so the
+ *  edge/corner opposite the dragged handle stays put. */
+export const fitTableBox = (
+  t: ExcalidrawTableElement,
+  box: { x: number; y: number; width: number; height: number },
+  anchor: { x: "start" | "end"; y: "start" | "end" },
+): ExcalidrawTableElement => {
+  const s = settleTable({ ...t, ...box }, t)
+  return {
+    ...s,
+    x: anchor.x === "end" ? box.x + box.width - s.width : box.x,
+    y: anchor.y === "end" ? box.y + box.height - s.height : box.y,
+  }
+}
+
+export type CellSpans = NonNullable<ExcalidrawTableElement["cellSpans"]>
+
+export const cellSpansAt = (
+  t: ExcalidrawTableElement,
+  row: number,
+  col: number,
+): readonly TextSpan[] | undefined => t.cellSpans?.[row]?.[col] ?? undefined
+
+/** A span grid with no formatted cell collapses to undefined (field absent). */
+const compactSpans = (grid: CellSpans | undefined): CellSpans | undefined =>
+  grid?.some((r) => r.some((c) => c !== null)) ? grid : undefined
+
+/** `cellSpans` patch for a structure edit: `fn` reshapes the grid the same way
+ *  as `cells`; nothing when the table has no spans. */
+const spansPatch = (
+  t: ExcalidrawTableElement,
+  fn: (grid: CellSpans) => CellSpans,
+): Partial<ExcalidrawTableElement> =>
+  t.cellSpans ? { cellSpans: compactSpans(fn(t.cellSpans)) } : {}
+
+/** Mirror the grid for a flip: x reverses columns, y reverses rows (the header
+ *  flag stays on row 0). Text is moved, never mirrored glyph-wise. */
+export const flipTable = (t: ExcalidrawTableElement, axis: "x" | "y"): ExcalidrawTableElement => {
+  const rev = <T>(xs: readonly T[]): T[] => [...xs].reverse()
+  const grid = <T>(g: readonly (readonly T[])[]): (readonly T[])[] =>
+    axis === "x" ? g.map(rev) : rev(g)
+  return {
+    ...t,
+    ...(axis === "x" ? { colWidths: rev(t.colWidths) } : { rowHeights: rev(t.rowHeights) }),
+    cells: grid(t.cells),
+    ...spansPatch(t, grid),
   }
 }
 
@@ -103,7 +195,12 @@ export const insertRow = (t: ExcalidrawTableElement, index: number): ExcalidrawT
   const height = t.rowHeights[clampIndex(at === t.rows ? at - 1 : at, t.rows)]!
   const rowHeights = [...t.rowHeights.slice(0, at), height, ...t.rowHeights.slice(at)]
   const cells = [...t.cells.slice(0, at), Array(t.cols).fill(""), ...t.cells.slice(at)]
-  return withSizes(t, { rows: t.rows + 1, rowHeights, cells })
+  return withSizes(t, {
+    rows: t.rows + 1,
+    rowHeights,
+    cells,
+    ...spansPatch(t, (g) => [...g.slice(0, at), Array(t.cols).fill(null), ...g.slice(at)]),
+  })
 }
 
 export const insertCol = (t: ExcalidrawTableElement, index: number): ExcalidrawTableElement => {
@@ -112,7 +209,12 @@ export const insertCol = (t: ExcalidrawTableElement, index: number): ExcalidrawT
   const width = t.colWidths[clampIndex(at === t.cols ? at - 1 : at, t.cols)]!
   const colWidths = [...t.colWidths.slice(0, at), width, ...t.colWidths.slice(at)]
   const cells = t.cells.map((r) => [...r.slice(0, at), "", ...r.slice(at)])
-  return withSizes(t, { cols: t.cols + 1, colWidths, cells })
+  return withSizes(t, {
+    cols: t.cols + 1,
+    colWidths,
+    cells,
+    ...spansPatch(t, (g) => g.map((r) => [...r.slice(0, at), null, ...r.slice(at)])),
+  })
 }
 
 /** Delete a row; the last remaining row can't be deleted. */
@@ -122,6 +224,7 @@ export const deleteRow = (t: ExcalidrawTableElement, index: number): ExcalidrawT
     rows: t.rows - 1,
     rowHeights: t.rowHeights.filter((_, i) => i !== index),
     cells: t.cells.filter((_, i) => i !== index),
+    ...spansPatch(t, (g) => g.filter((_, i) => i !== index)),
   })
 }
 
@@ -131,21 +234,35 @@ export const deleteCol = (t: ExcalidrawTableElement, index: number): ExcalidrawT
     cols: t.cols - 1,
     colWidths: t.colWidths.filter((_, i) => i !== index),
     cells: t.cells.map((r) => r.filter((_, i) => i !== index)),
+    ...spansPatch(t, (g) => g.map((r) => r.filter((_, i) => i !== index))),
   })
 }
 
+/** Set one cell's text. `spans` replaces the cell's formatting; without it the
+ *  existing spans are remapped through the text change. */
 export const setCellText = (
   t: ExcalidrawTableElement,
   row: number,
   col: number,
   text: string,
+  spans?: readonly TextSpan[],
 ): ExcalidrawTableElement => {
-  if (row < 0 || row >= t.rows || col < 0 || col >= t.cols || t.cells[row]![col] === text) {
-    return t
-  }
+  if (row < 0 || row >= t.rows || col < 0 || col >= t.cols) return t
+  const oldText = t.cells[row]![col]!
+  const oldSpans = cellSpansAt(t, row, col) ?? null
+  const next =
+    spans === undefined
+      ? remapSpansForText(oldSpans ?? undefined, oldText, text)
+      : normalizeSpans(spans, text.length)
+  const nextSpans = next && next.length > 0 ? next : null
+  if (oldText === text && JSON.stringify(oldSpans) === JSON.stringify(nextSpans)) return t
+  const put = <T>(g: readonly (readonly T[])[], v: T): (readonly T[])[] =>
+    g.map((r, ri) => (ri === row ? r.map((c, ci) => (ci === col ? v : c)) : r))
+  const grid = t.cellSpans ?? (nextSpans ? t.cells.map((r) => r.map(() => null)) : undefined)
   return {
     ...t,
-    cells: t.cells.map((r, ri) => (ri === row ? r.map((c, ci) => (ci === col ? text : c)) : r)),
+    cells: put(t.cells, text),
+    ...(grid ? { cellSpans: compactSpans(put(grid, nextSpans)) } : {}),
   }
 }
 
@@ -229,10 +346,10 @@ export const borderAtLocal = (
 }
 
 /** Row heights grown (never shrunk) so each row fits its wrapped cell text.
- *  `countLines(text, maxWidth, bold)` is the host's wrapping measurer. */
+ *  `countLines` is the host's wrapping measurer. */
 export const autoGrowRows = (
   t: ExcalidrawTableElement,
-  countLines: (text: string, maxWidth: number, bold: boolean) => number,
+  countLines: CountLines,
 ): ExcalidrawTableElement => {
   const lineHeight = t.fontSize * TABLE_LINE_HEIGHT
   let changed = false
@@ -241,7 +358,8 @@ export const autoGrowRows = (
     for (let c = 0; c < t.cols; c += 1) {
       const text = t.cells[r]![c]!
       if (text === "") continue
-      const lines = countLines(text, t.colWidths[c]! - 2 * TABLE_PAD_X, t.headerRow && r === 0)
+      const width = t.colWidths[c]! - 2 * TABLE_PAD_X
+      const lines = countLines(text, width, t.headerRow && r === 0, cellSpansAt(t, r, c))
       need = Math.max(need, lines * lineHeight + 2 * TABLE_PAD_Y)
     }
     if (need > h) changed = true
@@ -284,9 +402,18 @@ export const sanitizeTable = (el: Record<string, unknown>): Record<string, unkno
           : ""
     })
   })
+  const rawSpans = Array.isArray(el.cellSpans) ? (el.cellSpans as unknown[]) : []
+  const cellSpans = compactSpans(
+    cells.map((row, r) => {
+      const raw = Array.isArray(rawSpans[r]) ? (rawSpans[r] as unknown[]) : []
+      return row.map((text, c) => sanitizeSpans(raw[c], text.length) ?? null)
+    }),
+  )
+  const { cellSpans: _drop, ...rest } = el
   const family = el.fontFamily
   return {
-    ...el,
+    ...rest,
+    ...(cellSpans ? { cellSpans } : {}),
     rows,
     cols,
     colWidths,

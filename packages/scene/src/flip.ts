@@ -1,6 +1,7 @@
 import type { Point } from "@excalidraw-clone/geometry"
 import { getElementsBounds } from "./bounds"
 import { expandIdsToFrameMembers } from "./frames"
+import { flipTable } from "./table"
 import type { ExcalidrawElement, PointBinding } from "./types"
 
 export type FlipAxis = "x" | "y"
@@ -45,6 +46,11 @@ const flipOne = (el: ExcalidrawElement, axis: FlipAxis): ExcalidrawElement => {
       }
     case "freedraw":
       return { ...el, angle, points: mirrorPoints(el.points, axis, el.width, el.height) }
+    case "table": {
+      // The grid itself is reordered; a `mirror` flag would mirror nothing.
+      const { mirror: _m, ...rest } = flipTable(el, axis)
+      return { ...rest, angle }
+    }
     default: {
       const [mx, my] = mirrorOf(el)
       const nx = axis === "x" ? flipped(mx) : sign(mx)

@@ -17,6 +17,13 @@ export const LABELABLE_TYPES: ReadonlySet<ElementType> = new Set<ElementType>([
   "octagon",
 ])
 
+/** Shapes that honour `gradient`: the labelable closed shapes plus tables
+ *  (whose background fill takes it; the header tint stays flat). */
+export const GRADIENT_TYPES: ReadonlySet<ElementType> = new Set<ElementType>([
+  ...LABELABLE_TYPES,
+  "table",
+])
+
 /** Linear elements that can carry a midpoint-pinned bound text label. */
 export const LINEAR_LABELABLE_TYPES: ReadonlySet<ElementType> = new Set<ElementType>([
   "arrow",

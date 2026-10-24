@@ -188,6 +188,18 @@ describe("migrate — table validation", () => {
     expect(t.headerRow).toBe(true)
   })
 
+  it("keeps valid cell spans and drops malformed ones; tables without spans stay span-free", () => {
+    const t = load({
+      rows: 1,
+      cols: 2,
+      cells: [["ab", "c"]],
+      cellSpans: [[[{ start: 0, end: 2, bold: true }], { nope: 1 }]],
+    })
+    expect(t.cellSpans).toEqual([[[{ start: 0, end: 2, bold: true }], null]])
+    expect("cellSpans" in load({ rows: 1, cols: 1, cells: [["x"]] })).toBe(false)
+    expect("cellSpans" in load({ rows: 1, cols: 1, cellSpans: "junk" })).toBe(false)
+  })
+
   it("replaces a table with no usable fields by a default 3x3", () => {
     const t = load({})
     expect([t.rows, t.cols, t.width, t.height]).toEqual([3, 3, 360, 120])

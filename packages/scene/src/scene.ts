@@ -70,7 +70,7 @@ export class Scene {
     const draft = [...this.elements]
     fn(draft)
     reconcileBoundText(draft)
-    reconcileTables(draft)
+    reconcileTables(draft, this.elements)
     reconcileBindings(draft)
     reconcileFrameMembership(draft)
     this.setElements(draft)

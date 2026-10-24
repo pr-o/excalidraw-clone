@@ -87,7 +87,7 @@ export interface ExcalidrawElementBase {
   mirror?: readonly [1 | -1, 1 | -1]
 
   /** Linear fill from `backgroundColor` to `to`; `angle` in degrees (0 = left→right,
-   *  90 = top→bottom). Honored only on LABELABLE_TYPES shapes with a solid,
+   *  90 = top→bottom). Honored only on GRADIENT_TYPES shapes with a solid,
    *  non-transparent fill. Absent (or undefined) ⟺ flat fill. */
   gradient?: Gradient | undefined
 
@@ -211,6 +211,9 @@ export interface ExcalidrawTableElement extends ExcalidrawElementBase {
   rowHeights: readonly number[]
   /** cells[row][col], plain text. */
   cells: readonly (readonly string[])[]
+  /** Bold/italic runs per cell, parallel to `cells` (null = unformatted);
+   *  absent ⟺ no cell is formatted (documents from before cell spans). */
+  cellSpans?: readonly (readonly (readonly TextSpan[] | null)[])[] | undefined
   headerRow: boolean
   fontSize: number
   fontFamily: FontFamily

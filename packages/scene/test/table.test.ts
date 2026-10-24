@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it } from "vitest"
 import {
   Scene,
   autoGrowRows,
@@ -22,6 +22,11 @@ import {
   tableText,
   toTableLocal,
   canBindTo,
+  cellSpansAt,
+  fitTableBox,
+  flipElements,
+  GRADIENT_TYPES,
+  setTableMeasurer,
 } from "../src"
 import type { ExcalidrawTableElement } from "../src"
 
@@ -269,5 +274,187 @@ describe("integration", () => {
     const t = setCellText(setCellText(table(), 0, 0, "alpha"), 2, 1, "omega")
     expect(tableText(t)).toContain("alpha")
     expect(tableText(t)).toContain("omega")
+  })
+})
+
+describe("flip mirrors the grid (cell text itself is not mirrored)", () => {
+  const filled = (): ExcalidrawTableElement => {
+    let t = setTrackSize(setTrackSize(table({ angle: 0.3 }), "col", 0, 60), "row", 2, 90)
+    t = setCellText(t, 0, 0, "a")
+    t = setCellText(t, 2, 1, "z")
+    return setCellText(t, 0, 0, "a", [{ start: 0, end: 1, bold: true }])
+  }
+
+  it("x reverses columns, widths and spans; keeps the box; negates angle; no mirror flag", () => {
+    const t = filled()
+    const [out] = flipElements([t], [t.id], "x") as [ExcalidrawTableElement]
+    expect(out.colWidths).toEqual([120, 120, 60])
+    expect(out.rowHeights).toEqual(t.rowHeights)
+    expect(out.cells[0]).toEqual(["", "", "a"])
+    expect(out.cells[2]).toEqual(["", "z", ""])
+    expect(cellSpansAt(out, 0, 2)).toEqual([{ start: 0, end: 1, bold: true }])
+    expect(out.mirror).toBeUndefined()
+    expect(out.angle).toBe(-0.3)
+    expect([out.x, out.y, out.width, out.height]).toEqual([t.x, t.y, t.width, t.height])
+  })
+
+  it("y reverses rows (header flag stays on row 0, so the tint follows the new top row)", () => {
+    const t = filled()
+    const [out] = flipElements([t], [t.id], "y") as [ExcalidrawTableElement]
+    expect(out.rowHeights).toEqual([90, 40, 40])
+    expect(out.cells[0]).toEqual(["", "z", ""])
+    expect(out.cells[2]).toEqual(["a", "", ""])
+    expect(cellSpansAt(out, 2, 0)).toEqual([{ start: 0, end: 1, bold: true }])
+    expect(out.headerRow).toBe(true)
+  })
+
+  it("is one undo step through Scene.mutate", () => {
+    const t = filled()
+    const scene = new Scene([t])
+    scene.mutate((d) => {
+      d[0] = flipElements(d, [t.id], "x")[0]!
+    })
+    scene.undo()
+    expect(scene.getElements()[0]).toBe(t)
+  })
+})
+
+describe("cell spans", () => {
+  const bold = [{ start: 0, end: 2, bold: true as const }]
+  it("setCellText stores spans and remaps them when only the text changes", () => {
+    const t = setCellText(table(), 1, 1, "hello", bold)
+    expect(cellSpansAt(t, 1, 1)).toEqual(bold)
+    expect(cellSpansAt(t, 0, 0)).toBeUndefined()
+    const typed = setCellText(t, 1, 1, "ello")
+    expect(cellSpansAt(typed, 1, 1)).toEqual([{ start: 0, end: 1, bold: true }])
+    // clearing the last span drops the grid entirely
+    expect(setCellText(t, 1, 1, "hello", []).cellSpans).toBeUndefined()
+    expect(setCellText(t, 1, 1, "hello", bold)).toBe(t)
+  })
+
+  it("structure ops keep spans aligned with their cells", () => {
+    const t = setCellText(table(), 1, 1, "hello", bold)
+    expect(cellSpansAt(insertRow(t, 0), 2, 1)).toEqual(bold)
+    expect(cellSpansAt(insertCol(t, 0), 1, 2)).toEqual(bold)
+    expect(cellSpansAt(deleteRow(t, 0), 0, 1)).toEqual(bold)
+    expect(cellSpansAt(deleteCol(t, 0), 1, 0)).toEqual(bold)
+    expect(deleteRow(t, 1).cellSpans).toBeUndefined()
+    expect(insertRow(table(), 0).cellSpans).toBeUndefined()
+  })
+
+  it("sanitizeTable keeps valid spans, drops junk, and tolerates absence", () => {
+    const out = sanitizeTable({
+      rows: 1,
+      cols: 2,
+      cells: [["abc", "d"]],
+      cellSpans: [[[{ start: 0, end: 9, italic: true }], "junk"]],
+    }) as unknown as ExcalidrawTableElement
+    expect(out.cellSpans).toEqual([[[{ start: 0, end: 3, italic: true }], null]])
+    const none = sanitizeTable({ rows: 1, cols: 1, cellSpans: [[[{ start: 0, end: 1 }]]] })
+    expect("cellSpans" in none).toBe(false)
+    expect("cellSpans" in sanitizeTable({ rows: 1, cols: 1 })).toBe(false)
+  })
+
+  it("autoGrowRows hands each cell's spans to the measurer", () => {
+    const seen: unknown[] = []
+    autoGrowRows(setCellText(table(), 1, 0, "hi", bold), (_t, _w, _b, spans) => {
+      seen.push(spans)
+      return 1
+    })
+    expect(seen).toEqual([bold])
+  })
+})
+
+describe("rows auto-grow when columns narrow", () => {
+  // one line per 10px of text width: "x" * n wraps into ceil(10n / maxWidth) lines
+  const counter = () => (text: string, maxWidth: number) =>
+    Math.max(1, Math.ceil((text.length * 10) / maxWidth))
+  afterEach(() => setTableMeasurer(null))
+
+  it("Scene.mutate grows rows after a column narrows (border drag / stats width), never shrinks", () => {
+    setTableMeasurer(counter)
+    const t = setCellText(table({ x: 0, y: 0 }), 1, 0, "x".repeat(20)) // 200px of text
+    const scene = new Scene([t])
+    scene.mutate((d) => {
+      d[0] = setTrackSize(d[0] as ExcalidrawTableElement, "col", 0, 60) // 44px text width -> 5 lines
+    })
+    let out = scene.getElements()[0] as ExcalidrawTableElement
+    expect(out.rowHeights[1]).toBe(5 * 25 + 12)
+    // widening back never shrinks the grown row
+    scene.mutate((d) => {
+      d[0] = setTrackSize(d[0] as ExcalidrawTableElement, "col", 0, 400)
+    })
+    out = scene.getElements()[0] as ExcalidrawTableElement
+    expect(out.rowHeights[1]).toBe(137)
+  })
+
+  it("a direct width write (stats panel / resize handle) narrows columns and grows rows", () => {
+    setTableMeasurer(counter)
+    const t = setCellText(table({ x: 0, y: 0 }), 1, 0, "x".repeat(20))
+    const scene = new Scene([t])
+    scene.mutate((d) => {
+      d[0] = { ...d[0]!, width: 180 } // 60px columns -> 44px text width -> 5 lines
+    })
+    const out = scene.getElements()[0] as ExcalidrawTableElement
+    expect(out.colWidths).toEqual([60, 60, 60])
+    expect(out.rowHeights).toEqual([40, 137, 40])
+    expect(out.height).toBe(217)
+  })
+
+  it("leaves rows alone when no column narrowed (row drags can still shrink rows)", () => {
+    setTableMeasurer(counter)
+    const t = setCellText(table({ x: 0, y: 0 }), 1, 0, "x".repeat(40))
+    const scene = new Scene([t])
+    scene.mutate((d) => {
+      d[0] = setTrackSize(d[0] as ExcalidrawTableElement, "row", 1, 28)
+    })
+    expect((scene.getElements()[0] as ExcalidrawTableElement).rowHeights[1]).toBe(28)
+  })
+
+  it("is inert without a host measurer", () => {
+    const t = setCellText(table({ x: 0, y: 0 }), 1, 0, "x".repeat(40))
+    const scene = new Scene([t])
+    scene.mutate((d) => {
+      d[0] = setTrackSize(d[0] as ExcalidrawTableElement, "col", 0, 40)
+    })
+    expect((scene.getElements()[0] as ExcalidrawTableElement).rowHeights[1]).toBe(40)
+  })
+})
+
+describe("fitTableBox keeps the anchored side fixed", () => {
+  it("grows away from an end anchor when the minimum sizes clamp", () => {
+    const t = table({ x: 100, y: 100 }) // 360 x 120, min 120 x 84
+    const out = fitTableBox(t, { x: 450, y: 210, width: 10, height: 10 }, { x: "end", y: "end" })
+    expect([out.width, out.height]).toEqual([120, 84])
+    expect(out.x + out.width).toBe(460)
+    expect(out.y + out.height).toBe(220)
+  })
+  it("keeps x/y for start anchors", () => {
+    const t = table({ x: 100, y: 100 })
+    const out = fitTableBox(
+      t,
+      { x: 100, y: 100, width: 10, height: 10 },
+      { x: "start", y: "start" },
+    )
+    expect([out.x, out.y, out.width, out.height]).toEqual([100, 100, 120, 84])
+  })
+  it("resizeElements anchors tables on the group's fixed side", () => {
+    const t = table({ x: 0, y: 0 })
+    const [out] = resizeElements(
+      [t],
+      [t.id],
+      { x: 0, y: 0, width: 360, height: 120 },
+      { x: 350, y: 110, width: 10, height: 10 },
+      { x: "end", y: "end" },
+    ) as [ExcalidrawTableElement]
+    expect([out.x + out.width, out.y + out.height]).toEqual([360, 120])
+  })
+})
+
+describe("gradient-capable types", () => {
+  it("include tables", () => {
+    expect(GRADIENT_TYPES.has("table")).toBe(true)
+    expect(GRADIENT_TYPES.has("rectangle")).toBe(true)
+    expect(GRADIENT_TYPES.has("text")).toBe(false)
   })
 })

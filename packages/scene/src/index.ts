@@ -82,6 +82,7 @@ export { resizeElements } from "./resize-group"
 export type { ResizeBounds } from "./resize-group"
 export { bringForward, bringToFront, sendBackward, sendToBack } from "./z-order"
 export {
+  GRADIENT_TYPES,
   LABELABLE_TYPES,
   LINEAR_LABELABLE_TYPES,
   NOTE_PADDING,
@@ -169,14 +170,18 @@ export {
   borderAtLocal,
   cellAtLocal,
   cellRect,
+  cellSpansAt,
   deleteCol,
   deleteRow,
   fitTable,
+  fitTableBox,
+  flipTable,
   insertCol,
   insertRow,
   reconcileTables,
   sanitizeTable,
   setCellText,
+  setTableMeasurer,
   setTrackSize,
   tableText,
   toTableLocal,
@@ -191,4 +196,4 @@ export {
   TABLE_PAD_X,
   TABLE_PAD_Y,
 } from "./table"
-export type { CellRect } from "./table"
+export type { CellRect, CellSpans, CountLines } from "./table"
