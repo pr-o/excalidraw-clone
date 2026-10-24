@@ -49,3 +49,38 @@ test("import a Mermaid flowchart from the menu, then undo it in one step", async
   await page.waitForTimeout(700)
   expect(await readScene(page)).toHaveLength(0)
 })
+
+test("export the page to Mermaid text from the menu and the palette", async ({ page }) => {
+  await page.goto("/")
+  await page.evaluate(() => localStorage.clear())
+  await page.reload()
+
+  await page.getByRole("button", { name: "Menu" }).click()
+  await page.locator('[data-testid="menu-import-mermaid"]').click()
+  await page
+    .locator('[data-testid="mermaid-input"]')
+    .fill("graph LR; A[Start] --> B{Ok?}; B -->|yes| C((Done))")
+  await page.locator('[data-testid="mermaid-insert"]').click()
+
+  await page.getByRole("button", { name: "Menu" }).click()
+  await page.locator('[data-testid="menu-export-mermaid"]').click()
+  const expected = [
+    "flowchart LR",
+    '  A["Start"]',
+    '  B{"Ok?"}',
+    '  C(("Done"))',
+    "  A --> B",
+    "  B -->|yes| C",
+  ].join("\n")
+  // The inserted chart is still selected, so the selection is what gets exported.
+  await expect(page.locator('[data-testid="mermaid-output"]')).toHaveValue(expected)
+  await page.keyboard.press("Escape")
+  await expect(page.locator('[data-testid="mermaid-output"]')).toHaveCount(0)
+
+  // Palette entry, with nothing selected: exports the whole page.
+  await page.mouse.click(40, 400)
+  await page.keyboard.press(process.platform === "darwin" ? "Meta+/" : "Control+/")
+  await page.keyboard.type("Export to Mermaid")
+  await page.keyboard.press("Enter")
+  await expect(page.locator('[data-testid="mermaid-output"]')).toHaveValue(expected)
+})

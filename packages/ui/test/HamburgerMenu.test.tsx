@@ -210,4 +210,11 @@ describe("HamburgerMenu", () => {
     expect(screen.getByText("menu.export")).toBeInTheDocument()
     expect(screen.getByText("menu.help")).toBeInTheDocument()
   })
+
+  it("Export to Mermaid entry calls its handler and stays available in view mode", async () => {
+    const onExportMermaid = vi.fn()
+    render(<HamburgerMenu {...baseProps()} open viewMode onExportMermaid={onExportMermaid} />)
+    await userEvent.click(screen.getByTestId("menu-export-mermaid"))
+    expect(onExportMermaid).toHaveBeenCalledTimes(1)
+  })
 })

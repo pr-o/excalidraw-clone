@@ -56,6 +56,13 @@ const SHAPES: ReadonlyArray<readonly [string, string, MermaidShape]> = [
 // Group 3/4: `-- label -->` / `-- label ---`.
 const EDGE = /^(?:(-\.+->|-{2,}>|-{3,}|={2,}>)(?:\s*\|([^|]*)\|)?|--\s+([^|>]+?)\s+(-{2,}>|-{3,}))/
 
+/** Undoes `escapeLabel`: Mermaid `#quot;` / `#NN;` entity codes and `<br>`. */
+const decodeLabel = (s: string): string =>
+  s
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/#quot;/g, '"')
+    .replace(/#(\d+);/g, (_, n: string) => String.fromCharCode(Number(n)))
+
 /** Splits on newlines and `;`, but not inside double quotes. */
 function splitStatements(text: string): string[] {
   const out: string[] = []
@@ -119,7 +126,7 @@ function parseStatement(
       i = end
     }
     i += close.length
-    define(id, label, kind)
+    define(id, decodeLabel(label), kind)
     return id
   }
 
@@ -131,7 +138,8 @@ function parseStatement(
     if (!m) throw new Error("expected edge")
     i += m[0].length
     const token = m[1] ?? m[4]!
-    const label = (m[2] ?? m[3])?.trim()
+    const raw = (m[2] ?? m[3])?.trim()
+    const label = raw === undefined ? undefined : decodeLabel(raw)
     const to = node()
     edges.push({ from, to, ...(label ? { label } : {}), style: edgeStyle(token) })
     from = to
@@ -326,4 +334,83 @@ export function layoutFlowchart(f: MermaidFlowchart): ExcalidrawElement[] {
     return { ...shape, boundElements: refs.get(shape.id) ?? null }
   })
   return [...boundShapes, ...labels, ...arrows]
+}
+
+const NODE_TYPES = new Set<ExcalidrawElement["type"]>([
+  "rectangle",
+  "diamond",
+  "ellipse",
+  "triangle",
+  "parallelogram",
+  "hexagon",
+  "pentagon",
+  "octagon",
+])
+
+// `#` first so the codes it introduces are not re-escaped; `%` would start a
+// `%%` comment, `;` splits statements and `|` ends an edge label.
+const escapeLabel = (s: string): string =>
+  s
+    .replace(/[#"|;%]/g, (c) => (c === '"' ? "#quot;" : `#${c.charCodeAt(0)};`))
+    .replace(/\r?\n/g, "<br/>")
+
+/** A, B, …, Z, AA, AB, … */
+const nodeId = (i: number): string =>
+  (i >= 26 ? nodeId(Math.floor(i / 26) - 1) : "") + String.fromCharCode(65 + (i % 26))
+
+/**
+ * Serialises shapes and the arrows bound to them at both ends as a Mermaid
+ * flowchart (the inverse of `parseMermaidFlowchart`). With `ids`, only those
+ * shapes count as nodes. Free text, unbound arrows and other elements are
+ * ignored. Direction is LR when edges run mostly horizontally, else TD.
+ */
+export function exportMermaidFlowchart(
+  elements: readonly ExcalidrawElement[],
+  ids?: readonly string[],
+): string {
+  const live = elements.filter((e) => !e.isDeleted)
+  const picked = ids && ids.length > 0 ? new Set(ids) : null
+  const nodes = live.filter((e) => NODE_TYPES.has(e.type) && (!picked || picked.has(e.id)))
+  const idOf = new Map(nodes.map((e, i) => [e.id, nodeId(i)]))
+  const labelOf = new Map<string, string>()
+  for (const e of live) {
+    if (e.type === "text" && e.containerId !== null && e.text.trim() !== "")
+      labelOf.set(e.containerId, e.text)
+  }
+
+  const lines = nodes.map((e) => {
+    const id = idOf.get(e.id)!
+    const label = labelOf.get(e.id)
+    if (label === undefined) return `  ${id}`
+    const [open, close] =
+      e.type === "diamond"
+        ? ["{", "}"]
+        : e.type === "ellipse"
+          ? ["((", "))"]
+          : e.type === "rectangle" && e.roundness !== null
+            ? ["(", ")"]
+            : ["[", "]"]
+    return `  ${id}${open}"${escapeLabel(label)}"${close}`
+  })
+
+  const byId = new Map(nodes.map((e) => [e.id, e]))
+  const center = (e: ExcalidrawElement): { x: number; y: number } => ({
+    x: e.x + e.width / 2,
+    y: e.y + e.height / 2,
+  })
+  let dx = 0
+  let dy = 0
+  for (const e of live) {
+    if (e.type !== "arrow" || !e.startBinding || !e.endBinding) continue
+    const from = byId.get(e.startBinding.elementId)
+    const to = byId.get(e.endBinding.elementId)
+    if (!from || !to) continue
+    dx += Math.abs(center(to).x - center(from).x)
+    dy += Math.abs(center(to).y - center(from).y)
+    const link = e.strokeStyle !== "solid" ? "-.->" : e.endArrowhead === null ? "---" : "-->"
+    const label = labelOf.get(e.id)
+    const pipe = label === undefined ? "" : `|${escapeLabel(label)}|`
+    lines.push(`  ${idOf.get(from.id)!} ${link}${pipe} ${idOf.get(to.id)!}`)
+  }
+  return [`flowchart ${dx > dy ? "LR" : "TD"}`, ...lines].join("\n")
 }

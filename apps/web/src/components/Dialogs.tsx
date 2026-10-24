@@ -3,6 +3,7 @@ import { clearAllFiles, clearLocal, download } from "@excalidraw-clone/persisten
 import {
   arrayDuplicate,
   type ArrayDuplicateOptions,
+  exportMermaidFlowchart,
   layoutFlowchart,
   type MermaidFlowchart,
   type Scene,
@@ -11,6 +12,7 @@ import {
   ArrayDuplicateDialog,
   ExportDialog,
   HelpDialog,
+  MermaidExportDialog,
   MermaidImportDialog,
   ResetCanvasDialog,
   type ExportOptions,
@@ -146,6 +148,16 @@ export function Dialogs({ scene, pages, activePageId }: DialogsProps): React.Rea
         open={openDialog === "mermaid-import"}
         onClose={() => setOpenDialog(null)}
         onInsert={onMermaidInsert}
+      />
+      <MermaidExportDialog
+        t={t}
+        open={openDialog === "mermaid-export"}
+        onClose={() => setOpenDialog(null)}
+        text={
+          openDialog === "mermaid-export"
+            ? exportMermaidFlowchart(scene.getElements(), selectedIds)
+            : ""
+        }
       />
       <ResetCanvasDialog
         t={t}

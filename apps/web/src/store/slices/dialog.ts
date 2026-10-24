@@ -6,6 +6,7 @@ export type DialogId =
   | "export"
   | "reset"
   | "mermaid-import"
+  | "mermaid-export"
   | "snapshots"
   | "array-duplicate"
 

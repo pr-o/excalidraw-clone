@@ -41,6 +41,11 @@ export function PaletteHost({ scene }: { scene: Scene }): React.ReactElement {
       label: t("menu.importMermaid"),
       perform: () => setOpenDialog("mermaid-import"),
     },
+    {
+      id: "export-mermaid",
+      label: t("menu.exportMermaid"),
+      perform: () => setOpenDialog("mermaid-export"),
+    },
     { id: "reset", label: t("menu.reset"), perform: () => setOpenDialog("reset") },
     { id: "snapshots", label: t("menu.snapshots"), perform: () => setOpenDialog("snapshots") },
     {
@@ -99,7 +104,7 @@ export function PaletteHost({ scene }: { scene: Scene }): React.ReactElement {
 
   // View mode is read-only: keep only the commands that cannot touch the scene.
   const commands = viewMode
-    ? allCommands.filter((c) => ["help", "export", "view-mode"].includes(c.id))
+    ? allCommands.filter((c) => ["help", "export", "export-mermaid", "view-mode"].includes(c.id))
     : allCommands
 
   return <CommandPalette t={t} open={open} onClose={() => setOpen(false)} commands={commands} />

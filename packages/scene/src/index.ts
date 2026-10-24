@@ -67,7 +67,7 @@ export {
   type ArrayDuplicateOptions,
 } from "./arrayDuplicate"
 export { BUILTIN_TEMPLATES } from "./templates"
-export { layoutFlowchart, parseMermaidFlowchart } from "./mermaid"
+export { exportMermaidFlowchart, layoutFlowchart, parseMermaidFlowchart } from "./mermaid"
 export type {
   MermaidDirection,
   MermaidEdge,

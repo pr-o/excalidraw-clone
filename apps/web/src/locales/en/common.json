@@ -126,6 +126,7 @@
     "snapshots": "Snapshots…",
     "export": "Export image…",
     "importMermaid": "Import Mermaid…",
+    "exportMermaid": "Export to Mermaid…",
     "presentation": "Start presentation",
     "presentationHint": "Add a frame to present",
     "reset": "Reset the canvas",
@@ -234,7 +235,11 @@
     "insert": "Insert",
     "cancel": "Cancel",
     "error": "Can't read this diagram",
-    "skipped": "Skipped unsupported lines"
+    "skipped": "Skipped unsupported lines",
+    "exportTitle": "Export to Mermaid",
+    "copy": "Copy",
+    "copied": "Copied to clipboard",
+    "copyFailed": "Couldn't copy to the clipboard. Select the text and copy it manually."
   },
   "canvas": {
     "unlockAll": "Unlock all"

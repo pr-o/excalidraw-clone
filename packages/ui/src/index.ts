@@ -33,6 +33,8 @@ export { SnapshotsDialog } from "./SnapshotsDialog"
 export type { SnapshotListItem, SnapshotsDialogProps } from "./SnapshotsDialog"
 
 export { MermaidImportDialog } from "./MermaidImportDialog"
+export { MermaidExportDialog } from "./MermaidExportDialog"
+export type { MermaidExportDialogProps } from "./MermaidExportDialog"
 export type { MermaidImportDialogProps } from "./MermaidImportDialog"
 
 export { LibraryPanel } from "./LibraryPanel"

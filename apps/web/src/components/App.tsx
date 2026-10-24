@@ -481,6 +481,7 @@ function Inner(): React.ReactElement {
               }}
               onExport={() => setOpenDialog("export")}
               onImportMermaid={() => setOpenDialog("mermaid-import")}
+              onExportMermaid={() => setOpenDialog("mermaid-export")}
               onSnapshots={() => setOpenDialog("snapshots")}
               canPresent={frames.length > 0}
               onStartPresentation={() => useAppStore.getState().enterPresentation()}

@@ -126,6 +126,7 @@
     "snapshots": "스냅샷…",
     "export": "이미지 내보내기…",
     "importMermaid": "Mermaid 가져오기…",
+    "exportMermaid": "Mermaid로 내보내기…",
     "presentation": "발표 시작",
     "presentationHint": "발표하려면 프레임을 추가하세요",
     "reset": "캔버스 초기화",
@@ -232,7 +233,11 @@
     "insert": "삽입",
     "cancel": "취소",
     "error": "다이어그램을 읽을 수 없습니다",
-    "skipped": "지원하지 않는 줄을 건너뜀"
+    "skipped": "지원하지 않는 줄을 건너뜀",
+    "exportTitle": "Mermaid로 내보내기",
+    "copy": "복사",
+    "copied": "클립보드에 복사됨",
+    "copyFailed": "클립보드에 복사할 수 없습니다. 텍스트를 선택해 직접 복사하세요."
   },
   "canvas": { "unlockAll": "모두 잠금 해제" },
   "shortcuts": { "title": "키보드 단축키", "tools": "도구", "editor": "편집", "view": "보기" },

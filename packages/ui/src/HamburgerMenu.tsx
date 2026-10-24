@@ -29,6 +29,7 @@ export interface HamburgerMenuProps {
   onSnapshots?: () => void
   onExport: () => void
   onImportMermaid: () => void
+  onExportMermaid?: () => void
   onStartPresentation: () => void
   canPresent: boolean
   onReset: () => void
@@ -79,6 +80,11 @@ export function HamburgerMenu(props: HamburgerMenuProps): React.ReactElement {
             <MenuItem onClick={wrap(props.onSnapshots)}>{props.t("menu.snapshots")}</MenuItem>
           )}
           <MenuItem onClick={wrap(props.onExport)}>{props.t("menu.export")}</MenuItem>
+          {props.onExportMermaid && (
+            <MenuItem onClick={wrap(props.onExportMermaid)} testId="menu-export-mermaid">
+              {props.t("menu.exportMermaid")}
+            </MenuItem>
+          )}
           {!props.viewMode && (
             <MenuItem onClick={wrap(props.onImportMermaid)} testId="menu-import-mermaid">
               {props.t("menu.importMermaid")}
