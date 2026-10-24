@@ -1,7 +1,7 @@
 import type { Point } from "@excalidraw-clone/geometry"
 import { type ExcalidrawElement, resizeElements } from "@excalidraw-clone/scene"
 import type { Modifiers, ToolEffect } from "../../types"
-import { computeResize, type ResizeOrigin } from "./resize"
+import { anchorSides, computeResize, type ResizeOrigin } from "./resize"
 import type { ResizeHandle } from "./types"
 
 /** Overwrite each draft element that appears in `next` with its
@@ -40,7 +40,11 @@ export const buildGroupResizeMoveEffect = (
   const box = computeResize(origin, handle, start, at, modifiers)
   return {
     kind: "mutation",
-    apply: (draft) => applyReplacements(draft, resizeElements(originalElements, ids, origin, box)),
+    apply: (draft) =>
+      applyReplacements(
+        draft,
+        resizeElements(originalElements, ids, origin, box, anchorSides(origin, handle, box)),
+      ),
     skipHistory: true,
   }
 }

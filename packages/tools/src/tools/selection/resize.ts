@@ -1,5 +1,5 @@
 import type { Point } from "@excalidraw-clone/geometry"
-import type { ExcalidrawElement } from "@excalidraw-clone/scene"
+import { fitTableBox, type ExcalidrawElement } from "@excalidraw-clone/scene"
 import type { Modifiers, ToolEffect } from "../../types"
 import type { ResizeHandle } from "./types"
 
@@ -90,6 +90,28 @@ export const computeResize = (
   return { x, y, width, height }
 }
 
+type Side = "start" | "end"
+
+/** Which side of the resized `box` stays put on each axis: the edge opposite
+ *  the dragged handle — which, once the drag crosses over it (negative size,
+ *  normalised by computeResize), is the box's start edge again. */
+export const anchorSides = (
+  origin: ResizeOrigin,
+  handle: ResizeHandle,
+  box: { x: number; y: number; width: number; height: number },
+): { x: Side; y: Side } => {
+  const side = (moves: boolean, o0: number, size: number, b0: number, bSize: number): Side => {
+    const fixed = moves ? o0 + size : o0
+    const dEnd = Math.abs(b0 + bSize - fixed)
+    const dStart = Math.abs(b0 - fixed)
+    return dEnd < dStart || (dEnd === dStart && moves) ? "end" : "start"
+  }
+  return {
+    x: side(handle.includes("w"), origin.x, origin.width, box.x, box.width),
+    y: side(handle.includes("n"), origin.y, origin.height, box.y, box.height),
+  }
+}
+
 export const buildResizeMoveEffect = (
   elementId: string,
   origin: ResizeOrigin,
@@ -108,7 +130,11 @@ export const buildResizeMoveEffect = (
       // A side handle on free text turns it into a fixed-width wrapping box.
       const fixWidth =
         (handle === "e" || handle === "w") && e.type === "text" && e.containerId === null
-      draft[i] = fixWidth ? { ...e, ...box, autoResize: false } : { ...e, ...box }
+      draft[i] = fixWidth
+        ? { ...e, ...box, autoResize: false }
+        : e.type === "table"
+          ? fitTableBox(e, box, anchorSides(origin, handle, box))
+          : { ...e, ...box }
     },
     skipHistory: true,
   }
