@@ -18,3 +18,5 @@ export {
   wrapRich,
 } from "./text-metrics"
 export type { SVGRenderOptions } from "./svg"
+export { wrapCellText } from "./shapes/table"
+export type { TableMeasure } from "./shapes/table"

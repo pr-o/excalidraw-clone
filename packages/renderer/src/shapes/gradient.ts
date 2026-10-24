@@ -1,4 +1,4 @@
-import { LABELABLE_TYPES } from "@excalidraw-clone/scene"
+import { GRADIENT_TYPES } from "@excalidraw-clone/scene"
 import type { ExcalidrawElement } from "@excalidraw-clone/scene"
 import type { Drawable } from "roughjs/bin/core"
 
@@ -12,10 +12,10 @@ export interface GradientLine {
 
 /** The element-local gradient axis spanning its bounding box, or null when the
  *  element has no gradient to draw (wrong type, non-solid or transparent fill).
- *  Gradient-capable shapes are exactly the labelable closed shapes. */
+ *  Gradient-capable shapes are GRADIENT_TYPES. */
 export const gradientLine = (el: ExcalidrawElement): GradientLine | null => {
   const g = el.gradient
-  if (!g || !LABELABLE_TYPES.has(el.type)) return null
+  if (!g || !GRADIENT_TYPES.has(el.type)) return null
   if (el.fillStyle !== "solid" || el.backgroundColor === "transparent") return null
   const rad = (g.angle * Math.PI) / 180
   const dx = Math.cos(rad)
@@ -42,3 +42,9 @@ export const withFill = (d: Drawable, fill: string | CanvasGradient): Drawable =
   ...d,
   options: { ...d.options, fill: fill as string },
 })
+
+/** Whether drawable `index` of the element's shape takes the gradient: every
+ *  path for plain shapes; for a table only its background fill (index 0 — it
+ *  exists whenever a gradient applies), so the header tint stays a flat tint. */
+export const gradientTakes = (el: ExcalidrawElement, index: number): boolean =>
+  el.type !== "table" || index === 0

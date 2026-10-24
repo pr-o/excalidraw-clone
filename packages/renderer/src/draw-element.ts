@@ -2,7 +2,7 @@ import { elementShadow, mirrorOf } from "@excalidraw-clone/scene"
 import type { ExcalidrawElement, ExcalidrawTableElement } from "@excalidraw-clone/scene"
 import type { RoughCanvas } from "roughjs/bin/canvas"
 import type { ShapeCache } from "./shape-cache"
-import { gradientLine, withFill } from "./shapes/gradient"
+import { gradientLine, gradientTakes, withFill } from "./shapes/gradient"
 import { layoutTableCells } from "./shapes/table"
 import { drawText } from "./shapes/text"
 import { fontSpec } from "./text-metrics"
@@ -108,7 +108,9 @@ export const drawElement = (
     grad.addColorStop(1, resolveColor(line.to, theme))
   }
   const paint = (): void => {
-    for (const d of drawables) rough.draw(grad ? withFill(d, grad) : d)
+    drawables.forEach((d, i) =>
+      rough.draw(grad && gradientTakes(element, i) ? withFill(d, grad) : d),
+    )
   }
   // Rough emits several overlapping paths (fill, double stroke), each of which would cast its own
   // shadow over the others. So: one pass that casts the shadow, then a shadowless repaint on top.
@@ -134,17 +136,25 @@ const drawTableText = (
   theme: Theme,
   hidden: { row: number; col: number } | undefined,
 ): void => {
-  const fontOf = (bold: boolean): string =>
-    fontSpec(t.fontSize, t.fontFamily, bold ? "bold" : "normal")
-  const lines = layoutTableCells(t, (s, bold) => {
-    ctx.font = fontOf(bold)
+  const fontOf = (bold: boolean, italic = false): string =>
+    fontSpec(t.fontSize, t.fontFamily, bold ? "bold" : "normal", italic ? "italic" : "normal")
+  const lines = layoutTableCells(t, (s, bold, italic) => {
+    ctx.font = fontOf(bold, italic)
     return ctx.measureText(s).width
   })
   ctx.fillStyle = resolveColor(t.strokeColor, theme)
   ctx.textBaseline = "top"
-  ctx.textAlign = t.textAlign
   for (const l of lines) {
     if (hidden && l.row === hidden.row && l.col === hidden.col) continue
+    if (l.runs) {
+      ctx.textAlign = "left"
+      for (const r of l.runs) {
+        ctx.font = fontOf(r.bold, r.italic)
+        ctx.fillText(r.text, r.x, l.y)
+      }
+      continue
+    }
+    ctx.textAlign = t.textAlign
     ctx.font = fontOf(l.bold)
     ctx.fillText(l.text, l.x, l.y)
   }

@@ -1,14 +1,19 @@
 import {
   cellRect,
+  cellSpansAt,
+  sliceRuns,
   TABLE_LINE_HEIGHT,
   TABLE_PAD_X,
   type ExcalidrawTableElement,
+  type TextSpan,
 } from "@excalidraw-clone/scene"
 import type { Drawable, Options } from "roughjs/bin/core"
 import type { RoughGenerator } from "roughjs/bin/generator"
-import { wrapLines } from "../text-metrics"
+import { wrapRich, type WrappedLine } from "../text-metrics"
 import { parseHex } from "../theme-colors"
 import { strokeLineDash } from "./stroke-dash"
+
+const sum = (xs: readonly number[]): number => xs.reduce((a, b) => a + b, 0)
 
 /** Header-row tint: the stroke colour at ~12% alpha, so it follows the theme
  *  (the element handed to the shape generator already has theme-resolved colours). */
@@ -46,6 +51,14 @@ export const tableShape = (t: ExcalidrawTableElement, gen: RoughGenerator): read
   return out
 }
 
+export interface TableCellRun {
+  text: string
+  /** Left edge in table-local px. */
+  x: number
+  bold: boolean
+  italic: boolean
+}
+
 export interface TableCellLine {
   row: number
   col: number
@@ -55,13 +68,37 @@ export interface TableCellLine {
   /** Top of the line in table-local px. */
   y: number
   bold: boolean
+  /** Formatted cells only: the line's style runs, positioned left to right. */
+  runs?: TableCellRun[]
 }
 
-/** Wrapped, vertically centred lines for every non-empty cell. `measureWidth`
- *  gets the line text and whether it is set in the (bold) header row. */
+/** Width of one string in the table font; `bold` / `italic` select the face. */
+export type TableMeasure = (text: string, bold: boolean, italic: boolean) => number
+
+/** Cell text wrapped at `maxWidth` (the cell's inner width), with a
+ *  run-aware width function; `bold` is the header row's base weight. */
+export const wrapCellText = (
+  text: string,
+  spans: readonly TextSpan[] | undefined,
+  bold: boolean,
+  maxWidth: number,
+  measure: TableMeasure,
+): { lines: WrappedLine[]; width: (s: string, start: number) => number } => {
+  const width = (s: string, start: number): number =>
+    spans
+      ? sum(
+          sliceRuns(text, spans, start, start + s.length).map((r) =>
+            measure(r.text, bold || r.bold, r.italic),
+          ),
+        )
+      : measure(s, bold, false)
+  return { lines: wrapRich(text, spans, maxWidth, width), width }
+}
+
+/** Wrapped, vertically centred lines for every non-empty cell. */
 export const layoutTableCells = (
   t: ExcalidrawTableElement,
-  measureWidth: (text: string, bold: boolean) => number,
+  measure: TableMeasure,
 ): TableCellLine[] => {
   const out: TableCellLine[] = []
   const lineHeight = t.fontSize * TABLE_LINE_HEIGHT
@@ -70,8 +107,10 @@ export const layoutTableCells = (
     for (let col = 0; col < t.cols; col += 1) {
       const text = t.cells[row]![col]!
       if (text === "") continue
+      const spans = cellSpansAt(t, row, col)
       const rect = cellRect(t, row, col)
-      const lines = wrapLines(text, rect.width - 2 * TABLE_PAD_X, (s) => measureWidth(s, bold))
+      const inner = rect.width - 2 * TABLE_PAD_X
+      const { lines, width } = wrapCellText(text, spans, bold, inner, measure)
       const top = rect.y + (rect.height - lines.length * lineHeight) / 2
       const x =
         t.textAlign === "center"
@@ -79,9 +118,33 @@ export const layoutTableCells = (
           : t.textAlign === "right"
             ? rect.x + rect.width - TABLE_PAD_X
             : rect.x + TABLE_PAD_X
-      lines.forEach((line, i) =>
-        out.push({ row, col, text: line, x, y: top + i * lineHeight, bold }),
-      )
+      lines.forEach((l, i) => {
+        // Hanging bullet indent only makes sense against a left edge.
+        const indent = t.textAlign === "left" ? l.indent : 0
+        const line: TableCellLine = {
+          row,
+          col,
+          text: l.text,
+          x: x + indent,
+          y: top + i * lineHeight,
+          bold,
+        }
+        if (spans) {
+          const total = width(l.text, l.start)
+          let left =
+            t.textAlign === "center"
+              ? x - total / 2
+              : t.textAlign === "right"
+                ? x - total
+                : x + indent
+          line.runs = sliceRuns(text, spans, l.start, l.start + l.text.length).map((r) => {
+            const run = { text: r.text, x: left, bold: bold || r.bold, italic: r.italic }
+            left += measure(r.text, run.bold, r.italic)
+            return run
+          })
+        }
+        out.push(line)
+      })
     }
   }
   return out

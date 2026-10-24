@@ -1,7 +1,7 @@
 import { Scene, newTable, setCellText } from "@excalidraw-clone/scene"
 import type { ExcalidrawTableElement } from "@excalidraw-clone/scene"
 import { RoughCanvas } from "roughjs/bin/canvas"
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 import { drawElement } from "../src/draw-element"
 import { ShapeCache } from "../src/shape-cache"
 import { generateShape } from "../src/shapes"
@@ -118,5 +118,65 @@ describe("table SVG export", () => {
   it("renders without a measurer (no wrapping)", () => {
     const t = setCellText(base(), 0, 0, "solo")
     expect(renderToSVG(new Scene([t]))).toContain("solo")
+  })
+})
+
+describe("table gradient fill", () => {
+  const grad = (): ExcalidrawTableElement =>
+    base({ backgroundColor: "#ffc9c9", fillStyle: "solid", gradient: { to: "#a5d8ff", angle: 90 } })
+
+  it("SVG: the background takes the gradient, the header tint stays flat", () => {
+    const svg = renderToSVG(new Scene([grad()]))
+    expect(svg).toContain("<linearGradient")
+    expect((svg.match(/fill="url\(#gradient-/g) ?? []).length).toBe(1)
+    expect(svg).toContain("rgba(30,30,30,0.12)")
+  })
+
+  it("canvas: one gradient, header tint still painted", () => {
+    const { canvas, ctx } = createMockCanvas()
+    const create = vi.fn(() => ({ addColorStop: () => undefined }))
+    ctx.createLinearGradient = create
+    drawElement(
+      ctx as unknown as CanvasRenderingContext2D,
+      grad(),
+      new RoughCanvas(canvas),
+      new ShapeCache(),
+      () => undefined,
+    )
+    expect(create).toHaveBeenCalledTimes(1)
+    const fills = ctx.__calls.filter((c) => c.method === "set:fillStyle").map((c) => c.args[0])
+    expect(fills).toContain("rgba(30,30,30,0.12)")
+  })
+})
+
+describe("table rich cell text", () => {
+  const measure = (s: string, bold?: boolean) => s.length * (bold ? 12 : 10)
+  const rich = () => setCellText(base(), 1, 0, "ab cd", [{ start: 0, end: 2, bold: true }])
+
+  it("lays out style runs left to right with their own widths", () => {
+    const [line] = layoutTableCells(rich(), measure)
+    expect(line!.runs).toEqual([
+      { text: "ab", x: 8, bold: true, italic: false },
+      { text: " cd", x: 32, bold: false, italic: false },
+    ])
+  })
+
+  it("aligns a rich line by its total width", () => {
+    const [line] = layoutTableCells({ ...rich(), textAlign: "right" }, measure)
+    // cell right edge 120 - pad 8 - total (24 + 30)
+    expect(line!.runs![0]!.x).toBe(58)
+  })
+
+  it("canvas draws each run in its own font", () => {
+    const ctx = draw(rich())
+    expect(callsOf(ctx, "fillText").map((c) => c.args[0])).toEqual(["ab", " cd"])
+  })
+
+  it("SVG styles runs with tspans inside the line's text node", () => {
+    const svg = renderToSVG(new Scene([rich()]), {
+      measure: (s) => ({ width: s.length * 10, height: 20 }),
+    })
+    expect(svg).toContain('<tspan font-weight="bold">ab</tspan> cd</text>')
+    expect(svg).toContain('xml:space="preserve"')
   })
 })

@@ -17,7 +17,7 @@ import type {
 } from "@excalidraw-clone/scene"
 import { RoughSVG } from "roughjs/bin/svg"
 import { generateShape } from "./shapes"
-import { gradientLine, withFill } from "./shapes/gradient"
+import { gradientLine, gradientTakes, withFill } from "./shapes/gradient"
 import { layoutTableCells } from "./shapes/table"
 import { isFixedWidthText, OCCLUSION_PADDING } from "./shapes/text"
 import {
@@ -257,9 +257,9 @@ function renderElement(
     defs.appendChild(grad)
     group.appendChild(defs)
   }
-  for (const d of drawables) {
-    group.appendChild(rsvg.draw(fill ? withFill(d, `url(#${fill})`) : d))
-  }
+  drawables.forEach((d, i) => {
+    group.appendChild(rsvg.draw(fill && gradientTakes(el, i) ? withFill(d, `url(#${fill})`) : d))
+  })
   if (el.type === "table") appendTableText(doc, group, el, theme, measure)
   return group
 }
@@ -272,8 +272,17 @@ function appendTableText(
   theme: Theme,
   measure: TextMeasure | null | undefined,
 ): void {
-  const lines = layoutTableCells(t, (s, bold) =>
-    measure ? measure(s, t.fontSize, t.fontFamily, t.fontSize, bold ? "bold" : "normal").width : 0,
+  const lines = layoutTableCells(t, (s, bold, italic) =>
+    measure
+      ? measure(
+          s,
+          t.fontSize,
+          t.fontFamily,
+          t.fontSize,
+          bold ? "bold" : "normal",
+          italic ? "italic" : "normal",
+        ).width
+      : 0,
   )
   for (const l of lines) {
     const node = svgEl(doc, "text", {
@@ -286,7 +295,24 @@ function appendTableText(
       "text-anchor": anchorFor(t.textAlign),
       "dominant-baseline": "text-before-edge",
     })
-    node.textContent = l.text
+    if (l.runs) {
+      // Runs flow inside one anchored <text>, as for rich text elements.
+      node.setAttribute("xml:space", "preserve")
+      for (const r of l.runs) {
+        if (r.bold === l.bold && !r.italic) {
+          node.appendChild(doc.createTextNode(r.text))
+          continue
+        }
+        const run = svgEl(doc, "tspan", {
+          ...(r.bold !== l.bold ? { "font-weight": "bold" } : {}),
+          ...(r.italic ? { "font-style": "italic" } : {}),
+        })
+        run.textContent = r.text
+        node.appendChild(run)
+      }
+    } else {
+      node.textContent = l.text
+    }
     group.appendChild(node)
   }
 }
