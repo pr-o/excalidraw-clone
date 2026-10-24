@@ -102,4 +102,20 @@ describe("MoreShapesMenu", () => {
     await userEvent.keyboard("{Escape}")
     expect(onOpenChange).not.toHaveBeenCalled()
   })
+
+  it("Stickers entry opens the picker and closes the popout", async () => {
+    const onOpenStickers = vi.fn()
+    const onOpenChange = vi.fn()
+    render(
+      <MoreShapesMenu
+        {...baseProps()}
+        open
+        onOpenChange={onOpenChange}
+        onOpenStickers={onOpenStickers}
+      />,
+    )
+    await userEvent.click(screen.getByTestId("toolbar-stickers"))
+    expect(onOpenStickers).toHaveBeenCalledTimes(1)
+    expect(onOpenChange).toHaveBeenCalledWith(false)
+  })
 })

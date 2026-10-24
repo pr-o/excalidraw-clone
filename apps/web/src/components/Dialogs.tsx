@@ -15,6 +15,7 @@ import {
   MermaidExportDialog,
   MermaidImportDialog,
   ResetCanvasDialog,
+  StickerDialog,
   type ExportOptions,
 } from "@excalidraw-clone/ui"
 import { useTranslation } from "react-i18next"
@@ -30,6 +31,7 @@ import {
   type ExportTarget,
 } from "../driver/exportTarget"
 import { buildExportZip } from "../driver/exportZip"
+import { insertSticker } from "../driver/stickers"
 import type { PageRecord } from "../driver/pages"
 import { useAppStore } from "../store"
 
@@ -158,6 +160,15 @@ export function Dialogs({ scene, pages, activePageId }: DialogsProps): React.Rea
             ? exportMermaidFlowchart(scene.getElements(), selectedIds)
             : ""
         }
+      />
+      <StickerDialog
+        t={t}
+        open={openDialog === "stickers"}
+        onClose={() => setOpenDialog(null)}
+        onPick={(emoji) => {
+          insertSticker(scene, emoji)
+          setOpenDialog(null)
+        }}
       />
       <ResetCanvasDialog
         t={t}

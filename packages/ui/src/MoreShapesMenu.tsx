@@ -10,6 +10,7 @@ export interface MoreShapesMenuProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onSelectTool: (tool: MoreTool) => void
+  onOpenStickers?: () => void
   className?: string
 }
 
@@ -75,6 +76,18 @@ export function MoreShapesMenu(props: MoreShapesMenuProps): React.ReactElement {
           >
             <span aria-hidden dangerouslySetInnerHTML={{ __html: iconHTML("table") }} />
           </IconButton>
+          {props.onOpenStickers && (
+            <IconButton
+              label={props.t("toolbar.stickers")}
+              onClick={() => {
+                props.onOpenStickers?.()
+                onOpenChange(false)
+              }}
+              data-testid="toolbar-stickers"
+            >
+              <span aria-hidden>😀</span>
+            </IconButton>
+          )}
         </div>
       )}
     </div>

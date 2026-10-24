@@ -34,6 +34,8 @@ export type { SnapshotListItem, SnapshotsDialogProps } from "./SnapshotsDialog"
 
 export { MermaidImportDialog } from "./MermaidImportDialog"
 export { MermaidExportDialog } from "./MermaidExportDialog"
+export { STICKERS, StickerDialog } from "./StickerDialog"
+export type { Sticker, StickerDialogProps } from "./StickerDialog"
 export type { MermaidExportDialogProps } from "./MermaidExportDialog"
 export type { MermaidImportDialogProps } from "./MermaidImportDialog"
 

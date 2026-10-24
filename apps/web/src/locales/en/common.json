@@ -12,6 +12,7 @@
     "pentagon": "Pentagon",
     "octagon": "Octagon",
     "moreShapes": "More shapes",
+    "stickers": "Stickers…",
     "line": "Line",
     "arrow": "Arrow",
     "freedraw": "Draw",
@@ -229,6 +230,11 @@
     "copies": "New copies",
     "cancel": "Cancel",
     "confirm": "Duplicate"
+  },
+  "stickers": {
+    "title": "Stickers",
+    "search": "Search stickers…",
+    "empty": "No matching stickers"
   },
   "mermaid": {
     "title": "Import Mermaid flowchart",

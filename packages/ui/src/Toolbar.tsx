@@ -33,6 +33,7 @@ export interface ToolbarProps {
   onToggleLock: (locked: boolean) => void
   moreShapesOpen: boolean
   onMoreShapesOpenChange: (open: boolean) => void
+  onOpenStickers?: () => void
   className?: string
 }
 
@@ -44,6 +45,7 @@ export function Toolbar({
   onToggleLock,
   moreShapesOpen,
   onMoreShapesOpenChange,
+  onOpenStickers,
   className,
 }: ToolbarProps): React.ReactElement {
   const renderItem = (item: { name: ToolName; shortcut: string }): React.ReactElement => (
@@ -82,6 +84,7 @@ export function Toolbar({
         open={moreShapesOpen}
         onOpenChange={onMoreShapesOpenChange}
         onSelectTool={(tool) => onSelectTool(tool)}
+        {...(onOpenStickers ? { onOpenStickers } : {})}
       />
       {TOOL_ITEMS.slice(HEXAGON_INDEX + 1).map(renderItem)}
     </div>

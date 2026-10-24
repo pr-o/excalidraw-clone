@@ -501,6 +501,7 @@ function Inner(): React.ReactElement {
                   onToggleLock={() => toggleLockActiveTool()}
                   moreShapesOpen={moreShapesOpen}
                   onMoreShapesOpenChange={setMoreShapesOpen}
+                  onOpenStickers={() => setOpenDialog("stickers")}
                 />
               </div>
 

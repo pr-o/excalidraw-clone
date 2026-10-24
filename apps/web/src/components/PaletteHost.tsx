@@ -46,6 +46,11 @@ export function PaletteHost({ scene }: { scene: Scene }): React.ReactElement {
       label: t("menu.exportMermaid"),
       perform: () => setOpenDialog("mermaid-export"),
     },
+    {
+      id: "stickers",
+      label: t("toolbar.stickers"),
+      perform: () => setOpenDialog("stickers"),
+    },
     { id: "reset", label: t("menu.reset"), perform: () => setOpenDialog("reset") },
     { id: "snapshots", label: t("menu.snapshots"), perform: () => setOpenDialog("snapshots") },
     {
