@@ -282,6 +282,47 @@ test("PDF export keeps text as real PDF text", async ({ page }) => {
   expect(pdfStreams(pdf.bytes)).toContain("(hello pdf) Tj")
 })
 
+test("PDF export of a table draws its grid and cell text as vector + real text", async ({
+  page,
+}) => {
+  await freshCanvas(page)
+  await page.locator('[data-testid="toolbar-more-shapes"]').click()
+  await page.locator('[data-testid="toolbar-table"]').click()
+  await dragOnCanvas(page, { x: 100, y: 100 }, { x: 400, y: 220 })
+  await page.waitForTimeout(120)
+  const box = await page.locator("canvas").first().boundingBox()
+  if (!box) throw new Error("canvas not found")
+  await page.mouse.dblclick(box.x + 150, box.y + 120)
+  await page.keyboard.type("Name")
+  await page.keyboard.press("Tab")
+  await page.keyboard.type("Qty")
+  await page.keyboard.press("Enter") // row 1, col 1
+  await page.keyboard.type("bold")
+  await page.keyboard.press("Control+a")
+  await page.keyboard.press("Control+b")
+  await page.keyboard.press("Escape")
+  // a gradient background (the fill must be non-transparent to show it)
+  await page.locator('[data-testid="bg-ffc9c9"]').click()
+  await page.locator('[data-testid="gradient-toggle"]').click()
+  await page.waitForTimeout(300)
+
+  await openExportDialog(page)
+  await page.locator('[data-testid="format-pdf"]').click()
+  const pdf = await exportPDF(page)
+  // 300x120 table + 20px padding per side (stroke may add a pixel or two)
+  expectNear(pdf.width, 340)
+  expectNear(pdf.height, 160)
+  expect(pdf.bytes.toString("latin1")).not.toContain("/Subtype /Image")
+  const streams = pdfStreams(pdf.bytes)
+  expect(streams).toContain("(Name) Tj")
+  expect(streams).toContain("(Qty) Tj")
+  expect(streams).toContain("(bold) Tj")
+  // header row and the bold run use the bold face
+  expect(pdf.bytes.toString("latin1")).toContain("/BaseFont /Times-Bold")
+  // the gradient background is a real axial shading, not flattened
+  expect(pdf.bytes.toString("latin1")).toMatch(/\/ShadingType 2/)
+})
+
 test("export all pages downloads a zip with one entry per page", async ({ page }) => {
   await freshCanvas(page)
   await drawRect(page, { x: 100, y: 100 }, { x: 160, y: 160 }) // page 1

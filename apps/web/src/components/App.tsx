@@ -20,6 +20,7 @@ import {
   Scene,
   sendBackward,
   sendToBack,
+  setTableMeasurer,
   tidyElements,
   ungroupElements,
   unlockAll,
@@ -50,7 +51,7 @@ import { I18nextProvider, useTranslation } from "react-i18next"
 import { startAutoSave } from "../driver/autoSave"
 import { applySelectionPatch, setWholeTextStyle } from "../driver/applyPropertiesPatch"
 import { hydratePages, hydrateUI } from "../driver/hydration"
-import { applyTableOp } from "../driver/tableOps"
+import { applyTableOp, tableLineCounter } from "../driver/tableOps"
 import { pickAndUploadImage } from "../driver/imageUpload"
 import {
   addPage,
@@ -143,6 +144,11 @@ function Inner(): React.ReactElement {
   )
   useEffect(() => {
     hydrateUI()
+  }, [])
+  // Lets Scene.mutate re-wrap table rows when a column narrows (any path).
+  useEffect(() => {
+    setTableMeasurer(tableLineCounter)
+    return () => setTableMeasurer(null)
   }, [])
   useEffect(() => {
     return startAutoSave(pages, activePageId)

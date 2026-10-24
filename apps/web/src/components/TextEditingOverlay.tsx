@@ -1,26 +1,12 @@
 "use client"
 import { fontFamilyName } from "@excalidraw-clone/renderer"
-import {
-  applyBulletEdit,
-  autoBullet,
-  diffEdit,
-  enterOnBullet,
-  flagsAt,
-  remapSpans,
-  normalizeSpans,
-  sliceRuns,
-  toggleSpanStyle,
-  type BulletEdit,
-  type Scene,
-  type SpanFlags,
-  type SpanStyle,
-  type TextSpan,
-} from "@excalidraw-clone/scene"
-import React, { useEffect, useLayoutEffect, useRef, useState } from "react"
+import { enterOnBullet, normalizeSpans, type Scene } from "@excalidraw-clone/scene"
+import React, { useEffect, useRef } from "react"
 import { commitTextEdit } from "../driver/commitTextEdit"
 import { measureStandaloneText } from "../driver/measureStandaloneText"
 import { renameFrame } from "../driver/renameFrame"
 import { useAppStore } from "../store"
+import { RichMirror, useRichText } from "./richText"
 import { TableCellEditor } from "./TableCellEditor"
 
 export function TextEditingOverlay({ scene }: { scene: Scene }): React.ReactElement | null {
@@ -30,32 +16,19 @@ export function TextEditingOverlay({ scene }: { scene: Scene }): React.ReactElem
   const scrollY = useAppStore((s) => s.scrollY)
   const zoom = useAppStore((s) => s.zoom)
   const tableCell = useAppStore((s) => s.textEditCell)
-  const ref = useRef<HTMLTextAreaElement | HTMLInputElement | null>(null)
-  const [value, setValue] = useState("")
-  const [spans, setSpans] = useState<TextSpan[]>([])
-  // Typing style chosen with Ctrl+B/I at a bare caret; valid only at that caret.
-  const pending = useRef<{ flags: SpanFlags; at: number } | null>(null)
-  // Selection to re-apply after a programmatic value change.
-  const restoreSel = useRef<{ start: number; end: number } | null>(null)
+  const rich = useRichText()
+  const { ref, value, setValue, spans } = rich
   const mirror = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     if (!id) return
     const el = scene.getElementsIncludingDeleted().find((e) => e.id === id)
-    setValue(el?.type === "frame" ? (el.name ?? "") : el?.type === "text" ? el.text : "")
-    setSpans(el?.type === "text" ? normalizeSpans(el.spans, el.text.length) : [])
-    pending.current = null
+    rich.reset(
+      el?.type === "frame" ? (el.name ?? "") : el?.type === "text" ? el.text : "",
+      el?.type === "text" ? normalizeSpans(el.spans, el.text.length) : [],
+    )
     queueMicrotask(() => ref.current?.focus())
   }, [id, scene])
-
-  useLayoutEffect(() => {
-    const sel = restoreSel.current
-    const node = ref.current
-    if (sel && node) {
-      restoreSel.current = null
-      node.setSelectionRange(sel.start, sel.end)
-    }
-  }, [value, spans])
 
   if (!id) return null
   const target = scene.getElementsIncludingDeleted().find((e) => e.id === id)
@@ -147,45 +120,6 @@ export function TextEditingOverlay({ scene }: { scene: Scene }): React.ReactElem
     setId(null)
   }
 
-  const applyEdit = (nextText: string, nextSpans: TextSpan[], caret?: number): void => {
-    setValue(nextText)
-    setSpans(nextSpans)
-    if (caret !== undefined) restoreSel.current = { start: caret, end: caret }
-  }
-
-  const applyBullet = (edit: BulletEdit): void => {
-    const r = applyBulletEdit(value, spans, edit)
-    applyEdit(r.text, r.spans, r.caret)
-  }
-
-  const toggleStyle = (style: SpanStyle, node: HTMLTextAreaElement): void => {
-    const { selectionStart: a, selectionEnd: b } = node
-    if (a !== b) {
-      setSpans(toggleSpanStyle(spans, value.length, a, b, style))
-      restoreSel.current = { start: a, end: b }
-      return
-    }
-    const base = pending.current?.at === a ? pending.current.flags : flagsAt(spans, value.length, a)
-    pending.current = { flags: { ...base, [style]: !base[style] }, at: a }
-  }
-
-  const onInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>): void => {
-    const next = e.target.value
-    const edit = diffEdit(value, next)
-    const style = pending.current?.at === edit.start ? pending.current.flags : undefined
-    pending.current = null
-    const nextSpans = remapSpans(spans, value.length, edit, style)
-    const composing = (e.nativeEvent as { isComposing?: boolean }).isComposing === true
-    const bullet = composing ? null : autoBullet(next, e.target.selectionStart)
-    if (bullet) {
-      const r = applyBulletEdit(next, nextSpans, bullet)
-      applyEdit(r.text, r.spans, r.caret)
-      return
-    }
-    setValue(next)
-    setSpans(nextSpans)
-  }
-
   const styled = spans.length > 0
   const weight = el.fontWeight ?? "normal"
   const textStyle = {
@@ -200,56 +134,33 @@ export function TextEditingOverlay({ scene }: { scene: Scene }): React.ReactElem
   return (
     <div style={{ position: "absolute", left: `${left}px`, top: `${top}px` }} className="z-40">
       {styled && (
-        // Styled mirror under a transparent textarea: the textarea keeps owning
-        // caret, selection, IME and paste. Bold is drawn with a stroke instead
-        // of a heavier face so glyph advances match the textarea's caret math.
-        <div
-          ref={mirror}
-          aria-hidden
-          data-testid="text-mirror"
+        <RichMirror
+          mirrorRef={mirror}
+          value={value}
+          spans={spans}
+          weight={weight}
+          fontSize={fontSize}
+          color={el.strokeColor}
           style={{
             ...textStyle,
             position: "absolute",
             inset: 0,
             boxSizing: "border-box",
             border: "1px solid transparent",
-            overflow: "hidden",
-            pointerEvents: "none",
-            whiteSpace: "pre-wrap",
-            overflowWrap: "break-word",
-            color: el.strokeColor,
           }}
-        >
-          {sliceRuns(value, spans).map((r, k) => (
-            <span
-              key={k}
-              data-bold={r.bold || undefined}
-              data-italic={r.italic || undefined}
-              style={{
-                fontStyle: r.italic ? "italic" : undefined,
-                WebkitTextStroke: r.bold && weight !== "bold" ? `${fontSize * 0.035}px` : undefined,
-              }}
-            >
-              {r.text}
-            </span>
-          ))}
-        </div>
+        />
       )}
       <textarea
         ref={(node) => {
           ref.current = node
         }}
         value={value}
-        onChange={onInputChange}
+        onChange={rich.onChange}
         onBlur={commit}
         onScroll={(e) => {
           if (mirror.current) mirror.current.scrollTop = e.currentTarget.scrollTop
         }}
-        onSelect={(e) => {
-          if (pending.current && pending.current.at !== e.currentTarget.selectionStart) {
-            pending.current = null
-          }
-        }}
+        onSelect={rich.onSelect}
         onKeyDown={(e) => {
           if (e.key === "Escape") {
             e.preventDefault()
@@ -260,14 +171,7 @@ export function TextEditingOverlay({ scene }: { scene: Scene }): React.ReactElem
           }
           const composing = e.nativeEvent.isComposing || e.keyCode === 229
           if (composing) return
-          if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey) {
-            const k = e.key.toLowerCase()
-            if (k === "b" || k === "i") {
-              e.preventDefault()
-              toggleStyle(k === "b" ? "bold" : "italic", e.currentTarget)
-            }
-            return
-          }
+          if (rich.onModifierKey(e)) return
           if (e.key === "Enter" && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
             const edit = enterOnBullet(
               value,
@@ -276,7 +180,7 @@ export function TextEditingOverlay({ scene }: { scene: Scene }): React.ReactElem
             )
             if (edit) {
               e.preventDefault()
-              applyBullet(edit)
+              rich.applyBullet(edit)
             }
           }
         }}

@@ -12,7 +12,7 @@ import type {
   StrokeWidth,
   TextAlign,
 } from "@excalidraw-clone/scene"
-import { LABELABLE_TYPES, rangeHasStyle, type SpanStyle } from "@excalidraw-clone/scene"
+import { GRADIENT_TYPES, rangeHasStyle, type SpanStyle } from "@excalidraw-clone/scene"
 
 // Chromium-only; the button is simply absent elsewhere.
 interface EyeDropperApi {
@@ -196,8 +196,8 @@ export function PropertiesPanel({
   }
   const spanBold = wholeStyled("bold")
   const spanItalic = wholeStyled("italic")
-  // Gradient-capable shapes are the labelable closed shapes (see renderer gradientLine).
-  const gradientTarget = selectedElements.find((e) => LABELABLE_TYPES.has(e.type))
+  // Gradient-capable shapes (see renderer gradientLine).
+  const gradientTarget = selectedElements.find((e) => GRADIENT_TYPES.has(e.type))
   const gradient = gradientTarget?.gradient
   // Frames never cast a shadow (see scene elementShadow).
   const shadowTarget = selectedElements.find((e) => e.type !== "frame")

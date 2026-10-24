@@ -1,4 +1,4 @@
-import { fontSpec, wrapLines } from "@excalidraw-clone/renderer"
+import { fontSpec, wrapCellText } from "@excalidraw-clone/renderer"
 import {
   autoGrowRows,
   deleteCol,
@@ -6,19 +6,30 @@ import {
   insertCol,
   insertRow,
   setCellText,
+  type CountLines,
   type ExcalidrawElement,
   type ExcalidrawTableElement,
+  type TextSpan,
 } from "@excalidraw-clone/scene"
+
+/** Canvas line counter in the table's font, the same wrapping the renderer
+ *  uses; installed as the scene's table measurer. Null without a 2D canvas
+ *  (bare jsdom). */
+export function tableLineCounter(t: ExcalidrawTableElement): CountLines | null {
+  const ctx = document.createElement("canvas").getContext("2d")
+  if (!ctx) return null
+  return (text, maxWidth, bold, spans) =>
+    wrapCellText(text, spans, bold, maxWidth, (s, b, i) => {
+      ctx.font = fontSpec(t.fontSize, t.fontFamily, b ? "bold" : "normal", i ? "italic" : "normal")
+      return ctx.measureText(s).width
+    }).lines.length
+}
 
 /** Rows grown so every cell's wrapped text fits (never shrunk). Returns the
  *  table unchanged when no 2D canvas is available (bare jsdom). */
 export function growTableRows(t: ExcalidrawTableElement): ExcalidrawTableElement {
-  const ctx = document.createElement("canvas").getContext("2d")
-  if (!ctx) return t
-  return autoGrowRows(t, (text, maxWidth, bold) => {
-    ctx.font = fontSpec(t.fontSize, t.fontFamily, bold ? "bold" : "normal")
-    return wrapLines(text, maxWidth, (s) => ctx.measureText(s).width).length
-  })
+  const count = tableLineCounter(t)
+  return count ? autoGrowRows(t, count) : t
 }
 
 export type TableOp =
@@ -65,8 +76,8 @@ export function applyTableOp(
   if (next !== t) draft[i] = next
 }
 
-/** Commit one cell's text, growing rows to fit; `appendRow` adds a row first-class
- *  (Tab on the last cell) in the same mutation. */
+/** Commit one cell's text (and its spans, when given), growing rows to fit;
+ *  `appendRow` adds a row first-class (Tab on the last cell) in the same mutation. */
 export function commitTableCell(
   draft: ExcalidrawElement[],
   id: string,
@@ -74,11 +85,12 @@ export function commitTableCell(
   col: number,
   text: string,
   appendRow = false,
+  spans?: readonly TextSpan[],
 ): void {
   const i = draft.findIndex((e) => e.id === id)
   const t = draft[i]
   if (!t || t.type !== "table") return
-  let next = setCellText(t, row, col, text)
+  let next = setCellText(t, row, col, text, spans)
   if (appendRow) next = insertRow(next, next.rows)
   if (next !== t) draft[i] = growTableRows(next)
 }

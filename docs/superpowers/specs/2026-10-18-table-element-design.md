@@ -4,13 +4,13 @@ New element type `table`: an editable grid of plain-text cells that behaves as o
 
 ## Data model (`packages/scene/src/types.ts`, `table.ts`)
 
-`ExcalidrawTableElement` adds `rows`, `cols` (1..50), `colWidths[]`, `rowHeights[]`, `cells[row][col]` (plain strings, no spans), `headerRow` (default true), and `fontSize` / `fontFamily` / `textAlign` (text style for all cells). Defaults: 3x3, 120x40 cells; minimums 40 (col) and 28 (row).
+`ExcalidrawTableElement` adds `rows`, `cols` (1..50), `colWidths[]`, `rowHeights[]`, `cells[row][col]` (plain strings), optional `cellSpans[row][col]` (bold/italic `TextSpan[]` or null, absent when no cell is formatted), `headerRow` (default true), and `fontSize` / `fontFamily` / `textAlign` (text style for all cells). Defaults: 3x3, 120x40 cells; minimums 40 (col) and 28 (row).
 
 **Invariant:** `width === sum(colWidths)` and `height === sum(rowHeights)`. `reconcileTables` runs inside `Scene.mutate` (after bound text, before bindings/frames). Any code that writes `width`/`height` directly (resize handle, multi-element resize, stats panel) therefore scales every column/row proportionally, clamped to the minimums, with no per-feature code. Structure ops (`insertRow/Col`, `deleteRow/Col`, `setTrackSize`) set sizes and box together, so they are no-ops for the reconciler. A malformed table reaching `mutate` (e.g. pasted JSON) is repaired by `sanitizeTable`.
 
 Pure helpers (all in `table.ts`, unit tested): `newTable`, `fitTable`, `insert/deleteRow/Col`, `setCellText`, `setTrackSize`, `cellRect`, `cellAtLocal`, `borderAtLocal`, `toTableLocal` (undoes rotation), `autoGrowRows`, `tableText`, `sanitizeTable`.
 
-**Auto-grow:** `autoGrowRows(table, countLines)` grows (never shrinks) rows to fit wrapped text. The measurer is injected; the web app supplies a canvas `measureText` + `wrapLines` one (`driver/tableOps.ts`). It runs on cell commit and after a font size/family patch, not on resize or border drag.
+**Auto-grow:** `autoGrowRows(table, countLines)` grows (never shrinks) rows to fit wrapped text. The measurer is injected; the web app supplies a canvas one (`tableLineCounter` in `driver/tableOps.ts`, same `wrapCellText` wrapping as the renderer, span-aware). It runs on cell commit and after a font size/family patch, and — via `setTableMeasurer`, installed by `App` — inside `reconcileTables` whenever a column got narrower than in the pre-mutate scene: border drag, handle/multi resize, stats-panel width. Widening and row-only edits never auto-grow (a row drag can still shrink a row; an Escape revert stays exact).
 
 ## Touch points
 
@@ -27,10 +27,10 @@ Pure helpers (all in `table.ts`, unit tested): `newTable`, `fitTable`, `insert/d
 
 ## Decisions and known limits
 
-- Flip is allowed but only mirrors geometry/position in multi-selections; a lone table renders symmetric, so a single flip is visually a no-op and cell order is not reversed.
+- Flip reorders the grid (`flipTable`): horizontal reverses columns (widths, cells, spans), vertical reverses rows. The `headerRow` flag stays on row 0, so after a vertical flip the former last row is the (tinted, bold) header. Cell text is moved, never mirrored glyph-wise; no `mirror` flag is set. One undo step.
 - Rotation works; the editor overlay is rotated with the table.
-- Shrinking a table below the minimum track sizes clamps the size (the box grows back to the minimum), so a top/left handle drag at the limit shifts the origin.
-- Gradient fill is not offered for tables (not a labelable type); fill is always solid.
-- Row heights do not shrink when text is deleted, and only auto-grow on commit/font change (not on column narrowing).
-- The edit overlay centres a single line vertically; multi-line text starts at the cell top until commit.
-- Cell text has no bold/italic spans in v1 (header row is bold).
+- Shrinking a table below the minimum track sizes clamps the size; `fitTableBox` grows it away from the edge/corner opposite the dragged handle (`anchorSides`), in single and multi-element resize, so the anchor stays put.
+- Gradient fill (`GRADIENT_TYPES`) applies to the table background only; the header tint stays flat. Canvas, SVG and PDF.
+- Row heights never shrink when text is deleted or columns widen.
+- The edit overlay previews the committed layout: lines wrapped like the renderer, the box grown as the row will grow, text centred.
+- Cell editor shares the rich-text hook with the text overlay (`useRichText`): Ctrl/Cmd+B/I, `- ` bullets, Shift+Enter continues a bullet (plain Enter still moves down a cell). The header row is bold regardless of spans.

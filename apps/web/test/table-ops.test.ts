@@ -2,13 +2,20 @@ import {
   newRectangle,
   newTable,
   setCellText,
+  setTableMeasurer,
+  setTrackSize,
   Scene,
   type ExcalidrawElement,
   type ExcalidrawTableElement,
 } from "@excalidraw-clone/scene"
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from "vitest"
 import { applyPropertiesPatch } from "../src/driver/applyPropertiesPatch"
-import { applyTableOp, commitTableCell, growTableRows } from "../src/driver/tableOps"
+import {
+  applyTableOp,
+  commitTableCell,
+  growTableRows,
+  tableLineCounter,
+} from "../src/driver/tableOps"
 import { createFontAwareStubContext } from "./fontAwareCanvasStub"
 
 const tbl = (): ExcalidrawTableElement => ({ ...newTable({ x: 0, y: 0 }), id: "T" })
@@ -105,6 +112,30 @@ describe("row auto-grow with a 2D context", () => {
     const out = applyPropertiesPatch(t, { fontSize: 36 }) as ExcalidrawTableElement
     expect(out.fontSize).toBe(36)
     expect(out.rowHeights[0]).toBeGreaterThan(40)
+  })
+
+  it("commit stores the cell's spans and measures bold runs wider", () => {
+    // 10 chars normal = 100px fits the 104px inner width; bold (x1.2) = 120px wraps... as a
+    // single word it can't break, so use two words: "aaaa bbbbb" normal 100 -> 1 line, bold 120 -> 2
+    const draft: ExcalidrawElement[] = [tbl()]
+    commitTableCell(draft, "T", 1, 0, "aaaa bbbbb", false, [{ start: 0, end: 10, bold: true }])
+    const t = draft[0] as ExcalidrawTableElement
+    expect(t.cellSpans?.[1]?.[0]).toEqual([{ start: 0, end: 10, bold: true }])
+    expect(t.rowHeights[1]).toBe(2 * 25 + 12)
+  })
+
+  it("installed as the scene measurer, narrowing a column grows rows", () => {
+    setTableMeasurer(tableLineCounter)
+    try {
+      const scene = new Scene([setCellText(tbl(), 1, 0, "aaaa bbbb")])
+      scene.mutate((d) => {
+        d[0] = setTrackSize(d[0] as ExcalidrawTableElement, "col", 0, 60) // 44px: 4 chars/line
+      })
+      const t = scene.getElements()[0] as ExcalidrawTableElement
+      expect(t.rowHeights[1]).toBe(2 * 25 + 12)
+    } finally {
+      setTableMeasurer(null)
+    }
   })
 
   it("a non-font patch leaves the geometry alone", () => {

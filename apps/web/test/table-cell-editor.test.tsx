@@ -1,9 +1,16 @@
-import { newTable, Scene, type ExcalidrawTableElement } from "@excalidraw-clone/scene"
+import {
+  newTable,
+  Scene,
+  setCellText,
+  setTrackSize,
+  type ExcalidrawTableElement,
+} from "@excalidraw-clone/scene"
 import { cleanup, fireEvent, render, waitFor } from "@testing-library/react"
 import React from "react"
-import { afterEach, beforeEach, describe, expect, it } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { TextEditingOverlay } from "../src/components/TextEditingOverlay"
 import { useAppStore } from "../src/store"
+import { createFontAwareStubContext } from "./fontAwareCanvasStub"
 
 const setup = (rows = 2, cols = 2) => {
   const scene = new Scene()
@@ -156,5 +163,92 @@ describe("TableCellEditor", () => {
     fireEvent.change(node, { target: { value: "z" } })
     fireEvent.keyDown(node, { key: "Tab" })
     expect(scene.getHistory().length).toBe(before + 1)
+  })
+})
+
+describe("TableCellEditor — vertical centring matches the renderer", () => {
+  beforeEach(() => {
+    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation(() =>
+      createFontAwareStubContext(),
+    )
+  })
+  afterEach(() => vi.restoreAllMocks())
+
+  const tall = (text: string) => {
+    const scene = new Scene()
+    const t = setTrackSize(
+      { ...newTable({ x: 0, y: 0, rows: 2, cols: 2 }), id: "T" },
+      "row",
+      1,
+      120,
+    )
+    scene.mutate((d) => d.push(setCellText(t, 1, 0, text)))
+    return scene
+  }
+
+  it("centres wrapped lines (not just logical lines) in the cell", async () => {
+    // stub: 10px/char; inner width 104 => "aaaa bbbb" / "cccc" = 2 lines of 25px
+    const { area } = mount(tall("aaaa bbbb cccc"), { row: 1, col: 0 })
+    const node = await area()
+    expect(node.style.paddingTop).toBe("35px") // (120 - 50) / 2
+    expect(node.style.height).toBe("120px")
+  })
+
+  it("text taller than the row previews the auto-grown row, still centred", async () => {
+    const scene = setup()
+    const { area } = mount(scene, { row: 0, col: 0 })
+    const node = await area()
+    fireEvent.change(node, { target: { value: "a\nb\nc" } })
+    // 3 lines * 25 + 2 * 6 = 87
+    expect(node.style.height).toBe("87px")
+    expect(node.style.paddingTop).toBe("6px")
+  })
+})
+
+describe("TableCellEditor — rich text", () => {
+  it("Ctrl+B bolds the selection; commit stores the cell spans", async () => {
+    const scene = setup()
+    const { area, container } = mount(scene)
+    const node = await area()
+    fireEvent.change(node, { target: { value: "bold me" } })
+    node.setSelectionRange(0, 4)
+    fireEvent.keyDown(node, { key: "b", ctrlKey: true })
+    expect(container.querySelector("[data-testid=text-mirror] [data-bold]")?.textContent).toBe(
+      "bold",
+    )
+    fireEvent.keyDown(node, { key: "Escape" })
+    const t = tableOf(scene)
+    expect(t.cells[0]![0]).toBe("bold me")
+    expect(t.cellSpans?.[0]?.[0]).toEqual([{ start: 0, end: 4, bold: true }])
+  })
+
+  it("loads a cell's existing spans; Ctrl+I at a caret styles what is typed next", async () => {
+    const scene = new Scene()
+    const t = setCellText({ ...newTable({ x: 0, y: 0, rows: 2, cols: 2 }), id: "T" }, 1, 1, "ab", [
+      { start: 0, end: 2, italic: true },
+    ])
+    scene.mutate((d) => d.push(t))
+    const { area, container } = mount(scene, { row: 1, col: 1 })
+    const node = await area()
+    expect(container.querySelector("[data-testid=text-mirror] [data-italic]")?.textContent).toBe(
+      "ab",
+    )
+    node.setSelectionRange(2, 2)
+    fireEvent.keyDown(node, { key: "i", ctrlKey: true })
+    fireEvent.change(node, { target: { value: "abc", selectionStart: 3 } })
+    fireEvent.keyDown(node, { key: "Escape" })
+    expect(tableOf(scene).cellSpans?.[1]?.[1]).toEqual([{ start: 0, end: 2, italic: true }])
+  })
+
+  it("typing '- ' starts a bullet; Shift+Enter continues it", async () => {
+    const scene = setup()
+    const { area } = mount(scene)
+    const node = await area()
+    fireEvent.change(node, { target: { value: "- ", selectionStart: 2 } })
+    expect(node.value).toBe("• ")
+    fireEvent.change(node, { target: { value: "• x", selectionStart: 3 } })
+    node.setSelectionRange(3, 3)
+    fireEvent.keyDown(node, { key: "Enter", shiftKey: true })
+    expect(node.value).toBe("• x\n• ")
   })
 })

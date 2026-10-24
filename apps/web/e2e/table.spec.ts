@@ -173,3 +173,74 @@ test("find on canvas jumps to a table by cell text", async ({ page }) => {
   await page.keyboard.press("Enter")
   await expect(page.locator('[data-testid="table-add-row"]')).toBeVisible()
 })
+
+type RichTableEl = TableEl & {
+  angle: number
+  gradient?: { to: string; angle: number }
+  cellSpans?: ({ start: number; end: number; bold?: boolean }[] | null)[][]
+}
+
+test("flip mirrors the grid (one undo), tables take a gradient, Ctrl+B bolds a cell", async ({
+  page,
+}) => {
+  await freshCanvas(page)
+  await drawTable(page)
+  const first = await at(page, { x: 150, y: 120 })
+  await page.mouse.dblclick(first.x, first.y)
+  await page.keyboard.type("Hello")
+  await page.keyboard.press("Tab")
+  await page.keyboard.type("World")
+  await page.keyboard.press("Escape")
+
+  await page.keyboard.press("Shift+H")
+  let [table] = (await readTables(page)) as RichTableEl[]
+  expect(table!.cells[0]).toEqual(["", "World", "Hello"])
+  await page.keyboard.press("Control+z")
+  ;[table] = (await readTables(page)) as RichTableEl[]
+  expect(table!.cells[0]).toEqual(["Hello", "World", ""])
+
+  await page.locator('[data-testid="gradient-toggle"]').click()
+  ;[table] = (await readTables(page)) as RichTableEl[]
+  expect(table!.gradient).toBeDefined()
+
+  const body = await at(page, { x: 150, y: 160 })
+  await page.mouse.dblclick(body.x, body.y)
+  await page.keyboard.type("bold")
+  await page.keyboard.press("Control+a")
+  await page.keyboard.press("Control+b")
+  await page.keyboard.press("Escape")
+  ;[table] = (await readTables(page)) as RichTableEl[]
+  expect(table!.cells[1]![0]).toBe("bold")
+  expect(table!.cellSpans?.[1]?.[0]).toEqual([{ start: 0, end: 4, bold: true }])
+})
+
+test("narrowing a column grows the rows its text now wraps in", async ({ page }) => {
+  await freshCanvas(page)
+  await drawTable(page)
+  const cell = await at(page, { x: 250, y: 160 }) // row 1, col 1
+  await page.mouse.dblclick(cell.x, cell.y)
+  await page.keyboard.type("ab cd ef")
+  await page.keyboard.press("Escape")
+  let [table] = await readTables(page)
+  expect(table!.rowHeights[1]).toBe(40)
+
+  // drag the border between columns 1 and 2 (x = 300) left by 55 => column 1 is 45 wide
+  const from = await at(page, { x: 300, y: 200 })
+  await page.mouse.move(from.x, from.y)
+  await page.mouse.down()
+  await page.mouse.move(from.x - 55, from.y, { steps: 6 })
+  await page.mouse.up()
+  ;[table] = await readTables(page)
+  expect(table!.colWidths[1]).toBe(45)
+  expect(table!.rowHeights[1]).toBeGreaterThan(40)
+  expect(table!.height).toBe(table!.rowHeights.reduce((a, b) => a + b, 0))
+})
+
+test("dragging the nw handle past the minimum size keeps the se corner fixed", async ({ page }) => {
+  await freshCanvas(page)
+  await drawTable(page) // 100,100 .. 400,220
+  await dragOnCanvas(page, { x: 100, y: 100 }, { x: 395, y: 215 })
+  const [table] = await readTables(page)
+  expect([table!.width, table!.height]).toEqual([120, 84])
+  expect([table!.x + table!.width, table!.y + table!.height]).toEqual([400, 220])
+})

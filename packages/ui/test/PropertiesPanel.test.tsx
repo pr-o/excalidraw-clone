@@ -785,6 +785,11 @@ describe("PropertiesPanel — whole-text span buttons", () => {
 describe("PropertiesPanel — table", () => {
   const table = newTable({ x: 0, y: 0 })
 
+  it("offers the gradient fill for tables", () => {
+    render(<PropertiesPanel t={t} selectedElements={[table]} {...handlers} />)
+    expect(screen.getByTestId("gradient-toggle")).toBeInTheDocument()
+  })
+
   it("shows the Table section for a single table and forwards structure actions", async () => {
     const onTableAction = vi.fn()
     render(
