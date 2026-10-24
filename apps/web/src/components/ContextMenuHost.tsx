@@ -144,6 +144,15 @@ export function ContextMenuHost({
           },
         })
         items.push({
+          id: "array-duplicate",
+          label: t("arrayDuplicate.action"),
+          perform: () => {
+            // The dialog acts on the store selection, so make it match the menu's target.
+            useAppStore.getState().setSelection(elementIds)
+            useAppStore.getState().setOpenDialog("array-duplicate")
+          },
+        })
+        items.push({
           id: "flip-horizontal",
           label: t("properties.flip_horizontal"),
           perform: () => patchScene(scene, flipElements(scene.getElements(), elementIds, "x")),

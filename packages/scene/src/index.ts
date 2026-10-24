@@ -60,6 +60,12 @@ export type { LibraryItem } from "./library-item"
 export { normalizeToOrigin } from "./normalize"
 export { cloneElementsWithNewIds, expandIdsToCopyClosure } from "./clone"
 export { duplicateElements } from "./duplicate"
+export {
+  ARRAY_DUPLICATE_MAX_ELEMENTS,
+  ARRAY_DUPLICATE_MAX_TRACKS,
+  arrayDuplicate,
+  type ArrayDuplicateOptions,
+} from "./arrayDuplicate"
 export { BUILTIN_TEMPLATES } from "./templates"
 export { layoutFlowchart, parseMermaidFlowchart } from "./mermaid"
 export type {

@@ -34,6 +34,7 @@ const EDITOR_SHORTCUTS: readonly Shortcut[] = [
   { keys: "Cmd/Ctrl+C", label: "shortcuts:copy" },
   { keys: "Cmd/Ctrl+V", label: "shortcuts:paste" },
   { keys: "Cmd/Ctrl+D", label: "shortcuts:duplicate" },
+  { keys: "Cmd/Ctrl+Shift+D", label: "shortcuts:arrayDuplicate" },
   { keys: "Cmd/Ctrl+G", label: "shortcuts:group" },
   { keys: "Cmd/Ctrl+Shift+G", label: "shortcuts:ungroup" },
   { keys: "Double-click", label: "shortcuts:addLabel" },

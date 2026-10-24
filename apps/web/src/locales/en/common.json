@@ -218,6 +218,17 @@
     "cancel": "Cancel",
     "confirm": "Reset canvas"
   },
+  "arrayDuplicate": {
+    "action": "Array duplicate…",
+    "title": "Array duplicate",
+    "rows": "Rows",
+    "cols": "Columns",
+    "gapX": "Horizontal gap",
+    "gapY": "Vertical gap",
+    "copies": "New copies",
+    "cancel": "Cancel",
+    "confirm": "Duplicate"
+  },
   "mermaid": {
     "title": "Import Mermaid flowchart",
     "insert": "Insert",

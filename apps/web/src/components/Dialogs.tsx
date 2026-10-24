@@ -1,7 +1,14 @@
 "use client"
 import { clearAllFiles, clearLocal, download } from "@excalidraw-clone/persistence"
-import { layoutFlowchart, type MermaidFlowchart, type Scene } from "@excalidraw-clone/scene"
 import {
+  arrayDuplicate,
+  type ArrayDuplicateOptions,
+  layoutFlowchart,
+  type MermaidFlowchart,
+  type Scene,
+} from "@excalidraw-clone/scene"
+import {
+  ArrayDuplicateDialog,
   ExportDialog,
   HelpDialog,
   MermaidImportDialog,
@@ -91,8 +98,36 @@ export function Dialogs({ scene, pages, activePageId }: DialogsProps): React.Rea
     setOpenDialog(null)
   }
 
+  // One mutate = one undo step; the whole array (originals + copies) ends up selected.
+  const onArrayDuplicate = (opts: ArrayDuplicateOptions): void => {
+    const store = useAppStore.getState()
+    const copies = arrayDuplicate(scene.getElements(), store.selectedIds, opts)
+    if (copies.length > 0) {
+      scene.mutate((draft) => {
+        draft.push(...copies)
+      })
+      const locked = new Set(
+        scene
+          .getElements()
+          .filter((e) => e.locked)
+          .map((e) => e.id),
+      )
+      store.setSelection([
+        ...store.selectedIds.filter((id) => !locked.has(id)),
+        ...selectableIds(copies),
+      ])
+    }
+    setOpenDialog(null)
+  }
+
   return (
     <>
+      <ArrayDuplicateDialog
+        t={t}
+        open={openDialog === "array-duplicate"}
+        onClose={() => setOpenDialog(null)}
+        onConfirm={onArrayDuplicate}
+      />
       <HelpDialog t={t} open={openDialog === "help"} onClose={() => setOpenDialog(null)} />
       <ExportDialog
         t={t}

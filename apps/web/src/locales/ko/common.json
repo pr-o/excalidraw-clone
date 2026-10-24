@@ -216,6 +216,17 @@
     "cancel": "취소",
     "confirm": "초기화"
   },
+  "arrayDuplicate": {
+    "action": "배열 복제…",
+    "title": "배열 복제",
+    "rows": "행",
+    "cols": "열",
+    "gapX": "가로 간격",
+    "gapY": "세로 간격",
+    "copies": "새 복사본",
+    "cancel": "취소",
+    "confirm": "복제"
+  },
   "mermaid": {
     "title": "Mermaid 플로차트 가져오기",
     "insert": "삽입",

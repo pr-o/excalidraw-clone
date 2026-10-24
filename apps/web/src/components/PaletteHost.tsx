@@ -83,6 +83,14 @@ export function PaletteHost({ scene }: { scene: Scene }): React.ReactElement {
       },
     },
     {
+      id: "array-duplicate",
+      label: t("arrayDuplicate.action"),
+      hint: "Ctrl+Shift+D",
+      perform: () => {
+        if (useAppStore.getState().selectedIds.length > 0) setOpenDialog("array-duplicate")
+      },
+    },
+    {
       id: "unlock-all",
       label: t("palette.unlockAll"),
       perform: () => patchScene(scene, unlockAll(scene.getElements())),

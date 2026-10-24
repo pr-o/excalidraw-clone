@@ -27,6 +27,7 @@
   "bullet": "Start a bullet list (at line start)",
   "copyStyles": "Copy styles",
   "pasteStyles": "Paste styles",
+  "arrayDuplicate": "Array duplicate",
   "duplicate": "Duplicate",
   "group": "Group selection",
   "ungroup": "Ungroup",

@@ -57,3 +57,6 @@ export { StatsPanel } from "./StatsPanel"
 export type { StatsPanelProps } from "./StatsPanel"
 
 export { ICONS, iconHTML } from "./shared/icons"
+
+export { ArrayDuplicateDialog } from "./ArrayDuplicateDialog"
+export type { ArrayDuplicateDialogProps } from "./ArrayDuplicateDialog"

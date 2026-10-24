@@ -47,6 +47,7 @@ describe("HelpDialog — real i18n resolution", () => {
     expect(screen.getByText("Exit presentation")).toBeDefined()
     expect(screen.getByText("Find on canvas")).toBeDefined()
     expect(screen.getByText("Toggle stats panel")).toBeDefined()
+    expect(screen.getByText("Array duplicate")).toBeDefined()
     expect(screen.queryByText(/^shortcuts\./)).toBeNull()
   })
 })

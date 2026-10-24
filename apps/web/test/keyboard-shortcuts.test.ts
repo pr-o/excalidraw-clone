@@ -53,6 +53,24 @@ describe("keyboard shortcuts", () => {
     useAppStore.getState().setViewMode(false)
   })
 
+  it("Ctrl+Shift+D opens the array-duplicate dialog for a selection, without picking a tool", () => {
+    press({ key: "D", ctrlKey: true, shiftKey: true })
+    expect(useAppStore.getState().openDialog).toBeNull()
+    const r = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
+    scene.mutate((d) => {
+      d.push(r)
+    })
+    useAppStore.getState().setSelection([r.id])
+    press({ key: "D", ctrlKey: true, shiftKey: true })
+    expect(useAppStore.getState().openDialog).toBe("array-duplicate")
+    expect(useAppStore.getState().activeTool).toBe("selection")
+    useAppStore.getState().setOpenDialog(null)
+    useAppStore.getState().setViewMode(true)
+    press({ key: "D", ctrlKey: true, shiftKey: true })
+    expect(useAppStore.getState().openDialog).toBeNull()
+    useAppStore.getState().setViewMode(false)
+  })
+
   it("'r' switches to rectangle tool", () => {
     press({ key: "r" })
     expect(useAppStore.getState().activeTool).toBe("rectangle")

@@ -139,6 +139,13 @@ export function attachShortcuts({
     }
     // Must precede the TOOL_KEYS dispatch, which is not gated on `!isMeta`:
     // Ctrl+Alt+V would otherwise also switch to the selection tool.
+    if (isMeta && e.shiftKey && key === "d") {
+      e.preventDefault()
+      if (useAppStore.getState().selectedIds.length > 0) {
+        useAppStore.getState().setOpenDialog("array-duplicate")
+      }
+      return
+    }
     if (isMeta && e.altKey && key === "c") {
       const ids = useAppStore.getState().selectedIds
       if (ids.length === 0) return
