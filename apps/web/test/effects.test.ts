@@ -68,6 +68,17 @@ describe("applyEffects", () => {
     expect(spy).not.toHaveBeenCalled()
   })
 
+  it("placeComment effect opens the comment composer without touching the scene", () => {
+    const scene = new Scene()
+    const spy = vi.spyOn(scene, "mutate")
+    const anchor = { kind: "point" as const, x: 1, y: 2 }
+    applyEffects(scene, [{ kind: "placeComment", anchor }])
+    expect(useAppStore.getState().commentDraft).toEqual(anchor)
+    expect(scene.getComments()).toEqual([])
+    expect(spy).not.toHaveBeenCalled()
+    useAppStore.getState().setCommentDraft(null)
+  })
+
   it("setGuides effect updates the guides slice", () => {
     const scene = new Scene()
     const guides = [{ axis: "y" as const, position: 5, start: 0, end: 10 }]

@@ -1,5 +1,6 @@
 import { create } from "zustand"
 import { createCanvasBgSlice, type CanvasBgSlice } from "./slices/canvasBg"
+import { createCommentsSlice, type CommentsSlice } from "./slices/comments"
 import { createContextMenuSlice, type ContextMenuSlice } from "./slices/contextMenu"
 import { createCropSlice, type CropSlice } from "./slices/crop"
 import { createDialogSlice, type DialogSlice } from "./slices/dialog"
@@ -45,7 +46,8 @@ export type AppState = ToolSlice &
   PresentationSlice &
   FindSlice &
   CropSlice &
-  ToolKeysSlice
+  ToolKeysSlice &
+  CommentsSlice
 
 export const useAppStore = create<AppState>()((...a) => ({
   ...createToolSlice(...a),
@@ -71,4 +73,5 @@ export const useAppStore = create<AppState>()((...a) => ({
   ...createFindSlice(...a),
   ...createCropSlice(...a),
   ...createToolKeysSlice(...a),
+  ...createCommentsSlice(...a),
 }))

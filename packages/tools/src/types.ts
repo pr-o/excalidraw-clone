@@ -5,7 +5,7 @@ import type {
   UserGuides,
   ViewTransform,
 } from "@excalidraw-clone/geometry"
-import type { ExcalidrawElement } from "@excalidraw-clone/scene"
+import type { CommentAnchor, ExcalidrawElement } from "@excalidraw-clone/scene"
 
 export type ToolName =
   | "selection"
@@ -28,6 +28,7 @@ export type ToolName =
   | "laser"
   | "lasso"
   | "table"
+  | "comment"
 
 export interface Modifiers {
   shift: boolean
@@ -78,6 +79,7 @@ export type ToolEffect =
   | { kind: "laserMove"; at: Point }
   | { kind: "setGuides"; guides: readonly AlignmentGuide[] }
   | { kind: "setCrop"; elementId: string | null }
+  | { kind: "placeComment"; anchor: CommentAnchor }
 
 export interface Tool<S, E = ToolEvent> {
   readonly name: ToolName

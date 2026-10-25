@@ -22,6 +22,7 @@ export const DEFAULT_TOOL_KEYS = {
   note: "n",
   lasso: "s",
   laser: "k",
+  comment: "c",
 } as const satisfies Record<ToolName, string>
 
 export type ToolKeyMap = Record<ToolName, string>

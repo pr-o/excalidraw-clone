@@ -1,4 +1,5 @@
 import { arrowTool } from "./tools/arrow"
+import { commentTool } from "./tools/comment"
 import { diamondTool } from "./tools/diamond"
 import { ellipseTool } from "./tools/ellipse"
 import { eraserTool } from "./tools/eraser"
@@ -41,4 +42,5 @@ export const TOOLS: Record<ToolName, Tool<unknown, AnyToolEvent>> = {
   lasso: lassoTool,
   note: noteTool,
   table: tableTool,
+  comment: commentTool,
 }

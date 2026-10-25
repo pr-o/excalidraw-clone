@@ -46,6 +46,9 @@ export function applyEffects(
       case "laserMove":
         laser?.push(eff.at)
         break
+      case "placeComment":
+        useAppStore.getState().setCommentDraft(eff.anchor)
+        break
       case "setGuides":
         useAppStore.getState().setActiveGuides(eff.guides)
         break
