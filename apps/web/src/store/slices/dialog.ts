@@ -10,6 +10,7 @@ export type DialogId =
   | "stickers"
   | "snapshots"
   | "array-duplicate"
+  | "tool-keys"
 
 export interface DialogSlice {
   openDialog: DialogId

@@ -34,6 +34,7 @@ export interface HamburgerMenuProps {
   canPresent: boolean
   onReset: () => void
   onHelp: () => void
+  onToolKeys?: () => void
   className?: string
 }
 
@@ -206,6 +207,11 @@ export function HamburgerMenu(props: HamburgerMenuProps): React.ReactElement {
           )}
           <Separator />
           <MenuItem onClick={wrap(props.onHelp)}>{props.t("menu.help")}</MenuItem>
+          {props.onToolKeys && (
+            <MenuItem onClick={wrap(props.onToolKeys)} testId="menu-tool-keys">
+              {props.t("menu.toolKeys")}
+            </MenuItem>
+          )}
           {!props.viewMode && (
             <MenuItem onClick={wrap(props.onReset)} variant="danger">
               {props.t("menu.reset")}

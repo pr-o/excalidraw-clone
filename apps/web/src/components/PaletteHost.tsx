@@ -35,6 +35,7 @@ export function PaletteHost({ scene }: { scene: Scene }): React.ReactElement {
       perform: () => useAppStore.getState().setSelection([]),
     },
     { id: "help", label: t("menu.help"), perform: () => setOpenDialog("help") },
+    { id: "tool-keys", label: t("menu.toolKeys"), perform: () => setOpenDialog("tool-keys") },
     { id: "export", label: t("menu.export"), perform: () => setOpenDialog("export") },
     {
       id: "import-mermaid",

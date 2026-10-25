@@ -142,7 +142,8 @@
     "canvasBg": "캔버스 배경",
     "rulers": "눈금자",
     "viewMode": "보기 모드",
-    "minimap": "미니맵"
+    "minimap": "미니맵",
+    "toolKeys": "키보드 단축키…"
   },
   "minimap": {
     "label": "미니맵",
@@ -217,6 +218,19 @@
     "body": "모든 작업이 영구적으로 삭제됩니다. 되돌릴 수 없습니다.",
     "cancel": "취소",
     "confirm": "초기화"
+  },
+  "toolKeys": {
+    "title": "도구 단축키",
+    "hint": "키를 클릭한 뒤 이 도구에 쓸 새 단일 키를 누르세요.",
+    "press": "키를 누르세요…",
+    "reset": "초기화",
+    "resetAll": "모두 초기화",
+    "error": {
+      "modifier": "Ctrl, Alt, Shift, Cmd 없이 단일 키를 사용하세요.",
+      "notPrintable": "문자, 숫자 또는 기호 키 하나를 사용하세요.",
+      "reserved": "편집기에서 예약된 키입니다.",
+      "taken": "이미 다른 도구에서 사용 중인 키입니다."
+    }
   },
   "arrayDuplicate": {
     "action": "배열 복제…",

@@ -8,7 +8,6 @@ import {
   type Scene,
   ungroupElements,
 } from "@excalidraw-clone/scene"
-import type { ToolName } from "@excalidraw-clone/tools"
 import { applyPropertiesPatch } from "../driver/applyPropertiesPatch"
 import { deleteElements, patchScene, replaceElements } from "../driver/patchScene"
 import { zoomAboutCentre } from "../driver/zoom"
@@ -16,6 +15,7 @@ import { toggleViewMode } from "../driver/viewMode"
 import { useAppStore } from "../store"
 import { type ChainDirection, createChainedShape } from "./flowchartChain"
 import { applyStyle, extractStyle, type StyleClipboard } from "./styleClipboard"
+import { toolForKey } from "./toolKeys"
 
 const CHAIN_DIRECTIONS: Record<string, ChainDirection> = {
   arrowup: "up",
@@ -29,29 +29,6 @@ interface Bindings {
   onNextPage?: () => void
   onPrevPage?: () => void
   onToggleStats?: () => void
-}
-
-const TOOL_KEYS: Record<string, ToolName> = {
-  v: "selection",
-  r: "rectangle",
-  o: "ellipse",
-  d: "diamond",
-  "3": "triangle",
-  g: "parallelogram",
-  "6": "hexagon",
-  "5": "pentagon",
-  "8": "octagon",
-  "7": "table",
-  l: "line",
-  a: "arrow",
-  p: "freedraw",
-  t: "text",
-  "9": "image",
-  e: "eraser",
-  f: "frame",
-  n: "note",
-  k: "laser",
-  s: "lasso",
 }
 
 /** Ephemeral, app-lifetime style clipboard for Cmd/Ctrl+Alt+C / +V. Module-level
@@ -101,7 +78,9 @@ export function attachShortcuts({
       const allowed =
         (isMeta && ["0", "+", "=", "-", "/", "f"].includes(key)) ||
         (e.altKey && (key === "pagedown" || key === "pageup")) ||
-        (!isMeta && !e.altKey && key === "k") ||
+        (!isMeta &&
+          !e.altKey &&
+          toolForKey(key, useAppStore.getState().toolKeyOverrides) === "laser") ||
         key === "escape" ||
         key === "?" ||
         (e.shiftKey && key === "/")
@@ -138,7 +117,7 @@ export function attachShortcuts({
       useAppStore.getState().setSelection([])
       return
     }
-    // Must precede the TOOL_KEYS dispatch, which is not gated on `!isMeta`:
+    // Must precede the tool-key dispatch, which is not gated on `!isMeta`:
     // Ctrl+Alt+V would otherwise also switch to the selection tool.
     if (isMeta && e.shiftKey && key === "d") {
       e.preventDefault()
@@ -297,7 +276,7 @@ export function attachShortcuts({
       )
       return
     }
-    // Must precede the TOOL_KEYS dispatch: Shift+V would otherwise fall through
+    // Must precede the tool-key dispatch: Shift+V would otherwise fall through
     // to the selection tool.
     if (!isMeta && e.shiftKey && (key === "h" || key === "v")) {
       const ids = useAppStore.getState().selectedIds
@@ -306,13 +285,14 @@ export function attachShortcuts({
       patchScene(scene, flipElements(scene.getElements(), ids, key === "h" ? "x" : "y"))
       return
     }
-    // Must precede the TOOL_KEYS dispatch: Shift+R would otherwise pick the rectangle.
+    // Must precede the tool-key dispatch: Shift+R would otherwise pick the rectangle.
     if (!isMeta && !e.altKey && e.shiftKey && key === "r") {
       e.preventDefault()
       useAppStore.getState().toggleRulers()
       return
     }
-    const tool = TOOL_KEYS[key]
+    // Read at keypress time so rebinding applies without re-attaching.
+    const tool = toolForKey(key, useAppStore.getState().toolKeyOverrides)
     if (tool) {
       useAppStore.getState().setActiveTool(tool)
     }

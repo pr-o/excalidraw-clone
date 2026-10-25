@@ -89,6 +89,18 @@ describe("keyboard shortcuts", () => {
     expect(useAppStore.getState().activeTool).toBe("rectangle")
   })
 
+  it("rebound tool keys apply at keypress time without re-attaching", () => {
+    useAppStore.getState().setToolKeyOverrides({ rectangle: "q" })
+    try {
+      press({ key: "r" })
+      expect(useAppStore.getState().activeTool).toBe("selection")
+      press({ key: "q" })
+      expect(useAppStore.getState().activeTool).toBe("rectangle")
+    } finally {
+      useAppStore.getState().setToolKeyOverrides({})
+    }
+  })
+
   it("'5' switches to pentagon tool", () => {
     press({ key: "5" })
     expect(useAppStore.getState().activeTool).toBe("pentagon")

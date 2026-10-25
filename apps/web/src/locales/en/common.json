@@ -142,7 +142,8 @@
     "canvasBg": "Canvas background",
     "rulers": "Rulers",
     "viewMode": "View mode",
-    "minimap": "Minimap"
+    "minimap": "Minimap",
+    "toolKeys": "Keyboard shortcuts…"
   },
   "minimap": {
     "label": "Minimap",
@@ -219,6 +220,19 @@
     "body": "This will permanently remove all your work. This action cannot be undone.",
     "cancel": "Cancel",
     "confirm": "Reset canvas"
+  },
+  "toolKeys": {
+    "title": "Tool shortcuts",
+    "hint": "Click a key, then press a new single key for that tool.",
+    "press": "Press a key…",
+    "reset": "Reset",
+    "resetAll": "Reset all",
+    "error": {
+      "modifier": "Use a single key without Ctrl, Alt, Shift or Cmd.",
+      "notPrintable": "Use a single letter, digit or symbol key.",
+      "reserved": "That key is reserved by the editor.",
+      "taken": "That key is already used by another tool."
+    }
   },
   "arrayDuplicate": {
     "action": "Array duplicate…",

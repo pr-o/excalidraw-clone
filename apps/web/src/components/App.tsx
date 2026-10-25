@@ -218,6 +218,7 @@ function Inner(): React.ReactElement {
     useAppStore.getState().setLinkEditorElementId(null)
   }, [activePageId])
   const activeTool = useAppStore((s) => s.activeTool)
+  const toolKeyOverrides = useAppStore((s) => s.toolKeyOverrides)
   const setActiveTool = useAppStore((s) => s.setActiveTool)
   const lockActiveTool = useAppStore((s) => s.lockActiveTool)
   const toggleLockActiveTool = useAppStore((s) => s.toggleLockActiveTool)
@@ -487,6 +488,7 @@ function Inner(): React.ReactElement {
               onStartPresentation={() => useAppStore.getState().enterPresentation()}
               onReset={() => setOpenDialog("reset")}
               onHelp={() => setOpenDialog("help")}
+              onToolKeys={() => setOpenDialog("tool-keys")}
             />
           </div>
 
@@ -502,6 +504,7 @@ function Inner(): React.ReactElement {
                   moreShapesOpen={moreShapesOpen}
                   onMoreShapesOpenChange={setMoreShapesOpen}
                   onOpenStickers={() => setOpenDialog("stickers")}
+                  toolKeys={toolKeyOverrides}
                 />
               </div>
 

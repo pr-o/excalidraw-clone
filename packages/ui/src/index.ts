@@ -13,6 +13,8 @@ export { HamburgerMenu } from "./HamburgerMenu"
 export type { HamburgerMenuProps, Locale, Theme } from "./HamburgerMenu"
 
 export { HelpDialog } from "./HelpDialog"
+export { ToolKeysDialog } from "./ToolKeysDialog"
+export type { ToolKeysDialogProps, ToolKeysRow } from "./ToolKeysDialog"
 export type { HelpDialogProps } from "./HelpDialog"
 
 export { CommandPalette } from "./CommandPalette"

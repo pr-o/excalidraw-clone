@@ -79,6 +79,12 @@ describe("HelpDialog", () => {
     expect(screen.getByText("shortcuts:eraser")).toBeInTheDocument()
   })
 
+  it("shows rebound tool keys", () => {
+    render(<HelpDialog t={t} open onClose={() => {}} toolKeys={{ rectangle: "q" }} />)
+    expect(screen.getByText("Q")).toBeInTheDocument()
+    expect(screen.queryByText("R")).toBeNull()
+  })
+
   it("emits onClose when the close button is clicked", async () => {
     const onClose = vi.fn()
     render(<HelpDialog t={t} open onClose={onClose} />)

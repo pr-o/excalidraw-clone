@@ -8,6 +8,7 @@ import {
   type MermaidFlowchart,
   type Scene,
 } from "@excalidraw-clone/scene"
+import type { ToolName } from "@excalidraw-clone/tools"
 import {
   ArrayDuplicateDialog,
   ExportDialog,
@@ -16,6 +17,7 @@ import {
   MermaidImportDialog,
   ResetCanvasDialog,
   StickerDialog,
+  ToolKeysDialog,
   type ExportOptions,
 } from "@excalidraw-clone/ui"
 import { useTranslation } from "react-i18next"
@@ -32,6 +34,12 @@ import {
 } from "../driver/exportTarget"
 import { buildExportZip } from "../driver/exportZip"
 import { insertSticker } from "../driver/stickers"
+import {
+  DEFAULT_TOOL_KEYS,
+  effectiveToolKeys,
+  setToolKey,
+  validateToolKey,
+} from "../keyboard/toolKeys"
 import type { PageRecord } from "../driver/pages"
 import { useAppStore } from "../store"
 
@@ -48,6 +56,8 @@ export function Dialogs({ scene, pages, activePageId }: DialogsProps): React.Rea
   const canvasBg = useAppStore((s) => s.canvasBg)
   const resolvedTheme = useAppStore((s) => s.resolvedTheme)
   const selectedIds = useAppStore((s) => s.selectedIds)
+  const toolKeyOverrides = useAppStore((s) => s.toolKeyOverrides)
+  const setToolKeyOverrides = useAppStore((s) => s.setToolKeyOverrides)
   const exportOpen = openDialog === "export"
   // Only computed while the dialog is open; the closure check walks the page.
   const hasSelection = exportOpen && hasExportableSelection(scene.getElements(), selectedIds)
@@ -124,15 +134,44 @@ export function Dialogs({ scene, pages, activePageId }: DialogsProps): React.Rea
     setOpenDialog(null)
   }
 
+  const toolKeys = effectiveToolKeys(toolKeyOverrides)
+  const toolKeyRows = (Object.keys(DEFAULT_TOOL_KEYS) as ToolName[]).map((tool) => ({
+    tool,
+    key: toolKeys[tool],
+    isDefault: toolKeys[tool] === DEFAULT_TOOL_KEYS[tool],
+  }))
+
   return (
     <>
+      <ToolKeysDialog
+        t={t}
+        open={openDialog === "tool-keys"}
+        onClose={() => setOpenDialog(null)}
+        rows={toolKeyRows}
+        onRebind={(name, key, withModifier) => {
+          const tool = name as ToolName
+          const err = validateToolKey(tool, key, withModifier, toolKeyOverrides)
+          if (err) return `toolKeys.error.${err}`
+          setToolKeyOverrides(setToolKey(toolKeyOverrides, tool, key))
+          return null
+        }}
+        onReset={(name) =>
+          setToolKeyOverrides(setToolKey(toolKeyOverrides, name as ToolName, null))
+        }
+        onResetAll={() => setToolKeyOverrides({})}
+      />
       <ArrayDuplicateDialog
         t={t}
         open={openDialog === "array-duplicate"}
         onClose={() => setOpenDialog(null)}
         onConfirm={onArrayDuplicate}
       />
-      <HelpDialog t={t} open={openDialog === "help"} onClose={() => setOpenDialog(null)} />
+      <HelpDialog
+        t={t}
+        open={openDialog === "help"}
+        onClose={() => setOpenDialog(null)}
+        toolKeys={toolKeys}
+      />
       <ExportDialog
         t={t}
         open={exportOpen}

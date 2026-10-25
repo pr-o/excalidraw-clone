@@ -19,6 +19,7 @@ import { createSelectionSlice, type SelectionSlice } from "./slices/selection"
 import { createTextEditSlice, type TextEditSlice } from "./slices/textEdit"
 import { createThemeSlice, type ThemeSlice } from "./slices/theme"
 import { createToolSlice, type ToolSlice } from "./slices/tool"
+import { createToolKeysSlice, type ToolKeysSlice } from "./slices/toolKeys"
 import { createToolStateSlice, type ToolStateSlice } from "./slices/toolState"
 import { createViewSlice, type ViewSlice } from "./slices/view"
 
@@ -43,7 +44,8 @@ export type AppState = ToolSlice &
   LinkEditorSlice &
   PresentationSlice &
   FindSlice &
-  CropSlice
+  CropSlice &
+  ToolKeysSlice
 
 export const useAppStore = create<AppState>()((...a) => ({
   ...createToolSlice(...a),
@@ -68,4 +70,5 @@ export const useAppStore = create<AppState>()((...a) => ({
   ...createPresentationSlice(...a),
   ...createFindSlice(...a),
   ...createCropSlice(...a),
+  ...createToolKeysSlice(...a),
 }))

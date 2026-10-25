@@ -78,11 +78,25 @@ const VIEW_SHORTCUTS: readonly Shortcut[] = [
 export interface HelpDialogProps {
   t: (key: string) => string
   open: boolean
+  /** Effective tool keys (tool name -> key) when the user rebound any; defaults otherwise. */
+  toolKeys?: Readonly<Record<string, string>>
   onClose: () => void
   className?: string
 }
 
-export function HelpDialog({ t, open, onClose, className }: HelpDialogProps): React.ReactElement {
+export function HelpDialog({
+  t,
+  open,
+  onClose,
+  toolKeys,
+  className,
+}: HelpDialogProps): React.ReactElement {
+  const tools = toolKeys
+    ? TOOL_SHORTCUTS.map((s) => {
+        const key = toolKeys[s.label.slice("shortcuts:".length)]
+        return key ? { ...s, keys: key.toUpperCase() } : s
+      })
+    : TOOL_SHORTCUTS
   return (
     <Dialog
       t={t}
@@ -92,7 +106,7 @@ export function HelpDialog({ t, open, onClose, className }: HelpDialogProps): Re
       {...(className !== undefined ? { className } : {})}
     >
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-        <Group title={t("shortcuts.tools")} items={TOOL_SHORTCUTS} t={t} />
+        <Group title={t("shortcuts.tools")} items={tools} t={t} />
         <Group title={t("shortcuts.editor")} items={EDITOR_SHORTCUTS} t={t} />
         <Group title={t("shortcuts.view")} items={VIEW_SHORTCUTS} t={t} />
       </div>

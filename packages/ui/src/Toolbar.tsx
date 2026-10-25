@@ -34,6 +34,8 @@ export interface ToolbarProps {
   moreShapesOpen: boolean
   onMoreShapesOpenChange: (open: boolean) => void
   onOpenStickers?: () => void
+  /** Effective tool keys (tool name -> key) for the tooltip hints; defaults otherwise. */
+  toolKeys?: Readonly<Record<string, string>>
   className?: string
 }
 
@@ -46,13 +48,14 @@ export function Toolbar({
   moreShapesOpen,
   onMoreShapesOpenChange,
   onOpenStickers,
+  toolKeys,
   className,
 }: ToolbarProps): React.ReactElement {
   const renderItem = (item: { name: ToolName; shortcut: string }): React.ReactElement => (
     <IconButton
       key={item.name}
       label={t(`toolbar.${item.name}`)}
-      shortcut={item.shortcut}
+      shortcut={toolKeys?.[item.name]?.toUpperCase() ?? item.shortcut}
       active={activeTool === item.name}
       onClick={() => onSelectTool(item.name)}
       data-testid={`toolbar-${item.name}`}
