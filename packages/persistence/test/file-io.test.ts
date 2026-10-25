@@ -161,3 +161,33 @@ describe("user guides validation on load", () => {
     expect(out.pages[0]?.elements[0]?.shadow).toEqual(shadow)
   })
 })
+
+describe("comments persistence", () => {
+  it("round-trips page comments and omits the key when there are none", async () => {
+    const comments = [
+      {
+        id: "c1",
+        anchor: { kind: "point" as const, x: 1, y: 2 },
+        text: "hi",
+        createdAt: 1,
+        resolved: false,
+        replies: [],
+      },
+    ]
+    const withComments = new Scene([], undefined, comments)
+    const data = serializeDocument(
+      [
+        { id: "p1", name: "Page 1", scene: withComments },
+        { id: "p2", name: "Page 2", scene: new Scene() },
+      ],
+      "p1",
+    )
+    expect(data.pages[0]!.comments).toEqual(comments)
+    expect("comments" in data.pages[1]!).toBe(false)
+    const back = await parseExcalidrawFile(
+      new File([JSON.stringify(data)], "a.excalidraw", { type: "application/json" }),
+    )
+    expect(back.pages[0]!.comments).toEqual(comments)
+    expect(back.pages[1]!.comments).toBeUndefined()
+  })
+})

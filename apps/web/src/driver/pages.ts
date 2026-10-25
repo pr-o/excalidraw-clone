@@ -37,7 +37,7 @@ export function pagesFromDocument(data: ExcalidrawData): {
   const pages = data.pages.map((p) => ({
     id: p.id,
     name: p.name,
-    scene: new Scene(p.elements, p.guides),
+    scene: new Scene(p.elements, p.guides, p.comments),
     viewport: DEFAULT_VIEWPORT,
   }))
   return { pages, activePageId: data.activePageId }

@@ -21,11 +21,13 @@ export function serializeDocument(
 ): ExcalidrawData {
   const pageData = pages.map((p) => {
     const guides = p.scene.getGuides()
+    const comments = p.scene.getComments()
     return {
       id: p.id,
       name: p.name,
       elements: p.scene.getElementsIncludingDeleted(),
       ...(guides.x.length + guides.y.length > 0 ? { guides } : {}),
+      ...(comments.length > 0 ? { comments } : {}),
     }
   })
   return buildExcalidrawData(pageData, activePageId, appState, files)

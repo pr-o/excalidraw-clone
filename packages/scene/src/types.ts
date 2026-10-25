@@ -1,4 +1,5 @@
 import type { Point, UserGuides } from "@excalidraw-clone/geometry"
+import type { Comment } from "./comments"
 import type { TextSpan } from "./spans"
 
 export type ElementType =
@@ -254,6 +255,8 @@ export interface ExcalidrawPage {
   elements: readonly ExcalidrawElement[]
   /** Ruler guides; optional so pre-guides documents load unchanged. */
   guides?: UserGuides
+  /** Comment threads; optional so pre-comments documents load with none. */
+  comments?: readonly Comment[]
 }
 
 export interface SceneSnapshot {

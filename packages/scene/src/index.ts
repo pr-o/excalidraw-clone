@@ -203,3 +203,13 @@ export {
   TABLE_PAD_Y,
 } from "./table"
 export type { CellRect, CellSpans, CountLines } from "./table"
+export {
+  addComment,
+  commentAnchorAt,
+  deleteComment,
+  replyToComment,
+  resolveCommentPosition,
+  sanitizeComments,
+  setCommentResolved,
+} from "./comments"
+export type { Comment, CommentAnchor, CommentReply } from "./comments"

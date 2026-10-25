@@ -1,5 +1,6 @@
 import {
   SCENE_FORMAT_VERSION,
+  sanitizeComments,
   sanitizeSpans,
   sanitizeTable,
   type ExcalidrawData,
@@ -106,12 +107,15 @@ function normalizeTextSpans(el: Record<string, unknown>): Record<string, unknown
 
 function normalizePages(data: AnyData): AnyData {
   const pages =
-    (data.pages as { elements: Record<string, unknown>[]; guides?: unknown }[] | undefined) ?? []
+    (data.pages as
+      | { elements: Record<string, unknown>[]; guides?: unknown; comments?: unknown }[]
+      | undefined) ?? []
   return {
     ...data,
-    pages: pages.map(({ guides, ...page }) => ({
+    pages: pages.map(({ guides, comments, ...page }) => ({
       ...page,
       ...normalizeGuides(guides),
+      ...(comments === undefined ? {} : { comments: sanitizeComments(comments) }),
       elements: page.elements.map((el) =>
         el.type === "image"
           ? { ...el, crop: normalizeCrop(el.crop) }

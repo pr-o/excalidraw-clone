@@ -1,5 +1,6 @@
 import type { UserGuides } from "@excalidraw-clone/geometry"
 import { reconcileBindings } from "./bindings"
+import type { Comment } from "./comments"
 import { reconcileFrameMembership } from "./frames"
 import { reconcileBoundText } from "./reconcile-bound-text"
 import { reconcileTables } from "./table"
@@ -25,11 +26,18 @@ export class Scene {
    *  create/move/delete is view scaffolding, not drawing, so undo/redo and
    *  history jumps never touch it. */
   private guides: UserGuides
+  /** Comment threads on this page; outside the undo stack like guides. */
+  private comments: readonly Comment[]
   private static readonly MAX_HISTORY = 100
 
-  constructor(initial: readonly ExcalidrawElement[] = [], guides: UserGuides = NO_GUIDES) {
+  constructor(
+    initial: readonly ExcalidrawElement[] = [],
+    guides: UserGuides = NO_GUIDES,
+    comments: readonly Comment[] = [],
+  ) {
     this.elements = initial
     this.guides = guides
+    this.comments = comments
     this.history = [initial]
     this.historyIndex = 0
   }
@@ -51,6 +59,15 @@ export class Scene {
 
   setGuides(guides: UserGuides): void {
     this.guides = guides
+    this.notify()
+  }
+
+  getComments(): readonly Comment[] {
+    return this.comments
+  }
+
+  setComments(comments: readonly Comment[]): void {
+    this.comments = comments
     this.notify()
   }
 
