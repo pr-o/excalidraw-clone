@@ -71,6 +71,12 @@ describe("HelpDialog", () => {
     expect(screen.getByText("shortcuts:laser")).toBeInTheDocument()
   })
 
+  it("lists the comment tool shortcut", () => {
+    render(<HelpDialog t={t} open onClose={() => {}} />)
+    expect(screen.getByText("C")).toBeInTheDocument()
+    expect(screen.getByText("shortcuts:comment")).toBeInTheDocument()
+  })
+
   it("lists the lasso and eraser shortcuts", () => {
     render(<HelpDialog t={t} open onClose={() => {}} />)
     expect(screen.getByText("S")).toBeInTheDocument()

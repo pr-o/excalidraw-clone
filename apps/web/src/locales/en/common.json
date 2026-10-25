@@ -23,7 +23,8 @@
     "note": "Sticky note",
     "laser": "Laser pointer",
     "lasso": "Lasso select",
-    "table": "Table"
+    "table": "Table",
+    "comment": "Comment"
   },
   "properties": {
     "label": "Properties",
@@ -143,7 +144,8 @@
     "rulers": "Rulers",
     "viewMode": "View mode",
     "minimap": "Minimap",
-    "toolKeys": "Keyboard shortcuts…"
+    "toolKeys": "Keyboard shortcuts…",
+    "comments": "Comments"
   },
   "minimap": {
     "label": "Minimap",
@@ -346,5 +348,21 @@
     "next": "Next slide",
     "laser": "Laser pointer",
     "exit": "Exit presentation"
+  },
+  "comments": {
+    "title": "Comments",
+    "close": "Close comments",
+    "filterAll": "All",
+    "filterOpen": "Open",
+    "filterResolved": "Resolved",
+    "empty": "No comments on this page",
+    "placeholder": "Add a comment…",
+    "replyPlaceholder": "Reply…",
+    "resolve": "Resolve",
+    "reopen": "Reopen",
+    "delete": "Delete",
+    "pin": "Comment",
+    "closeThread": "Close thread",
+    "resolved": "Resolved"
   }
 }

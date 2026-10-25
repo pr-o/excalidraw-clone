@@ -24,6 +24,8 @@ export interface HamburgerMenuProps {
   onRulersToggle?: () => void
   minimapVisible?: boolean
   onMinimapToggle?: () => void
+  commentsOpen?: boolean
+  onCommentsToggle?: () => void
   onOpenFile: () => void
   onSaveFile: () => void
   onSnapshots?: () => void
@@ -155,6 +157,19 @@ export function HamburgerMenu(props: HamburgerMenuProps): React.ReactElement {
             >
               {props.t("menu.minimap")}
               <span className="text-xs text-muted">{props.minimapVisible ? "✓" : ""}</span>
+            </button>
+          )}
+          {props.onCommentsToggle && (
+            <button
+              type="button"
+              role="menuitemcheckbox"
+              aria-checked={props.commentsOpen ?? false}
+              data-testid="menu-comments"
+              onClick={wrap(props.onCommentsToggle)}
+              className="flex w-full items-center justify-between rounded px-3 py-2 text-left text-sm hover:bg-panel-hover"
+            >
+              {props.t("menu.comments")}
+              <span className="text-xs text-muted">{props.commentsOpen ? "✓" : ""}</span>
             </button>
           )}
           <Separator />

@@ -66,3 +66,8 @@ export { ICONS, iconHTML } from "./shared/icons"
 
 export { ArrayDuplicateDialog } from "./ArrayDuplicateDialog"
 export type { ArrayDuplicateDialogProps } from "./ArrayDuplicateDialog"
+
+export { CommentComposer, CommentThread } from "./CommentThread"
+export type { CommentComposerProps, CommentThreadProps } from "./CommentThread"
+export { CommentsPanel } from "./CommentsPanel"
+export type { CommentsPanelProps } from "./CommentsPanel"

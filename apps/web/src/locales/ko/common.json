@@ -23,7 +23,8 @@
     "note": "메모",
     "laser": "레이저 포인터",
     "lasso": "올가미 선택",
-    "table": "표"
+    "table": "표",
+    "comment": "댓글"
   },
   "properties": {
     "label": "속성",
@@ -143,7 +144,8 @@
     "rulers": "눈금자",
     "viewMode": "보기 모드",
     "minimap": "미니맵",
-    "toolKeys": "키보드 단축키…"
+    "toolKeys": "키보드 단축키…",
+    "comments": "댓글"
   },
   "minimap": {
     "label": "미니맵",
@@ -330,5 +332,21 @@
     "next": "다음 슬라이드",
     "laser": "레이저 포인터",
     "exit": "발표 종료"
+  },
+  "comments": {
+    "title": "댓글",
+    "close": "댓글 닫기",
+    "filterAll": "전체",
+    "filterOpen": "열림",
+    "filterResolved": "해결됨",
+    "empty": "이 페이지에 댓글이 없습니다",
+    "placeholder": "댓글 추가…",
+    "replyPlaceholder": "답글…",
+    "resolve": "해결",
+    "reopen": "다시 열기",
+    "delete": "삭제",
+    "pin": "댓글",
+    "closeThread": "스레드 닫기",
+    "resolved": "해결됨"
   }
 }

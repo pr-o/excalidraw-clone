@@ -60,5 +60,6 @@
   "presentNext": "Next slide",
   "presentPrev": "Previous slide",
   "presentExit": "Exit presentation",
-  "table": "Table"
+  "table": "Table",
+  "comment": "Comment"
 }

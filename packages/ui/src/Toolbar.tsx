@@ -21,6 +21,7 @@ const TOOL_ITEMS: ReadonlyArray<{ name: ToolName; shortcut: string }> = [
   { name: "note", shortcut: "N" },
   { name: "lasso", shortcut: "S" },
   { name: "laser", shortcut: "K" },
+  { name: "comment", shortcut: "C" },
 ]
 
 const HEXAGON_INDEX = TOOL_ITEMS.findIndex((item) => item.name === "hexagon")

@@ -81,6 +81,7 @@ import { PresentationHost } from "../presentation/PresentationHost"
 import { useAppStore } from "../store"
 import { computeResolvedTheme } from "../store/slices/theme"
 import { CanvasShell } from "./CanvasShell"
+import { CommentsHost } from "./CommentsHost"
 import { ContextMenuHost } from "./ContextMenuHost"
 import { Dialogs } from "./Dialogs"
 import { FindHost } from "./FindHost"
@@ -234,6 +235,8 @@ function Inner(): React.ReactElement {
   const toggleRulers = useAppStore((s) => s.toggleRulers)
   const minimapVisible = useAppStore((s) => s.minimapVisible)
   const toggleMinimap = useAppStore((s) => s.toggleMinimap)
+  const commentsPanelOpen = useAppStore((s) => s.commentsPanelOpen)
+  const toggleCommentsPanel = useAppStore((s) => s.toggleCommentsPanel)
   const setOpenDialog = useAppStore((s) => s.setOpenDialog)
   const openDialog = useAppStore((s) => s.openDialog)
   const selectedIds = useAppStore((s) => s.selectedIds)
@@ -468,6 +471,8 @@ function Inner(): React.ReactElement {
               onRulersToggle={toggleRulers}
               minimapVisible={minimapVisible}
               onMinimapToggle={toggleMinimap}
+              commentsOpen={commentsPanelOpen}
+              onCommentsToggle={toggleCommentsPanel}
               onOpenFile={() => {
                 void (async () => {
                   const data = await openExcalidrawFromPicker(renderer)
@@ -774,6 +779,7 @@ function Inner(): React.ReactElement {
       />
       <TextEditingOverlay scene={scene} />
       <LinkOverlay scene={scene} />
+      <CommentsHost scene={scene} />
     </main>
   )
 }
