@@ -1,94 +1,35 @@
 "use client"
-import { renderToSVG } from "@excalidraw-clone/renderer"
 import type { CanvasRenderer } from "@excalidraw-clone/renderer"
-import {
-  alignElements,
-  bringForward,
-  bringToFront,
-  BUILTIN_TEMPLATES,
-  computeStats,
-  distributeElements,
-  duplicateElements,
-  type ExcalidrawTextElement,
-  expandIdsToGroups,
-  flipElements,
-  resetCrop,
-  groupElements,
-  type LibraryItem,
-  lockElements,
-  normalizeToOrigin,
-  Scene,
-  sendBackward,
-  sendToBack,
-  setTableMeasurer,
-  tidyElements,
-  ungroupElements,
-  unlockAll,
-} from "@excalidraw-clone/scene"
-import {
-  HamburgerMenu,
-  HistoryPanel,
-  LayersPanel,
-  LibraryPanel,
-  PagesTabBar,
-  PropertiesPanel,
-  StatsPanel,
-  Toolbar,
-} from "@excalidraw-clone/ui"
-import {
-  createAutoSaver,
-  deleteLibraryItem,
-  download,
-  exportLibraryFile,
-  getAllLibraryItems,
-  getFile,
-  importLibraryFile,
-  putLibraryItem,
-  renameLibraryItem,
-} from "@excalidraw-clone/persistence"
+import { unlockAll } from "@excalidraw-clone/scene"
+import { HistoryPanel, PagesTabBar, StatsPanel, Toolbar } from "@excalidraw-clone/ui"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { I18nextProvider, useTranslation } from "react-i18next"
-import { startAutoSave } from "../driver/autoSave"
-import { applySelectionPatch, setWholeTextStyle } from "../driver/applyPropertiesPatch"
-import { hydratePages, hydrateUI } from "../driver/hydration"
-import { applyTableOp, tableLineCounter } from "../driver/tableOps"
-import { pickAndUploadImage } from "../driver/imageUpload"
-import {
-  addPage,
-  cyclePageId,
-  deletePage,
-  DEFAULT_VIEWPORT,
-  duplicatePage,
-  movePage,
-  pagesFromDocument,
-  renamePage,
-  reorderPage,
-  withViewport,
-  type PageRecord,
-} from "../driver/pages"
-import { zoomAboutCentre } from "../driver/zoom"
+import { cyclePageId } from "../driver/pages"
+import { patchScene } from "../driver/patchScene"
 import { toggleViewMode } from "../driver/viewMode"
-import { renderPageThumbnail } from "../driver/pageThumbnails"
-import { Minimap } from "./Minimap"
-import { useSceneRevision } from "../hooks/useSceneRevision"
-import { openExcalidrawFromPicker } from "../driver/openFile"
-import { deleteElements, patchScene, reorderElements, replaceElements } from "../driver/patchScene"
-import { saveAsExcalidraw } from "../driver/saveFile"
+import { useEditorEnvironment, useImageToolUpload } from "../hooks/useEditorEnvironment"
+import { usePages } from "../hooks/usePages"
+import { useSceneViews } from "../hooks/useSceneViews"
 import { ensureI18n } from "../i18n"
 import { attachClipboard } from "../keyboard/clipboard"
 import { attachShortcuts } from "../keyboard/shortcuts"
 import { PresentationHost } from "../presentation/PresentationHost"
 import { useAppStore } from "../store"
-import { computeResolvedTheme } from "../store/slices/theme"
 import { CanvasShell } from "./CanvasShell"
 import { CommentsHost } from "./CommentsHost"
 import { ContextMenuHost } from "./ContextMenuHost"
 import { Dialogs } from "./Dialogs"
 import { FindHost } from "./FindHost"
+import { LayersHost } from "./LayersHost"
+import { LibraryHost, useLibrarySync } from "./LibraryHost"
 import { LinkOverlay } from "./LinkOverlay"
+import { MenuHost } from "./MenuHost"
+import { Minimap } from "./Minimap"
 import { PaletteHost } from "./PaletteHost"
+import { PropertiesHost } from "./PropertiesHost"
 import { SnapshotsHost } from "./SnapshotsHost"
 import { TextEditingOverlay } from "./TextEditingOverlay"
+import { ZoomWidget } from "./ZoomWidget"
 
 export function App(): React.ReactElement {
   const locale = useAppStore((s) => s.locale)
@@ -102,150 +43,11 @@ export function App(): React.ReactElement {
 
 function Inner(): React.ReactElement {
   const { t, i18n } = useTranslation()
-  const initialDoc = useMemo(() => hydratePages(), [])
-  const [pages, setPages] = useState<PageRecord[]>(initialDoc.pages)
-  const [activePageId, setActivePageId] = useState<string>(initialDoc.activePageId)
-  const [thumbnails, setThumbnails] = useState<Record<string, string | undefined>>({})
-  const scene = useMemo(
-    () => pages.find((p) => p.id === activePageId)!.scene,
-    [pages, activePageId],
-  )
-  const canvasBg = useAppStore((s) => s.canvasBg)
-  const resolvedTheme = useAppStore((s) => s.resolvedTheme)
-  // Read at fire time by the re-theme-all effect below, which must see the live
-  // page list without re-running for every unrelated `pages` mutation.
-  const pagesRef = useRef<PageRecord[]>(pages)
-  pagesRef.current = pages
+  useEditorEnvironment(i18n)
+  const doc = usePages()
+  const { pages, activePageId, scene, switchToPage } = doc
   // Fullscreen target for presentation mode.
   const rootRef = useRef<HTMLElement>(null)
-  // Re-render one page's thumbnail; a failed render (e.g. a tainted canvas)
-  // keeps the last good thumbnail rather than blanking it.
-  const refreshThumbnail = useCallback(
-    (pageScene: Scene, pageId: string): void => {
-      void renderPageThumbnail(pageScene, canvasBg, resolvedTheme)
-        .then((thumb) => setThumbnails((prev) => ({ ...prev, [pageId]: thumb })))
-        .catch(() => {})
-    },
-    [canvasBg, resolvedTheme],
-  )
-  const switchToPage = useCallback(
-    (targetId: string): void => {
-      if (targetId === activePageId) return
-      const s = useAppStore.getState()
-      setPages(
-        withViewport(pages, activePageId, { scrollX: s.scrollX, scrollY: s.scrollY, zoom: s.zoom }),
-      )
-      const target = pages.find((p) => p.id === targetId)
-      s.setView(target?.viewport ?? DEFAULT_VIEWPORT)
-      setActivePageId(targetId)
-      s.setSelection([])
-      if (target) refreshThumbnail(target.scene, targetId)
-    },
-    [activePageId, pages, refreshThumbnail],
-  )
-  useEffect(() => {
-    hydrateUI()
-  }, [])
-  // Lets Scene.mutate re-wrap table rows when a column narrows (any path).
-  useEffect(() => {
-    setTableMeasurer(tableLineCounter)
-    return () => setTableMeasurer(null)
-  }, [])
-  useEffect(() => {
-    return startAutoSave(pages, activePageId)
-  }, [pages, activePageId])
-  // Hydrates every page's thumbnail on mount, and re-renders them all whenever
-  // the theme or canvas background changes. Deliberately keyed only on those two
-  // so adding/renaming/reordering a page does not re-render every thumbnail;
-  // the live page list is read from a ref at fire time instead.
-  useEffect(() => {
-    let cancelled = false
-    void (async () => {
-      const entries = await Promise.all(
-        pagesRef.current.map(async (p) => {
-          try {
-            return [p.id, await renderPageThumbnail(p.scene, canvasBg, resolvedTheme)] as const
-          } catch {
-            // Keep this page's existing thumbnail rather than blanking it.
-            return null
-          }
-        }),
-      )
-      if (cancelled) return
-      // Only touch pages that still exist, so a delete's cache removal is never
-      // undone and a removed page's Scene is not kept reachable.
-      const live = new Set(pagesRef.current.map((p) => p.id))
-      setThumbnails((prev) => {
-        const next: Record<string, string | undefined> = {}
-        for (const [id, thumb] of Object.entries(prev)) {
-          if (live.has(id)) next[id] = thumb
-        }
-        for (const entry of entries) {
-          if (entry && live.has(entry[0])) next[entry[0]] = entry[1]
-        }
-        return next
-      })
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [canvasBg, resolvedTheme])
-  useEffect(() => {
-    const saver = createAutoSaver({
-      delayMs: 500,
-      flush: () => refreshThumbnail(scene, activePageId),
-    })
-    const unsub = scene.subscribe(() => saver.schedule())
-    return () => {
-      unsub()
-      saver.dispose()
-    }
-  }, [scene, activePageId, refreshThumbnail])
-  useEffect(() => {
-    return attachShortcuts({
-      scene,
-      onNextPage: () => switchToPage(cyclePageId(pages, activePageId, "next")),
-      onPrevPage: () => switchToPage(cyclePageId(pages, activePageId, "prev")),
-      onToggleStats: () => setStatsOpen((v) => !v),
-    })
-  }, [scene, pages, activePageId, switchToPage])
-  useEffect(() => {
-    return attachClipboard({ scene })
-  }, [scene])
-  // Any page change (tab switch, Alt+PageUp/Down, opening a file) must drop a
-  // stale editor id from the previous page — same reasoning the codebase applies
-  // to textEditElementId. Keyed on activePageId so every path is covered.
-  useEffect(() => {
-    useAppStore.getState().setLinkEditorElementId(null)
-  }, [activePageId])
-  const activeTool = useAppStore((s) => s.activeTool)
-  const toolKeyOverrides = useAppStore((s) => s.toolKeyOverrides)
-  const setActiveTool = useAppStore((s) => s.setActiveTool)
-  const lockActiveTool = useAppStore((s) => s.lockActiveTool)
-  const toggleLockActiveTool = useAppStore((s) => s.toggleLockActiveTool)
-  const theme = useAppStore((s) => s.theme)
-  const setTheme = useAppStore((s) => s.setTheme)
-  const locale = useAppStore((s) => s.locale)
-  const setLocale = useAppStore((s) => s.setLocale)
-  const setCanvasBg = useAppStore((s) => s.setCanvasBg)
-  const zenMode = useAppStore((s) => s.zenMode)
-  const zoom = useAppStore((s) => s.zoom)
-  const toggleZenMode = useAppStore((s) => s.toggleZenMode)
-  const rulersVisible = useAppStore((s) => s.rulersVisible)
-  const toggleRulers = useAppStore((s) => s.toggleRulers)
-  const minimapVisible = useAppStore((s) => s.minimapVisible)
-  const toggleMinimap = useAppStore((s) => s.toggleMinimap)
-  const commentsPanelOpen = useAppStore((s) => s.commentsPanelOpen)
-  const toggleCommentsPanel = useAppStore((s) => s.toggleCommentsPanel)
-  const setOpenDialog = useAppStore((s) => s.setOpenDialog)
-  const openDialog = useAppStore((s) => s.openDialog)
-  const selectedIds = useAppStore((s) => s.selectedIds)
-  const libraryItems = useAppStore((s) => s.libraryItems)
-  const setLibraryItems = useAppStore((s) => s.setLibraryItems)
-  const armLibraryItem = useAppStore((s) => s.armLibraryItem)
-  const clearPendingItem = useAppStore((s) => s.clearPendingItem)
-  const presenting = useAppStore((s) => s.presenting)
-  const viewMode = useAppStore((s) => s.viewMode)
   const [menuOpen, setMenuOpen] = useState(false)
   const [libraryOpen, setLibraryOpen] = useState(false)
   const [layersOpen, setLayersOpen] = useState(false)
@@ -257,190 +59,30 @@ function Inner(): React.ReactElement {
   const onRendererTeardown = useCallback((): void => setRenderer(null), [])
 
   useEffect(() => {
-    if (activeTool !== "image") return
-    let cancelled = false
-    void (async () => {
-      const event = await pickAndUploadImage({ x: 100, y: 100 })
-      if (cancelled || !event) return
-      const bin = await getFile(event.fileId)
-      if (bin && renderer) void renderer.preloadImage(bin.id, bin.dataURL)
-      useAppStore.getState().dispatchToolEvent?.(event)
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [activeTool, renderer])
-
-  useEffect(() => {
-    const mql = window.matchMedia("(prefers-color-scheme: dark)")
-    const apply = (): void => {
-      const resolved = computeResolvedTheme(theme, mql.matches)
-      document.documentElement.dataset.theme = resolved
-      useAppStore.getState().setResolvedTheme(resolved)
-    }
-    apply()
-    if (theme !== "system") return
-    mql.addEventListener("change", apply)
-    return () => mql.removeEventListener("change", apply)
-  }, [theme])
-
-  useEffect(() => {
-    void i18n.changeLanguage(locale)
-  }, [locale, i18n])
-
-  // Recompute on every scene mutation: the `scene` ref is stable across edits,
-  // so without the revision the panel would only refresh on re-selection.
-  const sceneRevision = useSceneRevision(scene)
-  const selectedElements = useMemo(() => {
-    const ids = new Set(selectedIds)
-    return scene.getElements().filter((e) => ids.has(e.id))
-  }, [selectedIds, scene, sceneRevision])
-  const selectedLabels = useMemo(() => {
-    const ids = new Set(selectedIds)
-    return scene
-      .getElements()
-      .filter(
-        (e): e is ExcalidrawTextElement =>
-          e.type === "text" && e.containerId !== null && ids.has(e.containerId),
-      )
-  }, [selectedIds, scene, sceneRevision])
-  const hasLockedElements = useMemo(
-    () => scene.getElements().some((e) => e.locked),
-    [scene, sceneRevision],
-  )
-  const layerElements = useMemo(() => scene.getElements(), [scene, sceneRevision])
-  const historyEntries = useMemo(() => scene.getHistory(), [scene, sceneRevision])
-  const stats = useMemo(
-    () => computeStats(selectedElements, layerElements),
-    [selectedElements, layerElements],
-  )
-  const frames = useMemo(
-    () => scene.getElements().filter((e) => e.type === "frame" && !e.isDeleted),
-    [scene, sceneRevision],
-  )
-
-  useEffect(() => {
-    void getAllLibraryItems().then(setLibraryItems)
-  }, [setLibraryItems])
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent): void => {
-      if (e.key === "Escape") clearPendingItem()
-    }
-    window.addEventListener("keydown", onKey)
-    return () => window.removeEventListener("keydown", onKey)
-  }, [clearPendingItem])
-
-  useEffect(() => {
-    clearPendingItem()
-  }, [activeTool, openDialog, clearPendingItem])
-
-  const refreshLibrary = useCallback(async (): Promise<void> => {
-    setLibraryItems(await getAllLibraryItems())
-  }, [setLibraryItems])
-
-  const moveTo = (moved: readonly { id: string; x: number; y: number }[]): void => {
-    const byId = new Map(moved.map((p) => [p.id, p]))
-    replaceElements(scene, (el) => {
-      const p = byId.get(el.id)
-      return p && { ...el, x: p.x, y: p.y }
+    return attachShortcuts({
+      scene,
+      onNextPage: () => switchToPage(cyclePageId(pages, activePageId, "next")),
+      onPrevPage: () => switchToPage(cyclePageId(pages, activePageId, "prev")),
+      onToggleStats: () => setStatsOpen((v) => !v),
     })
-  }
-  const reorder = (fn: Parameters<typeof reorderElements>[1]) => (id: string) =>
-    reorderElements(scene, fn, [id])
+  }, [scene, pages, activePageId, switchToPage])
+  useEffect(() => {
+    return attachClipboard({ scene })
+  }, [scene])
+  useImageToolUpload(renderer)
+  useLibrarySync()
 
-  const handleAddFromSelection = useCallback(async (): Promise<void> => {
-    const allEls = scene.getElements()
-    const ids = new Set(selectedIds)
-    const picked = allEls.filter((e) => ids.has(e.id))
-    if (picked.length === 0) return
-    const normalized = normalizeToOrigin(picked)
-    const fileIds = new Set<string>()
-    for (const el of normalized) {
-      const fid = (el as { fileId?: string }).fileId
-      if (typeof fid === "string") fileIds.add(fid)
-    }
-    const files: Record<string, NonNullable<LibraryItem["files"]>[string]> = {}
-    for (const fid of fileIds) {
-      const bin = await getFile(fid)
-      if (bin) files[fid] = bin
-    }
-    const item: LibraryItem = {
-      id: crypto.randomUUID(),
-      name: `Item ${libraryItems.length + 1}`,
-      created: Date.now(),
-      elements: normalized,
-      ...(Object.keys(files).length > 0 ? { files } : {}),
-    }
-    await putLibraryItem(item)
-    await refreshLibrary()
-  }, [scene, selectedIds, libraryItems.length, refreshLibrary])
-
-  const handleImport = useCallback((): void => {
-    const input = document.createElement("input")
-    input.type = "file"
-    input.accept = ".excalidrawlib,application/json"
-    input.onchange = async (): Promise<void> => {
-      const file = input.files?.[0]
-      if (!file) return
-      try {
-        await importLibraryFile(file)
-        await refreshLibrary()
-      } catch (err) {
-        console.error("Library import failed", err)
-      }
-    }
-    input.click()
-  }, [refreshLibrary])
-
-  const handleExport = useCallback(async (): Promise<void> => {
-    const blob = await exportLibraryFile()
-    const date = new Date().toISOString().slice(0, 10)
-    download(blob, `library-${date}.excalidrawlib`)
-  }, [])
-
-  const handleRename = useCallback(
-    async (id: string, name: string): Promise<void> => {
-      await renameLibraryItem(id, name)
-      await refreshLibrary()
-    },
-    [refreshLibrary],
-  )
-
-  const handleDelete = useCallback(
-    async (id: string): Promise<void> => {
-      await deleteLibraryItem(id)
-      await refreshLibrary()
-    },
-    [refreshLibrary],
-  )
-
-  const renderThumbnail = useCallback((item: LibraryItem): string => {
-    const tempScene = new Scene(item.elements)
-    return renderToSVG(tempScene, { padding: 4 })
-  }, [])
-
-  const moveElementToPage = useCallback(
-    (elementId: string, targetPageId: string): void => {
-      const element = scene.getElements().find((el) => el.id === elementId)
-      const target = pages.find((p) => p.id === targetPageId)
-      if (!element || !target) return
-      replaceElements(scene, (el) => (el.id === elementId ? { ...el, isDeleted: true } : undefined))
-      target.scene.mutate((draft) => {
-        draft.push(element)
-      })
-      // The per-active-page thumbnail-flush effect below is subscribed to the
-      // *source* scene at this point (we haven't switched pages yet) but gets
-      // torn down by switchToPage's setActivePageId before its 500ms debounce
-      // fires, so it never runs for this mutation. Refresh the source page's
-      // thumbnail explicitly, the same way onAdd/onDuplicate below refresh a
-      // freshly created page's.
-      refreshThumbnail(scene, activePageId)
-      switchToPage(targetPageId)
-      useAppStore.getState().setSelection([elementId])
-    },
-    [scene, pages, activePageId, refreshThumbnail, switchToPage],
-  )
+  const activeTool = useAppStore((s) => s.activeTool)
+  const toolKeyOverrides = useAppStore((s) => s.toolKeyOverrides)
+  const setActiveTool = useAppStore((s) => s.setActiveTool)
+  const lockActiveTool = useAppStore((s) => s.lockActiveTool)
+  const toggleLockActiveTool = useAppStore((s) => s.toggleLockActiveTool)
+  const zenMode = useAppStore((s) => s.zenMode)
+  const setOpenDialog = useAppStore((s) => s.setOpenDialog)
+  const presenting = useAppStore((s) => s.presenting)
+  const viewMode = useAppStore((s) => s.viewMode)
+  const views = useSceneViews(scene)
+  const { selectedIds, stats } = views
 
   return (
     <main ref={rootRef} className="relative h-screen w-screen overflow-hidden">
@@ -453,47 +95,14 @@ function Inner(): React.ReactElement {
       {!zenMode && !presenting && (
         <>
           <div className="absolute left-3 top-3 z-40">
-            <HamburgerMenu
-              t={t}
+            <MenuHost
               open={menuOpen}
               onOpenChange={setMenuOpen}
-              theme={theme}
-              onThemeChange={setTheme}
-              locale={locale}
-              onLocaleChange={setLocale}
-              canvasBg={canvasBg}
-              onCanvasBgChange={setCanvasBg}
-              zenMode={zenMode}
-              onZenModeToggle={toggleZenMode}
-              viewMode={viewMode}
-              onViewModeToggle={toggleViewMode}
-              rulersVisible={rulersVisible}
-              onRulersToggle={toggleRulers}
-              minimapVisible={minimapVisible}
-              onMinimapToggle={toggleMinimap}
-              commentsOpen={commentsPanelOpen}
-              onCommentsToggle={toggleCommentsPanel}
-              onOpenFile={() => {
-                void (async () => {
-                  const data = await openExcalidrawFromPicker(renderer)
-                  if (!data) return
-                  const opened = pagesFromDocument(data)
-                  setPages(opened.pages)
-                  setActivePageId(opened.activePageId)
-                })()
-              }}
-              onSaveFile={() => {
-                void saveAsExcalidraw(pages, activePageId)
-              }}
-              onExport={() => setOpenDialog("export")}
-              onImportMermaid={() => setOpenDialog("mermaid-import")}
-              onExportMermaid={() => setOpenDialog("mermaid-export")}
-              onSnapshots={() => setOpenDialog("snapshots")}
-              canPresent={frames.length > 0}
-              onStartPresentation={() => useAppStore.getState().enterPresentation()}
-              onReset={() => setOpenDialog("reset")}
-              onHelp={() => setOpenDialog("help")}
-              onToolKeys={() => setOpenDialog("tool-keys")}
+              renderer={renderer}
+              pages={pages}
+              activePageId={activePageId}
+              canPresent={views.frames.length > 0}
+              onOpenDocument={doc.loadDocument}
             />
           </div>
 
@@ -516,105 +125,26 @@ function Inner(): React.ReactElement {
               {/* Right offset clears the HistoryPanel: its closed toggle occupies
               right:12px–48px, and its open panel occupies right:0–256px. */}
               <div className={`absolute ${historyOpen ? "right-[280px]" : "right-14"} top-3 z-30`}>
-                <PropertiesPanel
-                  t={t}
-                  selectedElements={selectedElements}
-                  labelElements={selectedLabels}
-                  onChange={(patch) =>
-                    replaceElements(scene, (el) => applySelectionPatch(el, patch, selectedIds))
-                  }
-                  onSetTextStyle={(style, on) =>
-                    replaceElements(scene, (el) =>
-                      selectedIds.includes(el.id) ||
-                      (el.type === "text" &&
-                        el.containerId !== null &&
-                        selectedIds.includes(el.containerId))
-                        ? setWholeTextStyle(el, style, on)
-                        : undefined,
-                    )
-                  }
-                  onDelete={() => {
-                    deleteElements(scene, selectedIds)
-                    useAppStore.getState().setSelection([])
-                  }}
-                  onDuplicate={() => {
-                    const copies = duplicateElements(scene.getElements(), selectedIds)
-                    scene.mutate((draft) => {
-                      draft.push(...copies)
-                    })
-                    useAppStore
-                      .getState()
-                      .setSelection(
-                        copies
-                          .filter((c) => !(c.type === "text" && c.containerId !== null))
-                          .map((c) => c.id),
-                      )
-                  }}
-                  onAlign={(edge) => moveTo(alignElements(selectedElements, edge))}
-                  onDistribute={(axis) => moveTo(distributeElements(selectedElements, axis))}
-                  onTidy={() => moveTo(tidyElements(selectedElements))}
-                  onGroup={() =>
-                    patchScene(
-                      scene,
-                      groupElements(selectedElements, selectedIds, crypto.randomUUID()),
-                    )
-                  }
-                  onUngroup={() =>
-                    patchScene(scene, ungroupElements(selectedElements, selectedIds))
-                  }
-                  onLock={() => {
-                    patchScene(scene, lockElements(scene.getElements(), selectedIds))
-                    useAppStore.getState().setSelection([])
-                  }}
-                  onFlip={(axis) => {
-                    patchScene(scene, flipElements(scene.getElements(), selectedIds, axis))
-                  }}
-                  onTableAction={(action) => {
-                    const id = selectedIds[0]
-                    if (!id) return
-                    const active = useAppStore.getState().tableActiveCell
-                    scene.mutate((draft) =>
-                      applyTableOp(draft, id, action, active?.elementId === id ? active : null),
-                    )
-                  }}
-                  onResetCrop={() => patchScene(scene, resetCrop(scene.getElements(), selectedIds))}
+                <PropertiesHost
+                  scene={scene}
+                  selectedIds={selectedIds}
+                  selectedElements={views.selectedElements}
+                  selectedLabels={views.selectedLabels}
                 />
               </div>
 
-              <LayersPanel
-                t={t}
-                elements={layerElements}
+              <LayersHost
+                scene={scene}
+                elements={views.layerElements}
                 selectedIds={selectedIds}
                 open={layersOpen}
                 onToggle={() => setLayersOpen((v) => !v)}
-                onSelect={(id, opts) => {
-                  const hitIds = expandIdsToGroups([id], scene.getElements())
-                  if (opts.additive) {
-                    if (!selectedIds.includes(id)) useAppStore.getState().addToSelection(hitIds)
-                  } else {
-                    useAppStore.getState().setSelection(hitIds)
-                  }
-                }}
-                onSendToBack={reorder(sendToBack)}
-                onSendBackward={reorder(sendBackward)}
-                onBringForward={reorder(bringForward)}
-                onBringToFront={reorder(bringToFront)}
               />
 
-              <LibraryPanel
-                t={t}
+              <LibraryHost
+                scene={scene}
                 open={libraryOpen}
                 onToggle={() => setLibraryOpen((v) => !v)}
-                items={libraryItems}
-                templates={BUILTIN_TEMPLATES}
-                selectedCount={selectedIds.length}
-                onAddFromSelection={() => void handleAddFromSelection()}
-                onItemClick={armLibraryItem}
-                onImport={handleImport}
-                onExport={() => void handleExport()}
-                onRename={(id, name) => void handleRename(id, name)}
-                onDelete={(id) => void handleDelete(id)}
-                renderThumbnail={renderThumbnail}
               />
             </>
           )}
@@ -623,38 +153,14 @@ function Inner(): React.ReactElement {
             t={t}
             pages={pages}
             activePageId={activePageId}
-            thumbnails={thumbnails}
+            thumbnails={doc.thumbnails}
             onSwitch={switchToPage}
-            onAdd={() => {
-              const updated = addPage(pages)
-              const created = updated[updated.length - 1]!
-              setPages(updated)
-              setActivePageId(created.id)
-              refreshThumbnail(created.scene, created.id)
-            }}
-            onDelete={(id) => {
-              if (id === activePageId) {
-                const fallback = pages.find((p) => p.id !== id)
-                if (fallback) switchToPage(fallback.id)
-              }
-              setPages(deletePage(pages, id))
-              setThumbnails((prev) => {
-                const next = { ...prev }
-                delete next[id]
-                return next
-              })
-            }}
-            onRename={(id, name) => setPages(renamePage(pages, id, name))}
-            onDuplicate={(id) => {
-              const updated = duplicatePage(pages, id)
-              const index = pages.findIndex((p) => p.id === id)
-              const created = updated[index + 1]!
-              setPages(updated)
-              setActivePageId(created.id)
-              refreshThumbnail(created.scene, created.id)
-            }}
-            onReorder={(id, direction) => setPages(reorderPage(pages, id, direction))}
-            onMove={(id, toIndex) => setPages(movePage(pages, id, toIndex))}
+            onAdd={doc.addPage}
+            onDelete={doc.deletePage}
+            onRename={doc.renamePage}
+            onDuplicate={doc.duplicatePage}
+            onReorder={doc.reorderPage}
+            onMove={doc.movePage}
             readOnly={viewMode}
           />
 
@@ -678,14 +184,14 @@ function Inner(): React.ReactElement {
                 // i18next's TFunction overloads aren't directly assignable to the
                 // panel's `(key, options?)` shape under exactOptionalPropertyTypes.
                 t={(key, options) => (options ? t(key, options) : t(key))}
-                history={historyEntries}
+                history={views.historyEntries}
                 currentIndex={scene.getHistoryIndex()}
                 open={historyOpen}
                 onToggle={() => setHistoryOpen((v) => !v)}
                 onJump={(index) => scene.jumpToHistory(index)}
               />
 
-              {hasLockedElements && (
+              {views.hasLockedElements && (
                 <button
                   type="button"
                   data-testid="unlock-all"
@@ -713,35 +219,7 @@ function Inner(): React.ReactElement {
             }
           />
 
-          <div className="absolute bottom-3 right-3 z-30 flex items-center gap-1 rounded-lg bg-white px-2 py-1 text-xs shadow">
-            <button
-              type="button"
-              data-testid="zoom-out"
-              aria-label={t("shortcuts:zoomOut")}
-              onClick={() => zoomAboutCentre((z) => z / 1.1)}
-              className="rounded px-1.5 py-0.5 hover:bg-gray-100"
-            >
-              −
-            </button>
-            <button
-              type="button"
-              data-testid="zoom-reset"
-              aria-label={t("shortcuts:zoomReset")}
-              onClick={() => zoomAboutCentre(() => 1)}
-              className="min-w-[3.5rem] rounded px-1.5 py-0.5 text-center hover:bg-gray-100"
-            >
-              {Math.round(zoom * 100)}%
-            </button>
-            <button
-              type="button"
-              data-testid="zoom-in"
-              aria-label={t("shortcuts:zoomIn")}
-              onClick={() => zoomAboutCentre((z) => z * 1.1)}
-              className="rounded px-1.5 py-0.5 hover:bg-gray-100"
-            >
-              +
-            </button>
-          </div>
+          <ZoomWidget />
         </>
       )}
 
@@ -765,17 +243,15 @@ function Inner(): React.ReactElement {
         activePageId={activePageId}
         onRestore={(data) => {
           // Fresh Scenes, so undo history resets exactly as when opening a file.
-          const restored = pagesFromDocument(data)
           useAppStore.getState().setSelection([])
-          setPages(restored.pages)
-          setActivePageId(restored.activePageId)
+          doc.loadDocument(data)
         }}
       />
       <FindHost scene={scene} />
       <ContextMenuHost
         scene={scene}
         pages={pages.filter((p) => p.id !== activePageId).map((p) => ({ id: p.id, name: p.name }))}
-        onMoveElementToPage={moveElementToPage}
+        onMoveElementToPage={doc.moveElementToPage}
       />
       <TextEditingOverlay scene={scene} />
       <LinkOverlay scene={scene} />
