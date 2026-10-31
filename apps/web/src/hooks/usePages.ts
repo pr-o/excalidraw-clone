@@ -19,6 +19,7 @@ import {
 import { renderPageThumbnail } from "../driver/pageThumbnails"
 import { replaceElements } from "../driver/patchScene"
 import { useAppStore } from "../store"
+import { viewOf } from "../store/slices/view"
 
 export interface PagesState {
   pages: PageRecord[]
@@ -68,9 +69,7 @@ export function usePages(): PagesState {
     (targetId: string): void => {
       if (targetId === activePageId) return
       const s = useAppStore.getState()
-      setPages(
-        withViewport(pages, activePageId, { scrollX: s.scrollX, scrollY: s.scrollY, zoom: s.zoom }),
-      )
+      setPages(withViewport(pages, activePageId, viewOf(s)))
       const target = pages.find((p) => p.id === targetId)
       s.setView(target?.viewport ?? DEFAULT_VIEWPORT)
       setActivePageId(targetId)

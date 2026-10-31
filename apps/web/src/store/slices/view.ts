@@ -14,6 +14,13 @@ export interface ViewSlice {
   toggleZenMode: () => void
 }
 
+/** The current view transform out of a store snapshot. */
+export const viewOf = (s: Pick<ViewSlice, "scrollX" | "scrollY" | "zoom">): ViewTransform => ({
+  scrollX: s.scrollX,
+  scrollY: s.scrollY,
+  zoom: s.zoom,
+})
+
 export const createViewSlice: StateCreator<ViewSlice, [], [], ViewSlice> = (set) => ({
   scrollX: 0,
   scrollY: 0,

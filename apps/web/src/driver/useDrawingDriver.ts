@@ -1,38 +1,12 @@
 "use client"
-import {
-  hitTestUserGuide,
-  sceneToViewport,
-  type GridSnap,
-  type Point,
-  type ViewTransform,
-} from "@excalidraw-clone/geometry"
-import { putFile } from "@excalidraw-clone/persistence"
+import { hitTestUserGuide, type Point } from "@excalidraw-clone/geometry"
 import { CanvasRenderer } from "@excalidraw-clone/renderer"
-import {
-  cloneElementsWithNewIds,
-  expandIdsToGroups,
-  type ExcalidrawElement,
-  type LibraryItem,
-  type Scene,
-} from "@excalidraw-clone/scene"
-import {
-  findHandleAt,
-  TOOLS,
-  type AnyToolEvent,
-  type EraserState,
-  type LassoState,
-  type LinearState,
-  type Modifiers,
-  type SelectionState,
-  type ToolContext,
-} from "@excalidraw-clone/tools"
+import type { Scene } from "@excalidraw-clone/scene"
+import { findHandleAt } from "@excalidraw-clone/tools"
 import { useEffect, useRef, type RefObject } from "react"
 import { useAppStore } from "../store"
-import { isReadOnly } from "./viewMode"
-import { applyEffects } from "./effects"
-import { pickElementAtPoint } from "./hitTest"
-import { LaserTrail } from "./laserTrail"
-import { openLink, sanitizeLinkHref } from "./link"
+import { viewOf } from "../store/slices/view"
+import { openCanvasContextMenu } from "./canvasContextMenu"
 import {
   applyWheel,
   clientToScene,
@@ -40,61 +14,15 @@ import {
   pointerEventToToolEvent,
   snapScenePoint,
 } from "./events"
-import { pinchView } from "./pinch"
+import { pickElementAtPoint } from "./hitTest"
+import { LaserTrail } from "./laserTrail"
+import { drawGhost, placeLibraryItem } from "./libraryPlacement"
+import { openLink, sanitizeLinkHref } from "./link"
+import { syncRendererWithStore } from "./rendererSync"
+import { createToolDispatch, NO_MODIFIERS, resolveGrid } from "./toolDispatch"
+import { createTouchGestures } from "./touchGestures"
 import { applyGuideDrag, guideValueAt, type GuideDrag } from "./userGuides"
-
-const GHOST_STROKE = "#6b46c1"
-
-const SNAPPABLE_TOOLS: ReadonlySet<string> = new Set([
-  "selection",
-  "rectangle",
-  "ellipse",
-  "diamond",
-  "line",
-  "arrow",
-  "text",
-  "image",
-])
-
-function placeLibraryItem(item: LibraryItem, x: number, y: number, scene: Scene): void {
-  if (item.files) {
-    for (const bin of Object.values(item.files)) {
-      void putFile(bin)
-    }
-  }
-  const placed: ExcalidrawElement[] = cloneElementsWithNewIds(item.elements).map((el) => ({
-    ...el,
-    x: el.x + x,
-    y: el.y + y,
-  }))
-  scene.mutate((draft) => {
-    draft.push(...placed)
-  })
-  useAppStore.getState().setSelection(placed.map((e) => e.id))
-}
-
-function drawGhost(
-  overlay: HTMLCanvasElement,
-  item: LibraryItem,
-  scenePoint: { x: number; y: number },
-  view: { scrollX: number; scrollY: number; zoom: number },
-): void {
-  const ctx = overlay.getContext("2d")
-  if (!ctx) return
-  ctx.setTransform(1, 0, 0, 1, 0, 0)
-  ctx.clearRect(0, 0, overlay.width, overlay.height)
-  ctx.save()
-  ctx.globalAlpha = 0.6
-  ctx.strokeStyle = GHOST_STROKE
-  ctx.lineWidth = 1
-  for (const el of item.elements) {
-    const tl = sceneToViewport({ x: el.x + scenePoint.x, y: el.y + scenePoint.y }, view)
-    const w = (el.width ?? 10) * view.zoom
-    const h = (el.height ?? 10) * view.zoom
-    ctx.strokeRect(tl.x, tl.y, w, h)
-  }
-  ctx.restore()
-}
+import { isReadOnly } from "./viewMode"
 
 interface DriverOptions {
   scene: Scene
@@ -135,10 +63,7 @@ export function useDrawingDriver({
 
     const laserCanvas = laserRef.current
     if (!laserCanvas) return
-    const laser = new LaserTrail(laserCanvas, () => {
-      const s = useAppStore.getState()
-      return { scrollX: s.scrollX, scrollY: s.scrollY, zoom: s.zoom }
-    })
+    const laser = new LaserTrail(laserCanvas, () => viewOf(useAppStore.getState()))
 
     const initial = useAppStore.getState()
     const renderer = new CanvasRenderer(canvas, scene, {
@@ -151,123 +76,11 @@ export function useDrawingDriver({
     renderer.start()
     onReady?.(renderer)
 
-    const unsubStore = useAppStore.subscribe((s, prev) => {
-      if (s.resolvedTheme !== prev.resolvedTheme) renderer.setTheme(s.resolvedTheme)
-      if (s.canvasBg !== prev.canvasBg) renderer.setCanvasBg(s.canvasBg)
-      if (s.scrollX !== prev.scrollX || s.scrollY !== prev.scrollY || s.zoom !== prev.zoom) {
-        renderer.setViewTransform({ scrollX: s.scrollX, scrollY: s.scrollY, zoom: s.zoom })
-      }
-      if (s.gridEnabled !== prev.gridEnabled || s.gridSize !== prev.gridSize) {
-        renderer.setGrid({ enabled: s.gridEnabled, size: s.gridSize })
-      }
-      if (s.selectedIds !== prev.selectedIds) renderer.setSelection(s.selectedIds)
-      if (s.textEditElementId !== prev.textEditElementId || s.textEditCell !== prev.textEditCell) {
-        // A table stays drawn while one of its cells is edited; only that cell's text hides.
-        renderer.setHiddenElement(s.textEditElementId, s.textEditCell)
-      }
-      if (s.cropElementId !== prev.cropElementId) renderer.setCropElement(s.cropElementId)
-      // Crop mode lasts only while that one image stays the sole selection on the
-      // selection tool; page switches, tool switches and clicking away all break it.
-      if (
-        s.cropElementId !== null &&
-        (s.activeTool !== "selection" ||
-          s.selectedIds.length !== 1 ||
-          s.selectedIds[0] !== s.cropElementId)
-      ) {
-        s.setCropElementId(null)
-        s.resetToolState("selection")
-      }
-      if (s.activeGuides !== prev.activeGuides) renderer.setGuides(s.activeGuides)
-      if (
-        s.rulersVisible !== prev.rulersVisible ||
-        s.presenting !== prev.presenting ||
-        s.viewMode !== prev.viewMode
-      ) {
-        renderer.setShowUserGuides(s.rulersVisible && !isReadOnly(s))
-      }
-      if (s.activeTool !== prev.activeTool && prev.activeTool === "laser") laser.clear()
-      if (
-        s.activeTool !== prev.activeTool &&
-        (prev.activeTool === "lasso" || prev.activeTool === "eraser")
-      ) {
-        renderer.setLasso([])
-      }
-      // Switching away mid-drag cancels the erase like Escape (restores live erasures, no history).
-      if (s.activeTool !== prev.activeTool && prev.activeTool === "eraser") {
-        if ((s.toolStates.eraser as EraserState | undefined)?.phase === "erasing") {
-          dispatch(
-            { type: "escape" },
-            { shift: false, alt: false, ctrl: false, meta: false },
-            "eraser",
-          )
-        }
-        useAppStore.getState().resetToolState("eraser")
-      }
-    })
+    const dispatch = createToolDispatch(scene, renderer, laser)
+    const unsubStore = syncRendererWithStore(renderer, laser, dispatch)
 
-    const resolveGrid = (): GridSnap => {
-      const s = useAppStore.getState()
-      return {
-        enabled: s.gridEnabled && SNAPPABLE_TOOLS.has(s.activeTool),
-        size: s.gridSize,
-      }
-    }
-
-    const viewOf = (s: ReturnType<typeof useAppStore.getState>): ViewTransform => ({
-      scrollX: s.scrollX,
-      scrollY: s.scrollY,
-      zoom: s.zoom,
-    })
     const snappedScenePoint = (e: PointerEvent | MouseEvent): Point =>
       snapScenePoint(clientToScene(canvas, viewOf(useAppStore.getState()), e), resolveGrid(), e)
-
-    const dispatch = (
-      event: AnyToolEvent,
-      modifiers: Modifiers,
-      toolName = useAppStore.getState().activeTool,
-    ): void => {
-      const store = useAppStore.getState()
-      const tool = TOOLS[toolName]
-      const currentState = store.toolStates[toolName] ?? tool.initial
-      const ctx: ToolContext = {
-        readElements: () => scene.getElements(),
-        hitTest: (at) => pickElementAtPoint(scene.getElements(), at),
-        viewTransform: viewOf(store),
-        modifiers,
-        selectedIds: store.selectedIds,
-        grid: resolveGrid(),
-        // Guides only snap while visible (they show and hide with the rulers).
-        ...(store.rulersVisible ? { userGuides: scene.getGuides() } : {}),
-      }
-      const [next, effects] = tool.reduce(currentState, event, ctx)
-      useAppStore.getState().setToolState(toolName, next)
-      applyEffects(scene, effects, laser)
-      if (toolName === "selection") {
-        const sel = next as SelectionState
-        renderer.setMarquee(sel.phase === "marquee" ? { start: sel.start, end: sel.current } : null)
-      }
-      if (toolName === "lasso") {
-        const lasso = next as LassoState
-        renderer.setLasso(lasso.phase === "drawing" ? lasso.points : [])
-      }
-      if (toolName === "eraser") {
-        const eraser = next as EraserState
-        renderer.setLasso(eraser.phase === "erasing" ? eraser.trail : [])
-      }
-      if (toolName === "arrow" && (next as LinearState).phase === "drawing") {
-        const cand = (next as Extract<LinearState, { phase: "drawing" }>).endBindId
-        renderer.setBindingHighlight(cand ? [cand] : [])
-      } else if (
-        toolName === "selection" &&
-        (next as SelectionState).phase === "endpointDragging"
-      ) {
-        const cand = (next as Extract<SelectionState, { phase: "endpointDragging" }>)
-          .candidateBindId
-        renderer.setBindingHighlight(cand ? [cand] : [])
-      } else {
-        renderer.setBindingHighlight([])
-      }
-    }
 
     const dispatchPointer = (
       type: "pointerDown" | "pointerMove" | "pointerUp",
@@ -323,44 +136,7 @@ export function useDrawingDriver({
       canvas.style.cursor = ""
     }
 
-    // Two-finger pan/zoom. Once a second touch lands the one-finger gesture is
-    // cancelled and every touch is swallowed until all fingers lift.
-    const touches = new Map<number, Point>()
-    let pinch: { ids: [number, number]; view: ViewTransform; from: [Point, Point] } | null = null
-    let touchDead = false
-    const canvasPoint = (e: PointerEvent): Point => {
-      const r = canvas.getBoundingClientRect()
-      return { x: e.clientX - r.left, y: e.clientY - r.top }
-    }
-    /** Returns true when the event was consumed by the touch gesture layer. */
-    const handleTouch = (type: "down" | "move" | "up", e: PointerEvent): boolean => {
-      if (e.pointerType !== "touch" || useAppStore.getState().presenting) return false
-      if (type === "up") {
-        touches.delete(e.pointerId)
-        pinch = null
-        const consumed = touchDead
-        if (touches.size === 0) touchDead = false
-        if (consumed) canvas.releasePointerCapture(e.pointerId)
-        return consumed
-      }
-      touches.set(e.pointerId, canvasPoint(e))
-      if (type === "down" && !touchDead && touches.size === 2) {
-        dispatch({ type: "escape" }, { shift: false, alt: false, ctrl: false, meta: false })
-        touchDead = true
-        const [a, b] = [...touches.keys()] as [number, number]
-        const from: [Point, Point] = [touches.get(a)!, touches.get(b)!]
-        pinch = { ids: [a, b], view: viewOf(useAppStore.getState()), from }
-        canvas.setPointerCapture(e.pointerId)
-        return true
-      }
-      if (touchDead && pinch) {
-        const [a, b] = pinch.ids
-        const pa = touches.get(a)
-        const pb = touches.get(b)
-        if (pa && pb) useAppStore.getState().setView(pinchView(pinch.view, pinch.from, [pa, pb]))
-      }
-      return touchDead
-    }
+    const handleTouch = createTouchGestures(canvas, dispatch)
 
     // Ruler guides on the canvas: only the exact line (4px) captures the
     // pointer, only with the selection tool and rulers shown, so elements
@@ -539,46 +315,7 @@ export function useDrawingDriver({
       dispatch({ type: "doubleClick", at: snappedScenePoint(e) }, modifiersOf(e))
     }
 
-    const onContextMenu = (e: MouseEvent): void => {
-      // No editor context menu while presenting; let the browser handle it.
-      if (isReadOnly(useAppStore.getState())) {
-        // View mode hides the editor menu outright; presenting leaves the browser's.
-        if (useAppStore.getState().viewMode) e.preventDefault()
-        return
-      }
-      e.preventDefault()
-      const store = useAppStore.getState()
-      const scenePoint = clientToScene(canvas, viewOf(store), e)
-      const hit = pickElementAtPoint(scene.getElements(), scenePoint, { includeLocked: true })
-      if (!hit) {
-        store.setContextMenu({ x: e.clientX, y: e.clientY, scenePoint, target: "canvas" })
-        return
-      }
-      if (hit.locked) {
-        store.setContextMenu({
-          x: e.clientX,
-          y: e.clientY,
-          scenePoint,
-          target: "element",
-          elementIds: [hit.id],
-          locked: true,
-        })
-        return
-      }
-      const alreadySelected = store.selectedIds.includes(hit.id)
-      const elementIds = alreadySelected
-        ? [...store.selectedIds]
-        : expandIdsToGroups([hit.id], scene.getElements())
-      if (!alreadySelected) store.setSelection(elementIds)
-      store.setContextMenu({
-        x: e.clientX,
-        y: e.clientY,
-        scenePoint,
-        target: "element",
-        elementIds,
-        locked: false,
-      })
-    }
+    const onContextMenu = (e: MouseEvent): void => openCanvasContextMenu(scene, canvas, e)
 
     const onPointerEnter = (): void => useAppStore.getState().setPointerOverCanvas(true)
     const onPointerLeave = (): void => useAppStore.getState().setPointerOverCanvas(false)
@@ -595,11 +332,7 @@ export function useDrawingDriver({
     window.addEventListener("keydown", onKeyDown)
     window.addEventListener("keyup", onKeyUp)
 
-    useAppStore
-      .getState()
-      .setDispatchToolEvent((e) =>
-        dispatch(e, { shift: false, alt: false, ctrl: false, meta: false }),
-      )
+    useAppStore.getState().setDispatchToolEvent((e) => dispatch(e, NO_MODIFIERS))
 
     return () => {
       canvas.removeEventListener("pointerdown", onPointerDown)

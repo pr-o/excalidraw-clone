@@ -13,6 +13,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useSceneRevision } from "../hooks/useSceneRevision"
 import { useAppStore } from "../store"
+import { viewOf } from "../store/slices/view"
 
 export const MINIMAP_W = 200
 export const MINIMAP_H = 140
@@ -101,9 +102,7 @@ export function Minimap({
     const r = e.currentTarget.getBoundingClientRect()
     const target = minimapToScene({ x: e.clientX - r.left, y: e.clientY - r.top }, f)
     const s = useAppStore.getState()
-    s.setView(
-      centerViewOn(target, { scrollX: s.scrollX, scrollY: s.scrollY, zoom: s.zoom }, vw, vh),
-    )
+    s.setView(centerViewOn(target, viewOf(s), vw, vh))
   }
   const end = (e: React.PointerEvent<HTMLDivElement>): void => {
     dragging.current = false

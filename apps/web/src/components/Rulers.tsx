@@ -3,6 +3,7 @@ import { rulerTickStep, rulerTicks } from "@excalidraw-clone/geometry"
 import type { Scene } from "@excalidraw-clone/scene"
 import React, { useEffect, useRef, useState } from "react"
 import { useAppStore } from "../store"
+import { viewOf } from "../store/slices/view"
 import { applyGuideDrag, guideValueAt, RULER_SIZE, type GuideDrag } from "../driver/userGuides"
 
 const COLORS = {
@@ -96,11 +97,7 @@ function RulerStrip({ side, scene }: { side: "top" | "left"; scene: Scene }): Re
     if (!drag.current) return
     const r = e.currentTarget.parentElement!.getBoundingClientRect()
     const s = useAppStore.getState()
-    const value = guideValueAt(
-      axis,
-      { x: e.clientX - r.left, y: e.clientY - r.top },
-      { scrollX: s.scrollX, scrollY: s.scrollY, zoom: s.zoom },
-    )
+    const value = guideValueAt(axis, { x: e.clientX - r.left, y: e.clientY - r.top }, viewOf(s))
     drag.current = applyGuideDrag(scene, drag.current, value)
   }
   const end = (e: React.PointerEvent<HTMLCanvasElement>): void => {
