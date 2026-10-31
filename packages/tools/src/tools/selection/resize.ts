@@ -1,8 +1,9 @@
 import type { Point } from "@excalidraw-clone/geometry"
 import { fitTableBox, type ExcalidrawElement } from "@excalidraw-clone/scene"
-import type { Modifiers, ToolEffect } from "../../types"
+import type { Modifiers, ToolEffect, ToolContext, ToolEvent } from "../../types"
 import { buildRecommitEffect } from "./recommit"
-import type { ResizeHandle } from "./types"
+import type { ResizeHandle, SelectionState, Transition } from "./types"
+import { snapResizeToUserGuides } from "./alignment"
 
 export interface ResizeOrigin {
   x: number
@@ -167,3 +168,41 @@ export const snapshotElementBox = (element: ExcalidrawElement): ResizeOrigin => 
   angle: element.angle,
   ...(element.type === "text" ? { autoResize: element.autoResize } : {}),
 })
+
+export const reduceResizing = (
+  state: Extract<SelectionState, { phase: "resizing" }>,
+  event: ToolEvent,
+  ctx: ToolContext,
+): Transition => {
+  switch (event.type) {
+    case "pointerMove": {
+      const snap = snapResizeToUserGuides(state.origin, state.handle, state.start, event.at, ctx)
+      return [
+        state,
+        [
+          buildResizeMoveEffect(
+            state.elementId,
+            state.origin,
+            state.handle,
+            state.start,
+            snap.at,
+            ctx.modifiers,
+          ),
+          { kind: "setGuides", guides: snap.guides },
+        ],
+      ]
+    }
+    case "pointerUp":
+      return [
+        { phase: "idle" },
+        [buildResizeCommitEffect(state.elementId), { kind: "setGuides", guides: [] }],
+      ]
+    case "escape":
+      return [
+        { phase: "idle" },
+        [buildResizeRevertEffect(state.elementId, state.origin), { kind: "setGuides", guides: [] }],
+      ]
+    default:
+      return [state, []]
+  }
+}

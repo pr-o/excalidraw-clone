@@ -4,8 +4,10 @@ import {
   type ExcalidrawElement,
   type ExcalidrawImageElement,
 } from "@excalidraw-clone/scene"
-import type { ToolEffect } from "../../types"
-import type { ResizeHandle } from "./types"
+import type { ToolEffect, ToolContext, ToolEvent } from "../../types"
+import type { ResizeHandle, SelectionState, Transition } from "./types"
+import { findHandleAt } from "./handles"
+import { reduceIdle } from "./idle"
 
 export type Crop = NonNullable<ExcalidrawImageElement["crop"]>
 export const FULL_CROP: Crop = { x: 0, y: 0, width: 1, height: 1 }
@@ -178,3 +180,65 @@ export const buildCropRevertEffect = (id: string, origin: CropOrigin): ToolEffec
   }),
   skipHistory: true,
 })
+
+const EXIT_CROP: ToolEffect = { kind: "setCrop", elementId: null }
+
+export const reduceCropping = (
+  state: Extract<SelectionState, { phase: "cropping" }>,
+  event: ToolEvent,
+  ctx: ToolContext,
+): Transition => {
+  if (event.type === "escape") return [{ phase: "idle" }, [EXIT_CROP]]
+  if (event.type === "pointerDown") {
+    const elements = ctx.readElements()
+    const handle = findHandleAt(event.at, ctx.selectedIds, elements, ctx.viewTransform)
+    const e = elements.find((el) => el.id === state.elementId)
+    if (handle?.kind === "resize" && handle.elementId === state.elementId && e?.type === "image") {
+      return [
+        {
+          phase: "cropDragging",
+          elementId: state.elementId,
+          handle: handle.handle,
+          origin: snapshotCrop(e),
+          start: event.at,
+        },
+        [],
+      ]
+    }
+  }
+  if (event.type === "pointerDown" || event.type === "delete") {
+    const [next, effects] = reduceIdle(event, ctx)
+    return [next, [EXIT_CROP, ...effects]]
+  }
+  return [state, []]
+}
+
+export const reduceCropDragging = (
+  state: Extract<SelectionState, { phase: "cropDragging" }>,
+  event: ToolEvent,
+  ctx: ToolContext,
+): Transition => {
+  const back: SelectionState = { phase: "cropping", elementId: state.elementId }
+  switch (event.type) {
+    case "pointerMove":
+      return [
+        state,
+        [
+          buildCropMoveEffect(
+            state.elementId,
+            state.origin,
+            state.handle,
+            state.start,
+            event.at,
+            ctx.modifiers.shift,
+          ),
+        ],
+      ]
+    case "pointerUp":
+      return [back, [buildCropCommitEffect(state.elementId)]]
+    case "escape":
+      return [back, [buildCropRevertEffect(state.elementId, state.origin)]]
+    default:
+      return [state, []]
+  }
+}

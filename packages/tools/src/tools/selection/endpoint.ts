@@ -5,14 +5,13 @@ import {
   bindingTargetAt,
   computeFocus,
   removeBackRef,
+  type ExcalidrawArrowElement,
+  type ExcalidrawElement,
+  type PointBinding,
 } from "@excalidraw-clone/scene"
-import type {
-  ExcalidrawArrowElement,
-  ExcalidrawElement,
-  PointBinding,
-} from "@excalidraw-clone/scene"
-import type { ToolEffect } from "../../types"
+import type { ToolEffect, ToolContext, ToolEvent } from "../../types"
 import { linearPatch } from "../linear"
+import type { SelectionState, Transition } from "./types"
 
 export interface LinearSnapshot {
   x: number
@@ -104,3 +103,25 @@ export const buildEndpointRevertEffect = (
     if (origin.endBinding) addBackRef(draft, origin.endBinding.elementId, elementId)
   },
 })
+
+export const reduceEndpoint = (
+  state: Extract<SelectionState, { phase: "endpointDragging" }>,
+  event: ToolEvent,
+  ctx: ToolContext,
+): Transition => {
+  switch (event.type) {
+    case "pointerMove": {
+      const candidate = bindingTargetAt(event.at, ctx.readElements())
+      return [
+        { ...state, candidateBindId: candidate?.id ?? null },
+        [buildEndpointMoveEffect(state.elementId, state.end, event.at)],
+      ]
+    }
+    case "pointerUp":
+      return [{ phase: "idle" }, [buildEndpointCommitEffect(state.elementId, state.end)]]
+    case "escape":
+      return [{ phase: "idle" }, [buildEndpointRevertEffect(state.elementId, state.origin)]]
+    default:
+      return [state, []]
+  }
+}

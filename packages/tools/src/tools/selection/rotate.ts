@@ -1,7 +1,8 @@
 import type { Point } from "@excalidraw-clone/geometry"
 import { patchElement } from "../../draft"
-import type { Modifiers, ToolEffect } from "../../types"
+import type { Modifiers, ToolEffect, ToolContext, ToolEvent } from "../../types"
 import { buildRecommitEffect } from "./recommit"
+import type { SelectionState, Transition } from "./types"
 
 const SNAP_STEP = (15 * Math.PI) / 180
 
@@ -33,3 +34,28 @@ export const buildRotateRevertEffect = (elementId: string, originalAngle: number
   apply: (draft) => patchElement(draft, elementId, { angle: originalAngle }),
   skipHistory: true,
 })
+
+export const reduceRotating = (
+  state: Extract<SelectionState, { phase: "rotating" }>,
+  event: ToolEvent,
+  ctx: ToolContext,
+): Transition => {
+  switch (event.type) {
+    case "pointerMove": {
+      const current = pointerAngle(state.center, event.at)
+      const newAngle = computeRotation(
+        state.origin,
+        state.pointerAngleAtStart,
+        current,
+        ctx.modifiers,
+      )
+      return [state, [buildRotateMoveEffect(state.elementId, newAngle)]]
+    }
+    case "pointerUp":
+      return [{ phase: "idle" }, [buildRotateCommitEffect(state.elementId)]]
+    case "escape":
+      return [{ phase: "idle" }, [buildRotateRevertEffect(state.elementId, state.origin.angle)]]
+    default:
+      return [state, []]
+  }
+}

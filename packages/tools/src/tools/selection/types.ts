@@ -2,6 +2,7 @@ import type { Point } from "@excalidraw-clone/geometry"
 import type { ExcalidrawElement, ExcalidrawTableElement } from "@excalidraw-clone/scene"
 import type { CropOrigin } from "./crop"
 import type { LinearSnapshot } from "./endpoint"
+import type { ToolEffect } from "../../types"
 
 export type ResizeHandle = "nw" | "n" | "ne" | "e" | "se" | "s" | "sw" | "w"
 
@@ -85,3 +86,6 @@ export type SelectionState =
   | { phase: "marquee"; start: Point; current: Point; baseSelection: readonly string[] }
 
 export const SELECTION_INITIAL: SelectionState = { phase: "idle" }
+
+/** A reducer step: the next state and the effects to apply. */
+export type Transition = [SelectionState, readonly ToolEffect[]]

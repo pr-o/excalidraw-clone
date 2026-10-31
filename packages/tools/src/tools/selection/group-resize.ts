@@ -1,9 +1,9 @@
 import type { Point } from "@excalidraw-clone/geometry"
 import { type ExcalidrawElement, resizeElements } from "@excalidraw-clone/scene"
-import type { Modifiers, ToolEffect } from "../../types"
+import type { Modifiers, ToolEffect, ToolContext, ToolEvent } from "../../types"
 import { buildRecommitEffect } from "./recommit"
 import { anchorSides, computeResize, type ResizeOrigin } from "./resize"
-import type { ResizeHandle } from "./types"
+import type { ResizeHandle, SelectionState, Transition } from "./types"
 
 /** Overwrite each draft element that appears in `next` with its
  *  replacement, matched by id. Elements not present in `next` (locked,
@@ -61,3 +61,34 @@ export const buildGroupResizeRevertEffect = (
   apply: (draft) => applyReplacements(draft, originalElements),
   skipHistory: true,
 })
+
+export const reduceGroupResizing = (
+  state: Extract<SelectionState, { phase: "groupResizing" }>,
+  event: ToolEvent,
+  ctx: ToolContext,
+): Transition => {
+  switch (event.type) {
+    case "pointerMove": {
+      return [
+        state,
+        [
+          buildGroupResizeMoveEffect(
+            state.ids,
+            state.originalElements,
+            state.origin,
+            state.handle,
+            state.start,
+            event.at,
+            ctx.modifiers,
+          ),
+        ],
+      ]
+    }
+    case "pointerUp":
+      return [{ phase: "idle" }, [buildGroupResizeCommitEffect(state.ids)]]
+    case "escape":
+      return [{ phase: "idle" }, [buildGroupResizeRevertEffect(state.ids, state.originalElements)]]
+    default:
+      return [state, []]
+  }
+}
