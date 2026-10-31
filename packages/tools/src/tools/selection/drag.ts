@@ -1,6 +1,10 @@
-import type { ExcalidrawArrowElement, ExcalidrawElement } from "@excalidraw-clone/scene"
+import {
+  type ExcalidrawArrowElement,
+  type ExcalidrawElement,
+  removeBackRef,
+} from "@excalidraw-clone/scene"
 import type { ToolEffect } from "../../types"
-import { removeBackRef } from "../../binding-refs"
+import { buildRecommitEffect } from "./recommit"
 
 const unbindMovedArrow = (
   draft: ExcalidrawElement[],
@@ -50,17 +54,8 @@ export const buildDragMoveEffect = (
   skipHistory: true,
 })
 
-export const buildDragCommitEffect = (ids: readonly string[]): ToolEffect => ({
-  kind: "mutation",
-  apply: (draft) => {
-    // No-op replace: re-emit each moved element to push a fresh history snapshot.
-    for (let i = 0; i < draft.length; i += 1) {
-      const e = draft[i]!
-      if (!ids.includes(e.id)) continue
-      draft[i] = { ...e }
-    }
-  },
-})
+export const buildDragCommitEffect = (ids: readonly string[]): ToolEffect =>
+  buildRecommitEffect(ids)
 
 /** Undoes a drag by translating by the negation of the total translation
  *  applied over the drag (raw pointer travel plus any baked-in alignment

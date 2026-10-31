@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test"
-import { dragOnCanvas, parseStoredScene } from "./_helpers"
+import { dblClickCanvas, dragOnCanvas, drawRect, freshCanvas, readScene } from "./_helpers"
 
 type SceneEl = {
   id: string
@@ -11,36 +11,6 @@ type SceneEl = {
   isDeleted?: boolean
 }
 
-const readScene = async (page: Page): Promise<SceneEl[]> => {
-  const json = await page.evaluate(() => localStorage.getItem("excalidraw-scene"))
-  const data = parseStoredScene<SceneEl>(json)
-  return data.elements.filter((e) => !e.isDeleted)
-}
-
-const freshCanvas = async (page: Page): Promise<void> => {
-  await page.goto("/")
-  await page.evaluate(() => localStorage.clear())
-  await page.reload()
-  await page.locator('[data-testid="toolbar-frame"]').waitFor({ state: "visible" })
-}
-
-const dblClickCanvas = async (page: Page, at: { x: number; y: number }): Promise<void> => {
-  const canvas = page.locator("canvas").first()
-  const box = await canvas.boundingBox()
-  if (!box) throw new Error("canvas not found")
-  await page.mouse.dblclick(box.x + at.x, box.y + at.y)
-}
-
-const drawRect = async (
-  page: Page,
-  from: { x: number; y: number },
-  to: { x: number; y: number },
-): Promise<void> => {
-  await page.locator('[data-testid="toolbar-rectangle"]').click()
-  await dragOnCanvas(page, from, to)
-  await page.waitForTimeout(120)
-}
-
 const drawSurroundingFrame = async (page: Page): Promise<void> => {
   await page.locator('[data-testid="toolbar-frame"]').click()
   await dragOnCanvas(page, { x: 100, y: 100 }, { x: 300, y: 220 })
@@ -50,14 +20,14 @@ const drawSurroundingFrame = async (page: Page): Promise<void> => {
 test("frame claims contained elements and dragging it moves them; persists across reload", async ({
   page,
 }) => {
-  await freshCanvas(page)
+  await freshCanvas(page, "toolbar-frame")
 
   await drawRect(page, { x: 120, y: 120 }, { x: 160, y: 160 })
   await drawRect(page, { x: 200, y: 120 }, { x: 240, y: 160 })
   await drawSurroundingFrame(page)
   await page.waitForTimeout(900)
 
-  let els = await readScene(page)
+  let els = await readScene<SceneEl>(page)
   const frame = els.find((e) => e.type === "frame")!
   let rects = els.filter((e) => e.type === "rectangle")
   expect(rects.length).toBe(2)
@@ -68,7 +38,7 @@ test("frame claims contained elements and dragging it moves them; persists acros
   await dragOnCanvas(page, { x: 270, y: 190 }, { x: 310, y: 240 })
   await page.waitForTimeout(900)
 
-  els = await readScene(page)
+  els = await readScene<SceneEl>(page)
   const movedFrame = els.find((e) => e.type === "frame")!
   rects = els.filter((e) => e.type === "rectangle")
   rects.sort((p, q) => p.x - q.x)
@@ -81,13 +51,13 @@ test("frame claims contained elements and dragging it moves them; persists acros
   // Membership and positions survive a reload.
   await page.reload()
   await page.locator('[data-testid="toolbar-frame"]').waitFor({ state: "visible" })
-  els = await readScene(page)
+  els = await readScene<SceneEl>(page)
   rects = els.filter((e) => e.type === "rectangle")
   expect(rects.every((r) => r.frameId === movedFrame.id)).toBe(true)
 })
 
 test("double-click renames a frame", async ({ page }) => {
-  await freshCanvas(page)
+  await freshCanvas(page, "toolbar-frame")
   await drawSurroundingFrame(page)
 
   await page.locator('[data-testid="toolbar-selection"]').click()
@@ -98,7 +68,7 @@ test("double-click renames a frame", async ({ page }) => {
   await page.keyboard.press("Enter")
   await page.waitForTimeout(900)
 
-  const els = await readScene(page)
+  const els = await readScene<SceneEl>(page)
   const frame = els.find((e) => e.type === "frame")!
   expect(frame.name).toBe("Login flow")
 })
@@ -106,7 +76,7 @@ test("double-click renames a frame", async ({ page }) => {
 test("dragging a member out clears frameId; deleting the frame releases members", async ({
   page,
 }) => {
-  await freshCanvas(page)
+  await freshCanvas(page, "toolbar-frame")
 
   await drawRect(page, { x: 120, y: 120 }, { x: 160, y: 160 })
   await drawRect(page, { x: 200, y: 120 }, { x: 240, y: 160 })
@@ -117,7 +87,7 @@ test("dragging a member out clears frameId; deleting the frame releases members"
   await dragOnCanvas(page, { x: 140, y: 140 }, { x: 500, y: 140 })
   await page.waitForTimeout(900)
 
-  let els = await readScene(page)
+  let els = await readScene<SceneEl>(page)
   const frame = els.find((e) => e.type === "frame")!
   let rects = els.filter((e) => e.type === "rectangle")
   rects.sort((p, q) => p.x - q.x)
@@ -130,7 +100,7 @@ test("dragging a member out clears frameId; deleting the frame releases members"
   await page.keyboard.press("Delete")
   await page.waitForTimeout(900)
 
-  els = await readScene(page)
+  els = await readScene<SceneEl>(page)
   expect(els.find((e) => e.type === "frame")).toBeUndefined()
   rects = els.filter((e) => e.type === "rectangle")
   expect(rects.length).toBe(2)
@@ -140,7 +110,7 @@ test("dragging a member out clears frameId; deleting the frame releases members"
 test("right-click a frame → Export frame… opens the export dialog on the selection", async ({
   page,
 }) => {
-  await freshCanvas(page)
+  await freshCanvas(page, "toolbar-frame")
   await drawRect(page, { x: 120, y: 120 }, { x: 160, y: 160 })
   await drawRect(page, { x: 600, y: 400 }, { x: 640, y: 440 }) // outside the frame
   await drawSurroundingFrame(page)

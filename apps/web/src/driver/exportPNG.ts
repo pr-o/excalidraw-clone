@@ -1,11 +1,10 @@
 "use client"
 import { embedTextChunk, getFile, PNG_EXCALIDRAW_KEYWORD } from "@excalidraw-clone/persistence"
-import { CanvasRenderer } from "@excalidraw-clone/renderer"
+import { CanvasRenderer, exportBounds } from "@excalidraw-clone/renderer"
 import {
   buildExcalidrawData,
   newPage,
   Scene,
-  shadowMargin,
   type ExcalidrawElement,
 } from "@excalidraw-clone/scene"
 import type { ExportOptions } from "@excalidraw-clone/ui"
@@ -27,7 +26,7 @@ export async function exportToPNG(
 ): Promise<Blob> {
   const live = elements.filter((e) => !e.isDeleted)
   const scene = new Scene(live)
-  const bbox = computeBBox(live)
+  const bbox = exportBounds(live, 0)
   const w = Math.max(1, bbox.width + PADDING * 2)
   const h = Math.max(1, bbox.height + PADDING * 2)
   const canvas = document.createElement("canvas")
@@ -68,25 +67,4 @@ export async function exportToPNG(
     return embedTextChunk(blob, PNG_EXCALIDRAW_KEYWORD, json)
   }
   return blob
-}
-
-function computeBBox(elements: readonly ExcalidrawElement[]): {
-  x: number
-  y: number
-  width: number
-  height: number
-} {
-  if (elements.length === 0) return { x: 0, y: 0, width: 100, height: 100 }
-  let minX = Infinity
-  let minY = Infinity
-  let maxX = -Infinity
-  let maxY = -Infinity
-  for (const el of elements) {
-    const m = shadowMargin(el)
-    minX = Math.min(minX, el.x - m)
-    minY = Math.min(minY, el.y - m)
-    maxX = Math.max(maxX, el.x + el.width + m)
-    maxY = Math.max(maxY, el.y + el.height + m)
-  }
-  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY }
 }

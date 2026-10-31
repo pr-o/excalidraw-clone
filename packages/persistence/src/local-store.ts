@@ -4,12 +4,17 @@ import { migrate } from "./migrations"
 const SCENE_KEY = "excalidraw-scene"
 const UI_KEY = "excalidraw-ui"
 
-export function saveScene(data: ExcalidrawData): void {
+/** Best-effort JSON write to localStorage. */
+export function saveJSON(key: string, value: unknown): void {
   try {
-    localStorage.setItem(SCENE_KEY, JSON.stringify(data))
+    localStorage.setItem(key, JSON.stringify(value))
   } catch {
     // Quota exceeded or storage disabled — silent. Caller can't do anything useful.
   }
+}
+
+export function saveScene(data: ExcalidrawData): void {
+  saveJSON(SCENE_KEY, data)
 }
 
 export function loadScene(): ExcalidrawData | null {
@@ -24,11 +29,7 @@ export function loadScene(): ExcalidrawData | null {
 }
 
 export function saveUI(snapshot: Record<string, unknown>): void {
-  try {
-    localStorage.setItem(UI_KEY, JSON.stringify(snapshot))
-  } catch {
-    // ignore
-  }
+  saveJSON(UI_KEY, snapshot)
 }
 
 export function loadUI(): Record<string, unknown> | null {

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test"
-import { dragOnCanvas, parseStoredScene } from "./_helpers"
+import { dragOnCanvas, freshCanvas, readScene } from "./_helpers"
 
 interface SceneEl {
   id: string
@@ -10,18 +10,6 @@ interface SceneEl {
   height: number
   points?: { x: number; y: number }[]
   isDeleted?: boolean
-}
-
-const readScene = async (page: Page): Promise<SceneEl[]> => {
-  const json = await page.evaluate(() => localStorage.getItem("excalidraw-scene"))
-  return parseStoredScene<SceneEl>(json).elements.filter((e) => !e.isDeleted)
-}
-
-const freshCanvas = async (page: Page): Promise<void> => {
-  await page.goto("/")
-  await page.evaluate(() => localStorage.clear())
-  await page.reload()
-  await page.locator('[data-testid="toolbar-rectangle"]').waitFor({ state: "visible" })
 }
 
 const draw = async (
@@ -51,7 +39,7 @@ test("multi-select two rectangles, drag a corner handle: both scale proportional
   await dragOnCanvas(page, { x: 400, y: 200 }, { x: 700, y: 300 })
   await page.waitForTimeout(900) // autosave debounce
 
-  const rects = (await readScene(page)).filter((e) => e.type === "rectangle")
+  const rects = (await readScene<SceneEl>(page)).filter((e) => e.type === "rectangle")
   expect(rects).toHaveLength(2)
   const [first, second] = rects.sort((a, b) => a.x - b.x)
   // sx = sy = 2 from the combined bounds (300x100 -> 600x200)
@@ -80,7 +68,7 @@ test("multi-select a rectangle and a line, drag a handle: the line's width/heigh
   await dragOnCanvas(page, { x: 380, y: 200 }, { x: 680, y: 300 })
   await page.waitForTimeout(900)
 
-  const scene = await readScene(page)
+  const scene = await readScene<SceneEl>(page)
   const line = scene.find((e) => e.type === "line")!
   expect(line.points).toBeDefined()
   const xs = line.points!.map((p) => p.x)

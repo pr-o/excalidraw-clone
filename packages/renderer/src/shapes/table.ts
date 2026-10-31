@@ -7,11 +7,11 @@ import {
   type ExcalidrawTableElement,
   type TextSpan,
 } from "@excalidraw-clone/scene"
-import type { Drawable, Options } from "roughjs/bin/core"
+import type { Drawable } from "roughjs/bin/core"
 import type { RoughGenerator } from "roughjs/bin/generator"
 import { wrapRich, type WrappedLine } from "../text-metrics"
 import { parseHex } from "../theme-colors"
-import { strokeLineDash } from "./stroke-dash"
+import { strokeOptions } from "./options"
 
 const sum = (xs: readonly number[]): number => xs.reduce((a, b) => a + b, 0)
 
@@ -25,13 +25,7 @@ export const headerTint = (stroke: string): string => {
 /** Fill, header tint, outer border and one line per interior border, in
  *  paint order. Lines go through rough.js, so roughness applies as elsewhere. */
 export const tableShape = (t: ExcalidrawTableElement, gen: RoughGenerator): readonly Drawable[] => {
-  const stroke: Options = {
-    stroke: t.strokeColor,
-    strokeWidth: t.strokeWidth,
-    roughness: t.roughness,
-    seed: t.seed,
-    strokeLineDash: strokeLineDash(t.strokeStyle),
-  }
+  const stroke = strokeOptions(t)
   const out: Drawable[] = []
   const fill = (w: number, h: number, color: string): Drawable =>
     gen.rectangle(0, 0, w, h, { fill: color, fillStyle: "solid", stroke: "none", seed: t.seed })

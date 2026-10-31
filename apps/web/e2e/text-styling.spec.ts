@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test"
-import { dragOnCanvas, parseStoredScene } from "./_helpers"
+import { dragOnCanvas, freshCanvas, parseStoredScene } from "./_helpers"
 
 type TextEl = {
   id: string
@@ -17,13 +17,6 @@ const readTexts = async (page: Page): Promise<TextEl[]> => {
   return parseStoredScene<TextEl>(json).elements.filter((e) => e.type === "text" && !e.isDeleted)
 }
 
-const freshCanvas = async (page: Page): Promise<void> => {
-  await page.goto("/")
-  await page.evaluate(() => localStorage.clear())
-  await page.reload()
-  await page.locator('[data-testid="toolbar-text"]').waitFor({ state: "visible" })
-}
-
 const canvasPoint = async (page: Page, at: { x: number; y: number }) => {
   const box = await page.locator("canvas").first().boundingBox()
   if (!box) throw new Error("canvas not found")
@@ -31,7 +24,7 @@ const canvasPoint = async (page: Page, at: { x: number; y: number }) => {
 }
 
 test("free text takes font family (re-measured) and alignment from the panel", async ({ page }) => {
-  await freshCanvas(page)
+  await freshCanvas(page, "toolbar-text")
   await page.locator('[data-testid="toolbar-text"]').click()
   const p = await canvasPoint(page, { x: 200, y: 200 })
   await page.mouse.click(p.x, p.y)
@@ -69,7 +62,7 @@ test("free text takes font family (re-measured) and alignment from the panel", a
 test("a labelled rectangle's label takes font family and alignment from the panel", async ({
   page,
 }) => {
-  await freshCanvas(page)
+  await freshCanvas(page, "toolbar-text")
   await page.locator('[data-testid="toolbar-rectangle"]').click()
   await dragOnCanvas(page, { x: 100, y: 100 }, { x: 300, y: 200 })
   await page.waitForTimeout(120)

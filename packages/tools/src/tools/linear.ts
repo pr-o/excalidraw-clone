@@ -1,8 +1,14 @@
 import type { Point } from "@excalidraw-clone/geometry"
-import { BINDING_GAP, bindingTargetAt } from "@excalidraw-clone/scene"
+import {
+  addBackRef,
+  BINDING_GAP,
+  bindingTargetAt,
+  type LinearPatch,
+  pointsPatch,
+} from "@excalidraw-clone/scene"
 import type { ExcalidrawArrowElement, ExcalidrawElement } from "@excalidraw-clone/scene"
+import { patchElement, removeElement } from "../draft"
 import type { Modifiers, ToolEffect } from "../types"
-import { addBackRef } from "../binding-refs"
 
 export type LinearState =
   | { phase: "idle" }
@@ -32,44 +38,10 @@ export const constrainAngle = (start: Point, at: Point): Point => {
   }
 }
 
-const replaceElement = (draft: ExcalidrawElement[], id: string, patch: LinearPatch): void => {
-  const i = draft.findIndex((e) => e.id === id)
-  if (i < 0) return
-  const prev = draft[i]!
-  draft[i] = { ...prev, ...patch }
-}
-
-const removeElement = (draft: ExcalidrawElement[], id: string): void => {
-  const i = draft.findIndex((e) => e.id === id)
-  if (i >= 0) draft.splice(i, 1)
-}
-
 const bindIdAt = (
   at: Point,
   bindTargets: readonly ExcalidrawElement[] | undefined,
 ): string | null => (bindTargets ? (bindingTargetAt(at, bindTargets)?.id ?? null) : null)
-
-export interface LinearPatch {
-  x: number
-  y: number
-  width: number
-  height: number
-  points: readonly Point[]
-}
-
-export const pointsPatch = (absPoints: readonly Point[]): LinearPatch => {
-  const xs = absPoints.map((p) => p.x)
-  const ys = absPoints.map((p) => p.y)
-  const minX = Math.min(...xs)
-  const minY = Math.min(...ys)
-  return {
-    x: minX,
-    y: minY,
-    width: Math.max(...xs) - minX,
-    height: Math.max(...ys) - minY,
-    points: absPoints.map((p) => ({ x: p.x - minX, y: p.y - minY })),
-  }
-}
 
 export const linearPatch = (start: Point, end: Point): LinearPatch => pointsPatch([start, end])
 
@@ -130,7 +102,7 @@ export const linearReduce = ({
         [
           {
             kind: "mutation",
-            apply: (draft) => replaceElement(draft, id, patch),
+            apply: (draft) => patchElement(draft, id, patch),
             skipHistory: true,
           },
         ],

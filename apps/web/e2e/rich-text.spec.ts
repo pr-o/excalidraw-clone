@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test"
 import { readFileSync } from "node:fs"
-import { parseStoredScene } from "./_helpers"
+import { freshCanvas, parseStoredScene } from "./_helpers"
 
 type TextEl = {
   type: string
@@ -12,13 +12,6 @@ type TextEl = {
 const readTexts = async (page: Page): Promise<TextEl[]> => {
   const json = await page.evaluate(() => localStorage.getItem("excalidraw-scene"))
   return parseStoredScene<TextEl>(json).elements.filter((e) => e.type === "text" && !e.isDeleted)
-}
-
-const freshCanvas = async (page: Page): Promise<void> => {
-  await page.goto("/")
-  await page.evaluate(() => localStorage.clear())
-  await page.reload()
-  await page.locator('[data-testid="toolbar-text"]').waitFor({ state: "visible" })
 }
 
 const startText = async (page: Page): Promise<void> => {
@@ -38,7 +31,7 @@ const commit = async (page: Page): Promise<void> => {
 test("Ctrl+B bolds the selected word: stored, persisted and exported as a bold tspan", async ({
   page,
 }) => {
-  await freshCanvas(page)
+  await freshCanvas(page, "toolbar-text")
   await startText(page)
   await page.keyboard.type("hello world")
   for (let i = 0; i < 5; i += 1) await page.keyboard.press("Shift+ArrowLeft")
@@ -64,7 +57,7 @@ test("Ctrl+B bolds the selected word: stored, persisted and exported as a bold t
 })
 
 test("typing '- item', Enter, 'next' produces a bullet list", async ({ page }) => {
-  await freshCanvas(page)
+  await freshCanvas(page, "toolbar-text")
   await startText(page)
   await page.keyboard.type("- item")
   await page.keyboard.press("Enter")
@@ -74,7 +67,7 @@ test("typing '- item', Enter, 'next' produces a bullet list", async ({ page }) =
 })
 
 test("the panel B button bolds a whole selected text element", async ({ page }) => {
-  await freshCanvas(page)
+  await freshCanvas(page, "toolbar-text")
   await startText(page)
   await page.keyboard.type("whole")
   await commit(page)

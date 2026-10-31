@@ -1,36 +1,11 @@
-import { expect, test, type Page } from "@playwright/test"
-import { dragOnCanvas, parseStoredScene } from "./_helpers"
+import { expect, test } from "@playwright/test"
+import { dragOnCanvas, maxChannelIn, parseStoredScene, setDarkTheme } from "./_helpers"
 
 // Brightest channel value in a region — stroke pixels are jittery (roughjs),
 // so scan a box instead of a single coordinate (same pattern as theme.spec.ts).
-const maxChannelIn = async (
-  page: Page,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-): Promise<number> =>
-  page.evaluate(
-    ([rx, ry, rw, rh]) => {
-      const c = document.querySelector("canvas")!
-      const ctx = c.getContext("2d")!
-      const d = ctx.getImageData(rx!, ry!, rw!, rh!).data
-      let max = 0
-      for (let i = 0; i < d.length; i += 4) max = Math.max(max, d[i]!, d[i + 1]!, d[i + 2]!)
-      return max
-    },
-    [x, y, w, h],
-  )
-
 // maxChannelIn detects light strokes against a dark canvas; on the default
 // light theme the background is white (255) and strokes vanish into it, so
 // pixel-based pan assertions must run in dark mode (same setup as theme.spec.ts).
-const setDarkTheme = async (page: Page): Promise<void> => {
-  await page.getByRole("button", { name: /menu/i }).click()
-  await page.locator('[data-testid="theme-dark"]').click()
-  await page.waitForTimeout(300)
-}
-
 test("zoom widget and Ctrl+0/+/- shortcuts change the displayed zoom percentage", async ({
   page,
 }) => {

@@ -4,6 +4,7 @@ import {
   type Point,
   type ViewTransform,
   type UserGuides,
+  boundsFromPoints,
   rotatePoint,
   sceneToViewport,
 } from "@excalidraw-clone/geometry"
@@ -223,14 +224,11 @@ export const drawSelectionChrome = (
   if (marquee) {
     const a = sceneToViewport(marquee.start, view)
     const b = sceneToViewport(marquee.end, view)
-    const x = Math.min(a.x, b.x)
-    const y = Math.min(a.y, b.y)
-    const w = Math.abs(b.x - a.x)
-    const h = Math.abs(b.y - a.y)
+    const { x, y, width, height } = boundsFromPoints([a, b])
     ctx.setLineDash([5, 5])
     ctx.strokeStyle = SELECTION_STROKE[theme]
     ctx.lineWidth = 1
-    ctx.strokeRect(x, y, w, h)
+    ctx.strokeRect(x, y, width, height)
     ctx.setLineDash([])
   }
 }

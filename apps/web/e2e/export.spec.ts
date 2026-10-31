@@ -2,24 +2,10 @@ import { expect, test, type Page } from "@playwright/test"
 import JSZip from "jszip"
 import { readFileSync } from "node:fs"
 import { inflateSync } from "node:zlib"
-import { dragOnCanvas } from "./_helpers"
+import { dragOnCanvas, drawRect, freshCanvas } from "./_helpers"
 
-type Point = { x: number; y: number }
 type ExportedPNG = { filename: string; width: number; height: number; bytes: Buffer }
 type ExportedPDF = { filename: string; width: number; height: number; bytes: Buffer }
-
-const freshCanvas = async (page: Page): Promise<void> => {
-  await page.goto("/")
-  await page.evaluate(() => localStorage.clear())
-  await page.reload()
-  await page.locator('[data-testid="toolbar-rectangle"]').waitFor({ state: "visible" })
-}
-
-const drawRect = async (page: Page, from: Point, to: Point): Promise<void> => {
-  await page.locator('[data-testid="toolbar-rectangle"]').click()
-  await dragOnCanvas(page, from, to)
-  await page.waitForTimeout(120)
-}
 
 /** Rect A (60×60 at 100,100) and rect B (100×80 at 400,300); then marquee-select A only. */
 const drawTwoRectsAndSelectFirst = async (page: Page): Promise<void> => {

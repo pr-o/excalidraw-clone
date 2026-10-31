@@ -55,7 +55,7 @@ function ArrayDuplicateBody({
       open={open}
       onClose={onClose}
       title={t("arrayDuplicate.title")}
-      {...(className !== undefined ? { className } : {})}
+      className={className}
     >
       <form
         onSubmit={(e) => {

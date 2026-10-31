@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
-import { linearPatch, pointsPatch } from "../src/tools/linear"
+import { pointsPatch } from "@excalidraw-clone/scene"
+import { linearPatch } from "../src/tools/linear"
 
 describe("pointsPatch", () => {
   it("re-bases a 3-point path to a fresh bounding box", () => {

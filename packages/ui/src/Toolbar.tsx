@@ -2,29 +2,30 @@ import type { ToolName } from "@excalidraw-clone/tools"
 import { MoreShapesMenu } from "./MoreShapesMenu"
 import { IconButton } from "./shared/IconButton"
 import { iconHTML } from "./shared/icons"
+import { DEFAULT_TOOL_KEYS } from "./toolKeys"
 
-const TOOL_ITEMS: ReadonlyArray<{ name: ToolName; shortcut: string }> = [
-  { name: "selection", shortcut: "V" },
-  { name: "rectangle", shortcut: "R" },
-  { name: "ellipse", shortcut: "O" },
-  { name: "diamond", shortcut: "D" },
-  { name: "triangle", shortcut: "3" },
-  { name: "parallelogram", shortcut: "G" },
-  { name: "hexagon", shortcut: "6" },
-  { name: "line", shortcut: "L" },
-  { name: "arrow", shortcut: "A" },
-  { name: "freedraw", shortcut: "P" },
-  { name: "text", shortcut: "T" },
-  { name: "image", shortcut: "9" },
-  { name: "eraser", shortcut: "E" },
-  { name: "frame", shortcut: "F" },
-  { name: "note", shortcut: "N" },
-  { name: "lasso", shortcut: "S" },
-  { name: "laser", shortcut: "K" },
-  { name: "comment", shortcut: "C" },
+const TOOL_ITEMS: readonly ToolName[] = [
+  "selection",
+  "rectangle",
+  "ellipse",
+  "diamond",
+  "triangle",
+  "parallelogram",
+  "hexagon",
+  "line",
+  "arrow",
+  "freedraw",
+  "text",
+  "image",
+  "eraser",
+  "frame",
+  "note",
+  "lasso",
+  "laser",
+  "comment",
 ]
 
-const HEXAGON_INDEX = TOOL_ITEMS.findIndex((item) => item.name === "hexagon")
+const HEXAGON_INDEX = TOOL_ITEMS.indexOf("hexagon")
 
 export interface ToolbarProps {
   t: (key: string) => string
@@ -52,16 +53,16 @@ export function Toolbar({
   toolKeys,
   className,
 }: ToolbarProps): React.ReactElement {
-  const renderItem = (item: { name: ToolName; shortcut: string }): React.ReactElement => (
+  const renderItem = (name: ToolName): React.ReactElement => (
     <IconButton
-      key={item.name}
-      label={t(`toolbar.${item.name}`)}
-      shortcut={toolKeys?.[item.name]?.toUpperCase() ?? item.shortcut}
-      active={activeTool === item.name}
-      onClick={() => onSelectTool(item.name)}
-      data-testid={`toolbar-${item.name}`}
+      key={name}
+      label={t(`toolbar.${name}`)}
+      shortcut={(toolKeys?.[name] ?? DEFAULT_TOOL_KEYS[name]).toUpperCase()}
+      active={activeTool === name}
+      onClick={() => onSelectTool(name)}
+      data-testid={`toolbar-${name}`}
     >
-      <span aria-hidden dangerouslySetInnerHTML={{ __html: iconHTML(item.name) }} />
+      <span aria-hidden dangerouslySetInnerHTML={{ __html: iconHTML(name) }} />
     </IconButton>
   )
 

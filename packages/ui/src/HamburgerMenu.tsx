@@ -1,5 +1,5 @@
-import { useEffect } from "react"
 import { iconHTML } from "./shared/icons"
+import { useCloseOnEscape } from "./shared/useCloseOnEscape"
 
 export type Theme = "light" | "dark" | "system"
 export type Locale = "en" | "ko"
@@ -48,14 +48,7 @@ export function HamburgerMenu(props: HamburgerMenuProps): React.ReactElement {
   }
 
   const { open, onOpenChange } = props
-  useEffect(() => {
-    if (!open) return
-    const onKeyDown = (e: KeyboardEvent): void => {
-      if (e.key === "Escape") onOpenChange(false)
-    }
-    document.addEventListener("keydown", onKeyDown)
-    return () => document.removeEventListener("keydown", onKeyDown)
-  }, [open, onOpenChange])
+  useCloseOnEscape(open, onOpenChange)
 
   return (
     <div className={`relative ${props.className ?? ""}`}>

@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs"
 import { expect, test, type Page } from "@playwright/test"
-import { dragOnCanvas, parseStoredScene } from "./_helpers"
+import { dragOnCanvas, freshCanvas, parseStoredScene } from "./_helpers"
 
 type TableEl = {
   id: string
@@ -24,13 +24,6 @@ const readTables = async (page: Page): Promise<TableEl[]> => {
   return parseStoredScene<TableEl>(json).elements.filter((e) => e.type === "table" && !e.isDeleted)
 }
 
-const freshCanvas = async (page: Page): Promise<void> => {
-  await page.goto("/")
-  await page.evaluate(() => localStorage.clear())
-  await page.reload()
-  await page.locator('[data-testid="toolbar-more-shapes"]').waitFor({ state: "visible" })
-}
-
 const at = async (page: Page, p: { x: number; y: number }) => {
   const box = await page.locator("canvas").first().boundingBox()
   if (!box) throw new Error("canvas not found")
@@ -45,7 +38,7 @@ const drawTable = async (page: Page): Promise<void> => {
 }
 
 test("drag creates a 3x3 table; click creates the default size", async ({ page }) => {
-  await freshCanvas(page)
+  await freshCanvas(page, "toolbar-more-shapes")
   await drawTable(page)
   let tables = await readTables(page)
   expect(tables).toHaveLength(1)
@@ -65,7 +58,7 @@ test("drag creates a 3x3 table; click creates the default size", async ({ page }
 test("type in cells with Tab navigation, add row via panel (one undo), resize a column, persist, export", async ({
   page,
 }) => {
-  await freshCanvas(page)
+  await freshCanvas(page, "toolbar-more-shapes")
   await drawTable(page)
 
   // double-click the first cell and type, Tab, type, Escape
@@ -133,7 +126,7 @@ test("type in cells with Tab navigation, add row via panel (one undo), resize a 
 })
 
 test("context menu on a cell inserts a column to its right", async ({ page }) => {
-  await freshCanvas(page)
+  await freshCanvas(page, "toolbar-more-shapes")
   await drawTable(page)
   const mid = await at(page, { x: 250, y: 120 }) // column 1
   await page.mouse.click(mid.x, mid.y, { button: "right" })
@@ -145,7 +138,7 @@ test("context menu on a cell inserts a column to its right", async ({ page }) =>
 })
 
 test("Enter moves down a cell and the rest of the structure ops work", async ({ page }) => {
-  await freshCanvas(page)
+  await freshCanvas(page, "toolbar-more-shapes")
   await drawTable(page)
   const first = await at(page, { x: 150, y: 120 })
   await page.mouse.dblclick(first.x, first.y)
@@ -161,7 +154,7 @@ test("Enter moves down a cell and the rest of the structure ops work", async ({ 
 })
 
 test("find on canvas jumps to a table by cell text", async ({ page }) => {
-  await freshCanvas(page)
+  await freshCanvas(page, "toolbar-more-shapes")
   await drawTable(page)
   const first = await at(page, { x: 150, y: 120 })
   await page.mouse.dblclick(first.x, first.y)
@@ -183,7 +176,7 @@ type RichTableEl = TableEl & {
 test("flip mirrors the grid (one undo), tables take a gradient, Ctrl+B bolds a cell", async ({
   page,
 }) => {
-  await freshCanvas(page)
+  await freshCanvas(page, "toolbar-more-shapes")
   await drawTable(page)
   const first = await at(page, { x: 150, y: 120 })
   await page.mouse.dblclick(first.x, first.y)
@@ -215,7 +208,7 @@ test("flip mirrors the grid (one undo), tables take a gradient, Ctrl+B bolds a c
 })
 
 test("narrowing a column grows the rows its text now wraps in", async ({ page }) => {
-  await freshCanvas(page)
+  await freshCanvas(page, "toolbar-more-shapes")
   await drawTable(page)
   const cell = await at(page, { x: 250, y: 160 }) // row 1, col 1
   await page.mouse.dblclick(cell.x, cell.y)
@@ -237,7 +230,7 @@ test("narrowing a column grows the rows its text now wraps in", async ({ page })
 })
 
 test("dragging the nw handle past the minimum size keeps the se corner fixed", async ({ page }) => {
-  await freshCanvas(page)
+  await freshCanvas(page, "toolbar-more-shapes")
   await drawTable(page) // 100,100 .. 400,220
   await dragOnCanvas(page, { x: 100, y: 100 }, { x: 395, y: 215 })
   const [table] = await readTables(page)

@@ -7,7 +7,7 @@ export { CanvasRenderer } from "./renderer"
 export type { CanvasRendererOptions, GridOptions, Theme } from "./types"
 export type { MarqueeBox } from "./overlay"
 export { resolveColor } from "./theme-colors"
-export { renderToSVG } from "./svg"
+export { exportBounds, renderToSVG } from "./svg"
 export {
   fontFamilyName,
   fontSpec,

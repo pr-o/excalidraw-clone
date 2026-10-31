@@ -1,6 +1,7 @@
 import type { Point } from "@excalidraw-clone/geometry"
 import { fitTableBox, type ExcalidrawElement } from "@excalidraw-clone/scene"
 import type { Modifiers, ToolEffect } from "../../types"
+import { buildRecommitEffect } from "./recommit"
 import type { ResizeHandle } from "./types"
 
 export interface ResizeOrigin {
@@ -140,14 +141,8 @@ export const buildResizeMoveEffect = (
   }
 }
 
-export const buildResizeCommitEffect = (elementId: string): ToolEffect => ({
-  kind: "mutation",
-  apply: (draft) => {
-    const i = draft.findIndex((e) => e.id === elementId)
-    if (i < 0) return
-    draft[i] = { ...draft[i]! }
-  },
-})
+export const buildResizeCommitEffect = (elementId: string): ToolEffect =>
+  buildRecommitEffect([elementId])
 
 export const buildResizeRevertEffect = (elementId: string, origin: ResizeOrigin): ToolEffect => ({
   kind: "mutation",

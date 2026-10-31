@@ -1,6 +1,7 @@
 import type { Point } from "@excalidraw-clone/geometry"
 import type { ExcalidrawElement } from "@excalidraw-clone/scene"
-import type { Modifiers, ToolEffect } from "../types"
+import { patchElement, removeElement } from "../draft"
+import type { Modifiers, Tool, ToolContext, ToolEffect, ToolEvent, ToolName } from "../types"
 
 export interface ShapeBox {
   x: number
@@ -31,22 +32,6 @@ export const computeBox = (down: Point, at: Point, mods: Modifiers): ShapeBox =>
   const x = dx >= 0 ? down.x : down.x + dx
   const y = dy >= 0 ? down.y : down.y + dy
   return { x, y, width: Math.abs(dx), height: Math.abs(dy) }
-}
-
-const replaceElement = (
-  draft: ExcalidrawElement[],
-  id: string,
-  patch: Partial<ExcalidrawElement>,
-): void => {
-  const i = draft.findIndex((e) => e.id === id)
-  if (i < 0) return
-  const prev = draft[i]!
-  draft[i] = { ...prev, ...patch } as ExcalidrawElement
-}
-
-const removeElement = (draft: ExcalidrawElement[], id: string): void => {
-  const i = draft.findIndex((e) => e.id === id)
-  if (i >= 0) draft.splice(i, 1)
 }
 
 interface ShapeReducerArgs {
@@ -103,7 +88,7 @@ export const shapeReduce = ({
         [
           {
             kind: "mutation",
-            apply: (draft) => replaceElement(draft, id, box),
+            apply: (draft) => patchElement(draft, id, box),
             skipHistory: true,
           },
         ],
@@ -130,7 +115,7 @@ export const shapeReduce = ({
         [
           {
             kind: "mutation",
-            apply: (draft) => replaceElement(draft, id, box),
+            apply: (draft) => patchElement(draft, id, box),
           },
           { kind: "select", ids: [id] },
           { kind: "switchTool", tool: "selection" },
@@ -154,3 +139,15 @@ export const shapeReduce = ({
       return [state, []]
   }
 }
+
+/** A drag-to-draw box tool: `factory` builds the element for each new box. */
+export const shapeTool = (
+  name: ToolName,
+  factory: (box: ShapeBox) => ExcalidrawElement,
+): Tool<ShapeState, ToolEvent> => ({
+  name,
+  initial: SHAPE_INITIAL,
+  reduce(state, event, ctx: ToolContext) {
+    return shapeReduce({ state, event, modifiers: ctx.modifiers, factory })
+  },
+})

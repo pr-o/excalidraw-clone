@@ -1,4 +1,4 @@
-import { snapPointToGrid, type Point } from "@excalidraw-clone/geometry"
+import { boundsCenter, snapPointToGrid, type Point } from "@excalidraw-clone/geometry"
 import {
   type ExcalidrawElement,
   bindingTargetAt,
@@ -54,7 +54,6 @@ import {
   buildRotateMoveEffect,
   buildRotateRevertEffect,
   computeRotation,
-  elementCenter,
   pointerAngle,
 } from "./rotate"
 import { SELECTION_INITIAL, type SelectionState } from "./types"
@@ -128,7 +127,7 @@ const startHandleDrag = (
     ]
   }
   if (e && handle.kind === "rotate") {
-    const center = elementCenter(e)
+    const center = boundsCenter(e)
     return [
       {
         phase: "rotating",

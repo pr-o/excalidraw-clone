@@ -1,5 +1,6 @@
 import type { ExcalidrawElement } from "@excalidraw-clone/scene"
 import { iconHTML } from "./shared/icons"
+import { PanelToggle } from "./shared/PanelToggle"
 
 export interface LayersPanelProps {
   t: (key: string) => string
@@ -40,16 +41,13 @@ export function LayersPanel({
 
   if (!open) {
     return (
-      <button
-        type="button"
+      <PanelToggle
+        label={t("layers.toggle")}
+        testId="layers-toggle"
+        position="left-3 top-16"
+        glyph="›"
         onClick={onToggle}
-        aria-label={t("layers.toggle")}
-        aria-expanded={false}
-        data-testid="layers-toggle"
-        className="fixed left-3 top-16 z-30 flex h-9 w-9 items-center justify-center rounded-lg bg-panel shadow hover:bg-panel-hover"
-      >
-        ›
-      </button>
+      />
     )
   }
 

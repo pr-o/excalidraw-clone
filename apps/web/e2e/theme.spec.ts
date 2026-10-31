@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test"
 import { readFileSync } from "node:fs"
-import { dragOnCanvas } from "./_helpers"
+import { dragOnCanvas, maxChannelIn } from "./_helpers"
 
 test("theme toggle changes data-theme attr", async ({ page }) => {
   await page.goto("/")
@@ -22,25 +22,6 @@ const bgPixel = async (page: Page): Promise<[number, number, number]> =>
 
 // Brightest channel value in a region — stroke pixels are jittery (roughjs),
 // so scan a box instead of a single coordinate.
-const maxChannelIn = async (
-  page: Page,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-): Promise<number> =>
-  page.evaluate(
-    ([rx, ry, rw, rh]) => {
-      const c = document.querySelector("canvas")!
-      const ctx = c.getContext("2d")!
-      const d = ctx.getImageData(rx!, ry!, rw!, rh!).data
-      let max = 0
-      for (let i = 0; i < d.length; i += 4) max = Math.max(max, d[i]!, d[i + 1]!, d[i + 2]!)
-      return max
-    },
-    [x, y, w, h],
-  )
-
 const setThemeVia = async (page: Page, testId: string): Promise<void> => {
   await page.getByRole("button", { name: /menu/i }).click()
   await page.locator(`[data-testid="${testId}"]`).click()

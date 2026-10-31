@@ -1,11 +1,16 @@
 import type { Point } from "@excalidraw-clone/geometry"
-import { BINDING_GAP, bindingTargetAt, computeFocus } from "@excalidraw-clone/scene"
+import {
+  addBackRef,
+  BINDING_GAP,
+  bindingTargetAt,
+  computeFocus,
+  removeBackRef,
+} from "@excalidraw-clone/scene"
 import type {
   ExcalidrawArrowElement,
   ExcalidrawElement,
   PointBinding,
 } from "@excalidraw-clone/scene"
-import { addBackRef, removeBackRef } from "../../binding-refs"
 import type { ToolEffect } from "../../types"
 import { linearPatch } from "../linear"
 

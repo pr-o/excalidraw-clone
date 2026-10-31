@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test"
-import { dragOnCanvas, parseStoredScene } from "./_helpers"
+import { dragOnCanvas, maxChannelIn, parseStoredScene } from "./_helpers"
 
 type SceneEl = { type: string; x: number; y: number; isDeleted?: boolean }
 
@@ -8,20 +8,6 @@ const stored = async (page: Page): Promise<SceneEl[]> => {
   const json = await page.evaluate(() => localStorage.getItem("excalidraw-scene"))
   return parseStoredScene<SceneEl>(json).elements.filter((e) => !e.isDeleted)
 }
-
-const maxChannelIn = async (page: Page, x: number, y: number, w: number, h: number) =>
-  page.evaluate(
-    ([rx, ry, rw, rh]) => {
-      const d = document
-        .querySelector("canvas")!
-        .getContext("2d")!
-        .getImageData(rx!, ry!, rw!, rh!).data
-      let max = 0
-      for (let i = 0; i < d.length; i += 4) max = Math.max(max, d[i]!, d[i + 1]!, d[i + 2]!)
-      return max
-    },
-    [x, y, w, h],
-  )
 
 test("view mode: read-only canvas, pan allowed, exit pill, preference persists", async ({
   page,

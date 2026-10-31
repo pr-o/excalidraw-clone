@@ -1,14 +1,7 @@
 import { expect, test, type Page } from "@playwright/test"
-import { dragOnCanvas, parseStoredScene } from "./_helpers"
+import { dragOnCanvas, freshCanvas, parseStoredScene } from "./_helpers"
 
 type SceneEl = { type: string; isDeleted?: boolean }
-
-const freshCanvas = async (page: Page): Promise<void> => {
-  await page.goto("/")
-  await page.evaluate(() => localStorage.clear())
-  await page.reload()
-  await page.locator('[data-testid="toolbar-frame"]').waitFor({ state: "visible" })
-}
 
 const readElements = async (page: Page): Promise<SceneEl[]> => {
   const json = await page.evaluate(() => localStorage.getItem("excalidraw-scene"))
@@ -49,7 +42,7 @@ const counter = (page: Page) => page.locator('[data-testid="presentation-counter
 test("presentation mode steps through frames, hides chrome, no wrap, Escape restores", async ({
   page,
 }) => {
-  await freshCanvas(page)
+  await freshCanvas(page, "toolbar-frame")
 
   await drawFrame(page, { x: 80, y: 80 }, { x: 280, y: 240 })
   await drawFrame(page, { x: 360, y: 80 }, { x: 560, y: 240 })
@@ -90,7 +83,7 @@ test("presentation mode steps through frames, hides chrome, no wrap, Escape rest
 test("presenting is read-only: armed library item is not placed, wheel and right-click are inert", async ({
   page,
 }) => {
-  await freshCanvas(page)
+  await freshCanvas(page, "toolbar-frame")
 
   // A frame is required for the menu entry to be enabled.
   await drawFrame(page, { x: 80, y: 80 }, { x: 280, y: 240 })
@@ -145,7 +138,7 @@ test("presenting is read-only: armed library item is not placed, wheel and right
 })
 
 test("editor shortcuts are swallowed while presenting", async ({ page }) => {
-  await freshCanvas(page)
+  await freshCanvas(page, "toolbar-frame")
   await drawFrame(page, { x: 80, y: 80 }, { x: 280, y: 240 })
 
   await page.locator('[data-testid="toolbar-selection"]').click()
@@ -174,7 +167,7 @@ test("editor shortcuts are swallowed while presenting", async ({ page }) => {
 })
 
 test("wheel does not drift the viewport while presenting", async ({ page }) => {
-  await freshCanvas(page)
+  await freshCanvas(page, "toolbar-frame")
 
   // Dark theme: strokes are invisible against the light-theme white canvas,
   // so pixel comparisons must run in dark mode (same constraint as zoom-pan.spec.ts).
@@ -212,7 +205,7 @@ test("wheel does not drift the viewport while presenting", async ({ page }) => {
 })
 
 test("menu entry is disabled with no frames on the page", async ({ page }) => {
-  await freshCanvas(page)
+  await freshCanvas(page, "toolbar-frame")
 
   await page.locator('button[aria-label="Menu"]').click()
   const item = page.locator('[data-testid="menu-presentation"]')

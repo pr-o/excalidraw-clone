@@ -1,5 +1,5 @@
-import { expect, test, type Page } from "@playwright/test"
-import { parseStoredScene } from "./_helpers"
+import { expect, test } from "@playwright/test"
+import { readScene } from "./_helpers"
 
 type SceneEl = {
   id: string
@@ -9,11 +9,6 @@ type SceneEl = {
   startBinding?: { elementId: string } | null
   endBinding?: { elementId: string } | null
   isDeleted?: boolean
-}
-
-const readScene = async (page: Page): Promise<SceneEl[]> => {
-  const json = await page.evaluate(() => localStorage.getItem("excalidraw-scene"))
-  return parseStoredScene<SceneEl>(json).elements.filter((e) => !e.isDeleted)
 }
 
 test("import a Mermaid flowchart from the menu, then undo it in one step", async ({ page }) => {
@@ -31,7 +26,7 @@ test("import a Mermaid flowchart from the menu, then undo it in one step", async
   await expect(page.locator('[data-testid="mermaid-input"]')).toHaveCount(0)
   await page.waitForTimeout(700)
 
-  const els = await readScene(page)
+  const els = await readScene<SceneEl>(page)
   const shapes = els.filter((e) => e.type === "rectangle" || e.type === "diamond")
   expect(shapes).toHaveLength(3)
   const shapeIds = new Set(shapes.map((s) => s.id))
@@ -47,7 +42,7 @@ test("import a Mermaid flowchart from the menu, then undo it in one step", async
   const isMac = process.platform === "darwin"
   await page.keyboard.press(isMac ? "Meta+Z" : "Control+Z")
   await page.waitForTimeout(700)
-  expect(await readScene(page)).toHaveLength(0)
+  expect(await readScene<SceneEl>(page)).toHaveLength(0)
 })
 
 test("export the page to Mermaid text from the menu and the palette", async ({ page }) => {

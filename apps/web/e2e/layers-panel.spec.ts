@@ -1,18 +1,12 @@
 import { expect, test, type Page } from "@playwright/test"
-import { dragOnCanvas, parseStoredScene } from "./_helpers"
+import { dragOnCanvas, readScene } from "./_helpers"
 
 type SceneEl = { id: string; type: string; isDeleted?: boolean }
 
 // The scene is persisted to localStorage on a 500ms auto-save debounce, so reads
 // must poll rather than assume a fixed sub-debounce wait has flushed it.
-const readScene = async (page: Page): Promise<SceneEl[]> => {
-  const json = await page.evaluate(() => localStorage.getItem("excalidraw-scene"))
-  if (json === null) return []
-  const data = parseStoredScene<SceneEl>(json)
-  return data.elements.filter((e) => !e.isDeleted)
-}
-
-const sceneIds = async (page: Page): Promise<string[]> => (await readScene(page)).map((e) => e.id)
+const sceneIds = async (page: Page): Promise<string[]> =>
+  (await readScene<SceneEl>(page)).map((e) => e.id)
 
 test("layers panel: z-order display, reorder buttons, and click-to-select", async ({ page }) => {
   await page.goto("/")
@@ -31,8 +25,8 @@ test("layers panel: z-order display, reorder buttons, and click-to-select", asyn
   await page.locator('[data-testid="toolbar-selection"]').click()
 
   // Wait for the auto-save debounce to persist both rectangles, then read ids.
-  await expect.poll(async () => (await readScene(page)).length).toBe(2)
-  const [a, b] = await readScene(page)
+  await expect.poll(async () => (await readScene<SceneEl>(page)).length).toBe(2)
+  const [a, b] = await readScene<SceneEl>(page)
   expect(a).toBeDefined()
   expect(b).toBeDefined()
 

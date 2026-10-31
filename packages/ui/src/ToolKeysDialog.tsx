@@ -58,13 +58,7 @@ function ToolKeysBody({
   }
 
   return (
-    <Dialog
-      t={t}
-      open={open}
-      onClose={onClose}
-      title={t("toolKeys.title")}
-      {...(className !== undefined ? { className } : {})}
-    >
+    <Dialog t={t} open={open} onClose={onClose} title={t("toolKeys.title")} className={className}>
       <p className="mb-2 text-sm text-muted">{t("toolKeys.hint")}</p>
       <ul className="mb-3 max-h-[60vh] w-[22rem] max-w-full space-y-1 overflow-y-auto text-sm">
         {rows.map((r) => (

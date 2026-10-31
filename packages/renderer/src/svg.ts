@@ -107,7 +107,7 @@ export function renderToSVG(scene: Scene, opts: SVGRenderOptions = {}): string {
   const padding = opts.padding ?? 20
   const theme = opts.theme ?? "light"
   const elements = scene.getElements().filter((e) => !e.isDeleted)
-  const bbox = computeBBox(elements, padding)
+  const bbox = exportBounds(elements, padding)
   const width = Math.max(1, bbox.width)
   const height = Math.max(1, bbox.height)
   const doc = document.implementation.createDocument(SVG_NS, "svg", null)
@@ -480,7 +480,9 @@ function verticalOffset(el: ExcalidrawTextElement, totalHeight: number): number 
   }
 }
 
-function computeBBox(
+/** Export frame for `elements`: their unrotated boxes grown by each one's
+ *  shadow reach, plus `padding` on every side; 100x100 at the origin when empty. */
+export function exportBounds(
   elements: readonly ExcalidrawElement[],
   padding: number,
 ): { x: number; y: number; width: number; height: number } {

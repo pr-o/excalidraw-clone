@@ -1,5 +1,5 @@
-import { expect, test, type Page } from "@playwright/test"
-import { dragOnCanvas, parseStoredScene } from "./_helpers"
+import { expect, test } from "@playwright/test"
+import { dblClickCanvas, dragOnCanvas, freshCanvas, readScene } from "./_helpers"
 
 type SceneEl = {
   id: string
@@ -15,26 +15,6 @@ type SceneEl = {
   isDeleted?: boolean
 }
 
-const readScene = async (page: Page): Promise<SceneEl[]> => {
-  const json = await page.evaluate(() => localStorage.getItem("excalidraw-scene"))
-  const data = parseStoredScene<SceneEl>(json)
-  return data.elements.filter((e) => !e.isDeleted)
-}
-
-const freshCanvas = async (page: Page): Promise<void> => {
-  await page.goto("/")
-  await page.evaluate(() => localStorage.clear())
-  await page.reload()
-  await page.locator('[data-testid="toolbar-arrow"]').waitFor({ state: "visible" })
-}
-
-const dblClickCanvas = async (page: Page, at: { x: number; y: number }): Promise<void> => {
-  const canvas = page.locator("canvas").first()
-  const box = await canvas.boundingBox()
-  if (!box) throw new Error("canvas not found")
-  await page.mouse.dblclick(box.x + at.x, box.y + at.y)
-}
-
 // straight (two-point) connectors only
 const pathCenter = (el: SceneEl): { x: number; y: number } => {
   const first = el.points![0]!
@@ -45,7 +25,7 @@ const pathCenter = (el: SceneEl): { x: number; y: number } => {
 test("double-click an arrow adds a midpoint label that follows rebinding and persists", async ({
   page,
 }) => {
-  await freshCanvas(page)
+  await freshCanvas(page, "toolbar-arrow")
 
   // two rects with a bound arrow between them
   await page.locator('[data-testid="toolbar-rectangle"]').click()
@@ -65,7 +45,7 @@ test("double-click an arrow adds a midpoint label that follows rebinding and per
   await page.mouse.click(300, 450) // blur commits
   await page.waitForTimeout(900)
 
-  let els = await readScene(page)
+  let els = await readScene<SceneEl>(page)
   const arrow = els.find((e) => e.type === "arrow")!
   let label = els.find((e) => e.type === "text")!
   expect(label.text).toBe("yes")
@@ -77,7 +57,7 @@ test("double-click an arrow adds a midpoint label that follows rebinding and per
   // drag rect B down; the bound arrow follows and the label recenters
   await dragOnCanvas(page, { x: 580, y: 220 }, { x: 580, y: 320 })
   await page.waitForTimeout(900)
-  els = await readScene(page)
+  els = await readScene<SceneEl>(page)
   const movedArrow = els.find((e) => e.type === "arrow")!
   label = els.find((e) => e.type === "text")!
   mid = pathCenter(movedArrow)
@@ -87,12 +67,12 @@ test("double-click an arrow adds a midpoint label that follows rebinding and per
   // persists across reload
   await page.reload()
   await page.locator('[data-testid="toolbar-arrow"]').waitFor({ state: "visible" })
-  els = await readScene(page)
+  els = await readScene<SceneEl>(page)
   expect(els.find((e) => e.type === "text")?.text).toBe("yes")
 })
 
 test("escaping an empty line label leaves the scene label-free", async ({ page }) => {
-  await freshCanvas(page)
+  await freshCanvas(page, "toolbar-arrow")
 
   await page.locator('[data-testid="toolbar-line"]').click()
   await dragOnCanvas(page, { x: 100, y: 100 }, { x: 300, y: 200 })
@@ -105,7 +85,7 @@ test("escaping an empty line label leaves the scene label-free", async ({ page }
   await page.keyboard.press("Escape")
   await page.waitForTimeout(900)
 
-  const els = await readScene(page)
+  const els = await readScene<SceneEl>(page)
   expect(els.filter((e) => e.type === "text")).toHaveLength(0)
   expect(els).toHaveLength(1)
   expect(els[0]!.boundElements ?? null).toBeNull()

@@ -1,5 +1,6 @@
 import { type Point, boundsFromPoints } from "@excalidraw-clone/geometry"
-import { type ExcalidrawElement, newFreedraw } from "@excalidraw-clone/scene"
+import { newFreedraw } from "@excalidraw-clone/scene"
+import { patchElement, removeElement } from "../draft"
 import type { Tool, ToolContext, ToolEffect, ToolEvent } from "../types"
 
 export type FreedrawState =
@@ -14,18 +15,6 @@ interface FreedrawPatch {
   width: number
   height: number
   points: readonly Point[]
-}
-
-const replaceElement = (draft: ExcalidrawElement[], id: string, patch: FreedrawPatch): void => {
-  const i = draft.findIndex((e) => e.id === id)
-  if (i < 0) return
-  const prev = draft[i]!
-  draft[i] = { ...prev, ...patch }
-}
-
-const removeElement = (draft: ExcalidrawElement[], id: string): void => {
-  const i = draft.findIndex((e) => e.id === id)
-  if (i >= 0) draft.splice(i, 1)
 }
 
 const freedrawPatch = (origin: Point, points: readonly Point[]): FreedrawPatch => {
@@ -81,7 +70,7 @@ export const freedrawTool: Tool<FreedrawState, ToolEvent> = {
           [
             {
               kind: "mutation",
-              apply: (draft) => replaceElement(draft, id, patch),
+              apply: (draft) => patchElement(draft, id, patch),
               skipHistory: true,
             },
           ],
@@ -108,7 +97,7 @@ export const freedrawTool: Tool<FreedrawState, ToolEvent> = {
           [
             {
               kind: "mutation",
-              apply: (draft) => replaceElement(draft, id, patch),
+              apply: (draft) => patchElement(draft, id, patch),
             },
             { kind: "select", ids: [id] },
             { kind: "switchTool", tool: "selection" },

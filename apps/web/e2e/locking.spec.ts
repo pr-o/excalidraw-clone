@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test"
-import { dragOnCanvas, parseStoredScene } from "./_helpers"
+import { dragOnCanvas, drawRect, freshCanvas, readScene } from "./_helpers"
 
 type SceneEl = {
   id: string
@@ -8,29 +8,6 @@ type SceneEl = {
   y: number
   locked?: boolean
   isDeleted?: boolean
-}
-
-const readScene = async (page: Page): Promise<SceneEl[]> => {
-  const json = await page.evaluate(() => localStorage.getItem("excalidraw-scene"))
-  const data = parseStoredScene<SceneEl>(json)
-  return data.elements.filter((e) => !e.isDeleted)
-}
-
-const freshCanvas = async (page: Page): Promise<void> => {
-  await page.goto("/")
-  await page.evaluate(() => localStorage.clear())
-  await page.reload()
-  await page.locator('[data-testid="toolbar-rectangle"]').waitFor({ state: "visible" })
-}
-
-const drawRect = async (
-  page: Page,
-  from: { x: number; y: number },
-  to: { x: number; y: number },
-): Promise<void> => {
-  await page.locator('[data-testid="toolbar-rectangle"]').click()
-  await dragOnCanvas(page, from, to)
-  await page.waitForTimeout(120)
 }
 
 const clickCanvas = async (page: Page, at: { x: number; y: number }): Promise<void> => {
@@ -73,7 +50,7 @@ test("locked element is click-through and Unlock all restores it", async ({ page
   await expect(page.locator('[data-testid="panel-lock"]')).toBeVisible()
 
   await page.waitForTimeout(900)
-  const rects = await readScene(page)
+  const rects = await readScene<SceneEl>(page)
   expect(rects.every((r) => !r.locked)).toBe(true)
 })
 
@@ -96,7 +73,7 @@ test("marquee selects only unlocked elements", async ({ page }) => {
   await page.keyboard.press("Delete")
   await page.waitForTimeout(900)
 
-  const rects = (await readScene(page)).filter((e) => e.type === "rectangle")
+  const rects = (await readScene<SceneEl>(page)).filter((e) => e.type === "rectangle")
   expect(rects.length).toBe(1)
   expect(Math.abs(rects[0]!.x - 220)).toBeLessThan(1)
   expect(rects[0]!.locked).toBe(true)
@@ -118,6 +95,6 @@ test("lock persists across reload (Ctrl+Shift+L path)", async ({ page }) => {
   await clickCanvas(page, { x: 130, y: 130 })
   await expect(page.locator('[data-testid="panel-lock"]')).toHaveCount(0)
 
-  const rects = (await readScene(page)).filter((e) => e.type === "rectangle")
+  const rects = (await readScene<SceneEl>(page)).filter((e) => e.type === "rectangle")
   expect(rects[0]!.locked).toBe(true)
 })

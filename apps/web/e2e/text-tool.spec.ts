@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test"
-import { parseStoredScene } from "./_helpers"
+import { freshCanvas, parseStoredScene } from "./_helpers"
 
 const clickCanvas = async (page: Page, at: { x: number; y: number }): Promise<void> => {
   const canvas = page.locator("canvas").first()
@@ -8,17 +8,10 @@ const clickCanvas = async (page: Page, at: { x: number; y: number }): Promise<vo
   await page.mouse.click(box.x + at.x, box.y + at.y)
 }
 
-const freshCanvas = async (page: Page): Promise<void> => {
-  await page.goto("/")
-  await page.evaluate(() => localStorage.clear())
-  await page.reload()
-  await page.locator('[data-testid="toolbar-text"]').waitFor({ state: "visible" })
-}
-
 test("a single click with the text tool, then typing, commits real text (no stray empty element)", async ({
   page,
 }) => {
-  await freshCanvas(page)
+  await freshCanvas(page, "toolbar-text")
 
   await page.locator('[data-testid="toolbar-text"]').click()
   await clickCanvas(page, { x: 200, y: 200 })
@@ -40,7 +33,7 @@ test("a single click with the text tool, then typing, commits real text (no stra
 test("a single click with the text tool, then blurring without typing, leaves no stray element", async ({
   page,
 }) => {
-  await freshCanvas(page)
+  await freshCanvas(page, "toolbar-text")
 
   await page.locator('[data-testid="toolbar-text"]').click()
   await clickCanvas(page, { x: 200, y: 200 })
@@ -57,7 +50,7 @@ test("a single click with the text tool, then blurring without typing, leaves no
 })
 
 test("typing then pressing Escape commits the text (same as click-away)", async ({ page }) => {
-  await freshCanvas(page)
+  await freshCanvas(page, "toolbar-text")
 
   await page.locator('[data-testid="toolbar-text"]').click()
   await clickCanvas(page, { x: 200, y: 200 })
@@ -80,7 +73,7 @@ test("typing then pressing Escape commits the text (same as click-away)", async 
 test("the Bold toggle in the properties panel persists fontWeight = bold on the selected text", async ({
   page,
 }) => {
-  await freshCanvas(page)
+  await freshCanvas(page, "toolbar-text")
 
   await page.locator('[data-testid="toolbar-text"]').click()
   await clickCanvas(page, { x: 200, y: 200 })
@@ -111,7 +104,7 @@ test("the Bold toggle in the properties panel persists fontWeight = bold on the 
 })
 
 test("committed free text can be selected by clicking on it", async ({ page }) => {
-  await freshCanvas(page)
+  await freshCanvas(page, "toolbar-text")
 
   await page.locator('[data-testid="toolbar-text"]').click()
   await clickCanvas(page, { x: 200, y: 200 })
@@ -136,7 +129,7 @@ test("committed free text can be selected by clicking on it", async ({ page }) =
 test("changing font size to XL grows the text's box so its new area is click-selectable", async ({
   page,
 }) => {
-  await freshCanvas(page)
+  await freshCanvas(page, "toolbar-text")
 
   await page.locator('[data-testid="toolbar-text"]').click()
   await clickCanvas(page, { x: 200, y: 200 })

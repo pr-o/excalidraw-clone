@@ -146,6 +146,9 @@ export type {
   VerticalAlign,
 } from "./types"
 export { elementShadow, shadowMargin } from "./shadow"
+export { pointsPatch } from "./points-patch"
+export { addBackRef, removeBackRef } from "./binding-refs"
+export type { LinearPatch } from "./points-patch"
 export {
   applyBulletEdit,
   autoBullet,

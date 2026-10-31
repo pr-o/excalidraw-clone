@@ -1,5 +1,6 @@
 import { useMemo } from "react"
 import { describeHistoryChange, type ExcalidrawElement } from "@excalidraw-clone/scene"
+import { PanelToggle } from "./shared/PanelToggle"
 
 export interface HistoryPanelProps {
   t: (key: string, options?: { count: number }) => string
@@ -45,16 +46,13 @@ export function HistoryPanel({
 
   if (!open) {
     return (
-      <button
-        type="button"
+      <PanelToggle
+        label={t("history.toggle")}
+        testId="history-toggle"
+        position="right-3 top-16"
+        glyph="‹"
         onClick={onToggle}
-        aria-label={t("history.toggle")}
-        aria-expanded={false}
-        data-testid="history-toggle"
-        className="fixed right-3 top-16 z-30 flex h-9 w-9 items-center justify-center rounded-lg bg-panel shadow hover:bg-panel-hover"
-      >
-        ‹
-      </button>
+      />
     )
   }
 

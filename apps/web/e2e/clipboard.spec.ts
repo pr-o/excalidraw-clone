@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test"
-import { dragOnCanvas, parseStoredScene } from "./_helpers"
+import { dragOnCanvas, drawRect, freshCanvas, readScene } from "./_helpers"
 
 test.use({ permissions: ["clipboard-read", "clipboard-write"] })
 
@@ -14,34 +14,11 @@ type SceneEl = {
   isDeleted?: boolean
 }
 
-const readScene = async (page: Page): Promise<SceneEl[]> => {
-  const json = await page.evaluate(() => localStorage.getItem("excalidraw-scene"))
-  const data = parseStoredScene<SceneEl>(json)
-  return data.elements.filter((e) => !e.isDeleted)
-}
-
-const freshCanvas = async (page: Page): Promise<void> => {
-  await page.goto("/")
-  await page.evaluate(() => localStorage.clear())
-  await page.reload()
-  await page.locator('[data-testid="toolbar-rectangle"]').waitFor({ state: "visible" })
-}
-
 const moveMouseOnCanvas = async (page: Page, at: { x: number; y: number }): Promise<void> => {
   const canvas = page.locator("canvas").first()
   const box = await canvas.boundingBox()
   if (!box) throw new Error("canvas not found")
   await page.mouse.move(box.x + at.x, box.y + at.y)
-}
-
-const drawRect = async (
-  page: Page,
-  from: { x: number; y: number },
-  to: { x: number; y: number },
-): Promise<void> => {
-  await page.locator('[data-testid="toolbar-rectangle"]').click()
-  await dragOnCanvas(page, from, to)
-  await page.waitForTimeout(120)
 }
 
 test("select-all, copy, paste at the cursor doubles the rects", async ({ page }) => {
@@ -55,7 +32,7 @@ test("select-all, copy, paste at the cursor doubles the rects", async ({ page })
   await page.keyboard.press("Control+KeyV")
   await page.waitForTimeout(900)
 
-  const rects = (await readScene(page)).filter((e) => e.type === "rectangle")
+  const rects = (await readScene<SceneEl>(page)).filter((e) => e.type === "rectangle")
   expect(rects.length).toBe(4)
   // payload bbox (100,100)-(220,140), center (160,120) → pasted at (500,300): offset (+340,+180)
   const xs = rects.map((r) => Math.round(r.x)).sort((a, b) => a - b)
@@ -69,12 +46,12 @@ test("cut removes the originals and paste restores them", async ({ page }) => {
   await page.keyboard.press("Control+KeyA")
   await page.keyboard.press("Control+KeyX")
   await page.waitForTimeout(900)
-  expect((await readScene(page)).filter((e) => e.type === "rectangle").length).toBe(0)
+  expect((await readScene<SceneEl>(page)).filter((e) => e.type === "rectangle").length).toBe(0)
 
   await moveMouseOnCanvas(page, { x: 400, y: 300 })
   await page.keyboard.press("Control+KeyV")
   await page.waitForTimeout(900)
-  const rects = (await readScene(page)).filter((e) => e.type === "rectangle")
+  const rects = (await readScene<SceneEl>(page)).filter((e) => e.type === "rectangle")
   expect(rects.length).toBe(1)
   expect(Math.round(rects[0]!.x)).toBe(375)
   expect(Math.round(rects[0]!.y)).toBe(275)
@@ -100,7 +77,7 @@ test("copying a labeled shape brings the label with remapped ids", async ({ page
   await page.keyboard.press("Control+KeyV")
   await page.waitForTimeout(900)
 
-  const els = await readScene(page)
+  const els = await readScene<SceneEl>(page)
   const rects = els.filter((e) => e.type === "rectangle")
   const texts = els.filter((e) => e.type === "text")
   expect(rects.length).toBe(2)
@@ -118,7 +95,7 @@ test("pasting plain text creates a text element at the cursor", async ({ page })
   await page.keyboard.press("Control+KeyV")
   await page.waitForTimeout(900)
 
-  const texts = (await readScene(page)).filter((e) => e.type === "text")
+  const texts = (await readScene<SceneEl>(page)).filter((e) => e.type === "text")
   expect(texts.length).toBe(1)
   expect(texts[0]!.text).toBe("hello canvas")
   expect(Math.round(texts[0]!.x)).toBe(300)

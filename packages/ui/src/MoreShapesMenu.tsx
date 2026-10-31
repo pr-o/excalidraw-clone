@@ -1,6 +1,7 @@
-import { useEffect } from "react"
+import { useCloseOnEscape } from "./shared/useCloseOnEscape"
 import { IconButton } from "./shared/IconButton"
 import { iconHTML } from "./shared/icons"
+import { DEFAULT_TOOL_KEYS } from "./toolKeys"
 
 type MoreTool = "pentagon" | "octagon" | "table"
 
@@ -17,14 +18,7 @@ export interface MoreShapesMenuProps {
 export function MoreShapesMenu(props: MoreShapesMenuProps): React.ReactElement {
   const { open, onOpenChange } = props
 
-  useEffect(() => {
-    if (!open) return
-    const onKeyDown = (e: KeyboardEvent): void => {
-      if (e.key === "Escape") onOpenChange(false)
-    }
-    document.addEventListener("keydown", onKeyDown)
-    return () => document.removeEventListener("keydown", onKeyDown)
-  }, [open, onOpenChange])
+  useCloseOnEscape(open, onOpenChange)
 
   const select = (tool: MoreTool) => (): void => {
     props.onSelectTool(tool)
@@ -69,7 +63,7 @@ export function MoreShapesMenu(props: MoreShapesMenuProps): React.ReactElement {
           </IconButton>
           <IconButton
             label={props.t("toolbar.table")}
-            shortcut="7"
+            shortcut={DEFAULT_TOOL_KEYS.table.toUpperCase()}
             active={props.activeTool === "table"}
             onClick={select("table")}
             data-testid="toolbar-table"

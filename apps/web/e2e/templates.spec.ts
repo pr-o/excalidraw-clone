@@ -1,5 +1,5 @@
-import { expect, test, type Page } from "@playwright/test"
-import { dragOnCanvas, parseStoredScene } from "./_helpers"
+import { expect, test } from "@playwright/test"
+import { dragOnCanvas, readScene } from "./_helpers"
 
 type SceneEl = {
   id: string
@@ -12,12 +12,6 @@ type SceneEl = {
   startBinding?: { elementId: string } | null
   endBinding?: { elementId: string } | null
   isDeleted?: boolean
-}
-
-const readScene = async (page: Page): Promise<SceneEl[]> => {
-  const json = await page.evaluate(() => localStorage.getItem("excalidraw-scene"))
-  const data = parseStoredScene<SceneEl>(json)
-  return data.elements.filter((e) => !e.isDeleted)
 }
 
 const boundArrows = (els: SceneEl[]): SceneEl[] =>
@@ -48,7 +42,7 @@ test("place a flowchart template, keep bindings, reflow on node drag", async ({ 
   await page.waitForTimeout(800)
 
   // Bindings survived placement: the flowchart has fully-bound arrows.
-  const placed = await readScene(page)
+  const placed = await readScene<SceneEl>(page)
   const arrows = boundArrows(placed)
   expect(arrows.length).toBeGreaterThanOrEqual(3)
 
@@ -63,7 +57,7 @@ test("place a flowchart template, keep bindings, reflow on node drag", async ({ 
   await dragOnCanvas(page, nodeCenter, { x: nodeCenter.x + 160, y: nodeCenter.y })
   await page.waitForTimeout(700)
 
-  const after = await readScene(page)
+  const after = await readScene<SceneEl>(page)
   const arrowAfter = after.find((e) => e.id === arrow.id)!
   const p0After = firstPointAbs(arrowAfter)
   expect(Math.abs(p0After.x - p0Before.x)).toBeGreaterThan(20)

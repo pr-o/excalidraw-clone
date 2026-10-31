@@ -1,13 +1,7 @@
-import { expect, test, type Page } from "@playwright/test"
-import { dragOnCanvas, parseStoredScene } from "./_helpers"
+import { expect, test } from "@playwright/test"
+import { dragOnCanvas, readScene } from "./_helpers"
 
 type SceneEl = { id: string; type: string; x: number; y: number; isDeleted?: boolean }
-
-const readScene = async (page: Page): Promise<SceneEl[]> => {
-  const json = await page.evaluate(() => localStorage.getItem("excalidraw-scene"))
-  const data = parseStoredScene<SceneEl>(json)
-  return data.elements.filter((e) => !e.isDeleted)
-}
 
 test("align top makes selected rectangles share a top edge", async ({ page }) => {
   await page.goto("/")
@@ -34,7 +28,7 @@ test("align top makes selected rectangles share a top edge", async ({ page }) =>
   await page.locator('[data-testid="align-top"]').click()
   await page.waitForTimeout(900)
 
-  const rects = (await readScene(page)).filter((e) => e.type === "rectangle")
+  const rects = (await readScene<SceneEl>(page)).filter((e) => e.type === "rectangle")
   expect(rects.length).toBe(3)
   const tops = rects.map((r) => r.y)
   const minTop = Math.min(...tops)

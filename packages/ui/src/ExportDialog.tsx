@@ -115,13 +115,7 @@ export function ExportDialog({
   }
 
   return (
-    <Dialog
-      t={t}
-      open={open}
-      onClose={onClose}
-      title={t("export.title")}
-      {...(className !== undefined ? { className } : {})}
-    >
+    <Dialog t={t} open={open} onClose={onClose} title={t("export.title")} className={className}>
       <div className="space-y-4">
         {showAllPagesToggle && (
           <label className="flex items-center gap-2 text-sm">

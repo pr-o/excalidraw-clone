@@ -1,5 +1,5 @@
-import { expect, test, type Page } from "@playwright/test"
-import { dragOnCanvas, parseStoredScene } from "./_helpers"
+import { expect, test } from "@playwright/test"
+import { dragOnCanvas, readScene } from "./_helpers"
 
 type SceneEl = {
   id: string
@@ -7,12 +7,6 @@ type SceneEl = {
   x: number
   points?: { x: number; y: number }[]
   isDeleted?: boolean
-}
-
-const readScene = async (page: Page): Promise<SceneEl[]> => {
-  const json = await page.evaluate(() => localStorage.getItem("excalidraw-scene"))
-  const data = parseStoredScene<SceneEl>(json)
-  return data.elements.filter((e) => !e.isDeleted)
 }
 
 const arrowEndX = (els: SceneEl[]): number => {
@@ -46,13 +40,13 @@ test("dragging an arrow endpoint onto a shape binds it; moving the shape drags t
   await dragOnCanvas(page, { x: 300, y: 250 }, { x: 550, y: 250 })
   await page.waitForTimeout(700)
 
-  const before = await readScene(page)
+  const before = await readScene<SceneEl>(page)
   const beforeEndX = arrowEndX(before)
 
   // Move the rectangle right; the now-bound arrow end must follow.
   await dragOnCanvas(page, { x: 580, y: 290 }, { x: 780, y: 290 })
   await page.waitForTimeout(700)
 
-  const after = await readScene(page)
+  const after = await readScene<SceneEl>(page)
   expect(arrowEndX(after)).toBeGreaterThan(beforeEndX)
 })

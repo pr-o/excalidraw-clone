@@ -1,6 +1,6 @@
-import { expect, test, type Page } from "@playwright/test"
+import { expect, test } from "@playwright/test"
 import { readFileSync } from "node:fs"
-import { parseStoredScene } from "./_helpers"
+import { readScene } from "./_helpers"
 
 type SceneEl = {
   id: string
@@ -12,11 +12,6 @@ type SceneEl = {
   width: number
   height: number
   isDeleted?: boolean
-}
-
-const readScene = async (page: Page): Promise<SceneEl[]> => {
-  const json = await page.evaluate(() => localStorage.getItem("excalidraw-scene"))
-  return parseStoredScene<SceneEl>(json).elements.filter((e) => !e.isDeleted)
 }
 
 const isMac = process.platform === "darwin"
@@ -36,7 +31,7 @@ test("pick a sticker from the More shapes flyout: inserted, rendered, movable, o
   await expect(page.locator('[data-testid="sticker-search"]')).toHaveCount(0)
   await page.waitForTimeout(700)
 
-  const [sticker, ...rest] = await readScene(page)
+  const [sticker, ...rest] = await readScene<SceneEl>(page)
   expect(rest).toHaveLength(0)
   expect(sticker).toMatchObject({ type: "text", text: "🐱", fontSize: 64 })
   expect(sticker!.width).toBeGreaterThan(30)
@@ -71,7 +66,7 @@ test("pick a sticker from the More shapes flyout: inserted, rendered, movable, o
   await page.mouse.move(vp.width / 2 + 100, vp.height / 2 + 50, { steps: 6 })
   await page.mouse.up()
   await page.waitForTimeout(700)
-  const [moved] = await readScene(page)
+  const [moved] = await readScene<SceneEl>(page)
   expect(moved!.x).toBeCloseTo(sticker!.x + 100, 0)
 
   // Double-click opens the text editor on the emoji; Escape commits it unchanged.
@@ -79,7 +74,7 @@ test("pick a sticker from the More shapes flyout: inserted, rendered, movable, o
   await expect(page.locator("textarea")).toHaveValue("🐱")
   await page.keyboard.press("Escape")
   await page.waitForTimeout(700)
-  expect((await readScene(page)).map((e) => e.text)).toEqual(["🐱"])
+  expect((await readScene<SceneEl>(page)).map((e) => e.text)).toEqual(["🐱"])
 
   // SVG export carries the emoji as text.
   await page.getByRole("button", { name: /menu/i }).click()
@@ -94,7 +89,7 @@ test("pick a sticker from the More shapes flyout: inserted, rendered, movable, o
   await page.keyboard.press(isMac ? "Meta+Z" : "Control+Z")
   await page.keyboard.press(isMac ? "Meta+Z" : "Control+Z")
   await page.waitForTimeout(700)
-  expect(await readScene(page)).toHaveLength(0)
+  expect(await readScene<SceneEl>(page)).toHaveLength(0)
 })
 
 test("Stickers is in the command palette but not in view mode", async ({ page }) => {

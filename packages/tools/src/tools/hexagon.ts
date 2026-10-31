@@ -1,16 +1,4 @@
 import { newHexagon } from "@excalidraw-clone/scene"
-import type { Tool, ToolContext, ToolEvent } from "../types"
-import { SHAPE_INITIAL, type ShapeState, shapeReduce } from "./shape"
+import { shapeTool } from "./shape"
 
-export const hexagonTool: Tool<ShapeState, ToolEvent> = {
-  name: "hexagon",
-  initial: SHAPE_INITIAL,
-  reduce(state, event, ctx: ToolContext) {
-    return shapeReduce({
-      state,
-      event,
-      modifiers: ctx.modifiers,
-      factory: (box) => newHexagon(box),
-    })
-  },
-}
+export const hexagonTool = shapeTool("hexagon", (box) => newHexagon(box))

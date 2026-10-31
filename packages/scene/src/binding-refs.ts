@@ -1,4 +1,4 @@
-import type { ExcalidrawElement } from "@excalidraw-clone/scene"
+import type { ExcalidrawElement } from "./types"
 
 /** Add an arrow back-reference to a target's boundElements (idempotent). */
 export const addBackRef = (draft: ExcalidrawElement[], targetId: string, arrowId: string): void => {

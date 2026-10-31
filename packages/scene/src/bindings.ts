@@ -14,6 +14,7 @@ import { getElementBounds } from "./bounds"
 import { routeElbow, sideCenter, sideOf, type Side } from "./elbow"
 import { mirrorOf } from "./flip"
 import { hitTestElement } from "./hit-test"
+import { pointsPatch } from "./points-patch"
 import type { ElementType, ExcalidrawElement, PointBinding } from "./types"
 
 export const BINDING_GAP = 4
@@ -115,17 +116,9 @@ const patchFromAbsolutePoints = (
   startBinding: PointBinding | null,
   endBinding: PointBinding | null,
 ): ExcalidrawElement => {
-  const xs = abs.map((p) => p.x)
-  const ys = abs.map((p) => p.y)
-  const minX = Math.min(...xs)
-  const minY = Math.min(...ys)
   return {
     ...arrow,
-    x: minX,
-    y: minY,
-    width: Math.max(...xs) - minX,
-    height: Math.max(...ys) - minY,
-    points: abs.map((p) => ({ x: p.x - minX, y: p.y - minY })),
+    ...pointsPatch(abs),
     startBinding,
     endBinding,
   } as ExcalidrawElement

@@ -1,20 +1,9 @@
 import type { ExcalidrawRectangleElement } from "@excalidraw-clone/scene"
 import type { Drawable, Options } from "roughjs/bin/core"
 import type { RoughGenerator } from "roughjs/bin/generator"
-import { strokeLineDash } from "./stroke-dash"
+import { filledShapeOptions } from "./options"
 
-export const rectangleOptions = (e: ExcalidrawRectangleElement): Options => {
-  const opts: Options = {
-    stroke: e.strokeColor,
-    strokeWidth: e.strokeWidth,
-    fillStyle: e.fillStyle,
-    roughness: e.roughness,
-    seed: e.seed,
-    strokeLineDash: strokeLineDash(e.strokeStyle),
-  }
-  if (e.backgroundColor !== "transparent") opts.fill = e.backgroundColor
-  return opts
-}
+export const rectangleOptions: (e: ExcalidrawRectangleElement) => Options = filledShapeOptions
 
 export const rectangleShape = (
   e: ExcalidrawRectangleElement,

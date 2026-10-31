@@ -1,30 +1,11 @@
-import { expect, test, type Page } from "@playwright/test"
-import { parseStoredScene } from "./_helpers"
+import { expect, test } from "@playwright/test"
+import { readScene, redPngBuffer } from "./_helpers"
 
 type SceneEl = {
   id: string
   type: string
   fileId?: string | null
   isDeleted?: boolean
-}
-
-const readScene = async (page: Page): Promise<SceneEl[]> => {
-  const json = await page.evaluate(() => localStorage.getItem("excalidraw-scene"))
-  const data = parseStoredScene<SceneEl>(json)
-  return data.elements.filter((e) => !e.isDeleted)
-}
-
-const redPngBuffer = async (page: Page): Promise<Buffer> => {
-  const dataURL = await page.evaluate(() => {
-    const c = document.createElement("canvas")
-    c.width = 8
-    c.height = 8
-    const ctx = c.getContext("2d")!
-    ctx.fillStyle = "#ff0000"
-    ctx.fillRect(0, 0, 8, 8)
-    return c.toDataURL("image/png")
-  })
-  return Buffer.from(dataURL.split(",")[1]!, "base64")
 }
 
 test("placing an uploaded image renders it and persists its fileId", async ({ page }) => {
@@ -47,7 +28,7 @@ test("placing an uploaded image renders it and persists its fileId", async ({ pa
   await page.mouse.click(box.x + 200, box.y + 150)
   await page.waitForTimeout(700)
 
-  const images = (await readScene(page)).filter((e) => e.type === "image")
+  const images = (await readScene<SceneEl>(page)).filter((e) => e.type === "image")
   expect(images).toHaveLength(1)
   expect(images[0]!.fileId).toBeTruthy()
 

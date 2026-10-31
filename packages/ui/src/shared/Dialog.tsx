@@ -6,7 +6,7 @@ export interface DialogProps {
   title: string
   t: (key: string) => string
   children: React.ReactNode
-  className?: string
+  className?: string | undefined
 }
 
 export function Dialog({

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test"
-import { parseStoredScene } from "./_helpers"
+import { freshCanvas, readScene } from "./_helpers"
 
 interface SceneEl {
   id: string
@@ -9,18 +9,6 @@ interface SceneEl {
   width: number
   height: number
   isDeleted?: boolean
-}
-
-const readScene = async (page: Page): Promise<SceneEl[]> => {
-  const json = await page.evaluate(() => localStorage.getItem("excalidraw-scene"))
-  return parseStoredScene<SceneEl>(json).elements.filter((e) => !e.isDeleted)
-}
-
-const freshCanvas = async (page: Page): Promise<void> => {
-  await page.goto("/")
-  await page.evaluate(() => localStorage.clear())
-  await page.reload()
-  await page.locator('[data-testid="toolbar-rectangle"]').waitFor({ state: "visible" })
 }
 
 const draw = async (
@@ -75,7 +63,7 @@ test("dragging near another element's edge snaps exactly to it", async ({ page }
   // Drag B so its near edge lands at 207 (2px from A's far edge, inside the 8px threshold).
   await dragSingleStep(page, { x: 335, y: 110 }, { x: 217, y: 110 })
 
-  const rects = (await readScene(page))
+  const rects = (await readScene<SceneEl>(page))
     .filter((e) => e.type === "rectangle")
     .sort((a, b) => a.x - b.x)
   expect(rects).toHaveLength(2)
@@ -87,7 +75,7 @@ test("enabling the grid suppresses the alignment snap for the same drag", async 
   await page.keyboard.press("Control+Quote") // toggle grid on (size 20)
   await dragSingleStep(page, { x: 335, y: 110 }, { x: 217, y: 110 })
 
-  const rects = (await readScene(page))
+  const rects = (await readScene<SceneEl>(page))
     .filter((e) => e.type === "rectangle")
     .sort((a, b) => a.x - b.x)
   expect(rects).toHaveLength(2)
@@ -103,7 +91,7 @@ test("holding Ctrl during the drag bypasses the alignment snap", async ({ page }
   await dragSingleStep(page, { x: 335, y: 110 }, { x: 217, y: 110 })
   await page.keyboard.up("Control")
 
-  const rects = (await readScene(page))
+  const rects = (await readScene<SceneEl>(page))
     .filter((e) => e.type === "rectangle")
     .sort((a, b) => a.x - b.x)
   expect(rects).toHaveLength(2)

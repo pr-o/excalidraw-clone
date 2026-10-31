@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test"
-import { parseStoredScene } from "./_helpers"
+import { freshCanvas, readScene } from "./_helpers"
 
 interface SceneEl {
   id: string
@@ -9,18 +9,6 @@ interface SceneEl {
   width: number
   height: number
   isDeleted?: boolean
-}
-
-const readScene = async (page: Page): Promise<SceneEl[]> => {
-  const json = await page.evaluate(() => localStorage.getItem("excalidraw-scene"))
-  return parseStoredScene<SceneEl>(json).elements.filter((e) => !e.isDeleted)
-}
-
-const freshCanvas = async (page: Page): Promise<void> => {
-  await page.goto("/")
-  await page.evaluate(() => localStorage.clear())
-  await page.reload()
-  await page.locator('[data-testid="toolbar-rectangle"]').waitFor({ state: "visible" })
 }
 
 const draw = async (
@@ -53,7 +41,7 @@ test("Escape while drawing a shape removes the uncommitted shape", async ({ page
   await page.mouse.up()
   await page.waitForTimeout(900)
 
-  const rects = (await readScene(page)).filter((e) => e.type === "rectangle")
+  const rects = (await readScene<SceneEl>(page)).filter((e) => e.type === "rectangle")
   expect(rects).toHaveLength(0)
 })
 
@@ -72,7 +60,7 @@ test("Escape mid-drag reverts the element to its original position", async ({ pa
   await page.mouse.up()
   await page.waitForTimeout(900)
 
-  const rects = (await readScene(page)).filter((e) => e.type === "rectangle")
+  const rects = (await readScene<SceneEl>(page)).filter((e) => e.type === "rectangle")
   expect(rects).toHaveLength(1)
   expect(rects[0]!.x).toBeCloseTo(100, 5)
   expect(rects[0]!.y).toBeCloseTo(100, 5)

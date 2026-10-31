@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { ensureI18n } from "../src/i18n"
 import { PresentationHost } from "../src/presentation/PresentationHost"
 import { useAppStore } from "../src/store"
+import { currentView, expectViewToBe } from "./viewAssertions"
 
 /** Distinctive pre-entry camera, so a restore is unmistakable. */
 const SNAPSHOT: ViewTransform = { scrollX: 7, scrollY: 9, zoom: 1 }
@@ -34,17 +35,6 @@ const expectedView = (f: ExcalidrawFrameElement): ViewTransform =>
     window.innerWidth,
     window.innerHeight,
   )
-
-const currentView = (): ViewTransform => {
-  const { scrollX, scrollY, zoom } = useAppStore.getState()
-  return { scrollX, scrollY, zoom }
-}
-
-const expectViewToBe = (actual: ViewTransform, expected: ViewTransform): void => {
-  expect(actual.scrollX).toBeCloseTo(expected.scrollX, 5)
-  expect(actual.scrollY).toBeCloseTo(expected.scrollY, 5)
-  expect(actual.zoom).toBeCloseTo(expected.zoom, 5)
-}
 
 const press = (key: string): void => {
   act(() => {

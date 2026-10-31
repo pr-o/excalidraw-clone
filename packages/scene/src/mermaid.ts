@@ -1,3 +1,4 @@
+import { boundsCenter } from "@excalidraw-clone/geometry"
 import { BINDING_GAP, computeBoundEndpoint } from "./bindings"
 import { DEFAULT_FONT_SIZE } from "./defaults"
 import {
@@ -287,17 +288,13 @@ export function layoutFlowchart(f: MermaidFlowchart): ExcalidrawElement[] {
     addRef(shape.id, { id: text.id, type: "text" })
   }
 
-  const centerOf = (e: ExcalidrawElement): { x: number; y: number } => ({
-    x: e.x + e.width / 2,
-    y: e.y + e.height / 2,
-  })
   const arrows: ExcalidrawElement[] = []
   for (const e of f.edges) {
     if (e.from === e.to) continue
     const from = shapes.get(e.from)!
     const to = shapes.get(e.to)!
-    const s = computeBoundEndpoint(from, centerOf(to), BINDING_GAP)
-    const t = computeBoundEndpoint(to, centerOf(from), BINDING_GAP)
+    const s = computeBoundEndpoint(from, boundsCenter(to), BINDING_GAP)
+    const t = computeBoundEndpoint(to, boundsCenter(from), BINDING_GAP)
     const base = newArrow({ x: s.x, y: s.y })
     const arrow: ExcalidrawArrowElement = {
       ...base,
@@ -394,10 +391,6 @@ export function exportMermaidFlowchart(
   })
 
   const byId = new Map(nodes.map((e) => [e.id, e]))
-  const center = (e: ExcalidrawElement): { x: number; y: number } => ({
-    x: e.x + e.width / 2,
-    y: e.y + e.height / 2,
-  })
   let dx = 0
   let dy = 0
   for (const e of live) {
@@ -405,8 +398,8 @@ export function exportMermaidFlowchart(
     const from = byId.get(e.startBinding.elementId)
     const to = byId.get(e.endBinding.elementId)
     if (!from || !to) continue
-    dx += Math.abs(center(to).x - center(from).x)
-    dy += Math.abs(center(to).y - center(from).y)
+    dx += Math.abs(boundsCenter(to).x - boundsCenter(from).x)
+    dy += Math.abs(boundsCenter(to).y - boundsCenter(from).y)
     const link = e.strokeStyle !== "solid" ? "-.->" : e.endArrowhead === null ? "---" : "-->"
     const label = labelOf.get(e.id)
     const pipe = label === undefined ? "" : `|${escapeLabel(label)}|`

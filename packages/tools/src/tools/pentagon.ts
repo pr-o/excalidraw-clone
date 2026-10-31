@@ -1,16 +1,4 @@
 import { newPentagon } from "@excalidraw-clone/scene"
-import type { Tool, ToolContext, ToolEvent } from "../types"
-import { SHAPE_INITIAL, type ShapeState, shapeReduce } from "./shape"
+import { shapeTool } from "./shape"
 
-export const pentagonTool: Tool<ShapeState, ToolEvent> = {
-  name: "pentagon",
-  initial: SHAPE_INITIAL,
-  reduce(state, event, ctx: ToolContext) {
-    return shapeReduce({
-      state,
-      event,
-      modifiers: ctx.modifiers,
-      factory: (box) => newPentagon(box),
-    })
-  },
-}
+export const pentagonTool = shapeTool("pentagon", (box) => newPentagon(box))

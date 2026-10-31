@@ -1,5 +1,6 @@
 import type { Point } from "@excalidraw-clone/geometry"
 import { type ExcalidrawElement, newNote } from "@excalidraw-clone/scene"
+import { patchElement } from "../draft"
 import type { Tool, ToolContext, ToolEvent } from "../types"
 import { computeBox } from "./shape"
 
@@ -8,15 +9,6 @@ export type NoteState =
   | { phase: "drawing"; start: Point; containerId: string; textId: string }
 
 const NOTE_INITIAL: NoteState = { phase: "idle" }
-
-const resizeBox = (
-  draft: ExcalidrawElement[],
-  id: string,
-  box: { x: number; y: number; width: number; height: number },
-): void => {
-  const i = draft.findIndex((e) => e.id === id)
-  if (i >= 0) draft[i] = { ...draft[i]!, ...box }
-}
 
 const removeByIds = (draft: ExcalidrawElement[], ids: readonly string[]): void => {
   for (let i = draft.length - 1; i >= 0; i -= 1) {
@@ -56,7 +48,7 @@ export const noteTool: Tool<NoteState, ToolEvent> = {
           [
             {
               kind: "mutation",
-              apply: (draft) => resizeBox(draft, containerId, box),
+              apply: (draft) => patchElement(draft, containerId, box),
               skipHistory: true,
             },
           ],
@@ -79,7 +71,7 @@ export const noteTool: Tool<NoteState, ToolEvent> = {
         return [
           { phase: "idle" },
           [
-            { kind: "mutation", apply: (draft) => resizeBox(draft, containerId, box) },
+            { kind: "mutation", apply: (draft) => patchElement(draft, containerId, box) },
             { kind: "select", ids: [containerId] },
             { kind: "switchTool", tool: "selection" },
             { kind: "startTextEdit", elementId: textId },

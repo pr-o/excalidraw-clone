@@ -1,5 +1,5 @@
-import { expect, test, type Page } from "@playwright/test"
-import { dragOnCanvas, parseStoredScene } from "./_helpers"
+import { expect, test } from "@playwright/test"
+import { dragOnCanvas, readScene } from "./_helpers"
 
 type SceneEl = {
   id: string
@@ -8,12 +8,6 @@ type SceneEl = {
   y: number
   points?: { x: number; y: number }[]
   isDeleted?: boolean
-}
-
-const readScene = async (page: Page): Promise<SceneEl[]> => {
-  const json = await page.evaluate(() => localStorage.getItem("excalidraw-scene"))
-  const data = parseStoredScene<SceneEl>(json)
-  return data.elements.filter((e) => !e.isDeleted)
 }
 
 const arrowOf = (els: SceneEl[]): SceneEl => els.find((e) => e.type === "arrow")!
@@ -40,7 +34,7 @@ test("add a bend point, then bend survives moving a bound target", async ({ page
 
   // The end is bound, so it reflowed to the rect's left edge. Compute the real
   // segment midpoint from the actual arrow endpoints before grabbing it.
-  const drawn = arrowOf(await readScene(page))
+  const drawn = arrowOf(await readScene<SceneEl>(page))
   const startAbs = pointAbs(drawn, 0)
   const endAbs = pointAbs(drawn, drawn.points!.length - 1)
   const mid = { x: (startAbs.x + endAbs.x) / 2, y: (startAbs.y + endAbs.y) / 2 }
@@ -57,7 +51,7 @@ test("add a bend point, then bend survives moving a bound target", async ({ page
   await dragOnCanvas(page, mid, { x: mid.x, y: mid.y + 150 })
   await page.waitForTimeout(700)
 
-  const before = await readScene(page)
+  const before = await readScene<SceneEl>(page)
   const arrowBefore = arrowOf(before)
   expect(arrowBefore.points!.length).toBe(3)
   const bendBefore = interiorAbs(arrowBefore)
@@ -66,7 +60,7 @@ test("add a bend point, then bend survives moving a bound target", async ({ page
   await dragOnCanvas(page, { x: 580, y: 290 }, { x: 780, y: 290 })
   await page.waitForTimeout(700)
 
-  const after = await readScene(page)
+  const after = await readScene<SceneEl>(page)
   const arrowAfter = arrowOf(after)
   expect(arrowAfter.points!.length).toBe(3)
   const bendAfter = interiorAbs(arrowAfter)

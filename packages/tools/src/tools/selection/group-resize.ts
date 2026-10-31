@@ -1,6 +1,7 @@
 import type { Point } from "@excalidraw-clone/geometry"
 import { type ExcalidrawElement, resizeElements } from "@excalidraw-clone/scene"
 import type { Modifiers, ToolEffect } from "../../types"
+import { buildRecommitEffect } from "./recommit"
 import { anchorSides, computeResize, type ResizeOrigin } from "./resize"
 import type { ResizeHandle } from "./types"
 
@@ -49,17 +50,8 @@ export const buildGroupResizeMoveEffect = (
   }
 }
 
-export const buildGroupResizeCommitEffect = (ids: readonly string[]): ToolEffect => ({
-  kind: "mutation",
-  apply: (draft) => {
-    // No-op replace: re-emit each resized element to push a fresh history snapshot.
-    for (let i = 0; i < draft.length; i += 1) {
-      const e = draft[i]!
-      if (!ids.includes(e.id)) continue
-      draft[i] = { ...e }
-    }
-  },
-})
+export const buildGroupResizeCommitEffect = (ids: readonly string[]): ToolEffect =>
+  buildRecommitEffect(ids)
 
 export const buildGroupResizeRevertEffect = (
   ids: readonly string[],

@@ -17,13 +17,7 @@ export function ResetCanvasDialog({
 }: ResetCanvasDialogProps): React.ReactElement | null {
   if (!open) return null
   return (
-    <Dialog
-      t={t}
-      open={open}
-      onClose={onClose}
-      title={t("reset.title")}
-      {...(className !== undefined ? { className } : {})}
-    >
+    <Dialog t={t} open={open} onClose={onClose} title={t("reset.title")} className={className}>
       <p className="mb-4 text-sm text-muted">{t("reset.body")}</p>
       <div className="flex justify-end gap-2">
         <button

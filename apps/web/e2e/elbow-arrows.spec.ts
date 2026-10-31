@@ -1,5 +1,5 @@
-import { expect, test, type Page } from "@playwright/test"
-import { dragOnCanvas, parseStoredScene } from "./_helpers"
+import { expect, test } from "@playwright/test"
+import { dragOnCanvas, readScene } from "./_helpers"
 
 type SceneEl = {
   id: string
@@ -11,12 +11,6 @@ type SceneEl = {
   startBinding?: { elementId: string } | null
   endBinding?: { elementId: string } | null
   isDeleted?: boolean
-}
-
-const readScene = async (page: Page): Promise<SceneEl[]> => {
-  const json = await page.evaluate(() => localStorage.getItem("excalidraw-scene"))
-  const data = parseStoredScene<SceneEl>(json)
-  return data.elements.filter((e) => !e.isDeleted)
 }
 
 const orthogonal = (pts: readonly { x: number; y: number }[]): boolean => {
@@ -51,7 +45,7 @@ test("toggle to elbow routes orthogonally, re-routes on shape drag, persists", a
   await page.locator('[data-testid="arrow-type-elbow"]').click()
   await page.waitForTimeout(900)
 
-  let arrow = (await readScene(page)).find((e) => e.type === "arrow")!
+  let arrow = (await readScene<SceneEl>(page)).find((e) => e.type === "arrow")!
   expect(arrow.elbowed).toBe(true)
   expect(arrow.startBinding).not.toBeNull()
   expect(arrow.endBinding).not.toBeNull()
@@ -60,14 +54,14 @@ test("toggle to elbow routes orthogonally, re-routes on shape drag, persists", a
   // Drag rect B; the elbow re-routes and stays orthogonal + bound.
   await dragOnCanvas(page, { x: 580, y: 390 }, { x: 580, y: 480 })
   await page.waitForTimeout(900)
-  arrow = (await readScene(page)).find((e) => e.type === "arrow")!
+  arrow = (await readScene<SceneEl>(page)).find((e) => e.type === "arrow")!
   expect(orthogonal(arrow.points!)).toBe(true)
   expect(arrow.endBinding).not.toBeNull()
 
   // Reload: elbowed flag and route persist.
   await page.reload()
   await page.locator('[data-testid="toolbar-rectangle"]').waitFor({ state: "visible" })
-  arrow = (await readScene(page)).find((e) => e.type === "arrow")!
+  arrow = (await readScene<SceneEl>(page)).find((e) => e.type === "arrow")!
   expect(arrow.elbowed).toBe(true)
   expect(orthogonal(arrow.points!)).toBe(true)
 })

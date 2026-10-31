@@ -1,5 +1,5 @@
-import { expect, test, type Page } from "@playwright/test"
-import { dragOnCanvas, parseStoredScene } from "./_helpers"
+import { expect, test } from "@playwright/test"
+import { dragOnCanvas, readScene } from "./_helpers"
 
 type SceneEl = {
   id: string
@@ -7,12 +7,6 @@ type SceneEl = {
   startArrowhead?: string | null
   endArrowhead?: string | null
   isDeleted?: boolean
-}
-
-const readScene = async (page: Page): Promise<SceneEl[]> => {
-  const json = await page.evaluate(() => localStorage.getItem("excalidraw-scene"))
-  const data = parseStoredScene<SceneEl>(json)
-  return data.elements.filter((e) => !e.isDeleted)
 }
 
 test("picking a start arrowhead persists it; end keeps the default", async ({ page }) => {
@@ -35,7 +29,7 @@ test("picking a start arrowhead persists it; end keeps the default", async ({ pa
   await page.locator('[data-testid="arrowhead-start-dot"]').click()
   await page.waitForTimeout(700)
 
-  const arrows = (await readScene(page)).filter((e) => e.type === "arrow")
+  const arrows = (await readScene<SceneEl>(page)).filter((e) => e.type === "arrow")
   expect(arrows).toHaveLength(1)
   expect(arrows[0]!.startArrowhead).toBe("dot")
   expect(arrows[0]!.endArrowhead).toBe("arrow")
@@ -43,6 +37,6 @@ test("picking a start arrowhead persists it; end keeps the default", async ({ pa
   // Strip the end arrowhead via None.
   await page.locator('[data-testid="arrowhead-end-none"]').click()
   await page.waitForTimeout(700)
-  const after = (await readScene(page)).filter((e) => e.type === "arrow")
+  const after = (await readScene<SceneEl>(page)).filter((e) => e.type === "arrow")
   expect(after[0]!.endArrowhead).toBeNull()
 })

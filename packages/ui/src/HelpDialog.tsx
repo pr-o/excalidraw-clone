@@ -1,33 +1,14 @@
 import { Dialog } from "./shared/Dialog"
+import { DEFAULT_TOOL_KEYS } from "./toolKeys"
 
 interface Shortcut {
   keys: string
   label: string
 }
 
-const TOOL_SHORTCUTS: readonly Shortcut[] = [
-  { keys: "V", label: "shortcuts:selection" },
-  { keys: "R", label: "shortcuts:rectangle" },
-  { keys: "O", label: "shortcuts:ellipse" },
-  { keys: "D", label: "shortcuts:diamond" },
-  { keys: "3", label: "shortcuts:triangle" },
-  { keys: "G", label: "shortcuts:parallelogram" },
-  { keys: "6", label: "shortcuts:hexagon" },
-  { keys: "5", label: "shortcuts:pentagon" },
-  { keys: "8", label: "shortcuts:octagon" },
-  { keys: "7", label: "shortcuts:table" },
-  { keys: "L", label: "shortcuts:line" },
-  { keys: "A", label: "shortcuts:arrow" },
-  { keys: "P", label: "shortcuts:freedraw" },
-  { keys: "T", label: "shortcuts:text" },
-  { keys: "9", label: "shortcuts:image" },
-  { keys: "E", label: "shortcuts:eraser" },
-  { keys: "F", label: "shortcuts:frame" },
-  { keys: "N", label: "shortcuts:note" },
-  { keys: "S", label: "shortcuts:lasso" },
-  { keys: "K", label: "shortcuts:laser" },
-  { keys: "C", label: "shortcuts:comment" },
-]
+const TOOL_SHORTCUTS: readonly Shortcut[] = Object.entries(DEFAULT_TOOL_KEYS).map(
+  ([tool, key]) => ({ keys: key.toUpperCase(), label: `shortcuts:${tool}` }),
+)
 
 const EDITOR_SHORTCUTS: readonly Shortcut[] = [
   { keys: "Cmd/Ctrl+Z", label: "shortcuts:undo" },
@@ -99,13 +80,7 @@ export function HelpDialog({
       })
     : TOOL_SHORTCUTS
   return (
-    <Dialog
-      t={t}
-      open={open}
-      onClose={onClose}
-      title={t("shortcuts.title")}
-      {...(className !== undefined ? { className } : {})}
-    >
+    <Dialog t={t} open={open} onClose={onClose} title={t("shortcuts.title")} className={className}>
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
         <Group title={t("shortcuts.tools")} items={tools} t={t} />
         <Group title={t("shortcuts.editor")} items={EDITOR_SHORTCUTS} t={t} />

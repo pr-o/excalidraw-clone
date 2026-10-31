@@ -1,5 +1,5 @@
-import { expect, test, type Page } from "@playwright/test"
-import { dragOnCanvas, parseStoredScene } from "./_helpers"
+import { expect, test } from "@playwright/test"
+import { dragOnCanvas, readScene } from "./_helpers"
 
 type SceneEl = {
   id: string
@@ -8,12 +8,6 @@ type SceneEl = {
   y: number
   groupIds?: string[]
   isDeleted?: boolean
-}
-
-const readScene = async (page: Page): Promise<SceneEl[]> => {
-  const json = await page.evaluate(() => localStorage.getItem("excalidraw-scene"))
-  const data = parseStoredScene<SceneEl>(json)
-  return data.elements.filter((e) => !e.isDeleted)
 }
 
 test("grouped rectangles drag together; ungrouped drag independently", async ({ page }) => {
@@ -41,7 +35,7 @@ test("grouped rectangles drag together; ungrouped drag independently", async ({ 
   // Drag A by (+40,+60): the whole group must move.
   await dragOnCanvas(page, { x: 130, y: 130 }, { x: 170, y: 190 })
   await page.waitForTimeout(900)
-  let rects = (await readScene(page)).filter((e) => e.type === "rectangle")
+  let rects = (await readScene<SceneEl>(page)).filter((e) => e.type === "rectangle")
   expect(rects.length).toBe(2)
   rects.sort((p, q) => p.x - q.x)
   expect(Math.abs(rects[0]!.x - 140)).toBeLessThan(1)
@@ -57,7 +51,7 @@ test("grouped rectangles drag together; ungrouped drag independently", async ({ 
   // Drag A by (+0,+50): only A moves now.
   await dragOnCanvas(page, { x: 170, y: 190 }, { x: 170, y: 240 })
   await page.waitForTimeout(900)
-  rects = (await readScene(page)).filter((e) => e.type === "rectangle")
+  rects = (await readScene<SceneEl>(page)).filter((e) => e.type === "rectangle")
   rects.sort((p, q) => p.x - q.x)
   expect(Math.abs(rects[0]!.y - 210)).toBeLessThan(1)
   expect(Math.abs(rects[1]!.y - 160)).toBeLessThan(1)

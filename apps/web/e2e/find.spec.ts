@@ -1,36 +1,11 @@
 import { expect, test, type Page } from "@playwright/test"
-import { dragOnCanvas } from "./_helpers"
+import { dragOnCanvas, maxChannelIn, setDarkTheme } from "./_helpers"
 
 // Brightest channel value in a region — stroke pixels are jittery (roughjs), so
 // scan a box instead of a single coordinate (ported from zoom-pan.spec.ts).
-const maxChannelIn = async (
-  page: Page,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-): Promise<number> =>
-  page.evaluate(
-    ([rx, ry, rw, rh]) => {
-      const c = document.querySelector("canvas")!
-      const ctx = c.getContext("2d")!
-      const d = ctx.getImageData(rx!, ry!, rw!, rh!).data
-      let max = 0
-      for (let i = 0; i < d.length; i += 4) max = Math.max(max, d[i]!, d[i + 1]!, d[i + 2]!)
-      return max
-    },
-    [x, y, w, h],
-  )
-
 // maxChannelIn detects light strokes against a dark canvas; on the default light
 // theme the background is white (255) and content vanishes into it, so the pixel
 // assertions below must run in dark mode (same setup as zoom-pan.spec.ts).
-const setDarkTheme = async (page: Page): Promise<void> => {
-  await page.getByRole("button", { name: /menu/i }).click()
-  await page.locator('[data-testid="theme-dark"]').click()
-  await page.waitForTimeout(300)
-}
-
 /**
  * Draws a sticky note and labels it. The note tool opens its bound-text editor
  * on pointerUp, so the label can be typed and committed (sticky-note.spec.ts);

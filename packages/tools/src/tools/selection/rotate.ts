@@ -1,13 +1,9 @@
 import type { Point } from "@excalidraw-clone/geometry"
-import type { ExcalidrawElement } from "@excalidraw-clone/scene"
+import { patchElement } from "../../draft"
 import type { Modifiers, ToolEffect } from "../../types"
+import { buildRecommitEffect } from "./recommit"
 
 const SNAP_STEP = (15 * Math.PI) / 180
-
-export const elementCenter = (e: ExcalidrawElement): Point => ({
-  x: e.x + e.width / 2,
-  y: e.y + e.height / 2,
-})
 
 export const pointerAngle = (center: Point, at: Point): number =>
   Math.atan2(at.y - center.y, at.x - center.x)
@@ -25,29 +21,15 @@ export const computeRotation = (
 
 export const buildRotateMoveEffect = (elementId: string, angle: number): ToolEffect => ({
   kind: "mutation",
-  apply: (draft) => {
-    const i = draft.findIndex((e) => e.id === elementId)
-    if (i < 0) return
-    draft[i] = { ...draft[i]!, angle }
-  },
+  apply: (draft) => patchElement(draft, elementId, { angle }),
   skipHistory: true,
 })
 
-export const buildRotateCommitEffect = (elementId: string): ToolEffect => ({
-  kind: "mutation",
-  apply: (draft) => {
-    const i = draft.findIndex((e) => e.id === elementId)
-    if (i < 0) return
-    draft[i] = { ...draft[i]! }
-  },
-})
+export const buildRotateCommitEffect = (elementId: string): ToolEffect =>
+  buildRecommitEffect([elementId])
 
 export const buildRotateRevertEffect = (elementId: string, originalAngle: number): ToolEffect => ({
   kind: "mutation",
-  apply: (draft) => {
-    const i = draft.findIndex((e) => e.id === elementId)
-    if (i < 0) return
-    draft[i] = { ...draft[i]!, angle: originalAngle }
-  },
+  apply: (draft) => patchElement(draft, elementId, { angle: originalAngle }),
   skipHistory: true,
 })

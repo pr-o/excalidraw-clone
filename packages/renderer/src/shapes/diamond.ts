@@ -1,21 +1,8 @@
 import type { ExcalidrawDiamondElement } from "@excalidraw-clone/scene"
-import type { Drawable, Options } from "roughjs/bin/core"
+import type { Drawable } from "roughjs/bin/core"
 import type { RoughGenerator } from "roughjs/bin/generator"
 import type { Point as RoughPoint } from "roughjs/bin/geometry"
-import { strokeLineDash } from "./stroke-dash"
-
-const diamondOptions = (e: ExcalidrawDiamondElement): Options => {
-  const opts: Options = {
-    stroke: e.strokeColor,
-    strokeWidth: e.strokeWidth,
-    fillStyle: e.fillStyle,
-    roughness: e.roughness,
-    seed: e.seed,
-    strokeLineDash: strokeLineDash(e.strokeStyle),
-  }
-  if (e.backgroundColor !== "transparent") opts.fill = e.backgroundColor
-  return opts
-}
+import { filledShapeOptions } from "./options"
 
 export const diamondShape = (
   e: ExcalidrawDiamondElement,
@@ -27,5 +14,5 @@ export const diamondShape = (
     [e.width / 2, e.height],
     [0, e.height / 2],
   ]
-  return [gen.polygon(points, diamondOptions(e))]
+  return [gen.polygon(points, filledShapeOptions(e))]
 }

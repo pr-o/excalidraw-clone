@@ -1,14 +1,10 @@
-import { type ExcalidrawElement, newText } from "@excalidraw-clone/scene"
+import { newText } from "@excalidraw-clone/scene"
+import { removeElement } from "../draft"
 import type { Tool, ToolContext, ToolEffect, ToolEvent } from "../types"
 
 export type TextState = { phase: "idle" } | { phase: "placing"; elementId: string }
 
 const TEXT_INITIAL: TextState = { phase: "idle" }
-
-const removeById = (draft: ExcalidrawElement[], id: string): void => {
-  const i = draft.findIndex((e) => e.id === id)
-  if (i >= 0) draft.splice(i, 1)
-}
 
 export const textTool: Tool<TextState, ToolEvent> = {
   name: "text",
@@ -43,7 +39,7 @@ export const textTool: Tool<TextState, ToolEvent> = {
         [
           {
             kind: "mutation",
-            apply: (draft) => removeById(draft, elementId),
+            apply: (draft) => removeElement(draft, elementId),
             skipHistory: true,
           },
         ],

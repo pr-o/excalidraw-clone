@@ -64,13 +64,7 @@ function StickerBody({
   const shown = STICKERS.filter((s) => s.name.includes(q) || s.category.includes(q))
 
   return (
-    <Dialog
-      t={t}
-      open={open}
-      onClose={onClose}
-      title={t("stickers.title")}
-      {...(className !== undefined ? { className } : {})}
-    >
+    <Dialog t={t} open={open} onClose={onClose} title={t("stickers.title")} className={className}>
       <input
         type="search"
         data-testid="sticker-search"

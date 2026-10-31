@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test"
 import { readFileSync } from "node:fs"
 import { inflateSync } from "node:zlib"
-import { dragOnCanvas, parseStoredScene } from "./_helpers"
+import { dragOnCanvas, parseStoredScene, redPngBuffer } from "./_helpers"
 
 type SceneEl = {
   id: string
@@ -15,19 +15,6 @@ type SceneEl = {
 const readImages = async (page: Page): Promise<SceneEl[]> => {
   const json = await page.evaluate(() => localStorage.getItem("excalidraw-scene"))
   return parseStoredScene<SceneEl>(json).elements.filter((e) => e.type === "image" && !e.isDeleted)
-}
-
-const redPngBuffer = async (page: Page): Promise<Buffer> => {
-  const dataURL = await page.evaluate(() => {
-    const c = document.createElement("canvas")
-    c.width = 8
-    c.height = 8
-    const ctx = c.getContext("2d")!
-    ctx.fillStyle = "#ff0000"
-    ctx.fillRect(0, 0, 8, 8)
-    return c.toDataURL("image/png")
-  })
-  return Buffer.from(dataURL.split(",")[1]!, "base64")
 }
 
 const pixelAt = (page: Page, x: number, y: number) =>

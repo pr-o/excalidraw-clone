@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test"
-import { dragOnCanvas, parseStoredScene } from "./_helpers"
+import { dblClickCanvas, dragOnCanvas, freshCanvas, readScene } from "./_helpers"
 
 type SceneEl = {
   id: string
@@ -11,26 +11,6 @@ type SceneEl = {
   text?: string
   containerId?: string | null
   isDeleted?: boolean
-}
-
-const readScene = async (page: Page): Promise<SceneEl[]> => {
-  const json = await page.evaluate(() => localStorage.getItem("excalidraw-scene"))
-  const data = parseStoredScene<SceneEl>(json)
-  return data.elements.filter((e) => !e.isDeleted)
-}
-
-const freshCanvas = async (page: Page): Promise<void> => {
-  await page.goto("/")
-  await page.evaluate(() => localStorage.clear())
-  await page.reload()
-  await page.locator('[data-testid="toolbar-more-shapes"]').waitFor({ state: "visible" })
-}
-
-const dblClickCanvas = async (page: Page, at: { x: number; y: number }): Promise<void> => {
-  const canvas = page.locator("canvas").first()
-  const box = await canvas.boundingBox()
-  if (!box) throw new Error("canvas not found")
-  await page.mouse.dblclick(box.x + at.x, box.y + at.y)
 }
 
 const drawViaFlyout = async (
@@ -48,7 +28,7 @@ const drawViaFlyout = async (
 test("opens the flyout, draws pentagon and octagon, and closes automatically after selection", async ({
   page,
 }) => {
-  await freshCanvas(page)
+  await freshCanvas(page, "toolbar-more-shapes")
 
   // flyout starts closed: pentagon/octagon testids are not in the DOM
   await expect(page.locator('[data-testid="toolbar-pentagon"]')).toHaveCount(0)
@@ -66,7 +46,7 @@ test("opens the flyout, draws pentagon and octagon, and closes automatically aft
   await drawViaFlyout(page, "octagon", { x: 220, y: 60 }, { x: 340, y: 160 })
 
   await page.waitForTimeout(900)
-  const els = await readScene(page)
+  const els = await readScene<SceneEl>(page)
   const types = els.map((e) => e.type).sort()
   expect(types).toEqual(["octagon", "pentagon"])
 
@@ -82,7 +62,7 @@ test("opens the flyout, draws pentagon and octagon, and closes automatically aft
 test("keyboard shortcuts 5 and 8 select pentagon/octagon directly without opening the flyout", async ({
   page,
 }) => {
-  await freshCanvas(page)
+  await freshCanvas(page, "toolbar-more-shapes")
 
   await page.keyboard.press("5")
   await expect(page.locator('[data-testid="toolbar-pentagon"]')).toHaveCount(0)
@@ -94,12 +74,12 @@ test("keyboard shortcuts 5 and 8 select pentagon/octagon directly without openin
   await dragOnCanvas(page, { x: 220, y: 60 }, { x: 340, y: 160 })
 
   await page.waitForTimeout(900)
-  const types = (await readScene(page)).map((e) => e.type).sort()
+  const types = (await readScene<SceneEl>(page)).map((e) => e.type).sort()
   expect(types).toEqual(["octagon", "pentagon"])
 })
 
 test("Escape closes the open flyout", async ({ page }) => {
-  await freshCanvas(page)
+  await freshCanvas(page, "toolbar-more-shapes")
 
   await page.locator('[data-testid="toolbar-more-shapes"]').click()
   await expect(page.locator('[data-testid="toolbar-pentagon"]')).toBeVisible()
@@ -109,7 +89,7 @@ test("Escape closes the open flyout", async ({ page }) => {
 })
 
 test("double-click a pentagon and an octagon each add a label", async ({ page }) => {
-  await freshCanvas(page)
+  await freshCanvas(page, "toolbar-more-shapes")
 
   await drawViaFlyout(page, "pentagon", { x: 100, y: 100 }, { x: 220, y: 180 })
   await page.locator('[data-testid="toolbar-selection"]').click()
@@ -120,7 +100,7 @@ test("double-click a pentagon and an octagon each add a label", async ({ page })
   await page.mouse.click(500, 400)
   await page.waitForTimeout(900)
 
-  let els = await readScene(page)
+  let els = await readScene<SceneEl>(page)
   const pentagon = els.find((e) => e.type === "pentagon")!
   let label = els.find((e) => e.type === "text" && e.containerId === pentagon.id)!
   expect(label.text).toBe("Pentagon label")
@@ -134,7 +114,7 @@ test("double-click a pentagon and an octagon each add a label", async ({ page })
   await page.mouse.click(500, 450)
   await page.waitForTimeout(900)
 
-  els = await readScene(page)
+  els = await readScene<SceneEl>(page)
   const octagon = els.find((e) => e.type === "octagon")!
   label = els.find((e) => e.type === "text" && e.containerId === octagon.id)!
   expect(label.text).toBe("Octagon label")

@@ -37,7 +37,7 @@ function MermaidExportBody({
       open={open}
       onClose={onClose}
       title={t("mermaid.exportTitle")}
-      {...(className !== undefined ? { className } : {})}
+      className={className}
     >
       <textarea
         data-testid="mermaid-output"

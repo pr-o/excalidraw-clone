@@ -1,7 +1,6 @@
 import type { Point } from "@excalidraw-clone/geometry"
-import type { ExcalidrawArrowElement } from "@excalidraw-clone/scene"
+import { type ExcalidrawArrowElement, pointsPatch } from "@excalidraw-clone/scene"
 import type { ToolEffect } from "../../types"
-import { pointsPatch } from "../linear"
 import type { LinearSnapshot } from "./endpoint"
 
 const absPoints = (a: ExcalidrawArrowElement): Point[] =>

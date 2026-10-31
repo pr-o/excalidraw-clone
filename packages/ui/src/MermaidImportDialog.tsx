@@ -38,13 +38,7 @@ function MermaidImportBody({
           : null
 
   return (
-    <Dialog
-      t={t}
-      open={open}
-      onClose={onClose}
-      title={t("mermaid.title")}
-      {...(className !== undefined ? { className } : {})}
-    >
+    <Dialog t={t} open={open} onClose={onClose} title={t("mermaid.title")} className={className}>
       <textarea
         data-testid="mermaid-input"
         aria-label={t("mermaid.title")}

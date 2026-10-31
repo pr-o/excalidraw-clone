@@ -1,16 +1,4 @@
 import { newFrame } from "@excalidraw-clone/scene"
-import type { Tool, ToolContext, ToolEvent } from "../types"
-import { SHAPE_INITIAL, type ShapeState, shapeReduce } from "./shape"
+import { shapeTool } from "./shape"
 
-export const frameTool: Tool<ShapeState, ToolEvent> = {
-  name: "frame",
-  initial: SHAPE_INITIAL,
-  reduce(state, event, ctx: ToolContext) {
-    return shapeReduce({
-      state,
-      event,
-      modifiers: ctx.modifiers,
-      factory: (box) => newFrame(box),
-    })
-  },
-}
+export const frameTool = shapeTool("frame", (box) => newFrame(box))

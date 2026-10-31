@@ -1,15 +1,8 @@
-import { type Bounds, boundsContains } from "@excalidraw-clone/geometry"
+import { type Bounds, boundsContains, boundsFromPoints } from "@excalidraw-clone/geometry"
 import { type ExcalidrawElement, getElementBounds } from "@excalidraw-clone/scene"
 
-export const marqueeBounds = (
-  a: { x: number; y: number },
-  b: { x: number; y: number },
-): Bounds => ({
-  x: Math.min(a.x, b.x),
-  y: Math.min(a.y, b.y),
-  width: Math.abs(b.x - a.x),
-  height: Math.abs(b.y - a.y),
-})
+export const marqueeBounds = (a: { x: number; y: number }, b: { x: number; y: number }): Bounds =>
+  boundsFromPoints([a, b])
 
 export const elementsInsideMarquee = (
   marquee: Bounds,

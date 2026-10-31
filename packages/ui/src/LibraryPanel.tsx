@@ -1,5 +1,6 @@
 import type { LibraryItem } from "@excalidraw-clone/scene"
 import { useState } from "react"
+import { PanelToggle } from "./shared/PanelToggle"
 
 export interface LibraryPanelProps {
   t: (key: string) => string
@@ -145,16 +146,13 @@ export function LibraryPanel(props: LibraryPanelProps): React.ReactElement {
 
   if (!props.open) {
     return (
-      <button
-        type="button"
+      <PanelToggle
+        label={props.t("library.toggle")}
+        testId="library-toggle"
+        position="bottom-16 right-3"
+        glyph="‹"
         onClick={props.onToggle}
-        aria-label={props.t("library.toggle")}
-        aria-expanded={false}
-        data-testid="library-toggle"
-        className="fixed bottom-16 right-3 z-30 flex h-9 w-9 items-center justify-center rounded-lg bg-panel shadow hover:bg-panel-hover"
-      >
-        ‹
-      </button>
+      />
     )
   }
 

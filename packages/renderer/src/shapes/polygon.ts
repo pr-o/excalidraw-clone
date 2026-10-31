@@ -6,10 +6,10 @@ import type {
   ExcalidrawPentagonElement,
   ExcalidrawTriangleElement,
 } from "@excalidraw-clone/scene"
-import type { Drawable, Options } from "roughjs/bin/core"
+import type { Drawable } from "roughjs/bin/core"
 import type { RoughGenerator } from "roughjs/bin/generator"
 import type { Point as RoughPoint } from "roughjs/bin/geometry"
-import { strokeLineDash } from "./stroke-dash"
+import { filledShapeOptions } from "./options"
 
 type PolygonElement =
   | ExcalidrawTriangleElement
@@ -18,24 +18,11 @@ type PolygonElement =
   | ExcalidrawPentagonElement
   | ExcalidrawOctagonElement
 
-const polygonOptions = (e: PolygonElement): Options => {
-  const opts: Options = {
-    stroke: e.strokeColor,
-    strokeWidth: e.strokeWidth,
-    fillStyle: e.fillStyle,
-    roughness: e.roughness,
-    seed: e.seed,
-    strokeLineDash: strokeLineDash(e.strokeStyle),
-  }
-  if (e.backgroundColor !== "transparent") opts.fill = e.backgroundColor
-  return opts
-}
-
 export const polygonShape = (e: PolygonElement, gen: RoughGenerator): readonly Drawable[] => {
   const points: RoughPoint[] = mirroredShapeVertices(
     e.type,
     { x: 0, y: 0, width: e.width, height: e.height },
     e.mirror ?? [1, 1],
   ).map((p) => [p.x, p.y])
-  return [gen.polygon(points, polygonOptions(e))]
+  return [gen.polygon(points, filledShapeOptions(e))]
 }
