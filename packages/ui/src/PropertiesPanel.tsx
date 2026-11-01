@@ -98,7 +98,7 @@ export function PropertiesPanel({
 
   return (
     <aside
-      className={`flex max-h-[calc(100vh-11rem)] w-60 flex-col gap-3 overflow-y-auto rounded-xl bg-panel p-3 shadow-panel min-[960px]:max-h-[calc(100vh-8rem)] ${className ?? ""}`}
+      className={`flex max-h-[calc(100vh-8rem)] w-60 flex-col gap-3 overflow-y-auto rounded-xl bg-panel p-3 shadow-panel ${className ?? ""}`}
       aria-label={t("properties.label")}
     >
       <Section label={t("properties.stroke")}>

@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import { describe, expect, it, vi } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 import { Toolbar } from "../src/Toolbar"
 
 const t = (key: string): string => key
@@ -112,5 +112,50 @@ describe("Toolbar", () => {
     render(<Toolbar {...baseProps()} onSelectTool={onSelectTool} />)
     await userEvent.click(screen.getByTestId("toolbar-laser"))
     expect(onSelectTool).toHaveBeenCalledWith("laser")
+  })
+
+  describe("below 960px", () => {
+    const stubWidth = (width: number): void => {
+      vi.stubGlobal("matchMedia", (q: string) => ({
+        matches: width >= Number(/min-width: (\d+)px/.exec(q)?.[1]),
+        addEventListener: () => {},
+        removeEventListener: () => {},
+      }))
+    }
+    afterEach(() => vi.unstubAllGlobals())
+
+    it("moves insert + utility groups into the more-tools menu at 800px", async () => {
+      stubWidth(800)
+      const onSelectTool = vi.fn()
+      render(<Toolbar {...baseProps()} onSelectTool={onSelectTool} activeTool="laser" />)
+      expect(screen.getByTestId("toolbar-arrow")).toBeInTheDocument()
+      expect(screen.queryByTestId("toolbar-image")).not.toBeInTheDocument()
+      const more = screen.getByTestId("toolbar-more-tools")
+      expect(more).toHaveAttribute("aria-pressed", "true")
+      await userEvent.click(more)
+      for (const name of ["image", "note", "frame", "eraser", "laser", "comment"]) {
+        expect(screen.getByTestId(`toolbar-${name}`)).toBeInTheDocument()
+      }
+      await userEvent.click(screen.getByTestId("toolbar-comment"))
+      expect(onSelectTool).toHaveBeenCalledWith("comment")
+      expect(screen.queryByTestId("toolbar-image")).not.toBeInTheDocument()
+    })
+
+    it("also moves the draw group below 768px, and Escape closes the menu", async () => {
+      stubWidth(600)
+      render(<Toolbar {...baseProps()} />)
+      expect(screen.queryByTestId("toolbar-arrow")).not.toBeInTheDocument()
+      await userEvent.click(screen.getByTestId("toolbar-more-tools"))
+      expect(screen.getByTestId("toolbar-arrow")).toHaveAttribute("title", "toolbar.arrow (A)")
+      await userEvent.keyboard("{Escape}")
+      expect(screen.queryByTestId("toolbar-arrow")).not.toBeInTheDocument()
+    })
+
+    it("keeps everything inline with no more-tools button when wide", () => {
+      stubWidth(1280)
+      render(<Toolbar {...baseProps()} />)
+      expect(screen.getByTestId("toolbar-comment")).toBeInTheDocument()
+      expect(screen.queryByTestId("toolbar-more-tools")).not.toBeInTheDocument()
+    })
   })
 })

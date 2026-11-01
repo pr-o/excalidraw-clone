@@ -52,6 +52,8 @@ export const ICONS: Record<string, string> = {
     '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 10a6.5 6.5 0 1 0 2-4.7"/><polyline points="3,3 3,6.5 6.5,6.5"/><polyline points="10,6.5 10,10 12.5,11.5"/></svg>',
   library:
     '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="4" height="14" rx="0.5"/><rect x="8" y="3" width="4" height="14" rx="0.5"/><path d="M13 4.2l3.7-1 2.6 13.6-3.7 1z"/></svg>',
+  "chevron-down":
+    '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4,8 10,14 16,8"/></svg>',
   "chevron-left":
     '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="12,4 6,10 12,16"/></svg>',
   "chevron-right":

@@ -108,8 +108,8 @@ function Inner(): React.ReactElement {
 
           {!viewMode && (
             <>
-              {/* Insets clear the menu button and panel toggles; the toolbar wraps its
-              tool groups onto a second row when narrower than one row (~940px). */}
+              {/* Insets clear the menu button and panel toggles; below 960px the toolbar
+              moves its lower-priority groups into a "more tools" menu to stay one row. */}
               <div className="pointer-events-none absolute left-16 right-16 top-3 z-30 flex justify-center">
                 <Toolbar
                   className="pointer-events-auto"
@@ -127,10 +127,8 @@ function Inner(): React.ReactElement {
 
               {/* Right offset clears the HistoryPanel: its closed toggle occupies
               right:12px–48px, and its open panel occupies right:0–256px. Top offset
-              sits below the toolbar (two rows below 960px wide). */}
-              <div
-                className={`absolute ${historyOpen ? "right-[280px]" : "right-14"} top-[6.75rem] z-30 min-[960px]:top-16`}
-              >
+              sits below the single-row toolbar. */}
+              <div className={`absolute ${historyOpen ? "right-[280px]" : "right-14"} top-16 z-30`}>
                 <PropertiesHost
                   scene={scene}
                   selectedIds={selectedIds}
