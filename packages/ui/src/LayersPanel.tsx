@@ -33,10 +33,10 @@ export function LayersPanel({
     .reverse()
 
   const orderButtons = [
-    ["send-to-back", "sendToBack", "⏮", onSendToBack],
-    ["send-backward", "sendBackward", "◀", onSendBackward],
-    ["bring-forward", "bringForward", "▶", onBringForward],
-    ["bring-to-front", "bringToFront", "⏭", onBringToFront],
+    ["send-to-back", "sendToBack", "send-to-back", onSendToBack],
+    ["send-backward", "sendBackward", "send-backward", onSendBackward],
+    ["bring-forward", "bringForward", "bring-forward", onBringForward],
+    ["bring-to-front", "bringToFront", "bring-to-front", onBringToFront],
   ] as const
 
   if (!open) {
@@ -97,7 +97,7 @@ export function LayersPanel({
                   <span className="truncate">{label}</span>
                 </button>
                 <div className="flex shrink-0 gap-0.5">
-                  {orderButtons.map(([slug, key, glyph, run]) => (
+                  {orderButtons.map(([slug, key, icon, run]) => (
                     <button
                       key={slug}
                       type="button"
@@ -105,9 +105,9 @@ export function LayersPanel({
                       aria-label={t(`properties.${key}`)}
                       title={t(`properties.${key}`)}
                       onClick={() => run(element.id)}
-                      className="rounded px-0.5 text-[10px] text-muted hover:bg-panel-hover hover:text-app"
+                      className="rounded p-0.5 text-muted hover:bg-panel-hover hover:text-app [&_svg]:h-3 [&_svg]:w-3"
                     >
-                      {glyph}
+                      <Icon name={icon} />
                     </button>
                   ))}
                 </div>

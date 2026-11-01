@@ -1,13 +1,13 @@
 import type { AlignEdge, DistributeAxis } from "@excalidraw-clone/scene"
 import { ACTION, IconAction, Section, type T } from "./controls"
 
-const ALIGN_GLYPH: Record<AlignEdge, string> = {
-  left: "⇤",
-  centerX: "↔",
-  right: "⇥",
-  top: "⤒",
-  centerY: "↕",
-  bottom: "⤓",
+const ALIGN_ICON: Record<AlignEdge, string> = {
+  left: "align-left",
+  centerX: "align-center-x",
+  right: "align-right",
+  top: "align-top",
+  centerY: "align-center-y",
+  bottom: "align-bottom",
 }
 
 export function GroupSection({
@@ -67,44 +67,32 @@ export function ArrangeSection({
     <Section label={t("properties.arrange")}>
       <div className="grid grid-cols-3 gap-1">
         {(["left", "centerX", "right", "top", "centerY", "bottom"] as const).map((edge) => (
-          <button
+          <IconAction
             key={edge}
-            type="button"
             data-testid={`align-${edge}`}
-            aria-label={t(`properties.align_${edge}`)}
-            title={t(`properties.align_${edge}`)}
+            label={t(`properties.align_${edge}`)}
+            icon={ALIGN_ICON[edge]}
             onClick={() => onAlign(edge)}
-            className={ACTION}
-          >
-            {ALIGN_GLYPH[edge]}
-          </button>
+          />
         ))}
       </div>
       <div className="mt-1 flex gap-1">
         {(["horizontal", "vertical"] as const).map((axis) => (
-          <button
+          <IconAction
             key={axis}
-            type="button"
             data-testid={`distribute-${axis}`}
-            aria-label={t(`properties.distribute_${axis}`)}
-            title={t(`properties.distribute_${axis}`)}
+            label={t(`properties.distribute_${axis}`)}
+            icon={axis === "horizontal" ? "distribute-h" : "distribute-v"}
             disabled={count < 3}
             onClick={() => onDistribute(axis)}
-            className={`${ACTION} disabled:pointer-events-none disabled:opacity-40`}
-          >
-            {axis === "horizontal" ? "⇿" : "⇳"}
-          </button>
+          />
         ))}
-        <button
-          type="button"
+        <IconAction
           data-testid="tidy-up"
-          aria-label={t("properties.tidy_up")}
-          title={t("properties.tidy_up")}
+          label={t("properties.tidy_up")}
+          icon="tidy"
           onClick={onTidy}
-          className={ACTION}
-        >
-          ▦
-        </button>
+        />
       </div>
     </Section>
   )

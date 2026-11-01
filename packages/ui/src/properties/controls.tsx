@@ -28,7 +28,7 @@ export function IconAction({
       type="button"
       aria-label={label}
       title={label}
-      className={`flex h-8 flex-1 items-center justify-center rounded-md border ${
+      className={`flex h-8 flex-1 items-center justify-center rounded-md border disabled:pointer-events-none disabled:opacity-40 ${
         danger
           ? "border-danger text-danger hover:bg-danger-soft"
           : "border-panel hover:bg-panel-hover"

@@ -79,7 +79,7 @@ export function MoreShapesMenu(props: MoreShapesMenuProps): React.ReactElement {
               }}
               data-testid="toolbar-stickers"
             >
-              <span aria-hidden>😀</span>
+              <Icon name="sticker" />
             </IconButton>
           )}
         </div>

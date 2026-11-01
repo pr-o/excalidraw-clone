@@ -73,6 +73,33 @@ export const ICONS: Record<string, string> = {
     '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="2" y1="10" x2="18" y2="10" stroke-dasharray="2 2"/><polygon points="5,7 15,7 15,2"/><polygon points="5,13 15,13 15,18"/></svg>',
   eyedropper:
     '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 3.5l3 3-2 2-3-3z"/><path d="M12.5 7.5L5 15l-2 2 .5-2.5L11 7"/></svg>',
+  "align-left":
+    '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="3" x2="3" y2="17"/><rect x="6" y="5" width="10" height="3" rx="1"/><rect x="6" y="12" width="6" height="3" rx="1"/></svg>',
+  "align-center-x":
+    '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="10" y1="3" x2="10" y2="17"/><rect x="4" y="5" width="12" height="3" rx="1"/><rect x="6" y="12" width="8" height="3" rx="1"/></svg>',
+  "align-right":
+    '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="17" y1="3" x2="17" y2="17"/><rect x="4" y="5" width="10" height="3" rx="1"/><rect x="8" y="12" width="6" height="3" rx="1"/></svg>',
+  "align-top":
+    '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="3" x2="17" y2="3"/><rect x="5" y="6" width="3" height="10" rx="1"/><rect x="12" y="6" width="3" height="6" rx="1"/></svg>',
+  "align-center-y":
+    '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="10" x2="17" y2="10"/><rect x="5" y="4" width="3" height="12" rx="1"/><rect x="12" y="6" width="3" height="8" rx="1"/></svg>',
+  "align-bottom":
+    '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="17" x2="17" y2="17"/><rect x="5" y="4" width="3" height="10" rx="1"/><rect x="12" y="8" width="3" height="6" rx="1"/></svg>',
+  "distribute-h":
+    '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="3" x2="3" y2="17"/><line x1="17" y1="3" x2="17" y2="17"/><rect x="8.5" y="6" width="3" height="8" rx="1"/></svg>',
+  "distribute-v":
+    '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="3" x2="17" y2="3"/><line x1="3" y1="17" x2="17" y2="17"/><rect x="6" y="8.5" width="8" height="3" rx="1"/></svg>',
+  tidy: '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="5" height="5" rx="1"/><rect x="12" y="3" width="5" height="5" rx="1"/><rect x="3" y="12" width="5" height="5" rx="1"/><rect x="12" y="12" width="5" height="5" rx="1"/></svg>',
+  "send-to-back":
+    '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="4" x2="4" y2="16"/><polyline points="14,4 8,10 14,16"/></svg>',
+  "send-backward":
+    '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="12,4 6,10 12,16"/></svg>',
+  "bring-forward":
+    '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="8,4 14,10 8,16"/></svg>',
+  "bring-to-front":
+    '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6,4 12,10 6,16"/><line x1="16" y1="4" x2="16" y2="16"/></svg>',
+  sticker:
+    '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7"/><path d="M7 12a3.5 3.5 0 0 0 6 0"/><line x1="7.5" y1="8" x2="7.5" y2="8.5"/><line x1="12.5" y1="8" x2="12.5" y2="8.5"/></svg>',
 }
 
 export function iconHTML(name: string): string {
