@@ -1,4 +1,5 @@
 "use client"
+import { Icon } from "@excalidraw-clone/ui"
 import { useTranslation } from "react-i18next"
 import { zoomAboutCentre } from "../driver/zoom"
 import { useAppStore } from "../store"
@@ -8,22 +9,24 @@ export function ZoomWidget(): React.ReactElement {
   const { t } = useTranslation()
   const zoom = useAppStore((s) => s.zoom)
   return (
-    <div className="absolute bottom-3 right-3 z-30 flex items-center gap-1 rounded-lg bg-white px-2 py-1 text-xs shadow">
+    <div className="absolute bottom-3 right-3 z-30 flex items-center gap-0.5 rounded-xl bg-panel p-1 text-xs shadow-panel">
       <button
         type="button"
         data-testid="zoom-out"
         aria-label={t("shortcuts:zoomOut")}
+        title={t("shortcuts:zoomOut")}
         onClick={() => zoomAboutCentre((z) => z / 1.1)}
-        className="rounded px-1.5 py-0.5 hover:bg-gray-100"
+        className="flex h-7 w-7 items-center justify-center rounded-lg hover:bg-panel-hover"
       >
-        −
+        <Icon name="minus" />
       </button>
       <button
         type="button"
         data-testid="zoom-reset"
         aria-label={t("shortcuts:zoomReset")}
         onClick={() => zoomAboutCentre(() => 1)}
-        className="min-w-[3.5rem] rounded px-1.5 py-0.5 text-center hover:bg-gray-100"
+        title={t("shortcuts:zoomReset")}
+        className="h-7 min-w-[3.5rem] rounded-lg px-1.5 text-center tabular-nums hover:bg-panel-hover"
       >
         {Math.round(zoom * 100)}%
       </button>
@@ -31,10 +34,11 @@ export function ZoomWidget(): React.ReactElement {
         type="button"
         data-testid="zoom-in"
         aria-label={t("shortcuts:zoomIn")}
+        title={t("shortcuts:zoomIn")}
         onClick={() => zoomAboutCentre((z) => z * 1.1)}
-        className="rounded px-1.5 py-0.5 hover:bg-gray-100"
+        className="flex h-7 w-7 items-center justify-center rounded-lg hover:bg-panel-hover"
       >
-        +
+        <Icon name="plus" />
       </button>
     </div>
   )

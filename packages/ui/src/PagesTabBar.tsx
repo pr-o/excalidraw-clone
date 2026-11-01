@@ -1,4 +1,9 @@
 import { useRef, useState } from "react"
+import { Icon } from "./shared/Icon"
+
+// Small icon button inside a page tab.
+const TAB_BTN =
+  "flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted hover:bg-panel-hover hover:text-app disabled:pointer-events-none disabled:opacity-30 [&_svg]:h-3.5 [&_svg]:w-3.5"
 
 export interface PagesTabBarProps {
   t: (key: string) => string
@@ -99,7 +104,7 @@ export function PagesTabBar({
       data-testid="pages-tab-bar"
       onPointerMove={handleBarPointerMove}
       onPointerUp={handleBarPointerUp}
-      className={`fixed bottom-0 left-0 right-0 z-30 flex items-center gap-1 overflow-x-auto bg-panel px-2 py-1 shadow-lg ${className ?? ""}`}
+      className={`fixed bottom-3 left-3 z-30 flex max-w-[calc(100vw-13rem)] items-center gap-1 overflow-x-auto rounded-xl bg-panel p-1 shadow-panel ${className ?? ""}`}
     >
       {drag && drag.overIndex !== null && (
         <div
@@ -120,8 +125,8 @@ export function PagesTabBar({
             data-testid={`page-tab-${page.id}`}
             data-page-tab-index={index}
             onPointerDown={handleTabPointerDown(page.id)}
-            className={`flex shrink-0 items-center gap-1 rounded px-2 py-1 text-xs ${
-              active ? "bg-accent-soft" : "hover:bg-panel-subtle"
+            className={`flex shrink-0 items-center gap-1 rounded-lg py-0.5 pl-1 pr-1.5 text-xs ${
+              active ? "bg-accent-soft" : "hover:bg-panel-hover"
             }`}
           >
             {!readOnly && (
@@ -129,11 +134,12 @@ export function PagesTabBar({
                 type="button"
                 data-testid={`page-reorder-left-${page.id}`}
                 aria-label={t("pages.moveLeft")}
+                title={t("pages.moveLeft")}
                 disabled={index === 0}
                 onClick={() => onReorder(page.id, "left")}
-                className="rounded px-0.5 disabled:opacity-30"
+                className={TAB_BTN}
               >
-                ◀
+                <Icon name="chevron-left" />
               </button>
             )}
 
@@ -163,7 +169,7 @@ export function PagesTabBar({
                   if (e.key === "Enter") commitRename(page.id)
                   if (e.key === "Escape") setEditingId(null)
                 }}
-                className="w-24 rounded border border-panel px-1"
+                className="w-24 rounded border border-panel bg-panel px-1"
               />
             ) : (
               <button
@@ -171,7 +177,7 @@ export function PagesTabBar({
                 data-testid={`page-switch-${page.id}`}
                 onClick={() => onSwitch(page.id)}
                 onDoubleClick={readOnly ? undefined : () => startRename(page.id, page.name)}
-                className="max-w-[8rem] truncate"
+                className={`max-w-[8rem] truncate px-0.5 ${active ? "font-medium" : ""}`}
               >
                 {page.name}
               </button>
@@ -183,11 +189,12 @@ export function PagesTabBar({
                   type="button"
                   data-testid={`page-reorder-right-${page.id}`}
                   aria-label={t("pages.moveRight")}
+                  title={t("pages.moveRight")}
                   disabled={index === pages.length - 1}
                   onClick={() => onReorder(page.id, "right")}
-                  className="rounded px-0.5 disabled:opacity-30"
+                  className={TAB_BTN}
                 >
-                  ▶
+                  <Icon name="chevron-right" />
                 </button>
 
                 <button
@@ -196,9 +203,9 @@ export function PagesTabBar({
                   aria-label={t("pages.duplicate")}
                   title={t("pages.duplicate")}
                   onClick={() => onDuplicate(page.id)}
-                  className="rounded px-0.5 hover:bg-panel-hover"
+                  className={TAB_BTN}
                 >
-                  ⧉
+                  <Icon name="duplicate" />
                 </button>
 
                 <button
@@ -208,9 +215,9 @@ export function PagesTabBar({
                   title={t("pages.delete")}
                   disabled={pages.length === 1}
                   onClick={() => onDelete(page.id)}
-                  className="rounded px-0.5 hover:bg-panel-hover disabled:opacity-30"
+                  className={TAB_BTN}
                 >
-                  ✕
+                  <Icon name="close" />
                 </button>
               </>
             )}
@@ -225,9 +232,9 @@ export function PagesTabBar({
           aria-label={t("pages.add")}
           title={t("pages.add")}
           onClick={onAdd}
-          className="shrink-0 rounded px-2 py-1 text-xs hover:bg-panel-hover"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg hover:bg-panel-hover"
         >
-          +
+          <Icon name="plus" />
         </button>
       )}
     </nav>
