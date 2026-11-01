@@ -1,6 +1,6 @@
 import { useCloseOnEscape } from "./shared/useCloseOnEscape"
 import { IconButton } from "./shared/IconButton"
-import { iconHTML } from "./shared/icons"
+import { Icon } from "./shared/Icon"
 import { DEFAULT_TOOL_KEYS } from "./toolKeys"
 
 type MoreTool = "pentagon" | "octagon" | "table"
@@ -37,13 +37,13 @@ export function MoreShapesMenu(props: MoreShapesMenuProps): React.ReactElement {
         aria-haspopup="true"
         aria-expanded={open}
       >
-        <span aria-hidden dangerouslySetInnerHTML={{ __html: iconHTML("more-shapes") }} />
+        <Icon name="more-shapes" />
       </IconButton>
 
       {open && (
         <div
           role="menu"
-          className="absolute left-0 top-11 z-50 flex gap-1 rounded-lg bg-panel p-2 shadow-lg"
+          className="absolute left-0 top-11 z-50 flex gap-0.5 rounded-xl bg-panel p-1 shadow-panel"
         >
           <IconButton
             label={props.t("toolbar.pentagon")}
@@ -51,7 +51,7 @@ export function MoreShapesMenu(props: MoreShapesMenuProps): React.ReactElement {
             onClick={select("pentagon")}
             data-testid="toolbar-pentagon"
           >
-            <span aria-hidden dangerouslySetInnerHTML={{ __html: iconHTML("pentagon") }} />
+            <Icon name="pentagon" />
           </IconButton>
           <IconButton
             label={props.t("toolbar.octagon")}
@@ -59,7 +59,7 @@ export function MoreShapesMenu(props: MoreShapesMenuProps): React.ReactElement {
             onClick={select("octagon")}
             data-testid="toolbar-octagon"
           >
-            <span aria-hidden dangerouslySetInnerHTML={{ __html: iconHTML("octagon") }} />
+            <Icon name="octagon" />
           </IconButton>
           <IconButton
             label={props.t("toolbar.table")}
@@ -68,7 +68,7 @@ export function MoreShapesMenu(props: MoreShapesMenuProps): React.ReactElement {
             onClick={select("table")}
             data-testid="toolbar-table"
           >
-            <span aria-hidden dangerouslySetInnerHTML={{ __html: iconHTML("table") }} />
+            <Icon name="table" />
           </IconButton>
           {props.onOpenStickers && (
             <IconButton

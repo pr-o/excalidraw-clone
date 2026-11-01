@@ -1,31 +1,20 @@
 import type { ToolName } from "@excalidraw-clone/tools"
 import { MoreShapesMenu } from "./MoreShapesMenu"
 import { IconButton } from "./shared/IconButton"
-import { iconHTML } from "./shared/icons"
+import { Icon } from "./shared/Icon"
 import { DEFAULT_TOOL_KEYS } from "./toolKeys"
 
-const TOOL_ITEMS: readonly ToolName[] = [
-  "selection",
-  "rectangle",
-  "ellipse",
-  "diamond",
-  "triangle",
-  "parallelogram",
-  "hexagon",
-  "line",
-  "arrow",
-  "freedraw",
-  "text",
-  "image",
-  "eraser",
-  "frame",
-  "note",
-  "lasso",
-  "laser",
-  "comment",
+// Visual groups, separated by dividers: pick | shapes (+ more) | draw | insert | utilities.
+const TOOL_GROUPS: readonly (readonly ToolName[])[] = [
+  ["selection", "lasso"],
+  ["rectangle", "ellipse", "diamond", "triangle", "parallelogram", "hexagon"],
+  ["arrow", "line", "freedraw", "text"],
+  ["image", "note", "frame"],
+  ["eraser", "laser", "comment"],
 ]
-
-const HEXAGON_INDEX = TOOL_ITEMS.indexOf("hexagon")
+const SHAPES_GROUP = 1
+// Narrow screens start the second toolbar row at the insert group.
+const ROW_BREAK_GROUP = 3
 
 export interface ToolbarProps {
   t: (key: string) => string
@@ -62,13 +51,15 @@ export function Toolbar({
       onClick={() => onSelectTool(name)}
       data-testid={`toolbar-${name}`}
     >
-      <span aria-hidden dangerouslySetInnerHTML={{ __html: iconHTML(name) }} />
+      <Icon name={name} />
     </IconButton>
   )
 
   return (
     <div
-      className={`flex items-center gap-1 rounded-lg bg-panel p-1 shadow ${className ?? ""}`}
+      // Each group draws its divider in the column gap before it. Below 960px the
+      // toolbar breaks into two rows before the insert group, which drops its divider.
+      className={`flex flex-wrap items-center justify-center gap-x-[11px] gap-y-1 rounded-xl bg-panel p-1 shadow-panel ${className ?? ""}`}
       role="toolbar"
       aria-label={t("toolbar.label")}
     >
@@ -79,19 +70,31 @@ export function Toolbar({
         onClick={() => onToggleLock(!lockActiveTool)}
         data-testid="toolbar-lock"
       >
-        <span aria-hidden>{lockActiveTool ? "🔒" : "🔓"}</span>
+        <Icon name={lockActiveTool ? "lock" : "unlock"} />
       </IconButton>
-      <span className="mx-1 h-6 w-px bg-panel-active" aria-hidden />
-      {TOOL_ITEMS.slice(0, HEXAGON_INDEX + 1).map(renderItem)}
-      <MoreShapesMenu
-        t={t}
-        activeTool={activeTool}
-        open={moreShapesOpen}
-        onOpenChange={onMoreShapesOpenChange}
-        onSelectTool={(tool) => onSelectTool(tool)}
-        {...(onOpenStickers ? { onOpenStickers } : {})}
-      />
-      {TOOL_ITEMS.slice(HEXAGON_INDEX + 1).map(renderItem)}
+      {TOOL_GROUPS.map((group, i) => [
+        i === ROW_BREAK_GROUP && (
+          <span key="row-break" className="h-0 basis-full min-[960px]:hidden" aria-hidden />
+        ),
+        <div
+          key={group[0]}
+          className={`relative flex items-center gap-0.5 before:absolute before:-left-[6px] before:bottom-2 before:top-2 before:w-px before:bg-panel-active ${
+            i === ROW_BREAK_GROUP ? "max-[959px]:before:hidden" : ""
+          }`}
+        >
+          {group.map(renderItem)}
+          {i === SHAPES_GROUP && (
+            <MoreShapesMenu
+              t={t}
+              activeTool={activeTool}
+              open={moreShapesOpen}
+              onOpenChange={onMoreShapesOpenChange}
+              onSelectTool={(tool) => onSelectTool(tool)}
+              {...(onOpenStickers ? { onOpenStickers } : {})}
+            />
+          )}
+        </div>,
+      ])}
     </div>
   )
 }

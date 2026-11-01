@@ -1,7 +1,7 @@
 "use client"
 import type { CanvasRenderer } from "@excalidraw-clone/renderer"
 import { unlockAll } from "@excalidraw-clone/scene"
-import { HistoryPanel, PagesTabBar, StatsPanel, Toolbar } from "@excalidraw-clone/ui"
+import { HistoryPanel, Icon, PagesTabBar, StatsPanel, Toolbar } from "@excalidraw-clone/ui"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { I18nextProvider, useTranslation } from "react-i18next"
 import { cyclePageId } from "../driver/pages"
@@ -108,8 +108,11 @@ function Inner(): React.ReactElement {
 
           {!viewMode && (
             <>
-              <div className="absolute left-1/2 top-3 z-30 -translate-x-1/2">
+              {/* Insets clear the menu button and panel toggles; the toolbar wraps its
+              tool groups onto a second row when narrower than one row (~940px). */}
+              <div className="pointer-events-none absolute left-16 right-16 top-3 z-30 flex justify-center">
                 <Toolbar
+                  className="pointer-events-auto"
                   t={t}
                   activeTool={activeTool}
                   onSelectTool={setActiveTool}
@@ -123,8 +126,11 @@ function Inner(): React.ReactElement {
               </div>
 
               {/* Right offset clears the HistoryPanel: its closed toggle occupies
-              right:12px–48px, and its open panel occupies right:0–256px. */}
-              <div className={`absolute ${historyOpen ? "right-[280px]" : "right-14"} top-3 z-30`}>
+              right:12px–48px, and its open panel occupies right:0–256px. Top offset
+              sits below the toolbar (two rows below 960px wide). */}
+              <div
+                className={`absolute ${historyOpen ? "right-[280px]" : "right-14"} top-[6.75rem] z-30 min-[960px]:top-16`}
+              >
                 <PropertiesHost
                   scene={scene}
                   selectedIds={selectedIds}
@@ -197,9 +203,10 @@ function Inner(): React.ReactElement {
                   data-testid="unlock-all"
                   aria-label={t("canvas.unlockAll")}
                   onClick={() => patchScene(scene, unlockAll(scene.getElements()))}
-                  className="absolute bottom-3 left-3 z-30 rounded-lg bg-white px-3 py-2 text-xs shadow"
+                  className="absolute bottom-16 right-3 z-30 flex items-center gap-1.5 rounded-lg bg-panel px-3 py-2 text-xs shadow-panel hover:bg-panel-hover"
                 >
-                  🔓 {t("canvas.unlockAll")}
+                  <Icon name="unlock" />
+                  {t("canvas.unlockAll")}
                 </button>
               )}
             </>
@@ -228,7 +235,7 @@ function Inner(): React.ReactElement {
           type="button"
           data-testid="view-mode-exit"
           onClick={toggleViewMode}
-          className="absolute left-1/2 top-3 z-40 -translate-x-1/2 rounded-full bg-panel px-4 py-1.5 text-xs shadow hover:bg-panel-hover"
+          className="absolute left-1/2 top-3 z-40 -translate-x-1/2 rounded-full bg-panel px-4 py-1.5 text-xs shadow-panel hover:bg-panel-hover"
         >
           {t("viewMode.label")} · {t("viewMode.exit")}
         </button>

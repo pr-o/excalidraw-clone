@@ -3,6 +3,7 @@ import { PACKAGE_NAME as TOOLS_NAME } from "@excalidraw-clone/tools"
 export { PACKAGE_NAME, PACKAGE_VERSION } from "./version"
 export const DEPENDS_ON: readonly string[] = [SCENE_NAME, TOOLS_NAME]
 
+export { Icon } from "./shared/Icon"
 export { Toolbar } from "./Toolbar"
 export { DEFAULT_TOOL_KEYS } from "./toolKeys"
 export type { ToolbarProps } from "./Toolbar"
