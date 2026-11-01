@@ -1,6 +1,6 @@
 import { useMemo } from "react"
 import { describeHistoryChange, type ExcalidrawElement } from "@excalidraw-clone/scene"
-import { PanelToggle } from "./shared/PanelToggle"
+import { PanelHeader, PanelToggle } from "./shared/PanelToggle"
 
 export interface HistoryPanelProps {
   t: (key: string, options?: { count: number }) => string
@@ -50,7 +50,7 @@ export function HistoryPanel({
         label={t("history.toggle")}
         testId="history-toggle"
         position="right-3 top-16"
-        glyph="‹"
+        icon="history"
         onClick={onToggle}
       />
     )
@@ -60,20 +60,15 @@ export function HistoryPanel({
     <aside
       aria-label={t("history.title")}
       data-testid="history-panel"
-      className="fixed right-0 top-16 z-30 flex h-[calc(100%-5rem)] w-64 flex-col bg-panel shadow-lg"
+      className="fixed right-3 top-16 z-30 flex h-[calc(100%-8.5rem)] w-64 flex-col overflow-hidden rounded-xl bg-panel shadow-panel"
     >
-      <button
-        type="button"
-        onClick={onToggle}
-        aria-label={t("history.toggle")}
-        aria-expanded={open}
-        data-testid="history-toggle"
-        className="flex h-10 w-10 items-center justify-center self-end border-b text-sm"
-      >
-        ›
-      </button>
-
-      <div className="border-b px-3 py-2 text-sm font-medium">{t("history.title")}</div>
+      <PanelHeader
+        title={t("history.title")}
+        toggleLabel={t("history.toggle")}
+        testId="history-toggle"
+        side="right"
+        onToggle={onToggle}
+      />
       <ul className="flex-1 overflow-y-auto px-2 py-2">
         {entries
           .slice()

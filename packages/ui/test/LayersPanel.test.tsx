@@ -25,7 +25,8 @@ describe("LayersPanel", () => {
     expect(toggle).toBeInTheDocument()
     expect(toggle).toHaveAttribute("aria-expanded", "false")
     expect(toggle).toHaveAttribute("aria-label", "layers.toggle")
-    expect(toggle).toHaveTextContent("›")
+    expect(toggle).toHaveAttribute("title", "layers.toggle")
+    expect(toggle.querySelector("svg")).not.toBeNull()
   })
 
   it("keeps toggle a11y attributes when open", () => {
@@ -34,7 +35,8 @@ describe("LayersPanel", () => {
     const toggle = screen.getByTestId("layers-toggle")
     expect(toggle).toHaveAttribute("aria-expanded", "true")
     expect(toggle).toHaveAttribute("aria-label", "layers.toggle")
-    expect(toggle).toHaveTextContent("‹")
+    expect(toggle).toHaveAttribute("title", "layers.toggle")
+    expect(toggle.querySelector("svg")).not.toBeNull()
   })
 
   it("renders rows in reverse scene order (front-most element first)", () => {

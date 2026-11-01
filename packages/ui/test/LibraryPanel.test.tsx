@@ -70,7 +70,8 @@ describe("LibraryPanel templates section", () => {
     expect(toggle).toBeInTheDocument()
     expect(toggle).toHaveAttribute("aria-expanded", "false")
     expect(toggle).toHaveAttribute("aria-label", "library.toggle")
-    expect(toggle).toHaveTextContent("‹")
+    expect(toggle).toHaveAttribute("title", "library.toggle")
+    expect(toggle.querySelector("svg")).not.toBeNull()
   })
 
   it("keeps toggle a11y attributes when open", () => {
@@ -78,6 +79,7 @@ describe("LibraryPanel templates section", () => {
     const toggle = screen.getByTestId("library-toggle")
     expect(toggle).toHaveAttribute("aria-expanded", "true")
     expect(toggle).toHaveAttribute("aria-label", "library.toggle")
-    expect(toggle).toHaveTextContent("›")
+    expect(toggle).toHaveAttribute("title", "library.toggle")
+    expect(toggle.querySelector("svg")).not.toBeNull()
   })
 })

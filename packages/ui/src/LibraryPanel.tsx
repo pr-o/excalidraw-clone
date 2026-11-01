@@ -1,6 +1,6 @@
 import type { LibraryItem } from "@excalidraw-clone/scene"
 import { useState } from "react"
-import { PanelToggle } from "./shared/PanelToggle"
+import { PanelHeader, PanelToggle } from "./shared/PanelToggle"
 
 export interface LibraryPanelProps {
   t: (key: string) => string
@@ -83,7 +83,7 @@ function ItemTile(props: ItemTileProps): React.ReactElement {
           {props.menuOpenId === item.id && (
             <div
               role="menu"
-              className="absolute right-0 top-5 z-10 rounded bg-panel p-1 text-xs shadow"
+              className="absolute right-0 top-5 z-10 rounded bg-panel p-1 text-xs shadow-panel"
             >
               <button
                 type="button"
@@ -149,8 +149,8 @@ export function LibraryPanel(props: LibraryPanelProps): React.ReactElement {
       <PanelToggle
         label={props.t("library.toggle")}
         testId="library-toggle"
-        position="bottom-16 right-3"
-        glyph="‹"
+        position="right-3 top-[6.5rem]"
+        icon="library"
         onClick={props.onToggle}
       />
     )
@@ -160,48 +160,40 @@ export function LibraryPanel(props: LibraryPanelProps): React.ReactElement {
     <aside
       aria-label={props.t("library.title")}
       data-testid="library-panel"
-      className="fixed right-0 top-16 z-30 flex h-[calc(100%-5rem)] w-72 flex-col bg-panel shadow-lg transition-all"
+      className="fixed right-3 top-16 z-30 flex h-[calc(100%-8.5rem)] w-72 flex-col overflow-hidden rounded-xl bg-panel shadow-panel"
     >
-      <button
-        type="button"
-        onClick={props.onToggle}
-        aria-label={props.t("library.toggle")}
-        aria-expanded
-        data-testid="library-toggle"
-        className="flex h-10 w-10 items-center justify-center self-end border-b text-sm"
+      <PanelHeader
+        title={props.t("library.title")}
+        toggleLabel={props.t("library.toggle")}
+        testId="library-toggle"
+        side="right"
+        onToggle={props.onToggle}
       >
-        ›
-      </button>
+        <button
+          type="button"
+          onClick={props.onImport}
+          data-testid="library-import"
+          className="rounded-lg px-2 py-1 text-xs hover:bg-panel-hover"
+        >
+          {props.t("library.import")}
+        </button>
+        <button
+          type="button"
+          onClick={props.onExport}
+          data-testid="library-export"
+          className="rounded-lg px-2 py-1 text-xs hover:bg-panel-hover"
+        >
+          {props.t("library.export")}
+        </button>
+      </PanelHeader>
 
       <>
-        <div className="flex items-center justify-between border-b px-3 py-2">
-          <span className="text-sm font-medium">{props.t("library.title")}</span>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={props.onImport}
-              data-testid="library-import"
-              className="rounded px-2 py-1 text-xs hover:bg-panel-hover"
-            >
-              {props.t("library.import")}
-            </button>
-            <button
-              type="button"
-              onClick={props.onExport}
-              data-testid="library-export"
-              className="rounded px-2 py-1 text-xs hover:bg-panel-hover"
-            >
-              {props.t("library.export")}
-            </button>
-          </div>
-        </div>
-
         <button
           type="button"
           disabled={props.selectedCount === 0}
           onClick={props.onAddFromSelection}
           data-testid="library-add"
-          className="m-3 rounded border px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+          className="m-3 rounded-lg border border-panel px-3 py-2 text-sm hover:bg-panel-hover disabled:cursor-not-allowed disabled:opacity-50"
         >
           + {props.t("library.addFromSelection")}
         </button>
