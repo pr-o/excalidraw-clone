@@ -13,7 +13,16 @@ import type {
 import { ArrangeSection, FlipRow, GroupSection } from "./properties/ArrangeSections"
 import { ArrowheadsSection, ArrowTypeSection } from "./properties/ArrowSections"
 import { BackgroundSection } from "./properties/BackgroundSection"
-import { ACTION, Choice, ChoiceRow, commonValue, Section, Swatches } from "./properties/controls"
+import {
+  ACTION,
+  Choice,
+  ChoiceRow,
+  commonValue,
+  Divider,
+  IconAction,
+  Section,
+  Swatches,
+} from "./properties/controls"
 import { ShadowSection } from "./properties/ShadowSection"
 import { type TableAction, TableSection } from "./properties/TableSection"
 import { TextSection } from "./properties/TextSection"
@@ -85,9 +94,11 @@ export function PropertiesPanel({
   const canUngroup = selectedElements.some((el) => el.groupIds.length > 0)
   const rowProps = { from: selectedElements, onChange }
 
+  const unlocked = !selectedElements.every((el) => el.locked)
+
   return (
     <aside
-      className={`flex max-h-[calc(100vh-1.5rem)] w-56 flex-col gap-3 overflow-y-auto rounded-lg bg-panel p-3 shadow ${className ?? ""}`}
+      className={`flex max-h-[calc(100vh-11rem)] w-60 flex-col gap-3 overflow-y-auto rounded-xl bg-panel p-3 shadow-panel min-[960px]:max-h-[calc(100vh-8rem)] ${className ?? ""}`}
       aria-label={t("properties.label")}
     >
       <Section label={t("properties.stroke")}>
@@ -100,13 +111,6 @@ export function PropertiesPanel({
         />
       </Section>
 
-      <BackgroundSection
-        t={t}
-        selectedElements={selectedElements}
-        backgroundColor={common<string>("backgroundColor")}
-        onChange={onChange}
-      />
-
       <Section label={t("properties.strokeWidth")}>
         <div className="flex gap-1">
           {STROKE_WIDTHS.map((w) => (
@@ -115,7 +119,7 @@ export function PropertiesPanel({
               data-testid={`stroke-width-${w}`}
               pressed={strokeWidth === w}
               onClick={() => onChange({ strokeWidth: w })}
-              className="h-8 w-8"
+              className="h-8 flex-1"
             >
               <div style={{ height: `${w}px` }} className="mx-auto w-5 bg-current" aria-hidden />
             </Choice>
@@ -135,6 +139,15 @@ export function PropertiesPanel({
         />
       </Section>
 
+      <Divider />
+
+      <BackgroundSection
+        t={t}
+        selectedElements={selectedElements}
+        backgroundColor={common<string>("backgroundColor")}
+        onChange={onChange}
+      />
+
       <Section label={t("properties.fillStyle")}>
         <ChoiceRow
           field="fillStyle"
@@ -143,6 +156,8 @@ export function PropertiesPanel({
         />
       </Section>
 
+      <Divider />
+
       <Section label={t("properties.roughness")}>
         <ChoiceRow
           field="roughness"
@@ -150,28 +165,6 @@ export function PropertiesPanel({
           {...rowProps}
         />
       </Section>
-
-      <ShadowSection t={t} selectedElements={selectedElements} onChange={onChange} />
-
-      {allLinear && (
-        <ArrowheadsSection t={t} selectedElements={selectedElements} onChange={onChange} />
-      )}
-
-      {allArrow && (
-        <ArrowTypeSection t={t} selectedElements={selectedElements} onChange={onChange} />
-      )}
-
-      <TextSection
-        t={t}
-        selectedElements={selectedElements}
-        labelElements={labelElements}
-        onChange={onChange}
-        onSetTextStyle={onSetTextStyle}
-      />
-
-      {soleTable && onTableAction && (
-        <TableSection t={t} table={soleTable} onChange={onChange} onTableAction={onTableAction} />
-      )}
 
       <Section label={t("properties.roundness")}>
         <div className="flex gap-1">
@@ -200,6 +193,35 @@ export function PropertiesPanel({
         />
       </Section>
 
+      <ShadowSection t={t} selectedElements={selectedElements} onChange={onChange} />
+
+      {(allLinear || allArrow) && <Divider />}
+
+      {allLinear && (
+        <ArrowheadsSection t={t} selectedElements={selectedElements} onChange={onChange} />
+      )}
+
+      {allArrow && (
+        <ArrowTypeSection t={t} selectedElements={selectedElements} onChange={onChange} />
+      )}
+
+      <TextSection
+        t={t}
+        selectedElements={selectedElements}
+        labelElements={labelElements}
+        onChange={onChange}
+        onSetTextStyle={onSetTextStyle}
+      />
+
+      {soleTable && onTableAction && (
+        <>
+          <Divider />
+          <TableSection t={t} table={soleTable} onChange={onChange} onTableAction={onTableAction} />
+        </>
+      )}
+
+      {(canGroup || canUngroup) && <Divider />}
+
       {(canGroup || canUngroup) && (
         <GroupSection
           t={t}
@@ -220,36 +242,30 @@ export function PropertiesPanel({
         />
       )}
 
-      {!selectedElements.every((el) => el.locked) && <FlipRow t={t} onFlip={onFlip} />}
-
-      {onResetCrop && sole?.type === "image" && sole.crop && !sole.locked && (
-        <button type="button" data-testid="reset-crop" onClick={onResetCrop} className={ACTION}>
-          {t("properties.reset_crop")}
-        </button>
-      )}
-
-      <button
-        type="button"
-        data-testid="panel-lock"
-        onClick={onLock}
-        className="w-full rounded border border-panel p-1 text-xs"
-      >
-        {t("properties.lock")}
-      </button>
+      <Divider />
 
       <Section label={t("properties.actions")}>
-        <div className="flex gap-2">
-          <button type="button" onClick={onDuplicate} className={ACTION}>
-            {t("properties.duplicate")}
-          </button>
+        <div className="flex gap-1">
+          {unlocked && <FlipRow t={t} onFlip={onFlip} />}
+          <IconAction label={t("properties.duplicate")} icon="duplicate" onClick={onDuplicate} />
+          <IconAction
+            label={t("properties.lock")}
+            icon="lock"
+            onClick={onLock}
+            data-testid="panel-lock"
+          />
+          <IconAction label={t("properties.delete")} icon="trash" onClick={onDelete} danger />
+        </div>
+        {onResetCrop && sole?.type === "image" && sole.crop && !sole.locked && (
           <button
             type="button"
-            onClick={onDelete}
-            className="flex-1 rounded border border-danger p-1 text-xs text-danger hover:bg-danger-soft"
+            data-testid="reset-crop"
+            onClick={onResetCrop}
+            className={`${ACTION} mt-1 w-full`}
           >
-            {t("properties.delete")}
+            {t("properties.reset_crop")}
           </button>
-        </div>
+        )}
       </Section>
     </aside>
   )

@@ -77,7 +77,7 @@ export function TextSection({
   const spanItalic = wholeStyled("italic")
 
   return (
-    <Section label={t("properties.text")}>
+    <Section label={t("properties.text")} className="border-t border-panel-subtle pt-3">
       <ChoiceRow
         field="fontFamily"
         items={FONT_FAMILIES.map(([n, key]) => [

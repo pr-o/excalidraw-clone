@@ -1,5 +1,5 @@
 import type { AlignEdge, DistributeAxis } from "@excalidraw-clone/scene"
-import { ACTION, Section, type T } from "./controls"
+import { ACTION, IconAction, Section, type T } from "./controls"
 
 const ALIGN_GLYPH: Record<AlignEdge, string> = {
   left: "⇤",
@@ -31,7 +31,7 @@ export function GroupSection({
           data-testid="group-selection"
           disabled={!canGroup}
           onClick={onGroup}
-          className={`${ACTION} disabled:opacity-40`}
+          className={`${ACTION} disabled:pointer-events-none disabled:opacity-40`}
         >
           {t("properties.group")}
         </button>
@@ -40,7 +40,7 @@ export function GroupSection({
           data-testid="ungroup-selection"
           disabled={!canUngroup}
           onClick={onUngroup}
-          className={`${ACTION} disabled:opacity-40`}
+          className={`${ACTION} disabled:pointer-events-none disabled:opacity-40`}
         >
           {t("properties.ungroup")}
         </button>
@@ -72,6 +72,7 @@ export function ArrangeSection({
             type="button"
             data-testid={`align-${edge}`}
             aria-label={t(`properties.align_${edge}`)}
+            title={t(`properties.align_${edge}`)}
             onClick={() => onAlign(edge)}
             className={ACTION}
           >
@@ -86,9 +87,10 @@ export function ArrangeSection({
             type="button"
             data-testid={`distribute-${axis}`}
             aria-label={t(`properties.distribute_${axis}`)}
+            title={t(`properties.distribute_${axis}`)}
             disabled={count < 3}
             onClick={() => onDistribute(axis)}
-            className={`${ACTION} disabled:opacity-40`}
+            className={`${ACTION} disabled:pointer-events-none disabled:opacity-40`}
           >
             {axis === "horizontal" ? "⇿" : "⇳"}
           </button>
@@ -97,6 +99,7 @@ export function ArrangeSection({
           type="button"
           data-testid="tidy-up"
           aria-label={t("properties.tidy_up")}
+          title={t("properties.tidy_up")}
           onClick={onTidy}
           className={ACTION}
         >
@@ -115,24 +118,21 @@ export function FlipRow({
   onFlip: (axis: "x" | "y") => void
 }): React.ReactElement {
   return (
-    <div className="flex gap-1">
+    <>
       {(
         [
-          ["x", "flip_horizontal", "⇋"],
-          ["y", "flip_vertical", "⥯"],
+          ["x", "flip_horizontal"],
+          ["y", "flip_vertical"],
         ] as const
-      ).map(([axis, key, glyph]) => (
-        <button
+      ).map(([axis, key]) => (
+        <IconAction
           key={axis}
-          type="button"
           data-testid={`flip-${axis}`}
-          aria-label={t(`properties.${key}`)}
+          label={t(`properties.${key}`)}
+          icon={`flip-${axis}`}
           onClick={() => onFlip(axis)}
-          className={ACTION}
-        >
-          {glyph}
-        </button>
+        />
       ))}
-    </div>
+    </>
   )
 }
