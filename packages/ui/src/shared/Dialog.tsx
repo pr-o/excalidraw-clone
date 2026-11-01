@@ -1,3 +1,4 @@
+import { Icon } from "./Icon"
 import { useEffect, useRef } from "react"
 
 export interface DialogProps {
@@ -37,20 +38,21 @@ export function Dialog({
   return (
     <dialog
       ref={ref}
-      className={`rounded-lg bg-panel p-0 text-app backdrop:bg-black/40 ${className ?? ""}`}
+      className={`m-auto rounded-xl bg-panel p-0 text-app shadow-panel backdrop:bg-black/40 ${className ?? ""}`}
       aria-labelledby="dialog-title"
     >
       <div className="flex items-center justify-between border-b border-panel-subtle px-4 py-3">
-        <h2 id="dialog-title" className="text-lg font-semibold">
+        <h2 id="dialog-title" className="text-base font-semibold">
           {title}
         </h2>
         <button
           type="button"
           onClick={onClose}
-          className="rounded p-1 text-xl leading-none hover:bg-panel-hover"
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-panel-hover"
           aria-label={t("common.close")}
+          title={t("common.close")}
         >
-          ×
+          <Icon name="close" />
         </button>
       </div>
       <div className="p-4">{children}</div>

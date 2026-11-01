@@ -66,7 +66,7 @@ export function HamburgerMenu(props: HamburgerMenuProps): React.ReactElement {
       {props.open && (
         <div
           role="menu"
-          className="absolute left-0 top-11 z-50 w-56 rounded-lg bg-panel p-2 shadow-panel"
+          className="absolute left-0 top-11 z-50 max-h-[calc(100vh-4rem)] w-56 overflow-y-auto rounded-xl bg-panel p-1.5 shadow-panel"
         >
           {!props.viewMode && (
             <MenuItem onClick={wrap(props.onOpenFile)}>{props.t("menu.open")}</MenuItem>
@@ -248,7 +248,7 @@ function MenuItem({
       role="menuitem"
       data-testid={testId}
       onClick={onClick}
-      className={`block w-full rounded px-3 py-2 text-left text-sm ${variant === "danger" ? "text-danger hover:bg-danger-soft" : "hover:bg-panel-hover"}`}
+      className={`block w-full rounded-md px-3 py-1.5 text-left text-sm ${variant === "danger" ? "text-danger hover:bg-danger-soft" : "hover:bg-panel-hover"}`}
     >
       {children}
     </button>

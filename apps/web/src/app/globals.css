@@ -2,6 +2,7 @@
 @source "../../../../packages/ui/src/**/*.tsx";
 
 :root {
+  color-scheme: light;
   --bg-app: #fafafa;
   --bg-canvas: #ffffff;
   --fg-app: #1e1e1e;
@@ -23,6 +24,7 @@
 }
 
 [data-theme="dark"] {
+  color-scheme: dark;
   --bg-app: #121212;
   --bg-canvas: #1e1e1e;
   --fg-app: #ececec;
@@ -114,6 +116,11 @@
   ::before,
   ::after {
     border-color: var(--color-border-subtle);
+  }
+  /* Slim, theme-coloured scrollbars for panels and menus. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border) transparent;
   }
 }
 
