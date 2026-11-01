@@ -1,4 +1,4 @@
-import { newRectangle } from "@excalidraw-clone/scene"
+import { addComment, newRectangle, replyToComment } from "@excalidraw-clone/scene"
 import { describe, expect, it } from "vitest"
 import {
   addPage,
@@ -98,6 +98,28 @@ describe("duplicatePage", () => {
     expect(result[1]?.scene.getElements()[0]?.id).not.toBe(r.id)
     expect(result[1]?.scene.getElements()[0]?.type).toBe("rectangle")
     expect(result[2]).toBe(b)
+  })
+
+  it("copies comment threads with fresh ids, re-anchored to the cloned elements", () => {
+    const r = newRectangle({ x: 10, y: 20, width: 10, height: 10 })
+    const gone = { ...newRectangle({ x: 50, y: 60, width: 5, height: 5 }), isDeleted: true }
+    const a = createPageRecord("Page 1", [r, gone])
+    let comments = addComment([], { kind: "point", x: 1, y: 2 }, "free")
+    comments = addComment(comments, { kind: "element", elementId: r.id, dx: 3, dy: 4 }, "on r")
+    comments = addComment(comments, { kind: "element", elementId: gone.id, dx: 1, dy: 1 }, "gone")
+    comments = replyToComment(comments, comments[0]!.id, "reply")
+    a.scene.setComments(comments)
+
+    const copy = duplicatePage([a], a.id)[1]!
+    const copied = copy.scene.getComments()
+    expect(copied.map((c) => c.text)).toEqual(["free", "on r", "gone"])
+    expect(copied.map((c) => c.id)).not.toContain(comments[0]!.id)
+    expect(copied[0]!.replies[0]!.text).toBe("reply")
+    expect(copied[0]!.replies[0]!.id).not.toBe(comments[0]!.replies[0]!.id)
+    const clonedRect = copy.scene.getElements()[0]!
+    expect(copied[1]!.anchor).toEqual({ kind: "element", elementId: clonedRect.id, dx: 3, dy: 4 })
+    expect(copied[2]!.anchor).toEqual({ kind: "point", x: 51, y: 61 })
+    expect(a.scene.getComments()).toBe(comments)
   })
 })
 

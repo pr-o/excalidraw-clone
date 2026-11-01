@@ -3,6 +3,7 @@ import type { ViewTransform } from "@excalidraw-clone/geometry"
 import {
   cloneElementsWithNewIds,
   newPage,
+  resolveCommentPosition,
   Scene,
   type ExcalidrawData,
   type ExcalidrawElement,
@@ -60,11 +61,36 @@ export function duplicatePage(pages: readonly PageRecord[], id: string): PageRec
   const index = pages.findIndex((p) => p.id === id)
   if (index === -1) return [...pages]
   const source = pages[index]!
-  const copy = createPageRecord(
-    `${source.name} copy`,
-    cloneElementsWithNewIds(source.scene.getElements()),
-  )
+  const sourceElements = source.scene.getElements()
+  const clones = cloneElementsWithNewIds(sourceElements)
+  const copy = createPageRecord(`${source.name} copy`, clones)
   copy.scene.setGuides(source.scene.getGuides())
+  // clones are index-aligned with sourceElements
+  const idMap = new Map(sourceElements.map((e, i) => [e.id, clones[i]!.id]))
+  const all = source.scene.getElementsIncludingDeleted()
+  copy.scene.setComments(
+    source.scene.getComments().flatMap((c) => {
+      let anchor = c.anchor
+      if (anchor.kind === "element") {
+        const newId = idMap.get(anchor.elementId)
+        if (newId) anchor = { ...anchor, elementId: newId }
+        else {
+          // element was deleted (not copied): pin stays where its tombstone was
+          const at = resolveCommentPosition(anchor, all)
+          if (!at) return []
+          anchor = { kind: "point", x: at.x, y: at.y }
+        }
+      }
+      return [
+        {
+          ...c,
+          id: crypto.randomUUID(),
+          anchor,
+          replies: c.replies.map((r) => ({ ...r, id: crypto.randomUUID() })),
+        },
+      ]
+    }),
+  )
   const next = [...pages]
   next.splice(index + 1, 0, copy)
   return next
