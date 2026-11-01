@@ -69,7 +69,7 @@ export function FindOverlay({
       role="dialog"
       aria-label={t("find.title")}
       data-testid="find-overlay"
-      className={`fixed left-1/2 top-16 z-50 flex -translate-x-1/2 items-center gap-2 rounded-lg bg-panel px-2 py-1.5 shadow-lg ${className ?? ""}`}
+      className={`fixed left-1/2 top-16 z-50 flex -translate-x-1/2 items-center gap-2 rounded-lg bg-panel px-2 py-1.5 shadow-panel ${className ?? ""}`}
     >
       <input
         ref={inputRef}

@@ -102,7 +102,7 @@ export function CommentsHost({ scene }: { scene: Scene }): React.ReactElement | 
               aria-pressed={c.id === activeId}
               onClick={() => useAppStore.getState().setActiveCommentId(c.id)}
               style={{ left: left - PIN / 2, top: top - PIN / 2, width: PIN, height: PIN }}
-              className={`pointer-events-auto absolute flex items-center justify-center rounded-full rounded-bl-none border-2 border-white bg-accent text-[11px] font-semibold text-white shadow ${c.resolved ? "opacity-40" : ""} ${c.id === activeId ? "ring-2 ring-accent" : ""}`}
+              className={`pointer-events-auto absolute flex items-center justify-center rounded-full rounded-bl-none border-2 border-white bg-accent text-[11px] font-semibold text-white shadow-panel ${c.resolved ? "opacity-40" : ""} ${c.id === activeId ? "ring-2 ring-accent" : ""}`}
             >
               {i + 1}
             </button>
@@ -111,7 +111,7 @@ export function CommentsHost({ scene }: { scene: Scene }): React.ReactElement | 
       </div>
 
       {draft && draftPos && !readOnly && (
-        <div style={popoverAt(draftPos)} className="z-40 w-64 rounded-lg bg-panel p-2 shadow-lg">
+        <div style={popoverAt(draftPos)} className="z-40 w-64 rounded-lg bg-panel p-2 shadow-panel">
           <CommentComposer
             placeholder={t("comments.placeholder")}
             submitOnBlur

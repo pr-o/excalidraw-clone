@@ -76,7 +76,7 @@ export function CommentThread({
       data-testid="comment-thread"
       role="dialog"
       aria-label={`${t("comments.pin")} ${number}`}
-      className="w-64 rounded-lg border border-panel bg-panel p-2 text-sm shadow-lg"
+      className="w-64 rounded-lg border border-panel bg-panel p-2 text-sm shadow-panel"
     >
       <div className="mb-1 flex items-center justify-between">
         <span className="text-xs font-medium text-muted">

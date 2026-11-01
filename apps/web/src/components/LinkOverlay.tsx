@@ -71,7 +71,7 @@ export function LinkOverlay({ scene }: { scene: Scene }): React.ReactElement | n
           commit()
         }}
         style={{ position: "absolute", left: `${left}px`, top: `${top}px` }}
-        className="z-40 flex items-center gap-1 rounded-md border border-panel bg-panel px-1.5 py-1 shadow-lg"
+        className="z-40 flex items-center gap-1 rounded-md border border-panel bg-panel px-1.5 py-1 shadow-panel"
       >
         <input
           ref={(node) => {
@@ -151,7 +151,7 @@ export function LinkOverlay({ scene }: { scene: Scene }): React.ReactElement | n
       title={sanitizeLinkHref(target.link) ?? ""}
       onClick={() => openLink(target.link)}
       style={{ position: "absolute", left: `${left}px`, top: `${top}px` }}
-      className="z-40 rounded border border-panel bg-panel px-1 py-0.5 text-xs leading-none shadow hover:bg-accent-soft"
+      className="z-40 rounded border border-panel bg-panel px-1 py-0.5 text-xs leading-none shadow-panel hover:bg-accent-soft"
     >
       &#128279;
     </button>

@@ -72,7 +72,7 @@ export function PresentationOverlay({
   return (
     <div
       data-testid="presentation-overlay"
-      className={`fixed bottom-6 left-1/2 z-[60] flex -translate-x-1/2 items-center gap-1 rounded-lg border border-panel bg-panel px-2 py-1 text-app shadow-lg transition-opacity duration-300 ${
+      className={`fixed bottom-6 left-1/2 z-[60] flex -translate-x-1/2 items-center gap-1 rounded-lg border border-panel bg-panel px-2 py-1 text-app shadow-panel transition-opacity duration-300 ${
         visible ? "opacity-100" : "pointer-events-none opacity-0"
       }`}
     >

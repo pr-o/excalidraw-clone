@@ -120,7 +120,7 @@ export function Minimap({
       data-scroll-y={Math.round(scrollY)}
       aria-label={t("minimap.label")}
       style={{ width: MINIMAP_W, height: MINIMAP_H }}
-      className={`absolute bottom-28 z-30 touch-none overflow-hidden rounded-lg border border-subtle bg-panel shadow ${className}`}
+      className={`absolute bottom-28 z-30 touch-none overflow-hidden rounded-lg border border-subtle bg-panel shadow-panel ${className}`}
       onWheel={(e) => e.stopPropagation()}
       onPointerDown={(e) => {
         if (e.button !== 0) return

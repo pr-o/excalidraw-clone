@@ -58,7 +58,7 @@ export function HamburgerMenu(props: HamburgerMenuProps): React.ReactElement {
         aria-haspopup="menu"
         aria-expanded={props.open}
         aria-label={props.t("menu.label")}
-        className="flex h-9 w-9 items-center justify-center rounded bg-panel shadow hover:bg-panel-hover"
+        className="flex h-9 w-9 items-center justify-center rounded bg-panel shadow-panel hover:bg-panel-hover"
       >
         <span aria-hidden dangerouslySetInnerHTML={{ __html: iconHTML("hamburger") }} />
       </button>
@@ -66,7 +66,7 @@ export function HamburgerMenu(props: HamburgerMenuProps): React.ReactElement {
       {props.open && (
         <div
           role="menu"
-          className="absolute left-0 top-11 z-50 w-56 rounded-lg bg-panel p-2 shadow-lg"
+          className="absolute left-0 top-11 z-50 w-56 rounded-lg bg-panel p-2 shadow-panel"
         >
           {!props.viewMode && (
             <MenuItem onClick={wrap(props.onOpenFile)}>{props.t("menu.open")}</MenuItem>

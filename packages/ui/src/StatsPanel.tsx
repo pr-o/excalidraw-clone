@@ -68,7 +68,7 @@ export function StatsPanel({
 }: StatsPanelProps): React.ReactElement | null {
   if (!open) return null
 
-  const container = `fixed bottom-16 left-3 z-30 w-52 rounded-lg bg-panel p-3 text-xs shadow-lg ${className ?? ""}`
+  const container = `fixed bottom-16 left-3 z-30 w-52 rounded-lg bg-panel p-3 text-xs shadow-panel ${className ?? ""}`
 
   if (stats.kind === "scene") {
     return (
