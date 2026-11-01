@@ -42,7 +42,7 @@ export function CommentsPanel({
     <aside
       aria-label={t("comments.title")}
       data-testid="comments-panel"
-      className="fixed left-0 top-16 z-40 flex h-[calc(100%-5rem)] w-72 flex-col bg-panel shadow-panel"
+      className="fixed left-3 top-16 z-40 flex h-[calc(100%-8.5rem)] w-72 flex-col overflow-hidden rounded-xl bg-panel shadow-panel"
     >
       <div className="flex items-center justify-between border-b px-3 py-2">
         <span className="text-sm font-medium">{t("comments.title")}</span>

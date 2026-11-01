@@ -81,6 +81,7 @@ function Inner(): React.ReactElement {
   const setOpenDialog = useAppStore((s) => s.setOpenDialog)
   const presenting = useAppStore((s) => s.presenting)
   const viewMode = useAppStore((s) => s.viewMode)
+  const commentsPanelOpen = useAppStore((s) => s.commentsPanelOpen)
   const views = useSceneViews(scene)
   const { selectedIds, stats } = views
 
@@ -125,10 +126,12 @@ function Inner(): React.ReactElement {
                 />
               </div>
 
-              {/* Right offset clears the HistoryPanel: its closed toggle occupies
-              right:12px–48px, and its open panel occupies right:0–256px. Top offset
-              sits below the single-row toolbar. */}
-              <div className={`absolute ${historyOpen ? "right-[280px]" : "right-14"} top-16 z-30`}>
+              {/* Right offset clears the right-side panels: their closed toggles occupy
+              right:12px–48px, the open History panel right:12px–268px and the open
+              Library panel right:12px–300px. Top offset sits below the toolbar. */}
+              <div
+                className={`absolute ${historyOpen ? "right-[280px]" : libraryOpen ? "right-[312px]" : "right-14"} top-16 z-30`}
+              >
                 <PropertiesHost
                   scene={scene}
                   selectedIds={selectedIds}
@@ -137,19 +140,25 @@ function Inner(): React.ReactElement {
                 />
               </div>
 
-              <LayersHost
-                scene={scene}
-                elements={views.layerElements}
-                selectedIds={selectedIds}
-                open={layersOpen}
-                onToggle={() => setLayersOpen((v) => !v)}
-              />
+              {/* Side panels sharing an edge are exclusive: while one is open the other
+              (and its toggle, which would sit on the open panel) is not rendered. */}
+              {!commentsPanelOpen && (
+                <LayersHost
+                  scene={scene}
+                  elements={views.layerElements}
+                  selectedIds={selectedIds}
+                  open={layersOpen}
+                  onToggle={() => setLayersOpen((v) => !v)}
+                />
+              )}
 
-              <LibraryHost
-                scene={scene}
-                open={libraryOpen}
-                onToggle={() => setLibraryOpen((v) => !v)}
-              />
+              {!historyOpen && (
+                <LibraryHost
+                  scene={scene}
+                  open={libraryOpen}
+                  onToggle={() => setLibraryOpen((v) => !v)}
+                />
+              )}
             </>
           )}
 
@@ -184,16 +193,18 @@ function Inner(): React.ReactElement {
                 }}
               />
 
-              <HistoryPanel
-                // i18next's TFunction overloads aren't directly assignable to the
-                // panel's `(key, options?)` shape under exactOptionalPropertyTypes.
-                t={(key, options) => (options ? t(key, options) : t(key))}
-                history={views.historyEntries}
-                currentIndex={scene.getHistoryIndex()}
-                open={historyOpen}
-                onToggle={() => setHistoryOpen((v) => !v)}
-                onJump={(index) => scene.jumpToHistory(index)}
-              />
+              {!libraryOpen && (
+                <HistoryPanel
+                  // i18next's TFunction overloads aren't directly assignable to the
+                  // panel's `(key, options?)` shape under exactOptionalPropertyTypes.
+                  t={(key, options) => (options ? t(key, options) : t(key))}
+                  history={views.historyEntries}
+                  currentIndex={scene.getHistoryIndex()}
+                  open={historyOpen}
+                  onToggle={() => setHistoryOpen((v) => !v)}
+                  onJump={(index) => scene.jumpToHistory(index)}
+                />
+              )}
 
               {views.hasLockedElements && (
                 <button
