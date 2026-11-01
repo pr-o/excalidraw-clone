@@ -345,6 +345,9 @@
     "resolve": "해결",
     "reopen": "다시 열기",
     "delete": "삭제",
+    "confirmDelete": "이 스레드를 삭제할까요?",
+    "deleteThread": "스레드 삭제",
+    "cancel": "취소",
     "pin": "댓글",
     "closeThread": "스레드 닫기",
     "resolved": "해결됨"

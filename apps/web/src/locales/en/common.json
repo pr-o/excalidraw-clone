@@ -361,6 +361,9 @@
     "resolve": "Resolve",
     "reopen": "Reopen",
     "delete": "Delete",
+    "confirmDelete": "Delete this thread?",
+    "deleteThread": "Delete thread",
+    "cancel": "Cancel",
     "pin": "Comment",
     "closeThread": "Close thread",
     "resolved": "Resolved"

@@ -68,6 +68,9 @@ test("place, persist, resolve, filter and delete a comment", async ({ page }) =>
   await expect(thread).toBeVisible()
 
   await panel.getByRole("button", { name: "Delete" }).click()
+  // Deleting asks first.
+  await expect(page.getByTestId("comment-pin-1")).toBeVisible()
+  await panel.getByTestId("comment-delete-confirm").click()
   await expect(page.getByTestId("comment-pin-1")).toHaveCount(0)
   await expect(thread).toHaveCount(0)
   await expect(panel).toContainText("No comments on this page")

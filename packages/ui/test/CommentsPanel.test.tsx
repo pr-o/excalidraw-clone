@@ -62,6 +62,8 @@ describe("CommentsPanel", () => {
     await userEvent.click(screen.getByTestId("comments-row-resolve-a"))
     expect(p.onToggleResolved).toHaveBeenCalledWith("a")
     await userEvent.click(screen.getByTestId("comments-row-delete-b"))
+    expect(p.onDelete).not.toHaveBeenCalled()
+    await userEvent.click(screen.getByTestId("comment-delete-confirm"))
     expect(p.onDelete).toHaveBeenCalledWith("b")
     await userEvent.click(screen.getByTestId("comments-panel-close"))
     expect(p.onClose).toHaveBeenCalled()

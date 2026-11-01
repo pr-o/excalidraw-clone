@@ -1,5 +1,6 @@
 import type { Comment } from "@excalidraw-clone/scene"
 import { useState } from "react"
+import { DeleteThreadButton } from "./CommentThread"
 
 type Filter = "all" | "open" | "resolved"
 
@@ -101,14 +102,12 @@ export function CommentsPanel({
                   >
                     {c.resolved ? t("comments.reopen") : t("comments.resolve")}
                   </button>
-                  <button
-                    type="button"
-                    data-testid={`comments-row-delete-${c.id}`}
-                    onClick={() => onDelete(c.id)}
+                  <DeleteThreadButton
+                    t={t}
+                    onDelete={() => onDelete(c.id)}
+                    testId={`comments-row-delete-${c.id}`}
                     className="rounded px-1.5 text-xs text-danger hover:bg-panel-hover"
-                  >
-                    {t("comments.delete")}
-                  </button>
+                  />
                 </div>
               )}
             </li>

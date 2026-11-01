@@ -60,6 +60,54 @@ export interface CommentThreadProps {
 
 const BTN = "rounded border border-panel px-2 py-0.5 text-xs hover:bg-panel-hover"
 
+/** Delete button that asks inline before calling `onDelete`. */
+export function DeleteThreadButton({
+  t,
+  onDelete,
+  testId,
+  className,
+}: {
+  t: (key: string) => string
+  onDelete: () => void
+  testId: string
+  className: string
+}): React.ReactElement {
+  const [confirming, setConfirming] = useState(false)
+  if (!confirming)
+    return (
+      <button
+        type="button"
+        data-testid={testId}
+        onClick={() => setConfirming(true)}
+        className={className}
+      >
+        {t("comments.delete")}
+      </button>
+    )
+  return (
+    <span role="alert" className="flex items-center gap-1 text-xs">
+      {t("comments.confirmDelete")}
+      <button
+        type="button"
+        data-testid="comment-delete-cancel"
+        autoFocus
+        onClick={() => setConfirming(false)}
+        className={BTN}
+      >
+        {t("comments.cancel")}
+      </button>
+      <button
+        type="button"
+        data-testid="comment-delete-confirm"
+        onClick={onDelete}
+        className="rounded bg-danger px-2 py-0.5 text-xs text-white"
+      >
+        {t("comments.deleteThread")}
+      </button>
+    </span>
+  )
+}
+
 export function CommentThread({
   t,
   comment,
@@ -118,14 +166,12 @@ export function CommentThread({
             >
               {comment.resolved ? t("comments.reopen") : t("comments.resolve")}
             </button>
-            <button
-              type="button"
-              data-testid="comment-thread-delete"
-              onClick={onDelete}
+            <DeleteThreadButton
+              t={t}
+              onDelete={onDelete}
+              testId="comment-thread-delete"
               className={`${BTN} text-danger`}
-            >
-              {t("comments.delete")}
-            </button>
+            />
           </div>
         </>
       )}
