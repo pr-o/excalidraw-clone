@@ -117,6 +117,8 @@ export function PropertiesPanel({
             <Choice
               key={w}
               data-testid={`stroke-width-${w}`}
+              aria-label={`${t("properties.strokeWidth")} ${w}px`}
+              title={`${t("properties.strokeWidth")} ${w}px`}
               pressed={strokeWidth === w}
               onClick={() => onChange({ strokeWidth: w })}
               className="h-8 flex-1"

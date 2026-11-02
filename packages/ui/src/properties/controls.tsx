@@ -231,6 +231,7 @@ function Swatch({
       data-testid={testId}
       aria-pressed={active}
       aria-label={color}
+      title={color}
       className={`h-7 w-7 rounded-md border-2 ${active ? "border-accent" : "border-panel-subtle"}`}
       style={{
         backgroundColor: color === "transparent" ? "white" : color,
