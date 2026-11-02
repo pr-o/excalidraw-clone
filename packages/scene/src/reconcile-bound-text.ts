@@ -1,4 +1,9 @@
-import { labelInnerBox, polylineMidpoint, type LabelShapeKind } from "@excalidraw-clone/geometry"
+import {
+  labelInnerBox,
+  polylineMidpoint,
+  rotatePoint,
+  type LabelShapeKind,
+} from "@excalidraw-clone/geometry"
 import { mirrorOf } from "./flip"
 import type { ElementType, ExcalidrawElement } from "./types"
 
@@ -54,7 +59,7 @@ const innerBoxFor = (
 /**
  * Enforce the container↔bound-text invariant in place on a mutation draft:
  * each non-deleted shape container keeps its bound text sized to the
- * shape-aware inner label box and vertically centered (its textAlign is
+ * shape-aware inner label box (turned with the container's angle) and vertically centered (its textAlign is
  * left to the user); a linear
  * (arrow/line) container keeps its bound text recentered on the path
  * midpoint without resizing. A deleted container cascades isDeleted to its
@@ -92,16 +97,32 @@ export function reconcileBoundText(draft: ExcalidrawElement[]): void {
       continue
     }
 
-    const { x, y, width, height } = innerBoxFor(container)
+    const box = innerBoxFor(container)
+    const { width, height } = box
+    let { x, y } = box
+    // A shape label rotates with its shape (as upstream Excalidraw's bound
+    // text does): its box centre turns about the container's centre and it
+    // takes the container's angle, so every renderer rotates it in place.
+    const angle = container.angle
+    if (angle !== 0) {
+      const c = rotatePoint(
+        { x: x + width / 2, y: y + height / 2 },
+        { x: container.x + container.width / 2, y: container.y + container.height / 2 },
+        angle,
+      )
+      x = c.x - width / 2
+      y = c.y - height / 2
+    }
     if (
       text.x !== x ||
       text.y !== y ||
       text.width !== width ||
       text.height !== height ||
+      text.angle !== angle ||
       text.verticalAlign !== "middle"
     ) {
       // textAlign is the user's choice for shape labels; only the box and vertical centering are owned here.
-      draft[ti] = { ...text, x, y, width, height, verticalAlign: "middle" }
+      draft[ti] = { ...text, x, y, width, height, angle, verticalAlign: "middle" }
     }
   }
 }

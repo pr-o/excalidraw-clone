@@ -150,7 +150,22 @@ export function TextEditingOverlay({ scene }: { scene: Scene }): React.ReactElem
   } as const
 
   return (
-    <div style={{ position: "absolute", left: `${left}px`, top: `${top}px` }} className="z-40">
+    <div
+      style={{
+        position: "absolute",
+        left: `${left}px`,
+        top: `${top}px`,
+        // Rotated text (incl. labels of rotated shapes) edits at its drawn angle,
+        // turning about the element's centre.
+        ...(el.angle !== 0
+          ? {
+              transform: `rotate(${el.angle}rad)`,
+              transformOrigin: `${(el.width * zoom) / 2}px ${(el.height * zoom) / 2 - labelOffset}px`,
+            }
+          : {}),
+      }}
+      className="z-40"
+    >
       {styled && (
         <RichMirror
           mirrorRef={mirror}

@@ -14,6 +14,28 @@ const makeNotePair = (): { container: ExcalidrawElement; text: ExcalidrawElement
 }
 
 describe("reconcileBoundText", () => {
+  it("a rotated shape's label takes its angle and turns about the shape's centre", () => {
+    const text = newText({ x: 0, y: 0, text: "hi", containerId: "T" })
+    // A triangle's inner box sits below centre, so its offset must rotate too.
+    const container = {
+      ...newTriangle({ x: 0, y: 0, width: 100, height: 100 }),
+      id: "T",
+      angle: Math.PI,
+      boundElements: [{ id: text.id, type: "text" as const }],
+    }
+    const upright: ExcalidrawElement[] = [{ ...container, angle: 0 }, text]
+    reconcileBoundText(upright)
+    const u = upright[1]!
+    const draft: ExcalidrawElement[] = [container, text]
+    reconcileBoundText(draft)
+    const t = draft[1]!
+    expect(t.angle).toBe(Math.PI)
+    expect(t.width).toBe(u.width)
+    // Half-turn about (50,50): the box centre mirrors through the shape centre.
+    expect(t.x + t.width / 2).toBeCloseTo(100 - (u.x + u.width / 2))
+    expect(t.y + t.height / 2).toBeCloseTo(100 - (u.y + u.height / 2))
+  })
+
   it("sizes bound text to container box minus padding and middle-aligns it", () => {
     const { container, text } = makeNotePair()
     const draft: ExcalidrawElement[] = [container, text]

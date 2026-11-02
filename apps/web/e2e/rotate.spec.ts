@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test"
+import { readFileSync } from "node:fs"
 import { dragOnCanvas, parseStoredScene } from "./_helpers"
 
 /** Draws a rectangle spanning canvas (200,200)-(320,300) and selects it. */
@@ -54,4 +55,43 @@ test("Shift while rotating snaps the angle to 15° steps", async ({ page }) => {
   await page.waitForTimeout(500)
 
   expect(await readAngle(page)).toBe(0)
+})
+
+test("a shape's label rotates with it: stored, exported to SVG and edited at that angle", async ({
+  page,
+}) => {
+  await drawAndSelectRect(page)
+  await page.mouse.dblclick(260, 250)
+  await page.keyboard.type("Turn")
+  await page.locator("textarea").blur()
+  await page.mouse.click(260, 250)
+  // Shift-drag the handle a quarter turn so the angle is exactly π/2.
+  await page.keyboard.down("Shift")
+  await dragOnCanvas(page, { x: 260, y: 180 }, { x: 360, y: 250 })
+  await page.keyboard.up("Shift")
+  await page.waitForTimeout(600)
+
+  type El = { type: string; x: number; y: number; width: number; height: number; angle: number }
+  const els = parseStoredScene<El>(
+    await page.evaluate(() => localStorage.getItem("excalidraw-scene")),
+  ).elements
+  const rect = els.find((e) => e.type === "rectangle")!
+  const label = els.find((e) => e.type === "text")!
+  expect(rect.angle).toBeCloseTo(Math.PI / 2, 5)
+  expect(label.angle).toBeCloseTo(Math.PI / 2, 5)
+  expect(label.x + label.width / 2).toBeCloseTo(rect.x + rect.width / 2, 5)
+  expect(label.y + label.height / 2).toBeCloseTo(rect.y + rect.height / 2, 5)
+
+  await page.getByRole("button", { name: /menu/i }).click()
+  await page.getByText("Export image…").click()
+  await page.locator('[data-testid="format-svg"]').click()
+  const download = page.waitForEvent("download")
+  await page.getByRole("button", { name: "Export", exact: true }).click()
+  const svg = readFileSync(await (await download).path(), "utf8")
+  // Both the rectangle and its label carry the quarter-turn.
+  expect(svg.match(/rotate\(90 /g)?.length ?? 0).toBeGreaterThanOrEqual(2)
+
+  await page.mouse.dblclick(260, 250)
+  const wrapper = page.locator("textarea").locator("..")
+  await expect(wrapper).toHaveCSS("transform", /^matrix\([-\d.e]+, 1, -1, /)
 })
