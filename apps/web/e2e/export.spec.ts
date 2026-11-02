@@ -491,5 +491,6 @@ test("italic hand-drawn text uses the oblique Caveat face on canvas, in SVG and 
   // (upright Caveat Regular's is [-111 -290 911 960]).
   expect(raw.match(/\/FontFile2/g)).toHaveLength(1)
   expect(raw).toContain("/FontBBox [-134 -290 1115 960]")
+  expect(raw).toContain("/ItalicAngle -12")
   expect(pdfTexts(pdf.bytes)).toContain("slanted")
 })

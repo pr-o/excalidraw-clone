@@ -122,6 +122,29 @@ export async function handwrittenFontFaceCSS(
 export interface FontRegistry {
   addFileToVFS: (name: string, base64: string) => unknown
   addFont: (file: string, family: string, style: string) => unknown
+  setFont: (family: string, style: string) => unknown
+  getFont: () => { metadata?: unknown; fontName: string; fontStyle: string }
+}
+
+/** The parsed-TTF fields jsPDF writes into a font's PDF descriptor. */
+interface TtfMetadata {
+  italicAngle: number
+  flags: number
+  post: { italicAngle: number }
+}
+
+/** jsPDF 4.2.1 reads `post.italic_angle` while its TTF parser stores
+ *  `post.italicAngle`, so every embedded font gets `/ItalicAngle 0`. Copy the
+ *  real angle (16.16 fixed point) and set the descriptor's Italic flag. */
+function fixItalicAngle(pdf: FontRegistry, style: string): void {
+  const prev = pdf.getFont()
+  pdf.setFont("Caveat", style)
+  const meta = pdf.getFont().metadata as TtfMetadata | undefined
+  // Leave jsPDF's current font as svg2pdf expects to find it.
+  pdf.setFont(prev.fontName, prev.fontStyle)
+  if (!meta || meta.italicAngle !== 0 || !meta.post.italicAngle) return
+  meta.italicAngle = meta.post.italicAngle / 65536
+  meta.flags |= 1 << 6
 }
 
 /** True when a parsed export SVG draws any text in Caveat. */
@@ -148,5 +171,6 @@ export async function registerHandwrittenFont(
     const file = `caveat-${style}.ttf`
     pdf.addFileToVFS(file, toBase64(files[i]!))
     pdf.addFont(file, "Caveat", style)
+    if (style.endsWith("italic")) fixItalicAngle(pdf, style)
   })
 }

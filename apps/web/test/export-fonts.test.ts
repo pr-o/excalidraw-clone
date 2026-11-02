@@ -1,12 +1,13 @@
 import { readFileSync } from "node:fs"
 import { resolve } from "node:path"
 import { newRectangle, newText } from "@excalidraw-clone/scene"
-import type { jsPDF } from "jspdf"
+import { jsPDF as JsPDF, type jsPDF } from "jspdf"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import {
   handwrittenFontFaceCSS,
   handwrittenItalics,
   handwrittenText,
+  registerHandwrittenFont,
 } from "../src/driver/exportFonts"
 import { svgToPDF } from "../src/driver/exportPDF"
 import { type FileLoader, renderExportSVG } from "../src/driver/exportSVG"
@@ -151,6 +152,27 @@ describe("PDF export font registration", () => {
     expect(pdf.getFontList().Caveat?.sort()).toEqual(["bold", "bolditalic", "italic", "normal"])
     expect(fetchMock).toHaveBeenCalledWith("/fonts/caveat-italic.ttf")
     expect(fetchMock).toHaveBeenCalledWith("/fonts/caveat-bolditalic.ttf")
+  })
+
+  it("writes the oblique faces' real italic angle into the PDF font descriptor", async () => {
+    stubFontFetch()
+    const pdf = new JsPDF({
+      unit: "pt",
+      format: [200, 100],
+      compress: false,
+      putOnlyUsedFonts: true,
+    })
+    await registerHandwrittenFont(pdf, true)
+    // Registration leaves jsPDF's current font alone (svg2pdf relies on it).
+    expect(pdf.getFont().fontName).toBe("helvetica")
+    pdf.setFont("Caveat", "italic")
+    pdf.text("Hi", 10, 20)
+    pdf.setFont("Caveat", "normal")
+    pdf.text("Hi", 10, 50)
+    const out = pdf.output()
+    // The italic face carries -12 and the Italic flag (bit 7 = 64); upright stays 0.
+    expect(out.match(/\/ItalicAngle \S+/g)?.sort()).toEqual(["/ItalicAngle -12", "/ItalicAngle 0"])
+    expect(out).toMatch(/\/Flags 96\b/)
   })
 
   it("fetches no font for a PDF without hand-drawn text", async () => {
