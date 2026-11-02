@@ -16,6 +16,7 @@ import {
   straightenConnectors,
   tidyElements,
   ungroupElements,
+  isBoundLabel,
 } from "@excalidraw-clone/scene"
 import { PropertiesPanel } from "@excalidraw-clone/ui"
 import { useTranslation } from "react-i18next"
@@ -71,8 +72,7 @@ export function PropertiesHost({
       }
       onSetTextStyle={(style, on) =>
         replaceElements(scene, (el) =>
-          selectedIds.includes(el.id) ||
-          (el.type === "text" && el.containerId !== null && selectedIds.includes(el.containerId))
+          selectedIds.includes(el.id) || (isBoundLabel(el) && selectedIds.includes(el.containerId))
             ? setWholeTextStyle(el, style, on)
             : undefined,
         )
@@ -86,11 +86,7 @@ export function PropertiesHost({
         scene.mutate((draft) => {
           draft.push(...copies)
         })
-        useAppStore
-          .getState()
-          .setSelection(
-            copies.filter((c) => !(c.type === "text" && c.containerId !== null)).map((c) => c.id),
-          )
+        useAppStore.getState().setSelection(copies.filter((c) => !isBoundLabel(c)).map((c) => c.id))
       }}
       onAlign={(edge) => moveTo(alignElements(selectedElements, edge))}
       onDistribute={(axis) => moveTo(distributeElements(selectedElements, axis))}

@@ -147,6 +147,8 @@ export type {
   TextAlign,
   VerticalAlign,
 } from "./types"
+export { isBoundLabel } from "./bound-label"
+export type { BoundLabel } from "./bound-label"
 export { elementShadow, shadowMargin } from "./shadow"
 export { pointsPatch } from "./points-patch"
 export { addBackRef, removeBackRef } from "./binding-refs"

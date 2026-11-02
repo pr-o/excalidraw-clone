@@ -1,6 +1,7 @@
 import { boundsFromPoints, type Point } from "@excalidraw-clone/geometry"
 import { fitTableBox } from "./table"
 import type { ExcalidrawElement } from "./types"
+import { isBoundLabel } from "./bound-label"
 
 /** Plain x/y/width/height box — the shape both the pre-drag combined
  *  selection bounds and the post-drag target bounds take. No `angle`: a
@@ -22,7 +23,7 @@ const MIN_FONT_SIZE = 4
  *  against its container's new box afterward. Mirrors `isPassengerLabel`
  *  in `flip.ts`. */
 const isPassengerLabel = (el: ExcalidrawElement, inSet: ReadonlySet<string>): boolean =>
-  el.type === "text" && el.containerId !== null && inSet.has(el.containerId)
+  isBoundLabel(el) && inSet.has(el.containerId)
 
 const scalePoint = (p: Point, sx: number, sy: number): Point => ({ x: p.x * sx, y: p.y * sy })
 

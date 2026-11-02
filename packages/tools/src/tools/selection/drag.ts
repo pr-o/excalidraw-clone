@@ -4,6 +4,7 @@ import {
   type ExcalidrawElement,
   removeBackRef,
   duplicateElements,
+  isBoundLabel,
 } from "@excalidraw-clone/scene"
 import type { ToolEffect, ToolContext, ToolEvent } from "../../types"
 import { buildRecommitEffect } from "./recommit"
@@ -86,7 +87,7 @@ export const reduceDragging = (
         // this move on creation loses no distance — the next one measures from `last`.
         const copies = duplicateElements(ctx.readElements(), state.movedIds, 0)
         const dupIds = copies.map((c) => c.id)
-        const selectable = copies.filter((c) => !(c.type === "text" && c.containerId !== null))
+        const selectable = copies.filter((c) => !isBoundLabel(c))
         return [
           { ...state, dupPending: false, dupIds, movedIds: dupIds },
           [

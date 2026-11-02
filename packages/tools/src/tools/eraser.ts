@@ -1,5 +1,10 @@
 import { type Point, pointInRectangle } from "@excalidraw-clone/geometry"
-import { type ExcalidrawElement, expandIdsToGroups, hitTestElement } from "@excalidraw-clone/scene"
+import {
+  type ExcalidrawElement,
+  expandIdsToGroups,
+  hitTestElement,
+  isBoundLabel,
+} from "@excalidraw-clone/scene"
 import type { Tool, ToolContext, ToolEffect, ToolEvent } from "../types"
 import { NO_EFFECTS } from "../types"
 
@@ -46,8 +51,7 @@ const samplesBetween = (a: Point, b: Point, step: number): Point[] => {
 }
 
 /** Locked elements stay; bound labels go with their container (reconcileBoundText). */
-const erasable = (e: ExcalidrawElement): boolean =>
-  !e.locked && !(e.type === "text" && e.containerId !== null)
+const erasable = (e: ExcalidrawElement): boolean => !e.locked && !isBoundLabel(e)
 
 /** Ids of erasable elements under any of `points`, widened to whole groups, minus `skip`. */
 const idsUnder = (

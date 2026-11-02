@@ -4,6 +4,7 @@ import {
   getElementBounds,
   newText,
   type ExcalidrawElement,
+  isBoundLabel,
 } from "@excalidraw-clone/scene"
 
 export const CLIPBOARD_TYPE = "excalidraw-clone/clipboard"
@@ -59,7 +60,7 @@ export function buildPaste(text: string, at: { x: number; y: number }): Excalidr
 
 /** Ids to select after inserting `els`: everything but bound labels. */
 export const selectableIds = (els: readonly ExcalidrawElement[]): string[] =>
-  els.filter((el) => !(el.type === "text" && el.containerId !== null)).map((el) => el.id)
+  els.filter((el) => !isBoundLabel(el)).map((el) => el.id)
 
 /** Translates `els` so their combined bounding-box center lands at `at`. */
 export function centerAt(

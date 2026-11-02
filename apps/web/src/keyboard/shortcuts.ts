@@ -7,6 +7,7 @@ import {
   lockElements,
   type Scene,
   ungroupElements,
+  isBoundLabel,
 } from "@excalidraw-clone/scene"
 import i18next from "i18next"
 import { announce } from "../components/LiveAnnouncer"
@@ -138,11 +139,7 @@ export function attachShortcuts({
       scene.mutate((draft) => {
         draft.push(...copies)
       })
-      useAppStore
-        .getState()
-        .setSelection(
-          copies.filter((c) => !(c.type === "text" && c.containerId !== null)).map((c) => c.id),
-        )
+      useAppStore.getState().setSelection(copies.filter((c) => !isBoundLabel(c)).map((c) => c.id))
       return
     }
     if (isMeta && e.altKey && key === "c") {
@@ -249,7 +246,7 @@ export function attachShortcuts({
       e.preventDefault()
       const all = scene
         .getElements()
-        .filter((el) => !el.locked && !(el.type === "text" && el.containerId !== null))
+        .filter((el) => !el.locked && !isBoundLabel(el))
         .map((el) => el.id)
       useAppStore.getState().setSelection(all)
       return

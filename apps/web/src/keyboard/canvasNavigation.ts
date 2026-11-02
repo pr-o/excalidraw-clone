@@ -1,4 +1,4 @@
-import { getElementsBounds, type ExcalidrawElement } from "@excalidraw-clone/scene"
+import { getElementsBounds, type ExcalidrawElement, isBoundLabel } from "@excalidraw-clone/scene"
 
 /** Keyboard-navigable units in z-order (back to front, the reverse of the
  *  layers panel): each ungrouped element, or one entry per outermost group.
@@ -9,7 +9,7 @@ export function navigationUnits(elements: readonly ExcalidrawElement[]): string[
   const groupUnit = new Map<string, string[]>()
   for (const el of elements) {
     if (el.isDeleted || el.locked) continue
-    if (el.type === "text" && el.containerId !== null) continue
+    if (isBoundLabel(el)) continue
     const outer = el.groupIds[el.groupIds.length - 1]
     if (outer === undefined) {
       units.push([el.id])

@@ -165,3 +165,12 @@ describe("straightenConnectors", () => {
     ])
   })
 })
+
+describe("layoutGraph at scale", () => {
+  it("lays out a very long chain without overflowing the stack", () => {
+    const nodes = Array.from({ length: 20000 }, () => box(0, 0, 20, 20))
+    const arrows = nodes.slice(1).map((n, i) => link(nodes[i]!, n))
+    const patches = layoutGraph(nodes, [...nodes, ...arrows], "tree-down")
+    expect(patches).toHaveLength(nodes.length)
+  })
+})

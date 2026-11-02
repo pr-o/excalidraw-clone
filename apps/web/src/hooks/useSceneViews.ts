@@ -5,6 +5,7 @@ import {
   type ExcalidrawTextElement,
   type Scene,
   type Stats,
+  isBoundLabel,
 } from "@excalidraw-clone/scene"
 import { useMemo } from "react"
 import { useAppStore } from "../store"
@@ -36,10 +37,7 @@ export function useSceneViews(scene: Scene): SceneViews {
     const ids = new Set(selectedIds)
     return scene
       .getElements()
-      .filter(
-        (e): e is ExcalidrawTextElement =>
-          e.type === "text" && e.containerId !== null && ids.has(e.containerId),
-      )
+      .filter((e): e is ExcalidrawTextElement => isBoundLabel(e) && ids.has(e.containerId))
   }, [selectedIds, scene, sceneRevision])
   const hasLockedElements = useMemo(
     () => scene.getElements().some((e) => e.locked),

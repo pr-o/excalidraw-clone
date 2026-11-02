@@ -43,6 +43,8 @@ function pickFile(accept: string): Promise<File | null> {
     input.type = "file"
     input.accept = accept
     input.onchange = () => resolve(input.files?.[0] ?? null)
+    // Dismissing the dialog fires `cancel`, not `change`; without this the promise never settles.
+    input.oncancel = () => resolve(null)
     input.click()
   })
 }

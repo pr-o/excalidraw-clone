@@ -1,5 +1,5 @@
 import type { AlignmentGuide, Bounds, Point, ViewTransform } from "@excalidraw-clone/geometry"
-import { LABELABLE_TYPES, LINEAR_LABELABLE_TYPES } from "@excalidraw-clone/scene"
+import { LABELABLE_TYPES, LINEAR_LABELABLE_TYPES, isBoundLabel } from "@excalidraw-clone/scene"
 import type { ExcalidrawElement, Scene } from "@excalidraw-clone/scene"
 import { RoughCanvas } from "roughjs/bin/canvas"
 import { drawCropDim } from "./crop-overlay"
@@ -224,10 +224,7 @@ export class CanvasRenderer {
         element.id === this.hiddenId && element.type === "table" ? this.hiddenCell : null
       if ((element.id === this.hiddenId && !hiddenCell) || !isElementVisible(element, view))
         continue
-      const container =
-        element.type === "text" && element.containerId !== null
-          ? byId.get(element.containerId)
-          : undefined
+      const container = isBoundLabel(element) ? byId.get(element.containerId) : undefined
       const labelOpts = hiddenCell
         ? { hiddenCell }
         : container === undefined

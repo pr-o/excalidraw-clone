@@ -3,6 +3,7 @@ import { getElementsBounds } from "./bounds"
 import { expandIdsToFrameMembers } from "./frames"
 import { flipTable } from "./table"
 import type { ExcalidrawElement, PointBinding } from "./types"
+import { isBoundLabel } from "./bound-label"
 
 export type FlipAxis = "x" | "y"
 
@@ -74,7 +75,7 @@ const flipOne = (el: ExcalidrawElement, axis: FlipAxis): ExcalidrawElement => {
  *  necessarily encloses a label along with its container, which is why this
  *  guard lives here rather than in the selection layer. */
 const isPassengerLabel = (el: ExcalidrawElement, inSet: ReadonlySet<string>): boolean =>
-  el.type === "text" && el.containerId !== null && inSet.has(el.containerId)
+  isBoundLabel(el) && inSet.has(el.containerId)
 
 /** Full replacement elements for a flip of `ids` across `axis`. Single vs.
  *  group behaviour is chosen by `ids.length`. Locked / deleted / unknown ids

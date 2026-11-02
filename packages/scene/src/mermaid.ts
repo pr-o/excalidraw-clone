@@ -15,6 +15,7 @@ import type {
   ExcalidrawElement,
   ExcalidrawTextElement,
 } from "./types"
+import { isBoundLabel } from "./bound-label"
 
 export type MermaidDirection = "TD" | "TB" | "LR" | "BT" | "RL"
 export type MermaidShape = "rectangle" | "ellipse" | "diamond"
@@ -371,8 +372,7 @@ export function exportMermaidFlowchart(
   const idOf = new Map(nodes.map((e, i) => [e.id, nodeId(i)]))
   const labelOf = new Map<string, string>()
   for (const e of live) {
-    if (e.type === "text" && e.containerId !== null && e.text.trim() !== "")
-      labelOf.set(e.containerId, e.text)
+    if (isBoundLabel(e) && e.text.trim() !== "") labelOf.set(e.containerId, e.text)
   }
 
   const lines = nodes.map((e) => {

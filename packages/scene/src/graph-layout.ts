@@ -3,6 +3,7 @@ import { canBindTo } from "./bindings"
 import { getElementBounds } from "./bounds"
 import type { PositionPatch } from "./arrange"
 import type { ExcalidrawElement } from "./types"
+import { isBoundLabel } from "./bound-label"
 
 /**
  * - `tree-down` / `tree-right`: layered (Sugiyama-style) layout, layers flowing
@@ -23,8 +24,7 @@ const NODE_GAP = 40
 /** Space between disconnected components laid out side by side. */
 const COMPONENT_GAP = 80
 
-const isNode = (el: ExcalidrawElement): boolean =>
-  canBindTo(el) && !el.locked && !(el.type === "text" && el.containerId !== null)
+const isNode = (el: ExcalidrawElement): boolean => canBindTo(el) && !el.locked && !isBoundLabel(el)
 
 /**
  * The layout graph of a selection: nodes are the selected bindable shapes
@@ -112,21 +112,33 @@ function assignLayers(
   const starts = [...comp].sort(
     (p, q) => indegree.get(p.id)! - indegree.get(q.id)! || crossKey(p) - crossKey(q),
   )
-  const state = new Map<string, 0 | 1 | 2>() // 1 = on stack, 2 = done
+  const state = new Map<string, 1 | 2>() // 1 = on stack, 2 = done
   const dag: GraphEdge[] = []
   const post: string[] = []
-  const visit = (id: string): void => {
-    state.set(id, 1)
-    for (const e of out.get(id)!) {
-      const s = state.get(e.to)
+  // Iterative DFS (explicit stack) so a long chain cannot overflow the call stack.
+  for (const start of starts) {
+    if (state.has(start.id)) continue
+    state.set(start.id, 1)
+    const stack: { id: string; next: number }[] = [{ id: start.id, next: 0 }]
+    while (stack.length) {
+      const frame = stack[stack.length - 1]!
+      const edge = out.get(frame.id)![frame.next]
+      if (!edge) {
+        state.set(frame.id, 2)
+        post.push(frame.id)
+        stack.pop()
+        continue
+      }
+      frame.next += 1
+      const s = state.get(edge.to)
       if (s === 1) continue // back edge: drop
-      dag.push(e)
-      if (s === undefined) visit(e.to)
+      dag.push(edge)
+      if (s === undefined) {
+        state.set(edge.to, 1)
+        stack.push({ id: edge.to, next: 0 })
+      }
     }
-    state.set(id, 2)
-    post.push(id)
   }
-  for (const n of starts) if (!state.has(n.id)) visit(n.id)
 
   const layerOf = new Map<string, number>(comp.map((n) => [n.id, 0]))
   const dagOut = new Map<string, GraphEdge[]>(comp.map((n) => [n.id, []]))
