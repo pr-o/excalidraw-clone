@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test"
-import { freshCanvas } from "./_helpers"
+import { freshCanvas, readScene } from "./_helpers"
 
 type Box = { x: number; y: number; width: number; height: number }
 const box = async (page: Page, testId: string): Promise<Box> => {
@@ -113,6 +113,46 @@ test.describe("phone 360x640", () => {
     await touch(page, "pointerup", 150, 360)
     await expect(page.getByTestId("context-menu")).toBeVisible()
     await expect(page.getByTestId("context-menu-item-delete")).toBeVisible()
+  })
+
+  test("double-tap on a shape labels it, even without a native dblclick (iOS)", async ({
+    page,
+  }) => {
+    await freshCanvas(page)
+    await drawRectByTouch(page)
+    for (let i = 0; i < 2; i += 1) {
+      await touch(page, "pointerdown", 150, 360)
+      await touch(page, "pointerup", 150, 360)
+    }
+    await expect(page.locator("textarea")).toBeFocused()
+    await page.keyboard.type("Hi")
+    await page.locator("textarea").blur()
+    await expect
+      .poll(async () => (await readScene<{ text?: string }>(page)).map((e) => e.text ?? null))
+      .toEqual([null, "Hi"])
+  })
+
+  test("a real double-tap (native dblclick too) edits once and the canvas blocks callouts", async ({
+    page,
+  }) => {
+    await freshCanvas(page)
+    await drawRectByTouch(page)
+    await page.touchscreen.tap(150, 360)
+    await page.touchscreen.tap(150, 360)
+    await expect(page.locator("textarea")).toHaveCount(1)
+    await page.keyboard.type("One")
+    await page.locator("textarea").blur()
+    await expect
+      .poll(async () => (await readScene<{ text?: string }>(page)).filter((e) => e.text).length)
+      .toBe(1)
+    const css = await page
+      .locator("canvas")
+      .first()
+      .evaluate((c) => {
+        const s = getComputedStyle(c) as CSSStyleDeclaration & { webkitTouchCallout?: string }
+        return [s.touchAction, s.userSelect, s.webkitTouchCallout]
+      })
+    expect(css.slice(0, 2)).toEqual(["none", "none"])
   })
 
   test("a moving finger never turns into a long-press", async ({ page }) => {

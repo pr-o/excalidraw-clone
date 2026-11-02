@@ -21,6 +21,7 @@ import { drawGhost, placeLibraryItem } from "./libraryPlacement"
 import { openLink, sanitizeLinkHref } from "./link"
 import { syncRendererWithStore } from "./rendererSync"
 import { createToolDispatch, NO_MODIFIERS, resolveGrid } from "./toolDispatch"
+import { createDoubleTap } from "./doubleTap"
 import { createTouchGestures } from "./touchGestures"
 import { applyGuideDrag, guideValueAt, type GuideDrag } from "./userGuides"
 import { isReadOnly } from "./viewMode"
@@ -151,6 +152,8 @@ export function useDrawingDriver({
       canvas.style.cursor = ""
     }
 
+    const doubleTap = createDoubleTap()
+    let syntheticDoubleTapAt = -Infinity
     const handleTouch = createTouchGestures(canvas, dispatch, (clientX, clientY) =>
       openCanvasContextMenu(scene, canvas, {
         clientX,
@@ -173,6 +176,7 @@ export function useDrawingDriver({
 
     const onPointerDown = (e: PointerEvent): void => {
       if (e.button !== 0) return
+      if (e.pointerType === "touch") doubleTap.down(e)
       if (handleTouch("down", e)) return
       if (useAppStore.getState().contextMenu) {
         useAppStore.getState().setContextMenu(null)
@@ -302,6 +306,7 @@ export function useDrawingDriver({
       dispatchPointer("pointerMove", e)
     }
     const onPointerUp = (e: PointerEvent): void => {
+      const isDoubleTap = e.type === "pointerup" && e.pointerType === "touch" && doubleTap.up(e)
       if (handleTouch("up", e)) return
       if (orphanedPointerRef.current === e.pointerId) {
         // End of the orphaned gesture: clear the mark so a fresh press works
@@ -324,6 +329,10 @@ export function useDrawingDriver({
       if (useAppStore.getState().pendingItem) return
       canvas.releasePointerCapture(e.pointerId)
       dispatchPointer("pointerUp", e)
+      if (isDoubleTap) {
+        syntheticDoubleTapAt = performance.now()
+        onDoubleClick(e)
+      }
     }
     const onDoubleClick = (e: MouseEvent): void => {
       // Read-only while presenting (laser has no double-click behaviour).
@@ -336,6 +345,12 @@ export function useDrawingDriver({
       dispatch({ type: "doubleClick", at: snappedScenePoint(e) }, modifiersOf(e))
     }
 
+    // Browsers that also send a native dblclick for the double-tap must not run it twice.
+    const onNativeDoubleClick = (e: MouseEvent): void => {
+      if (performance.now() - syntheticDoubleTapAt < 500) return
+      onDoubleClick(e)
+    }
+
     const onContextMenu = (e: MouseEvent): void => openCanvasContextMenu(scene, canvas, e)
 
     const onPointerEnter = (): void => useAppStore.getState().setPointerOverCanvas(true)
@@ -345,7 +360,7 @@ export function useDrawingDriver({
     canvas.addEventListener("pointermove", onPointerMove)
     canvas.addEventListener("pointerup", onPointerUp)
     canvas.addEventListener("pointercancel", onPointerUp)
-    canvas.addEventListener("dblclick", onDoubleClick)
+    canvas.addEventListener("dblclick", onNativeDoubleClick)
     canvas.addEventListener("contextmenu", onContextMenu)
     canvas.addEventListener("pointerenter", onPointerEnter)
     canvas.addEventListener("pointerleave", onPointerLeave)
@@ -360,7 +375,7 @@ export function useDrawingDriver({
       canvas.removeEventListener("pointermove", onPointerMove)
       canvas.removeEventListener("pointerup", onPointerUp)
       canvas.removeEventListener("pointercancel", onPointerUp)
-      canvas.removeEventListener("dblclick", onDoubleClick)
+      canvas.removeEventListener("dblclick", onNativeDoubleClick)
       canvas.removeEventListener("contextmenu", onContextMenu)
       canvas.removeEventListener("pointerenter", onPointerEnter)
       canvas.removeEventListener("pointerleave", onPointerLeave)

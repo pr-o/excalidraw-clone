@@ -58,7 +58,11 @@ export function CanvasShell({
 
   return (
     <div ref={wrapperRef} className="absolute inset-0">
-      <canvas ref={canvasRef} className="absolute inset-0 touch-none" />
+      <canvas
+        ref={canvasRef}
+        // iOS: no callout / text-selection magnifier on long-press.
+        className="absolute inset-0 touch-none select-none [-webkit-touch-callout:none]"
+      />
       <canvas ref={overlayRef} className="pointer-events-none absolute inset-0" />
       <canvas ref={laserRef} className="pointer-events-none absolute inset-0" />
       <Rulers scene={scene} />
