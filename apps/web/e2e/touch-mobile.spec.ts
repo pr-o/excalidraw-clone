@@ -128,7 +128,9 @@ test.describe("phone 360x640", () => {
     await page.keyboard.type("Hi")
     await page.locator("textarea").blur()
     await expect
-      .poll(async () => (await readScene<{ text?: string }>(page)).map((e) => e.text ?? null))
+      .poll(async () =>
+        (await readScene<{ text?: string; isDeleted?: boolean }>(page)).map((e) => e.text ?? null),
+      )
       .toEqual([null, "Hi"])
   })
 
@@ -143,7 +145,11 @@ test.describe("phone 360x640", () => {
     await page.keyboard.type("One")
     await page.locator("textarea").blur()
     await expect
-      .poll(async () => (await readScene<{ text?: string }>(page)).filter((e) => e.text).length)
+      .poll(
+        async () =>
+          (await readScene<{ text?: string; isDeleted?: boolean }>(page)).filter((e) => e.text)
+            .length,
+      )
       .toBe(1)
     const css = await page
       .locator("canvas")
