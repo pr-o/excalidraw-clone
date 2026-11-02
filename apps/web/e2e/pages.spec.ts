@@ -90,6 +90,11 @@ test("pages: add, switch, rename, delete-guard, and localStorage round-trip", as
   expect(docAfterReload?.pages.find((p) => p.id === firstId)?.name).toBe("Notes")
 
   // Delete guard: delete page 2 down to one page, then delete is disabled again.
+  // Page 2 has content, so deleting asks first: dismissing keeps it.
+  page.once("dialog", (d) => void d.dismiss())
+  await page.locator(`[data-testid="page-delete-${page2Id}"]`).click()
+  await expect(page.locator('[data-testid^="page-tab-"]')).toHaveCount(2)
+  page.once("dialog", (d) => void d.accept())
   await page.locator(`[data-testid="page-delete-${page2Id}"]`).click()
   await expect(page.locator('[data-testid^="page-tab-"]')).toHaveCount(1)
   await expect(page.locator(`[data-testid="page-delete-${firstId}"]`)).toBeDisabled()

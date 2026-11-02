@@ -341,6 +341,7 @@
   },
   "pages": {
     "title": "Pages",
+    "confirmDelete": "Delete \"{{name}}\" and everything on it? This can't be undone.",
     "add": "Add page",
     "rename": "Rename page",
     "delete": "Delete page",

@@ -195,7 +195,17 @@ function Inner(): React.ReactElement {
             thumbnails={doc.thumbnails}
             onSwitch={switchToPage}
             onAdd={doc.addPage}
-            onDelete={doc.deletePage}
+            onDelete={(id) => {
+              // Page deletion is not undoable, so a page with content asks first.
+              const target = pages.find((p) => p.id === id)
+              if (
+                target &&
+                target.scene.getElements().length > 0 &&
+                !window.confirm(t("pages.confirmDelete", { name: target.name }))
+              )
+                return
+              doc.deletePage(id)
+            }}
             onRename={doc.renamePage}
             onDuplicate={doc.duplicatePage}
             onReorder={doc.reorderPage}
