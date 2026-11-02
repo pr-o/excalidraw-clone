@@ -1,6 +1,6 @@
-import { newText } from "@excalidraw-clone/scene"
+import { newText, Scene } from "@excalidraw-clone/scene"
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from "vitest"
-import { measureStandaloneText } from "../src/driver/measureStandaloneText"
+import { measureStandaloneText, refitFreeText } from "../src/driver/measureStandaloneText"
 import { createFontAwareStubContext } from "./fontAwareCanvasStub"
 
 describe("measureStandaloneText — with a 2D context", () => {
@@ -53,5 +53,42 @@ describe("measureStandaloneText — without a 2D context", () => {
     const spy = vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation(() => null)
     expect(measureStandaloneText(newText({ x: 0, y: 0, text: "hello" }))).toBeUndefined()
     spy.mockRestore()
+  })
+})
+
+describe("refitFreeText — after web fonts load", () => {
+  let getContextSpy: MockInstance<typeof HTMLCanvasElement.prototype.getContext>
+  beforeEach(() => {
+    getContextSpy = vi
+      .spyOn(HTMLCanvasElement.prototype, "getContext")
+      .mockImplementation(() => createFontAwareStubContext())
+  })
+  afterEach(() => getContextSpy.mockRestore())
+
+  it("re-fits stale auto-sized free text without adding an undo step", () => {
+    const stale = { ...newText({ x: 0, y: 0, text: "abcd", fontSize: 20 }), width: 99, height: 7 }
+    const fixed = {
+      ...newText({ x: 0, y: 50, text: "abcd", fontSize: 20 }),
+      autoResize: false,
+      width: 99,
+      height: 7,
+    }
+    const scene = new Scene([stale, fixed])
+    const historyBefore = scene.getHistory().length
+    refitFreeText(scene)
+    const [a, b] = scene.getElements()
+    expect({ width: a!.width, height: a!.height }).toEqual({ width: 40, height: 25 })
+    // Fixed-width text keeps the user's width.
+    expect(b!.width).toBe(99)
+    expect(scene.getHistory().length).toBe(historyBefore)
+  })
+
+  it("leaves an already-fitted scene untouched", () => {
+    const scene = new Scene([newText({ x: 0, y: 0, text: "abcd", fontSize: 20 })])
+    refitFreeText(scene)
+    const changed = vi.fn()
+    scene.subscribe(changed)
+    refitFreeText(scene)
+    expect(changed).not.toHaveBeenCalled()
   })
 })

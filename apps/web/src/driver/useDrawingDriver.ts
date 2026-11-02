@@ -16,6 +16,7 @@ import {
 } from "./events"
 import { pickElementAtPoint } from "./hitTest"
 import { LaserTrail } from "./laserTrail"
+import { refitFreeText } from "./measureStandaloneText"
 import { drawGhost, placeLibraryItem } from "./libraryPlacement"
 import { openLink, sanitizeLinkHref } from "./link"
 import { syncRendererWithStore } from "./rendererSync"
@@ -78,6 +79,14 @@ export function useDrawingDriver({
     // CanvasShell resizes the canvas on window resize, which clears its bitmap.
     const onResize = (): void => renderer.requestRedraw()
     window.addEventListener("resize", onResize)
+    // Caveat is a web font: once it is ready, re-fit free text measured with
+    // the fallback and redraw (the first frame may have used the fallback).
+    let disposed = false
+    void document.fonts?.load('20px "Caveat"').then(() => {
+      if (disposed) return
+      refitFreeText(scene)
+      renderer.requestRedraw()
+    })
 
     const dispatch = createToolDispatch(scene, renderer, laser)
     const unsubStore = syncRendererWithStore(renderer, laser, dispatch)
@@ -351,6 +360,7 @@ export function useDrawingDriver({
       window.removeEventListener("keydown", onKeyDown)
       window.removeEventListener("keyup", onKeyUp)
       useAppStore.getState().setDispatchToolEvent(null)
+      disposed = true
       window.removeEventListener("resize", onResize)
       unsubStore()
       laser.clear()
