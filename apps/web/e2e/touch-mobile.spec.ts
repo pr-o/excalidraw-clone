@@ -201,6 +201,59 @@ test.describe("phone 360x640", () => {
   })
 })
 
+test.describe("on-screen keyboard (emulated visualViewport)", () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true })
+
+  test("a text editor near the bottom scrolls above the keyboard", async ({ page }) => {
+    // Chromium can't open a soft keyboard; stand in a visualViewport we can shrink.
+    await page.addInitScript(() => {
+      const vv = new EventTarget() as EventTarget & { height: number; offsetTop: number }
+      vv.height = window.innerHeight
+      vv.offsetTop = 0
+      Object.defineProperty(window, "visualViewport", { value: vv, configurable: true })
+      ;(window as unknown as { __keyboard: (h: number) => void }).__keyboard = (h) => {
+        vv.height = h
+        vv.dispatchEvent(new Event("resize"))
+      }
+    })
+    await freshCanvas(page)
+    await page.getByTestId("toolbar-more-tools").tap()
+    await page.getByRole("menu").getByTestId("toolbar-text").tap()
+    await page.touchscreen.tap(120, 700)
+    const editor = page.locator("textarea")
+    await expect(editor).toBeFocused()
+    await page.evaluate(() =>
+      (window as unknown as { __keyboard: (h: number) => void }).__keyboard(420),
+    )
+    await expect
+      .poll(async () => (await editor.boundingBox())!.y + (await editor.boundingBox())!.height)
+      .toBeLessThanOrEqual(420)
+    await page.keyboard.type("visible")
+    await expect(editor).toHaveValue("visible")
+
+    // The comment composer is anchored on the canvas too.
+    await page.locator("textarea").blur()
+    await page.evaluate(() =>
+      (window as unknown as { __keyboard: (h: number) => void }).__keyboard(844),
+    )
+    await page.getByTestId("toolbar-more-tools").tap()
+    await page.getByRole("menu").getByTestId("toolbar-comment").tap()
+    await touch(page, "pointerdown", 200, 640)
+    await touch(page, "pointerup", 200, 640)
+    const input = page.getByTestId("comment-input")
+    await expect(input).toBeFocused()
+    await page.evaluate(() =>
+      (window as unknown as { __keyboard: (h: number) => void }).__keyboard(420),
+    )
+    await expect
+      .poll(async () => {
+        const b = (await input.boundingBox())!
+        return b.y + b.height
+      })
+      .toBeLessThanOrEqual(420)
+  })
+})
+
 test.describe("tablet 768x1024", () => {
   test.use({ viewport: { width: 768, height: 1024 }, hasTouch: true, isMobile: true })
 

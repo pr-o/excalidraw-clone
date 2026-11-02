@@ -7,6 +7,7 @@ import { I18nextProvider, useTranslation } from "react-i18next"
 import { cyclePageId } from "../driver/pages"
 import { patchScene } from "../driver/patchScene"
 import { toggleViewMode } from "../driver/viewMode"
+import { useKeyboardAvoidance } from "../hooks/useKeyboardAvoidance"
 import { useEditorEnvironment, useImageToolUpload } from "../hooks/useEditorEnvironment"
 import { usePages } from "../hooks/usePages"
 import { useSceneViews } from "../hooks/useSceneViews"
@@ -45,6 +46,7 @@ export function App(): React.ReactElement {
 function Inner(): React.ReactElement {
   const { t, i18n } = useTranslation()
   useEditorEnvironment(i18n)
+  useKeyboardAvoidance()
   const doc = usePages()
   const { pages, activePageId, scene, switchToPage } = doc
   // Fullscreen target for presentation mode.
