@@ -265,7 +265,10 @@
     "copyFailed": "Couldn't copy to the clipboard. Select the text and copy it manually."
   },
   "canvas": {
-    "unlockAll": "Unlock all"
+    "unlockAll": "Unlock all",
+    "emptyHint": "Pick a shape above, then drag on the canvas to draw",
+    "emptyHintKeysBefore": "Press",
+    "emptyHintKeysAfter": "to see every keyboard shortcut"
   },
   "shortcuts": {
     "title": "Keyboard shortcuts",

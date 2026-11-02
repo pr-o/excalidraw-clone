@@ -262,7 +262,12 @@
     "copied": "클립보드에 복사됨",
     "copyFailed": "클립보드에 복사할 수 없습니다. 텍스트를 선택해 직접 복사하세요."
   },
-  "canvas": { "unlockAll": "모두 잠금 해제" },
+  "canvas": {
+    "unlockAll": "모두 잠금 해제",
+    "emptyHint": "위에서 도형을 고른 뒤 캔버스를 드래그해 그려 보세요",
+    "emptyHintKeysBefore": "",
+    "emptyHintKeysAfter": "키를 누르면 모든 단축키를 볼 수 있어요"
+  },
   "shortcuts": { "title": "키보드 단축키", "tools": "도구", "editor": "편집", "view": "보기" },
   "library": {
     "title": "라이브러리",

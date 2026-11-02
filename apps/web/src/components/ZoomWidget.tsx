@@ -9,7 +9,7 @@ export function ZoomWidget(): React.ReactElement {
   const { t } = useTranslation()
   const zoom = useAppStore((s) => s.zoom)
   return (
-    <div className="absolute bottom-3 right-3 z-30 flex items-center gap-0.5 rounded-xl bg-panel p-1 text-xs shadow-panel">
+    <div className="flex items-center gap-0.5 rounded-xl bg-panel p-1 text-xs shadow-panel">
       <button
         type="button"
         data-testid="zoom-out"

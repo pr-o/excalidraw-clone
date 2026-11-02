@@ -19,6 +19,7 @@ import { CanvasShell } from "./CanvasShell"
 import { CommentsHost } from "./CommentsHost"
 import { ContextMenuHost } from "./ContextMenuHost"
 import { Dialogs } from "./Dialogs"
+import { EmptyCanvasHint } from "./EmptyCanvasHint"
 import { FindHost } from "./FindHost"
 import { LayersHost } from "./LayersHost"
 import { LibraryHost, useLibrarySync } from "./LibraryHost"
@@ -82,6 +83,7 @@ function Inner(): React.ReactElement {
   const presenting = useAppStore((s) => s.presenting)
   const viewMode = useAppStore((s) => s.viewMode)
   const commentsPanelOpen = useAppStore((s) => s.commentsPanelOpen)
+  const openDialog = useAppStore((s) => s.openDialog)
   const views = useSceneViews(scene)
   const toggleCommentsPanel = useAppStore((s) => s.toggleCommentsPanel)
   // Same-edge panels are exclusive; each open one offers its sibling in its header.
@@ -99,6 +101,8 @@ function Inner(): React.ReactElement {
 
       {!zenMode && !presenting && (
         <>
+          {!viewMode && !openDialog && views.layerElements.length === 0 && <EmptyCanvasHint />}
+
           <div className="absolute left-3 top-3 z-40">
             <MenuHost
               open={menuOpen}
@@ -261,7 +265,19 @@ function Inner(): React.ReactElement {
             }
           />
 
-          <ZoomWidget />
+          <div className="absolute bottom-3 right-3 z-30 flex items-center gap-2">
+            <button
+              type="button"
+              data-testid="help-button"
+              aria-label={t("menu.help")}
+              title={`${t("menu.help")} (?)`}
+              onClick={() => setOpenDialog("help")}
+              className="flex h-9 w-9 items-center justify-center rounded-xl bg-panel shadow-panel hover:bg-panel-hover"
+            >
+              <Icon name="help" />
+            </button>
+            <ZoomWidget />
+          </div>
         </>
       )}
 
