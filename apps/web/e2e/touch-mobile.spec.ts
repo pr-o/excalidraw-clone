@@ -217,3 +217,47 @@ test.describe("tablet 768x1024", () => {
     await expect(page.getByTestId("properties-open")).toBeHidden()
   })
 })
+
+for (const width of [390, 768, 1024]) {
+  test.describe(`touch targets at ${width}px`, () => {
+    test.use({ viewport: { width, height: 844 }, hasTouch: true, isMobile: true })
+
+    test("toolbar and page-tab controls are 40px and nothing collides", async ({ page }) => {
+      await freshCanvas(page)
+      const toolbar = page.getByRole("toolbar")
+      const bar = (await toolbar.boundingBox())!
+      expect(bar.x).toBeGreaterThanOrEqual(0)
+      expect(bar.x + bar.width).toBeLessThanOrEqual(width)
+      for (const name of [
+        "Menu",
+        "Toggle history panel",
+        "Toggle library",
+        "Toggle layers panel",
+      ]) {
+        const other = (await page.getByRole("button", { name, exact: true }).boundingBox())!
+        expect(overlaps(bar, other), name).toBe(false)
+      }
+      for (const b of await toolbar.getByRole("button").all()) {
+        const r = (await b.boundingBox())!
+        expect(Math.min(r.width, r.height)).toBeGreaterThanOrEqual(40)
+      }
+      if (width >= 1024) await expect(page.getByTestId("toolbar-more-tools")).toHaveCount(0)
+
+      await page.getByTestId("page-add").tap()
+      const tabs = page.locator('[data-testid^="page-tab-"]')
+      const [first, second] = [tabs.nth(0), tabs.nth(1)]
+      // Page 2 is active: its controls are touch-sized, page 1's are hidden.
+      for (const b of await second.getByRole("button").all()) {
+        if (!(await b.isVisible())) continue
+        const label = await b.getAttribute("aria-label")
+        if (label?.startsWith("Move page") || label?.includes("page")) {
+          const r = (await b.boundingBox())!
+          expect(Math.min(r.width, r.height), label ?? "").toBeGreaterThanOrEqual(40)
+        }
+      }
+      await expect(first.getByRole("button", { name: "Delete page" })).toBeHidden()
+      await expect(second.getByRole("button", { name: "Delete page" })).toBeVisible()
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width)
+    })
+  })
+}

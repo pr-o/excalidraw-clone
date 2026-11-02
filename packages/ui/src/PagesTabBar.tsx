@@ -1,9 +1,9 @@
 import { useRef, useState } from "react"
 import { Icon } from "./shared/Icon"
 
-// Small icon button inside a page tab.
+// Small icon button inside a page tab (40px on touch).
 const TAB_BTN =
-  "flex h-6 w-6 pointer-coarse:h-8 pointer-coarse:w-8 shrink-0 items-center justify-center rounded-md text-muted hover:bg-panel-hover hover:text-app disabled:pointer-events-none disabled:opacity-30 [&_svg]:h-3.5 [&_svg]:w-3.5"
+  "flex h-6 w-6 pointer-coarse:h-10 pointer-coarse:w-10 shrink-0 items-center justify-center rounded-md text-muted hover:bg-panel-hover hover:text-app disabled:pointer-events-none disabled:opacity-30 [&_svg]:h-3.5 [&_svg]:w-3.5"
 
 export interface PagesTabBarProps {
   t: (key: string) => string
@@ -119,6 +119,8 @@ export function PagesTabBar({
         const active = page.id === activePageId
         const editing = editingId === page.id
         const thumb = thumbnails?.[page.id]
+        // On touch only the active tab carries its 40px controls, keeping tabs narrow.
+        const tabBtn = active ? TAB_BTN : `${TAB_BTN} pointer-coarse:hidden`
         return (
           <div
             key={page.id}
@@ -137,7 +139,7 @@ export function PagesTabBar({
                 title={t("pages.moveLeft")}
                 disabled={index === 0}
                 onClick={() => onReorder(page.id, "left")}
-                className={TAB_BTN}
+                className={tabBtn}
               >
                 <Icon name="chevron-left" />
               </button>
@@ -192,7 +194,7 @@ export function PagesTabBar({
                   title={t("pages.moveRight")}
                   disabled={index === pages.length - 1}
                   onClick={() => onReorder(page.id, "right")}
-                  className={TAB_BTN}
+                  className={tabBtn}
                 >
                   <Icon name="chevron-right" />
                 </button>
@@ -203,7 +205,7 @@ export function PagesTabBar({
                   aria-label={t("pages.duplicate")}
                   title={t("pages.duplicate")}
                   onClick={() => onDuplicate(page.id)}
-                  className={TAB_BTN}
+                  className={tabBtn}
                 >
                   <Icon name="duplicate" />
                 </button>
@@ -215,7 +217,7 @@ export function PagesTabBar({
                   title={t("pages.delete")}
                   disabled={pages.length === 1}
                   onClick={() => onDelete(page.id)}
-                  className={TAB_BTN}
+                  className={tabBtn}
                 >
                   <Icon name="close" />
                 </button>

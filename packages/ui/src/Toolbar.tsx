@@ -20,13 +20,13 @@ const SHAPES_GROUP = 1
  *  the "more tools" overflow menu so the toolbar stays a single row. */
 const inlineGroupCount = (wide: boolean, medium: boolean): number => (wide ? 5 : medium ? 3 : 2)
 /** Phones (< 480px): only this many leading tools of each inline group stay inline
- *  (selection; rectangle + ellipse), and the lock moves into the overflow menu too. */
+ *  (selection; rectangle + ellipse). */
 const NARROW_INLINE = [1, 2]
 
-function useMinWidth(px: number): boolean {
-  const query = `(min-width: ${px}px)`
-  const [matches, setMatches] = useState(
-    () => typeof window.matchMedia !== "function" || window.matchMedia(query).matches,
+/** `fallback` applies where matchMedia is unavailable (tests, SSR-less envs). */
+function useMedia(query: string, fallback: boolean): boolean {
+  const [matches, setMatches] = useState(() =>
+    typeof window.matchMedia !== "function" ? fallback : window.matchMedia(query).matches,
   )
   useEffect(() => {
     if (typeof window.matchMedia !== "function") return
@@ -65,8 +65,13 @@ export function Toolbar({
   toolKeys,
   className,
 }: ToolbarProps): React.ReactElement {
-  const inlineCount = inlineGroupCount(useMinWidth(960), useMinWidth(768))
-  const narrow = !useMinWidth(480)
+  // Touch buttons are 40px, so the full row needs more room and the lock moves
+  // into More tools below the wide layout.
+  const coarse = useMedia("(pointer: coarse)", false)
+  const wide = useMedia(`(min-width: ${coarse ? 1024 : 960}px)`, true)
+  const inlineCount = inlineGroupCount(wide, useMedia("(min-width: 768px)", true))
+  const narrow = !useMedia("(min-width: 480px)", true)
+  const lockInline = !narrow && (wide || !coarse)
   const inlineGroups = TOOL_GROUPS.slice(0, inlineCount).map((g, i) =>
     narrow ? g.slice(0, NARROW_INLINE[i]) : g,
   )
@@ -124,7 +129,7 @@ export function Toolbar({
       role="toolbar"
       aria-label={t("toolbar.label")}
     >
-      {!narrow && lockButton}
+      {lockInline && lockButton}
       {inlineGroups.map((group, i) => (
         <div key={group[0]} className={divider}>
           {group.map((name) => renderItem(name))}
@@ -160,7 +165,7 @@ export function Toolbar({
             >
               {overflow.map((group, i) => (
                 <div key={group[0]} className="flex gap-0.5">
-                  {narrow && i === 0 && lockButton}
+                  {!lockInline && i === 0 && lockButton}
                   {group.map((name) => renderItem(name, true))}
                 </div>
               ))}
