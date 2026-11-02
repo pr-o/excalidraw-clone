@@ -92,9 +92,20 @@ export function TextEditingOverlay({ scene }: { scene: Scene }): React.ReactElem
   if (target.type !== "text") return null
   const el = target
 
-  const left = (el.x + scrollX) * zoom
-  const top = (el.y + scrollY) * zoom
   const fontSize = el.fontSize * zoom
+  // A bound label edits inside its container's text box, at its aligned line
+  // position, so the text doesn't spill off-centre and jump on commit.
+  // Arrow/line labels size to their text instead, so they keep the natural editor.
+  const container =
+    el.containerId === null ? undefined : scene.getElements().find((c) => c.id === el.containerId)
+  const inBox = container !== undefined && container.type !== "arrow" && container.type !== "line"
+  const labelTextHeight = value.split("\n").length * fontSize * el.lineHeight
+  const labelOffset =
+    !inBox || el.verticalAlign === "top"
+      ? 0
+      : Math.max(0, el.height * zoom - labelTextHeight) * (el.verticalAlign === "middle" ? 0.5 : 1)
+  const left = (el.x + scrollX) * zoom
+  const top = (el.y + scrollY) * zoom + labelOffset
   // Fixed-width text wraps inside its box while editing, as it renders.
   const fixedWidth =
     el.containerId === null && el.autoResize === false
@@ -104,7 +115,14 @@ export function TextEditingOverlay({ scene }: { scene: Scene }): React.ReactElem
           boxSizing: "content-box" as const,
           whiteSpace: "pre-wrap" as const,
         }
-      : {}
+      : inBox
+        ? {
+            width: `${el.width * zoom}px`,
+            height: `${labelTextHeight}px`,
+            boxSizing: "content-box" as const,
+            whiteSpace: "pre-wrap" as const,
+          }
+        : {}
 
   const commit = (): void => {
     const noVisibleChange = value === "" && (el?.text ?? "") === ""
