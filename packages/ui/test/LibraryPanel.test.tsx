@@ -56,6 +56,16 @@ describe("LibraryPanel templates section", () => {
     expect(tile.querySelector('[aria-label="more"]')).toBeNull()
   })
 
+  it("explains how to add items when the library is empty", () => {
+    renderPanel()
+    expect(screen.getByTestId("library-empty-hint")).toHaveTextContent("library.emptyHint")
+  })
+
+  it("drops the how-to once the library has items", () => {
+    renderPanel({ items: [userItem] })
+    expect(screen.queryByTestId("library-empty-hint")).toBeNull()
+  })
+
   it("still renders user items with their menu", () => {
     renderPanel({ items: [userItem] })
     const tile = screen.getByTestId("library-item-u1")

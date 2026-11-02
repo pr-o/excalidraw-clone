@@ -226,7 +226,12 @@ export function LibraryPanel(props: LibraryPanelProps): React.ReactElement {
             {props.t("library.myItems")}
           </p>
           {props.items.length === 0 ? (
-            <p className="px-2 py-4 text-center text-sm text-muted">{props.t("library.empty")}</p>
+            <div className="px-2 py-4 text-center text-sm text-muted">
+              <p>{props.t("library.empty")}</p>
+              <p className="mt-1 text-xs" data-testid="library-empty-hint">
+                {props.t("library.emptyHint")}
+              </p>
+            </div>
           ) : (
             <ul className="grid grid-cols-3 gap-2">
               {props.items.map((item) => (

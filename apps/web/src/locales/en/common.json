@@ -281,6 +281,7 @@
     "toggle": "Toggle library",
     "addFromSelection": "Add from selection",
     "empty": "Library is empty",
+    "emptyHint": "Select shapes on the canvas, then click “Add from selection” to save them here. Import also loads a .excalidrawlib file.",
     "import": "Import",
     "export": "Export",
     "rename": "Rename",
