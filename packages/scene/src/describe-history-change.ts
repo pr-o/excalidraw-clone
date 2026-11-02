@@ -70,6 +70,8 @@ function classifyElementDiff(
   prev: ExcalidrawElement | undefined,
   next: ExcalidrawElement | undefined,
 ): ElementCategory {
+  // Same object ⟹ nothing changed (snapshots share untouched elements).
+  if (prev === next) return "unchanged"
   const prevLive = isLive(prev)
   const nextLive = isLive(next)
   if (!prevLive && nextLive) return "added"
@@ -101,7 +103,25 @@ function classifyElementDiff(
   return "unchanged"
 }
 
+/** Snapshots are immutable, so a (prev, next) pair's description never changes;
+ *  the history panel re-describes all ~100 entries on every new commit. */
+const cache = new WeakMap<
+  readonly ExcalidrawElement[],
+  { prev: readonly ExcalidrawElement[] | undefined; result: HistoryChangeDescription }
+>()
+
 export function describeHistoryChange(
+  prev: readonly ExcalidrawElement[] | undefined,
+  next: readonly ExcalidrawElement[],
+): HistoryChangeDescription {
+  const hit = cache.get(next)
+  if (hit && hit.prev === prev) return hit.result
+  const result = describeUncached(prev, next)
+  cache.set(next, { prev, result })
+  return result
+}
+
+function describeUncached(
   prev: readonly ExcalidrawElement[] | undefined,
   next: readonly ExcalidrawElement[],
 ): HistoryChangeDescription {
@@ -111,15 +131,17 @@ export function describeHistoryChange(
 
   const prevIds = prev.map((e) => e.id)
   const nextIds = next.map((e) => e.id)
-  const sameIdSet = prevIds.length === nextIds.length && prevIds.every((id) => nextIds.includes(id))
+  const nextIdSet = new Set(nextIds)
+  const sameIdSet = prevIds.length === nextIds.length && prevIds.every((id) => nextIdSet.has(id))
 
   if (sameIdSet) {
     const prevMap = new Map(prev.map((e) => [e.id, e]))
     const allFieldsEqual = next.every((e) => {
       const before = prevMap.get(e.id)!
       return (
+        before === e ||
         JSON.stringify(stripFields(before, VOLATILE_FIELDS)) ===
-        JSON.stringify(stripFields(e, VOLATILE_FIELDS))
+          JSON.stringify(stripFields(e, VOLATILE_FIELDS))
       )
     })
     if (allFieldsEqual) {
