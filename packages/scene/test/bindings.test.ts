@@ -88,6 +88,14 @@ describe("bindingTargetAt", () => {
     const b = rect({ id: "b", x: 0, y: 0, width: 100, height: 100 })
     expect(bindingTargetAt({ x: 50, y: 50 }, [a, b])?.id).toBe("b")
   })
+  it("binds a point just outside an edge, prefers a direct hit, ignores far points", () => {
+    const a = rect({ id: "a", x: 0, y: 0, width: 100, height: 100 })
+    const b = rect({ id: "b", x: 110, y: 0, width: 100, height: 100 })
+    expect(bindingTargetAt({ x: 105, y: 50 }, [a])?.id).toBe("a")
+    expect(bindingTargetAt({ x: 50, y: -8 }, [a])?.id).toBe("a")
+    expect(bindingTargetAt({ x: 112, y: 50 }, [b, a])?.id).toBe("b")
+    expect(bindingTargetAt({ x: 130, y: 50 }, [a])).toBeNull()
+  })
   it("returns null over empty space", () => {
     const a = rect({ id: "a", x: 0, y: 0, width: 100, height: 100 })
     expect(bindingTargetAt({ x: 500, y: 500 }, [a])).toBeNull()

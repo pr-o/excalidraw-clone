@@ -18,6 +18,8 @@ import { pointsPatch } from "./points-patch"
 import type { ElementType, ExcalidrawElement, PointBinding } from "./types"
 
 export const BINDING_GAP = 4
+/** How far outside a shape's edge (scene px) an arrow endpoint still binds to it. */
+export const BINDING_PROXIMITY = 12
 
 export const BINDABLE_TYPES: ReadonlySet<ElementType> = new Set<ElementType>([
   "rectangle",
@@ -57,6 +59,18 @@ export const bindingTargetAt = (
     if (!canBindTo(el) || el.locked) continue
     if (el.type === "text" && el.containerId !== null) continue
     if (hitTestElement(el, point)) return el
+  }
+  // Near miss: a point just outside a shape's edge (where users aim arrows) still binds.
+  for (let i = elements.length - 1; i >= 0; i -= 1) {
+    const el = elements[i]!
+    if (!canBindTo(el) || el.locked) continue
+    if (el.type === "text" && el.containerId !== null) continue
+    const center = boundsCenter(getElementBounds(el))
+    const d = Math.hypot(center.x - point.x, center.y - point.y)
+    if (d === 0) continue
+    const k = Math.min(BINDING_PROXIMITY, d) / d
+    const nudged = { x: point.x + (center.x - point.x) * k, y: point.y + (center.y - point.y) * k }
+    if (hitTestElement(el, nudged)) return el
   }
   return null
 }

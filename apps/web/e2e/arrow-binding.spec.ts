@@ -6,6 +6,8 @@ type SceneEl = {
   type: string
   x: number
   points?: { x: number; y: number }[]
+  startBinding?: { elementId: string } | null
+  endBinding?: { elementId: string } | null
   isDeleted?: boolean
 }
 
@@ -14,6 +16,27 @@ const arrowEndX = (els: SceneEl[]): number => {
   const last = a.points![a.points!.length - 1]!
   return a.x + last.x
 }
+
+test("an arrow drawn from just outside one edge to just outside another binds both ends", async ({
+  page,
+}) => {
+  await page.goto("/")
+  await page.evaluate(() => localStorage.clear())
+  await page.reload()
+  await page.locator('[data-testid="toolbar-rectangle"]').click()
+  await dragOnCanvas(page, { x: 200, y: 200 }, { x: 360, y: 280 })
+  await page.locator('[data-testid="toolbar-rectangle"]').click()
+  await dragOnCanvas(page, { x: 600, y: 200 }, { x: 760, y: 280 })
+  await page.locator('[data-testid="toolbar-arrow"]').click()
+  await dragOnCanvas(page, { x: 366, y: 240 }, { x: 594, y: 240 })
+  await expect
+    .poll(async () => {
+      const els = await readScene<SceneEl>(page)
+      const arrow = els.find((e) => e.type === "arrow")
+      return [arrow?.startBinding?.elementId, arrow?.endBinding?.elementId]
+    })
+    .toEqual([expect.any(String), expect.any(String)])
+})
 
 test("a bound arrow follows its target shape when the shape moves", async ({ page }) => {
   await page.goto("/")
