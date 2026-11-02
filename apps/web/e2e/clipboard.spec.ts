@@ -101,3 +101,12 @@ test("pasting plain text creates a text element at the cursor", async ({ page })
   expect(Math.round(texts[0]!.x)).toBe(300)
   expect(Math.round(texts[0]!.y)).toBe(200)
 })
+
+test("Ctrl+C copies without switching to the comment tool (C)", async ({ page }) => {
+  await freshCanvas(page)
+  await drawRect(page, { x: 100, y: 100 }, { x: 150, y: 150 })
+  await page.keyboard.press("Control+KeyA")
+  await page.keyboard.press("Control+KeyC")
+  await expect(page.getByTestId("toolbar-selection")).toHaveAttribute("aria-pressed", "true")
+  await expect(page.getByTestId("toolbar-comment")).toHaveAttribute("aria-pressed", "false")
+})

@@ -53,6 +53,20 @@ describe("keyboard shortcuts", () => {
     useAppStore.getState().setViewMode(false)
   })
 
+  it("Ctrl/Cmd/Alt + a tool letter never picks that tool (Ctrl+C copies, not comment)", () => {
+    for (const init of [
+      { key: "c", ctrlKey: true },
+      { key: "c", metaKey: true },
+      { key: "l", ctrlKey: true },
+      { key: "e", altKey: true },
+    ]) {
+      press(init)
+      expect(useAppStore.getState().activeTool).toBe("selection")
+    }
+    press({ key: "c" })
+    expect(useAppStore.getState().activeTool).toBe("comment")
+  })
+
   it("Ctrl+D duplicates the selection and selects the copy, without picking a tool", () => {
     const r = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
     scene.mutate((d) => {

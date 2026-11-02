@@ -291,6 +291,8 @@ export function attachShortcuts({
       useAppStore.getState().toggleRulers()
       return
     }
+    // Modified keys are commands (Ctrl+C copies, Ctrl+L…), never tool picks.
+    if (isMeta || e.altKey) return
     // Read at keypress time so rebinding applies without re-attaching.
     const tool = toolForKey(key, useAppStore.getState().toolKeyOverrides)
     if (tool) {
