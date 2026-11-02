@@ -151,7 +151,13 @@ export function useDrawingDriver({
       canvas.style.cursor = ""
     }
 
-    const handleTouch = createTouchGestures(canvas, dispatch)
+    const handleTouch = createTouchGestures(canvas, dispatch, (clientX, clientY) =>
+      openCanvasContextMenu(scene, canvas, {
+        clientX,
+        clientY,
+        preventDefault: () => {},
+      } as MouseEvent),
+    )
 
     // Ruler guides on the canvas: only the exact line (4px) captures the
     // pointer, only with the selection tool and rulers shown, so elements
