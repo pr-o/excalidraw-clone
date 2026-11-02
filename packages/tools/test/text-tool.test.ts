@@ -30,7 +30,10 @@ describe("text tool", () => {
     const elementId = draft[0]!.id
     const up = textTool.reduce(r[0], { type: "pointerUp", at: point(0, 0) }, ctx)
     expect(up[0]).toEqual({ phase: "idle" })
-    expect(up[1]).toEqual([{ kind: "startTextEdit", elementId }])
+    expect(up[1]).toEqual([
+      { kind: "switchTool", tool: "selection" },
+      { kind: "startTextEdit", elementId },
+    ])
   })
 
   it("escape while placing discards the pending empty element and returns to idle", () => {
@@ -50,7 +53,13 @@ describe("text tool", () => {
     const down = textTool.reduce(textTool.initial, { type: "pointerDown", at: point(5, 5) }, ctx)
     expect(down[1]).toEqual([])
     const up = textTool.reduce(down[0], { type: "pointerUp", at: point(5, 5) }, ctx)
-    expect(up).toEqual([{ phase: "idle" }, [{ kind: "startTextEdit", elementId: existing.id }]])
+    expect(up).toEqual([
+      { phase: "idle" },
+      [
+        { kind: "switchTool", tool: "selection" },
+        { kind: "startTextEdit", elementId: existing.id },
+      ],
+    ])
     // Escape before release leaves the existing text alone.
     expect(textTool.reduce(down[0], { type: "escape" }, ctx)).toEqual([{ phase: "idle" }, []])
   })

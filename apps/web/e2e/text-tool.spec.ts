@@ -184,10 +184,29 @@ test("changing font size to XL grows the text's box so its new area is click-sel
   await expect(xl).toHaveAttribute("aria-pressed", "true")
 })
 
-test("with the text tool still active, clicking existing text edits it (no duplicate)", async ({
+test("committing text hands back to selection; locked, the text tool stays", async ({ page }) => {
+  await freshCanvas(page, "toolbar-text")
+  await page.locator('[data-testid="toolbar-text"]').click()
+  await clickCanvas(page, { x: 200, y: 200 })
+  await page.keyboard.type("Hi")
+  await page.keyboard.press("Escape")
+  await expect(page.locator('[data-testid="toolbar-selection"]')).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  )
+  await page.locator('[data-testid="toolbar-lock"]').click()
+  await page.locator('[data-testid="toolbar-text"]').click()
+  await clickCanvas(page, { x: 400, y: 300 })
+  await page.keyboard.type("Yo")
+  await page.keyboard.press("Escape")
+  await expect(page.locator('[data-testid="toolbar-text"]')).toHaveAttribute("aria-pressed", "true")
+})
+
+test("with the text tool kept active (lock), clicking existing text edits it (no duplicate)", async ({
   page,
 }) => {
   await freshCanvas(page, "toolbar-text")
+  await page.locator('[data-testid="toolbar-lock"]').click()
   await page.locator('[data-testid="toolbar-text"]').click()
   await clickCanvas(page, { x: 200, y: 200 })
   await page.keyboard.type("Hello")

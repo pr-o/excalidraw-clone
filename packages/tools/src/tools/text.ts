@@ -34,7 +34,14 @@ export const textTool: Tool<TextState, ToolEvent> = {
     }
     const { elementId } = state
     if (event.type === "pointerUp") {
-      return [{ phase: "idle" }, [{ kind: "startTextEdit", elementId }]]
+      // Like the other tools, hand back to selection (the toolbar lock vetoes this).
+      return [
+        { phase: "idle" },
+        [
+          { kind: "switchTool", tool: "selection" },
+          { kind: "startTextEdit", elementId },
+        ],
+      ]
     }
     if (event.type === "escape") {
       if (state.existing) return [{ phase: "idle" }, []]
