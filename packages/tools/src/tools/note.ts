@@ -10,6 +10,10 @@ export type NoteState =
 
 const NOTE_INITIAL: NoteState = { phase: "idle" }
 
+/** A press-release shorter than this (px, both axes) is a click: it drops a default-size note. */
+const CLICK_SLOP = 4
+const NOTE_DEFAULT_SIZE = 200
+
 const removeByIds = (draft: ExcalidrawElement[], ids: readonly string[]): void => {
   for (let i = draft.length - 1; i >= 0; i -= 1) {
     if (ids.includes(draft[i]!.id)) draft.splice(i, 1)
@@ -55,7 +59,10 @@ export const noteTool: Tool<NoteState, ToolEvent> = {
         ]
       }
       case "pointerUp": {
-        const box = computeBox(start, event.at, ctx.modifiers)
+        let box = computeBox(start, event.at, ctx.modifiers)
+        if (box.width < CLICK_SLOP && box.height < CLICK_SLOP) {
+          box = { x: start.x, y: start.y, width: NOTE_DEFAULT_SIZE, height: NOTE_DEFAULT_SIZE }
+        }
         if (box.width === 0 || box.height === 0) {
           return [
             { phase: "idle" },

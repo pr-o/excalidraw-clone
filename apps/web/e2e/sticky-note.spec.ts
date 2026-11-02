@@ -30,6 +30,31 @@ test("draw a sticky note, type into it — container + text persist", async ({ p
   expect(text?.text).toBe("hello")
 })
 
+test("a plain click with the sticky-note tool drops a default-size note ready for typing", async ({
+  page,
+}) => {
+  await page.goto("/")
+  await page.evaluate(() => localStorage.clear())
+  await page.reload()
+  await page.locator('[data-testid="toolbar-note"]').click()
+  const box = (await page.locator("canvas").first().boundingBox())!
+  await page.mouse.click(box.x + 300, box.y + 200)
+  await expect(page.locator("textarea")).toBeFocused()
+  await page.keyboard.type("todo")
+  await page.locator("textarea").blur()
+  await page.waitForTimeout(700)
+
+  const data = parseStoredScene<{
+    type: string
+    text?: string
+    width: number
+    isDeleted?: boolean
+  }>(await page.evaluate(() => localStorage.getItem("excalidraw-scene")))
+  const live = data.elements.filter((e) => !e.isDeleted)
+  expect(live.find((e) => e.type === "rectangle")?.width).toBe(200)
+  expect(live.find((e) => e.type === "text")?.text).toBe("todo")
+})
+
 test("toggling stroke style to dashed updates the selected shape", async ({ page }) => {
   await page.goto("/")
   await page.evaluate(() => {

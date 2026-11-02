@@ -42,12 +42,28 @@ describe("note tool", () => {
     expect(edit).toEqual({ kind: "startTextEdit", elementId: text.id })
   })
 
-  it("pointerUp with a zero-size box discards both elements", () => {
+  it("a plain click drops a default-size note and edits its text", () => {
     const ctx = makeCtx()
     const draft: ExcalidrawElement[] = []
     const r = noteTool.reduce(noteTool.initial, { type: "pointerDown", at: point(5, 5) }, ctx)
     applyMutation(r[1], draft)
-    const up = noteTool.reduce(r[0], { type: "pointerUp", at: point(5, 5) }, ctx)
+    const up = noteTool.reduce(r[0], { type: "pointerUp", at: point(6, 7) }, ctx)
+    applyMutation(up[1], draft)
+    expect(draft.find((e) => e.type === "rectangle")).toMatchObject({
+      x: 5,
+      y: 5,
+      width: 200,
+      height: 200,
+    })
+    expect(up[1].some((e) => e.kind === "startTextEdit")).toBe(true)
+  })
+
+  it("pointerUp with a zero-width box discards both elements", () => {
+    const ctx = makeCtx()
+    const draft: ExcalidrawElement[] = []
+    const r = noteTool.reduce(noteTool.initial, { type: "pointerDown", at: point(5, 5) }, ctx)
+    applyMutation(r[1], draft)
+    const up = noteTool.reduce(r[0], { type: "pointerUp", at: point(5, 60) }, ctx)
     applyMutation(up[1], draft)
     expect(draft.length).toBe(0)
     expect(up[1].some((e) => e.kind === "startTextEdit")).toBe(false)
