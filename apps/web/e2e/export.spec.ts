@@ -480,7 +480,7 @@ test("italic hand-drawn text uses the oblique Caveat face on canvas, in SVG and 
   const svgDownload = page.waitForEvent("download")
   await exportButton(page).click()
   const svg = readFileSync(await (await svgDownload).path(), "utf8")
-  expect(svg).toContain('font-family:"Caveat";font-style:italic;font-weight:400;')
+  expect(svg).toContain('font-family:"Caveat";font-style:italic;font-weight:400;unicode-range:')
   await page.keyboard.press("Escape")
 
   await openExportDialog(page)

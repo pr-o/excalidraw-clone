@@ -68,10 +68,24 @@ describe("SVG export font embedding", () => {
     const fetchMock = stubFontFetch()
     const italic = { ...caveat("slanted"), fontStyle: "italic" as const }
     const svg = await renderExportSVG([italic], { background: "white" }, "#fff", noFiles)
-    expect(fetchMock).toHaveBeenCalledWith("/fonts/caveat-italic.woff2")
-    expect(fetchMock).not.toHaveBeenCalledWith("/fonts/caveat-bolditalic.woff2")
-    expect(svg).toContain('font-family:"Caveat";font-style:italic;font-weight:400;')
+    // Latin-1 text: only the latin subset of the regular oblique face.
+    expect(fetchMock.mock.calls.map((call) => String(call[0])).sort()).toEqual([
+      "/fonts/caveat-italic-latin.woff2",
+      "/fonts/caveat-latin.woff2",
+    ])
+    expect(svg).toContain(
+      'font-family:"Caveat";font-style:italic;font-weight:400;unicode-range:U+0000-00FF',
+    )
     expect(svg).toContain('font-style="italic"')
+  })
+
+  it("adds the oblique latin-ext subset only for italic text beyond Latin-1", async () => {
+    const fetchMock = stubFontFetch()
+    const italic = { ...caveat("Łódź"), fontStyle: "italic" as const, fontWeight: "bold" as const }
+    await handwrittenFontFaceCSS([italic])
+    expect(fetchMock).toHaveBeenCalledWith("/fonts/caveat-bolditalic-latin-ext.woff2")
+    expect(fetchMock).toHaveBeenCalledWith("/fonts/caveat-bolditalic-latin.woff2")
+    expect(fetchMock).not.toHaveBeenCalledWith("/fonts/caveat-italic-latin.woff2")
   })
 
   it("embeds Caveat as base64 woff2 in <defs><style> when hand-drawn text is present", async () => {

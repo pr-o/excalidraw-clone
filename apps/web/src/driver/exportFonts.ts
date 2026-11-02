@@ -15,11 +15,9 @@ const WOFF2_LATIN_EXT = {
   range:
     "U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF",
 }
-/** Synthetic oblique faces (scripts/make-caveat-oblique.py): Caveat has no italic. */
-const WOFF2_ITALIC = {
-  regular: "/fonts/caveat-italic.woff2",
-  bold: "/fonts/caveat-bolditalic.woff2",
-}
+/** Synthetic oblique faces (scripts/make-caveat-oblique.py; Caveat has no
+ *  italic), split into the same subsets as the upright ones. */
+const ITALIC_STEM = { regular: "/fonts/caveat-italic", bold: "/fonts/caveat-bolditalic" }
 /** jsPDF only embeds TrueType, so the PDF path uses static TTFs. */
 const TTF = {
   normal: "/fonts/caveat-regular.ttf",
@@ -96,17 +94,20 @@ export async function handwrittenFontFaceCSS(
   // eslint-disable-next-line no-control-regex
   const subsets = /[^\u0000-ÿ]/.test(text) ? [WOFF2_LATIN_EXT, WOFF2_LATIN] : [WOFF2_LATIN]
   const italics = handwrittenItalics(elements)
+  const italicFaces = (["regular", "bold"] as const)
+    .filter((weight) => italics[weight])
+    .flatMap((weight) =>
+      subsets.map(({ url, range }) => ({
+        url: url.replace("/fonts/caveat", ITALIC_STEM[weight]),
+        rule: `font-style:italic;font-weight:${weight === "bold" ? 700 : 400};unicode-range:${range};`,
+      })),
+    )
   const faces = [
     ...subsets.map(({ url, range }) => ({
       url,
       rule: `font-weight:400 700;unicode-range:${range};`,
     })),
-    ...(italics.regular
-      ? [{ url: WOFF2_ITALIC.regular, rule: "font-style:italic;font-weight:400;" }]
-      : []),
-    ...(italics.bold
-      ? [{ url: WOFF2_ITALIC.bold, rule: "font-style:italic;font-weight:700;" }]
-      : []),
+    ...italicFaces,
   ]
   const rules = await Promise.all(
     faces.map(async ({ url, rule }) => {

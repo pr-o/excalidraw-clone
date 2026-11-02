@@ -14,11 +14,44 @@ Run from the repo root:
 import math
 from pathlib import Path
 
+from fontTools import subset
 from fontTools.ttLib import TTFont
 
 FONTS = Path(__file__).resolve().parent.parent / "apps/web/public/fonts"
 ANGLE = 12.0
 SLANT = math.tan(math.radians(ANGLE))
+
+# Same unicode-range subsets as the upright Google Fonts woff2 files (and the
+# @font-face rules in apps/web/src/app/globals.css).
+SUBSETS = {
+    "latin": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD",
+    "latin-ext": "U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF",
+}
+
+
+def codepoints(ranges: str) -> list[int]:
+    out: list[int] = []
+    for part in ranges.split(","):
+        lo, _, hi = part.strip().removeprefix("U+").partition("-")
+        out.extend(range(int(lo, 16), int(hi or lo, 16) + 1))
+    return out
+
+
+def write_woff2_subsets(ttf: Path, stem: str) -> None:
+    """One woff2 per unicode-range subset, for the browser (the full TTF stays for jsPDF)."""
+    for subset_name, ranges in SUBSETS.items():
+        options = subset.Options()
+        options.flavor = "woff2"
+        options.layout_features = ["*"]
+        options.name_IDs = ["*"]
+        options.name_languages = ["*"]
+        options.notdef_outline = True
+        options.recalc_timestamp = False
+        font = TTFont(ttf, recalcTimestamp=False)
+        subsetter = subset.Subsetter(options)
+        subsetter.populate(unicodes=codepoints(ranges))
+        subsetter.subset(font)
+        subset.save_font(font, FONTS / f"{stem}-{subset_name}.woff2", options)
 
 
 def skew(x: float, y: float) -> tuple[int, int]:
@@ -76,8 +109,7 @@ def make_oblique(src: str, dst_stem: str, style: str, ps_name: str, bold: bool) 
     )
 
     font.save(FONTS / f"{dst_stem}.ttf")
-    font.flavor = "woff2"
-    font.save(FONTS / f"{dst_stem}.woff2")
+    write_woff2_subsets(FONTS / f"{dst_stem}.ttf", dst_stem)
 
 
 make_oblique("caveat-regular.ttf", "caveat-italic", "Italic", "Caveat-Italic", bold=False)
