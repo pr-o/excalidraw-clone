@@ -1,4 +1,5 @@
 import type { ExcalidrawElement } from "@excalidraw-clone/scene"
+import { useState } from "react"
 import { Icon } from "../shared/Icon"
 
 export type T = (key: string) => string
@@ -57,6 +58,29 @@ export function commonValue<V>(items: readonly object[], key: string): V | undef
   return items.every((item) => get(item) === first) ? (first as V) : undefined
 }
 
+const COLLAPSED_KEY = "excalidraw-properties-collapsed"
+
+// Per-viewer convenience only: storage may be blocked, so every access is guarded.
+// shortcut: keyed by the translated label, so switching language forgets collapse state; add an id prop if that matters.
+function readCollapsed(): string[] {
+  try {
+    const v: unknown = JSON.parse(localStorage.getItem(COLLAPSED_KEY) ?? "[]")
+    return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : []
+  } catch {
+    return []
+  }
+}
+
+function writeCollapsed(label: string, collapsed: boolean): void {
+  try {
+    const rest = readCollapsed().filter((l) => l !== label)
+    localStorage.setItem(COLLAPSED_KEY, JSON.stringify(collapsed ? [...rest, label] : rest))
+  } catch {
+    // Not remembered; the section still collapses for this session.
+  }
+}
+
+/** A labelled group of controls; clicking the label collapses it (expanded by default). */
 export function Section({
   label,
   children,
@@ -66,10 +90,26 @@ export function Section({
   children: React.ReactNode
   className?: string
 }): React.ReactElement {
+  const [collapsed, setCollapsed] = useState(() => readCollapsed().includes(label))
   return (
     <div className={className}>
-      <div className="mb-1.5 text-xs font-medium text-muted">{label}</div>
-      {children}
+      <button
+        type="button"
+        aria-expanded={!collapsed}
+        onClick={() => {
+          setCollapsed(!collapsed)
+          writeCollapsed(label, !collapsed)
+        }}
+        className={`group flex w-full items-center gap-1 rounded text-left text-xs font-medium text-muted hover:text-app ${collapsed ? "" : "mb-1.5"}`}
+      >
+        <span className="flex-1">{label}</span>
+        <span
+          className={`opacity-60 transition-transform group-hover:opacity-100 ${collapsed ? "-rotate-90" : ""}`}
+        >
+          <Icon name="chevron-down" />
+        </span>
+      </button>
+      {!collapsed && children}
     </div>
   )
 }
