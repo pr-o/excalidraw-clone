@@ -79,6 +79,24 @@ const pdfStreams = (bytes: Buffer): string => {
   return out.join("\n")
 }
 
+/** Every string a PDF draws with Tj, decoded to Unicode: literal `(…)` strings
+ *  as-is, and embedded-font `<hex>` glyph strings through the fonts' ToUnicode
+ *  CMaps (so this proves the text is real, extractable text). */
+const pdfTexts = (bytes: Buffer): string[] => {
+  const streams = pdfStreams(bytes)
+  const toUnicode = new Map<string, string>()
+  for (const block of streams.matchAll(/beginbfchar([\s\S]*?)endbfchar/g)) {
+    for (const [, gid, uni] of block[1]!.matchAll(/<([0-9a-fA-F]+)>\s*<([0-9a-fA-F]+)>/g)) {
+      toUnicode.set(gid!.toLowerCase(), String.fromCharCode(parseInt(uni!, 16)))
+    }
+  }
+  return [...streams.matchAll(/(?:\(([^)]*)\)|<([0-9a-fA-F]+)>) Tj/g)].map(([, literal, hex]) =>
+    literal !== undefined
+      ? literal
+      : (hex!.toLowerCase().match(/.{4}/g) ?? []).map((g) => toUnicode.get(g) ?? "?").join(""),
+  )
+}
+
 const expectNear = (actual: number, expected: number): void => {
   expect(Math.abs(actual - expected)).toBeLessThanOrEqual(3)
 }
@@ -263,9 +281,12 @@ test("PDF export keeps text as real PDF text", async ({ page }) => {
   await page.locator('[data-testid="format-pdf"]').click()
   const pdf = await exportPDF(page)
   expect(pdf.filename).toBe("Page 1.pdf")
-  // The default hand-drawn family falls back to the standard Times font.
-  expect(pdf.bytes.toString("latin1")).toContain("/BaseFont /Times-Roman")
-  expect(pdfStreams(pdf.bytes)).toContain("(hello pdf) Tj")
+  // The default hand-drawn family embeds Caveat (TrueType) instead of a Times fallback.
+  const raw = pdf.bytes.toString("latin1")
+  expect(raw).toContain("/BaseFont /Caveat")
+  expect(raw).toContain("/FontFile2")
+  expect(raw).not.toContain("/Times-Roman")
+  expect(pdfTexts(pdf.bytes)).toContain("hello pdf")
 })
 
 test("PDF export of a table draws its grid and cell text as vector + real text", async ({
@@ -299,12 +320,16 @@ test("PDF export of a table draws its grid and cell text as vector + real text",
   expectNear(pdf.width, 340)
   expectNear(pdf.height, 160)
   expect(pdf.bytes.toString("latin1")).not.toContain("/Subtype /Image")
-  const streams = pdfStreams(pdf.bytes)
-  expect(streams).toContain("(Name) Tj")
-  expect(streams).toContain("(Qty) Tj")
-  expect(streams).toContain("(bold) Tj")
-  // header row and the bold run use the bold face
-  expect(pdf.bytes.toString("latin1")).toContain("/BaseFont /Times-Bold")
+  const texts = pdfTexts(pdf.bytes)
+  expect(texts).toContain("Name")
+  expect(texts).toContain("Qty")
+  expect(texts).toContain("bold")
+  // Every string here is bold (header row + the bolded cell), so the one embedded
+  // face must be Caveat Bold: its FontBBox is the bold TTF's head-table bbox
+  // (Caveat Regular's is [-111 -290 911 960]).
+  const raw = pdf.bytes.toString("latin1")
+  expect(raw.match(/\/FontFile2/g)).toHaveLength(1)
+  expect(raw).toContain("/FontBBox [-118 -290 984 960]")
   // the gradient background is a real axial shading, not flattened
   expect(pdf.bytes.toString("latin1")).toMatch(/\/ShadingType 2/)
 })
@@ -394,4 +419,32 @@ test("export all pages as PDF downloads one multi-page export.pdf", async ({ pag
   expect(boxes[0]!.width).not.toBe(boxes[1]!.width)
   // Still vector output.
   expect(bytes.toString("latin1")).not.toContain("/Subtype /Image")
+})
+
+test("SVG export embeds Caveat only when hand-drawn text is present", async ({ page }) => {
+  const exportSVG = async (): Promise<string> => {
+    await openExportDialog(page)
+    await page.locator('[data-testid="format-svg"]').click()
+    const downloadPromise = page.waitForEvent("download")
+    await exportButton(page).click()
+    const svg = readFileSync(await (await downloadPromise).path(), "utf8")
+    await page.keyboard.press("Escape")
+    return svg
+  }
+  await freshCanvas(page)
+  await drawRect(page, { x: 100, y: 100 }, { x: 160, y: 160 })
+  const plain = await exportSVG()
+  expect(plain).not.toContain("@font-face")
+
+  const box = await page.locator("canvas").first().boundingBox()
+  if (!box) throw new Error("canvas not found")
+  await page.locator('[data-testid="toolbar-text"]').click()
+  await page.mouse.click(box.x + 300, box.y + 300)
+  await page.locator("textarea").waitFor({ state: "visible" })
+  await page.keyboard.type("hand drawn")
+  await page.locator("textarea").blur()
+  await page.waitForTimeout(300)
+  const withText = await exportSVG()
+  expect(withText).toContain('<defs><style>@font-face{font-family:"Caveat"')
+  expect(withText).toContain("data:font/woff2;base64,")
 })

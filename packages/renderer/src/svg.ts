@@ -59,6 +59,9 @@ export interface SVGRenderOptions {
   files?: ReadonlyMap<string, string>
   /** Resolve all colors for this theme; default "light" (identity). */
   theme?: Theme
+  /** `@font-face` CSS embedded in `<defs><style>` so the file renders its web
+   *  fonts without them installed. Omitted: no style element is written. */
+  fontFaceCSS?: string
   /** Text measurer for linear-label backing rects; defaults to a hidden
    *  canvas context, and the backing is skipped when none is available. */
   measure?: TextMeasure
@@ -116,6 +119,14 @@ export function renderToSVG(scene: Scene, opts: SVGRenderOptions = {}): string {
   root.setAttribute("width", String(width))
   root.setAttribute("height", String(height))
   root.setAttribute("viewBox", `${bbox.x} ${bbox.y} ${width} ${height}`)
+
+  if (opts.fontFaceCSS) {
+    const defs = svgEl(doc, "defs", {})
+    const style = svgEl(doc, "style", {})
+    style.textContent = opts.fontFaceCSS
+    defs.appendChild(style)
+    root.appendChild(defs)
+  }
 
   if (opts.background && opts.background !== "transparent") {
     root.appendChild(

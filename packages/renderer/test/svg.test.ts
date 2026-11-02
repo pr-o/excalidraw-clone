@@ -329,4 +329,13 @@ describe("renderToSVG frame names", () => {
     const svg = renderToSVG(new Scene([frame]))
     expect(svg).toContain(">Login flow</text>")
   })
+
+  it("embeds fontFaceCSS in a leading <defs><style>, and writes none by default", () => {
+    const scene = new Scene([newRectangle({ x: 0, y: 0, width: 10, height: 10 })])
+    const css = '@font-face{font-family:"Caveat";src:url(data:font/woff2;base64,AA)}'
+    expect(renderToSVG(scene, { fontFaceCSS: css })).toMatch(
+      /^<svg[^>]*><defs><style>@font-face\{font-family:"Caveat"/,
+    )
+    expect(renderToSVG(scene)).not.toContain("<style>")
+  })
 })

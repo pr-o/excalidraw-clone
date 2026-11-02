@@ -2,6 +2,7 @@
 import { getFile } from "@excalidraw-clone/persistence"
 import type { ExcalidrawElement } from "@excalidraw-clone/scene"
 import type { ExportOptions } from "@excalidraw-clone/ui"
+import { registerHandwrittenFont, svgUsesHandwritten } from "./exportFonts"
 import { renderExportSVG, type FileLoader } from "./exportSVG"
 import type { PageRecord } from "./pages"
 
@@ -55,6 +56,7 @@ export async function svgToPDF(svg: string): Promise<Blob> {
     compress: true,
     putOnlyUsedFonts: true,
   })
+  if (svgUsesHandwritten(root)) await registerHandwrittenFont(pdf)
   await svg2pdf(root, pdf, { x: 0, y: 0, width, height })
   return pdf.output("blob")
 }
@@ -75,6 +77,7 @@ export async function svgsToPDF(svgs: readonly string[]): Promise<Blob> {
     compress: true,
     putOnlyUsedFonts: true,
   })
+  if ([first, ...rest].some((p) => svgUsesHandwritten(p.root))) await registerHandwrittenFont(pdf)
   await svg2pdf(first.root, pdf, { x: 0, y: 0, width: first.width, height: first.height })
   for (const { root, width, height } of rest) {
     // addPage's orientation is sticky (omitted = previous page's), so always
@@ -88,14 +91,15 @@ export async function svgsToPDF(svgs: readonly string[]): Promise<Blob> {
 
 /** Render exactly `elements` to a one-page PDF sized like the PNG/SVG export
  *  (content bounding box plus the same 20px padding). Vector output: there is
- *  no scale. Text uses the PDF standard fonts (Helvetica/Times/Courier). */
+ *  no scale. Hand-drawn text embeds Caveat (TrueType); the other families use
+ *  the PDF standard fonts (Helvetica/Courier). */
 export async function exportToPDF(
   elements: readonly ExcalidrawElement[],
   opts: Pick<ExportOptions, "background">,
   canvasBg: string,
   loadFile: FileLoader = getFile,
 ): Promise<Blob> {
-  return svgToPDF(await renderExportSVG(elements, opts, canvasBg, loadFile))
+  return svgToPDF(await renderExportSVG(elements, opts, canvasBg, loadFile, false))
 }
 
 /** Render every page, in order, into one multi-page PDF, each page sized
@@ -109,7 +113,7 @@ export async function buildCombinedPDF(
 ): Promise<Blob> {
   const svgs: string[] = []
   for (const page of pages) {
-    svgs.push(await renderExportSVG(page.scene.getElements(), opts, canvasBg, loadFile))
+    svgs.push(await renderExportSVG(page.scene.getElements(), opts, canvasBg, loadFile, false))
   }
   return svgsToPDF(svgs)
 }
