@@ -27,7 +27,7 @@ export function BackgroundSection({
   const gradientTarget = selectedElements.find((e) => GRADIENT_TYPES.has(e.type))
   const gradient = gradientTarget?.gradient
   return (
-    <Section label={t("properties.background")}>
+    <Section id="background" label={t("properties.background")}>
       <Swatches
         t={t}
         colors={BG_COLORS}

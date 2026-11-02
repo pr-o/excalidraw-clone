@@ -23,7 +23,7 @@ export function ShadowSection({
   if (!shadowTarget) return null
   const shadow = shadowTarget.shadow
   return (
-    <Section label={t("properties.shadow")}>
+    <Section id="shadow" label={t("properties.shadow")}>
       <Choice
         data-testid="shadow-toggle"
         pressed={shadow !== undefined}

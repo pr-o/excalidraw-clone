@@ -101,7 +101,7 @@ export function PropertiesPanel({
       className={`flex max-h-[calc(100vh-8rem)] w-60 flex-col gap-3 overflow-y-auto rounded-xl bg-panel p-3 shadow-panel ${className ?? ""}`}
       aria-label={t("properties.label")}
     >
-      <Section label={t("properties.stroke")}>
+      <Section id="stroke" label={t("properties.stroke")}>
         <Swatches
           t={t}
           colors={STROKE_COLORS}
@@ -111,7 +111,7 @@ export function PropertiesPanel({
         />
       </Section>
 
-      <Section label={t("properties.strokeWidth")}>
+      <Section id="strokeWidth" label={t("properties.strokeWidth")}>
         <div className="flex gap-1">
           {STROKE_WIDTHS.map((w) => (
             <Choice
@@ -129,7 +129,7 @@ export function PropertiesPanel({
         </div>
       </Section>
 
-      <Section label={t("properties.strokeStyle")}>
+      <Section id="strokeStyle" label={t("properties.strokeStyle")}>
         <ChoiceRow
           field="strokeStyle"
           items={STROKE_STYLES.map((s) => [
@@ -150,7 +150,7 @@ export function PropertiesPanel({
         onChange={onChange}
       />
 
-      <Section label={t("properties.fillStyle")}>
+      <Section id="fillStyle" label={t("properties.fillStyle")}>
         <ChoiceRow
           field="fillStyle"
           items={FILL_STYLES.map((s) => [s, `fill-style-${s}`, t(`properties.fillStyle_${s}`)])}
@@ -160,7 +160,7 @@ export function PropertiesPanel({
 
       <Divider />
 
-      <Section label={t("properties.roughness")}>
+      <Section id="roughness" label={t("properties.roughness")}>
         <ChoiceRow
           field="roughness"
           items={ROUGHNESS_LEVELS.map((r) => [r, `roughness-${r}`, t(`properties.roughness_${r}`)])}
@@ -168,7 +168,7 @@ export function PropertiesPanel({
         />
       </Section>
 
-      <Section label={t("properties.roundness")}>
+      <Section id="roundness" label={t("properties.roundness")}>
         <div className="flex gap-1">
           <Choice
             data-testid="roundness-sharp"
@@ -187,7 +187,7 @@ export function PropertiesPanel({
         </div>
       </Section>
 
-      <Section label={t("properties.opacity")}>
+      <Section id="opacity" label={t("properties.opacity")}>
         <ChoiceRow
           field="opacity"
           items={OPACITY_STEPS.map((o) => [o, `opacity-${o}`, `${o}%`])}
@@ -246,7 +246,7 @@ export function PropertiesPanel({
 
       <Divider />
 
-      <Section label={t("properties.actions")}>
+      <Section id="actions" label={t("properties.actions")}>
         <div className="flex gap-1">
           {unlocked && <FlipRow t={t} onFlip={onFlip} />}
           <IconAction label={t("properties.duplicate")} icon="duplicate" onClick={onDuplicate} />

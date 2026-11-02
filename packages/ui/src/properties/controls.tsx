@@ -58,10 +58,9 @@ export function commonValue<V>(items: readonly object[], key: string): V | undef
   return items.every((item) => get(item) === first) ? (first as V) : undefined
 }
 
-const COLLAPSED_KEY = "excalidraw-properties-collapsed"
+const COLLAPSED_KEY = "excalidraw-properties-collapsed-ids"
 
 // Per-viewer convenience only: storage may be blocked, so every access is guarded.
-// shortcut: keyed by the translated label, so switching language forgets collapse state; add an id prop if that matters.
 function readCollapsed(): string[] {
   try {
     const v: unknown = JSON.parse(localStorage.getItem(COLLAPSED_KEY) ?? "[]")
@@ -71,10 +70,10 @@ function readCollapsed(): string[] {
   }
 }
 
-function writeCollapsed(label: string, collapsed: boolean): void {
+function writeCollapsed(id: string, collapsed: boolean): void {
   try {
-    const rest = readCollapsed().filter((l) => l !== label)
-    localStorage.setItem(COLLAPSED_KEY, JSON.stringify(collapsed ? [...rest, label] : rest))
+    const rest = readCollapsed().filter((x) => x !== id)
+    localStorage.setItem(COLLAPSED_KEY, JSON.stringify(collapsed ? [...rest, id] : rest))
   } catch {
     // Not remembered; the section still collapses for this session.
   }
@@ -82,15 +81,18 @@ function writeCollapsed(label: string, collapsed: boolean): void {
 
 /** A labelled group of controls; clicking the label collapses it (expanded by default). */
 export function Section({
+  id,
   label,
   children,
   className,
 }: {
+  /** Stable, language-independent key for the remembered collapse state. */
+  id: string
   label: string
   children: React.ReactNode
   className?: string
 }): React.ReactElement {
-  const [collapsed, setCollapsed] = useState(() => readCollapsed().includes(label))
+  const [collapsed, setCollapsed] = useState(() => readCollapsed().includes(id))
   return (
     <div className={className}>
       <button
@@ -98,7 +100,7 @@ export function Section({
         aria-expanded={!collapsed}
         onClick={() => {
           setCollapsed(!collapsed)
-          writeCollapsed(label, !collapsed)
+          writeCollapsed(id, !collapsed)
         }}
         className={`group flex w-full items-center gap-1 rounded text-left text-xs font-medium text-muted hover:text-app ${collapsed ? "" : "mb-1.5"}`}
       >

@@ -24,7 +24,7 @@ export function GroupSection({
   onUngroup: () => void
 }): React.ReactElement {
   return (
-    <Section label={t("properties.group")}>
+    <Section id="group" label={t("properties.group")}>
       <div className="flex gap-1">
         <button
           type="button"
@@ -64,7 +64,7 @@ export function ArrangeSection({
   onTidy: () => void
 }): React.ReactElement {
   return (
-    <Section label={t("properties.arrange")}>
+    <Section id="arrange" label={t("properties.arrange")}>
       <div className="grid grid-cols-3 gap-1">
         {(["left", "centerX", "right", "top", "centerY", "bottom"] as const).map((edge) => (
           <IconAction

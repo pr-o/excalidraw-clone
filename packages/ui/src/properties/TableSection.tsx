@@ -23,7 +23,7 @@ export function TableSection({
   onTableAction: (action: TableAction) => void
 }): React.ReactElement {
   return (
-    <Section label={t("properties.table")}>
+    <Section id="table" label={t("properties.table")}>
       <div className="grid grid-cols-2 gap-1">
         {TABLE_ACTIONS.map(([action, testId, key]) => (
           <button

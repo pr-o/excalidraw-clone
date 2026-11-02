@@ -28,7 +28,7 @@ export function ArrowheadsSection({
   onChange,
 }: SectionProps): React.ReactElement {
   return (
-    <Section label={t("properties.arrowheads")}>
+    <Section id="arrowheads" label={t("properties.arrowheads")}>
       {(["start", "end"] as const).map((end) => {
         const field = `${end}Arrowhead`
         const value = commonValue<Arrowhead | null>(selectedElements, field)
@@ -66,7 +66,7 @@ export function ArrowTypeSection({
   onChange,
 }: SectionProps): React.ReactElement {
   return (
-    <Section label={t("properties.arrowType")}>
+    <Section id="arrowType" label={t("properties.arrowType")}>
       <ChoiceRow
         field="elbowed"
         items={[
