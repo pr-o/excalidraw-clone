@@ -20,7 +20,21 @@ const rotatedCorners = (e: ExcalidrawElement): readonly Point[] => {
   return cornersOf(e).map((c) => rotatePoint(c, center, e.angle))
 }
 
+/** Elements are immutable (edits replace the object), so bounds can be cached
+ *  per object; hot paths (frame membership, alignment, hit-testing, minimap)
+ *  ask for the same element's bounds on every pointer move. */
+const boundsCache = new WeakMap<ExcalidrawElement, Bounds>()
+
 export const getElementBounds = (element: ExcalidrawElement): Bounds => {
+  let b = boundsCache.get(element)
+  if (!b) {
+    b = computeElementBounds(element)
+    boundsCache.set(element, b)
+  }
+  return b
+}
+
+const computeElementBounds = (element: ExcalidrawElement): Bounds => {
   switch (element.type) {
     case "line":
     case "arrow":

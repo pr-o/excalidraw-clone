@@ -67,12 +67,19 @@ const innerBoxFor = (
  * after every mutation.
  */
 export function reconcileBoundText(draft: ExcalidrawElement[]): void {
+  // id → first index, built on first use (the loop only replaces slots, never moves them).
+  let indexOf: Map<string, number> | null = null
   for (let i = 0; i < draft.length; i += 1) {
     const container = draft[i]!
     if (!container.boundElements) continue
     const ref = container.boundElements.find((b) => b.type === "text")
     if (!ref) continue
-    const ti = draft.findIndex((e) => e.id === ref.id)
+    if (!indexOf) {
+      indexOf = new Map()
+      for (let j = 0; j < draft.length; j += 1)
+        if (!indexOf.has(draft[j]!.id)) indexOf.set(draft[j]!.id, j)
+    }
+    const ti = indexOf.get(ref.id) ?? -1
     if (ti < 0) continue
     const text = draft[ti]!
     if (text.type !== "text") continue

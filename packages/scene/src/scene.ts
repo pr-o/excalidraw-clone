@@ -50,8 +50,17 @@ export class Scene {
   }
 
   getElements(): readonly ExcalidrawElement[] {
-    return this.elements.filter((e) => !e.isDeleted)
+    // Called many times per frame (renderer, hit-testing, React views): filter once per
+    // elements array. Safe because `elements` is replaced, never mutated in place.
+    if (this.liveSource !== this.elements) {
+      this.liveSource = this.elements
+      this.live = this.elements.filter((e) => !e.isDeleted)
+    }
+    return this.live
   }
+  private reconciled = new WeakSet<readonly ExcalidrawElement[]>()
+  private liveSource: readonly ExcalidrawElement[] | null = null
+  private live: readonly ExcalidrawElement[] = []
 
   getGuides(): UserGuides {
     return this.guides
@@ -89,7 +98,10 @@ export class Scene {
     reconcileBoundText(draft)
     reconcileTables(draft, this.elements)
     reconcileBindings(draft)
-    reconcileFrameMembership(draft)
+    // Arrays produced here are fully reconciled; the next mutate can then skip
+    // re-checking frame membership of elements it carries over untouched.
+    reconcileFrameMembership(draft, this.reconciled.has(this.elements) ? this.elements : undefined)
+    this.reconciled.add(draft)
     this.setElements(draft)
     // A value-identical commit (e.g. a plain click-to-select, which replaces an
     // element with an unchanged clone) must not pollute the undo stack — under
@@ -113,7 +125,12 @@ export class Scene {
   ): boolean {
     if (a === b) return true
     if (a.length !== b.length) return false
-    return JSON.stringify(a) === JSON.stringify(b)
+    // Structural sharing: unchanged elements keep their reference, so only the
+    // replaced ones need a value comparison (not two whole-scene stringifies).
+    for (let i = 0; i < a.length; i += 1) {
+      if (a[i] !== b[i] && JSON.stringify(a[i]) !== JSON.stringify(b[i])) return false
+    }
+    return true
   }
 
   protected pushHistory(snapshot: readonly ExcalidrawElement[]): void {
