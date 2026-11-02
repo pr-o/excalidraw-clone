@@ -63,23 +63,17 @@ export function reflowFixedWidthText(
 
 /** Re-fit auto-sized free text to the now-loaded web fonts. Sizes measured
  *  before Caveat loaded used a fallback font, so their hit boxes are off.
- *  Not an undo step: it corrects layout, it doesn't edit the drawing. */
-export function refitFreeText(scene: Scene): void {
-  const fits = new Map<string, MeasuredSize>()
-  for (const e of scene.getElements()) {
-    if (e.type !== "text" || e.containerId !== null || e.autoResize === false) continue
-    const size = measureStandaloneText(e)
-    if (size && (Math.abs(size.width - e.width) > 0.5 || Math.abs(size.height - e.height) > 0.5))
-      fits.set(e.id, size)
-  }
-  if (fits.size === 0) return
-  scene.mutate(
-    (draft) => {
-      for (let i = 0; i < draft.length; i += 1) {
-        const size = fits.get(draft[i]!.id)
-        if (size) draft[i] = { ...draft[i]!, ...size }
-      }
-    },
-    { skipHistory: true },
-  )
+ *  A history-silent normalisation: the live scene and every undo snapshot are
+ *  re-fitted, so no undo step appears and undo never restores stale sizes. */
+export function refitFreeText(
+  scene: Scene,
+  measure: (input: TextMeasureInput) => MeasuredSize | undefined = measureStandaloneText,
+): void {
+  scene.normalize((e) => {
+    if (e.type !== "text" || e.containerId !== null || e.autoResize === false) return e
+    const size = measure(e)
+    const stale =
+      size && (Math.abs(size.width - e.width) > 0.5 || Math.abs(size.height - e.height) > 0.5)
+    return stale ? { ...e, width: size.width, height: size.height } : e
+  })
 }

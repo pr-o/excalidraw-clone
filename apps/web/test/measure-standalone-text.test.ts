@@ -83,6 +83,23 @@ describe("refitFreeText — after web fonts load", () => {
     expect(scene.getHistory().length).toBe(historyBefore)
   })
 
+  it("no extra undo entry on the next click, and undo never restores stale sizes", () => {
+    const stale = { ...newText({ x: 0, y: 0, text: "abcd", fontSize: 20 }), width: 99, height: 7 }
+    const scene = new Scene([stale])
+    scene.mutate((d) => {
+      d[0] = { ...d[0]!, x: 10 }
+    })
+    refitFreeText(scene)
+    expect(scene.getHistory().length).toBe(2)
+    // A plain click-to-select commits an unchanged clone: no new entry.
+    scene.mutate((d) => {
+      d[0] = { ...d[0]! }
+    })
+    expect(scene.getHistory().length).toBe(2)
+    scene.undo()
+    expect(scene.getElements()[0]).toMatchObject({ x: 0, width: 40, height: 25 })
+  })
+
   it("leaves an already-fitted scene untouched", () => {
     const scene = new Scene([newText({ x: 0, y: 0, text: "abcd", fontSize: 20 })])
     refitFreeText(scene)

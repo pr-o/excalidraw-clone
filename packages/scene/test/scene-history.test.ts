@@ -180,3 +180,39 @@ describe("Scene history — getHistory / getHistoryIndex / jumpToHistory", () =>
     expect(s.getHistory().length).toBe(2) // initial + the new branch's one mutation
   })
 })
+
+describe("Scene.normalize — history-silent fixes", () => {
+  const widen = (e: ReturnType<typeof newRectangle>) => (e.width === 10 ? { ...e, width: 20 } : e)
+
+  it("rewrites live elements and every undo snapshot without a new entry", () => {
+    const r = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
+    const s = new Scene([r])
+    s.mutate((d) => {
+      d[0] = { ...d[0]!, x: 5 }
+    })
+    s.normalize((e) => (e.type === "rectangle" ? widen(e) : e))
+    expect(s.getHistory().length).toBe(2)
+    expect(s.getElements()[0]!.width).toBe(20)
+    s.undo()
+    // The first state is normalised too: no stale value comes back on undo.
+    expect(s.getElements()[0]).toMatchObject({ x: 0, width: 20 })
+  })
+
+  it("a no-op commit after normalising does not add an entry", () => {
+    const s = new Scene([newRectangle({ x: 0, y: 0, width: 10, height: 10 })])
+    s.normalize((e) => (e.type === "rectangle" ? widen(e) : e))
+    s.mutate((d) => {
+      d[0] = { ...d[0]! }
+    })
+    expect(s.getHistory().length).toBe(1)
+    expect(s.canUndo()).toBe(false)
+  })
+
+  it("does not notify when nothing changes", () => {
+    const s = new Scene([newRectangle({ x: 0, y: 0 })])
+    let calls = 0
+    s.subscribe(() => (calls += 1))
+    s.normalize((e) => e)
+    expect(calls).toBe(0)
+  })
+})

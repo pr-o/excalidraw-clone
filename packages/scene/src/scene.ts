@@ -159,6 +159,34 @@ export class Scene {
     this.setElements(this.history[index]!)
   }
 
+  /** History-silent normalisation (e.g. re-fitting text once a web font loads):
+   *  `fix` is applied to the live elements AND every undo snapshot, so neither
+   *  the next commit nor an undo sees a difference. Return the element itself
+   *  to leave it unchanged; nothing is notified when nothing changed. */
+  normalize(fix: (element: ExcalidrawElement) => ExcalidrawElement): void {
+    const memo = new Map<ExcalidrawElement, ExcalidrawElement>()
+    let changed = false
+    const apply = (list: readonly ExcalidrawElement[]): readonly ExcalidrawElement[] => {
+      let listChanged = false
+      const next = list.map((e) => {
+        let fixed = memo.get(e)
+        if (!fixed) {
+          fixed = fix(e)
+          memo.set(e, fixed)
+        }
+        if (fixed !== e) listChanged = true
+        return fixed
+      })
+      changed ||= listChanged
+      return listChanged ? next : list
+    }
+    const history = this.history.map(apply)
+    const elements = apply(this.elements)
+    if (!changed) return
+    this.history = history
+    this.setElements(elements)
+  }
+
   protected resetHistory(snapshot: readonly ExcalidrawElement[]): void {
     this.history = [snapshot]
     this.historyIndex = 0
