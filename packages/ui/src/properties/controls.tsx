@@ -167,6 +167,10 @@ export function ChoiceRow<V>({
   )
 }
 
+/** Human name of a preset colour for tooltips (keys under `colors.` in the locale files). */
+export const colorName = (t: T, color: string): string =>
+  t(`colors.${color.replace("#", "").toLowerCase()}`)
+
 /** Colour swatches plus, where supported, an eyedropper that picks from the screen. */
 export function Swatches({
   t,
@@ -189,6 +193,7 @@ export function Swatches({
           color={c}
           active={current === c}
           testId={`${prefix}-${c === "transparent" ? "none" : c.replace("#", "")}`}
+          name={colorName(t, c)}
           onClick={() => pick(c)}
         />
       ))}
@@ -217,11 +222,13 @@ export function Swatches({
 
 function Swatch({
   color,
+  name,
   active,
   testId,
   onClick,
 }: {
   color: string
+  name: string
   active: boolean
   testId: string
   onClick: () => void
@@ -233,7 +240,7 @@ function Swatch({
       data-testid={testId}
       aria-pressed={active}
       aria-label={color}
-      title={color}
+      title={name}
       className={`h-7 w-7 rounded-md border-2 ${active ? "border-accent" : "border-panel-subtle"}`}
       style={{
         backgroundColor: color === "transparent" ? "white" : color,

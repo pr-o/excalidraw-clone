@@ -371,5 +371,24 @@
     "pin": "Comment",
     "closeThread": "Close thread",
     "resolved": "Resolved"
+  },
+  "colors": {
+    "1e1e1e": "Black",
+    "e03131": "Red",
+    "2f9e44": "Green",
+    "1971c2": "Blue",
+    "f08c00": "Orange",
+    "transparent": "Transparent",
+    "ffc9c9": "Light red",
+    "b2f2bb": "Light green",
+    "a5d8ff": "Light blue",
+    "ffec99": "Light yellow",
+    "00000059": "Soft black",
+    "00000099": "Strong black",
+    "868e9680": "Grey",
+    "ffffff": "White",
+    "f8f9fa": "Off-white",
+    "fff5f5": "Blush",
+    "f3f0ff": "Lavender"
   }
 }

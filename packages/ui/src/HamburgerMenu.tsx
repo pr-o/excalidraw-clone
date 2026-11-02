@@ -1,3 +1,4 @@
+import { colorName } from "./properties/controls"
 import { iconHTML } from "./shared/icons"
 import { useCloseOnEscape } from "./shared/useCloseOnEscape"
 
@@ -203,6 +204,7 @@ export function HamburgerMenu(props: HamburgerMenuProps): React.ReactElement {
                     data-testid={`canvas-bg-${c.replace("#", "")}`}
                     aria-pressed={props.canvasBg === c}
                     aria-label={c}
+                    title={colorName(props.t, c)}
                     onClick={() => {
                       props.onCanvasBgChange(c)
                       close()

@@ -36,6 +36,14 @@ describe("PropertiesPanel", () => {
     expect(container.firstChild).toBeNull()
   })
 
+  it("names preset colours in swatch tooltips and labels stroke widths", () => {
+    const el = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
+    render(<PropertiesPanel t={t} selectedElements={[el]} {...handlers} />)
+    expect(screen.getByTestId("stroke-e03131")).toHaveAttribute("title", "colors.e03131")
+    expect(screen.getByTestId("bg-none")).toHaveAttribute("title", "colors.transparent")
+    expect(screen.getByTestId("stroke-width-2")).toHaveAccessibleName("properties.strokeWidth 2px")
+  })
+
   it("shows current strokeColor as the selected swatch", () => {
     const el = { ...newRectangle({ x: 0, y: 0, width: 10, height: 10 }), strokeColor: "#1e1e1e" }
     render(<PropertiesPanel t={t} selectedElements={[el]} {...handlers} />)
