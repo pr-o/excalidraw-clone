@@ -25,6 +25,7 @@ export interface PropertiesHostProps {
   selectedIds: readonly string[]
   selectedElements: readonly ExcalidrawElement[]
   selectedLabels: readonly ExcalidrawTextElement[]
+  onClose?: () => void
 }
 
 /** Properties panel wired to scene edits on the current selection. */
@@ -33,6 +34,7 @@ export function PropertiesHost({
   selectedIds,
   selectedElements,
   selectedLabels,
+  onClose,
 }: PropertiesHostProps): React.ReactElement {
   const { t } = useTranslation()
   const moveTo = (moved: readonly { id: string; x: number; y: number }[]): void => {
@@ -96,6 +98,7 @@ export function PropertiesHost({
         )
       }}
       onResetCrop={() => patchScene(scene, resetCrop(scene.getElements(), selectedIds))}
+      {...(onClose ? { onClose } : {})}
     />
   )
 }

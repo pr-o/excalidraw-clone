@@ -55,6 +55,8 @@ function Inner(): React.ReactElement {
   const [moreShapesOpen, setMoreShapesOpen] = useState(false)
   const [statsOpen, setStatsOpen] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
+  // Phones (< 480px) show properties as a bottom sheet, opened on demand.
+  const [propsSheetOpen, setPropsSheetOpen] = useState(false)
   const [renderer, setRenderer] = useState<CanvasRenderer | null>(null)
   const onRendererReady = useCallback((r: CanvasRenderer): void => setRenderer(r), [])
   const onRendererTeardown = useCallback((): void => setRenderer(null), [])
@@ -90,6 +92,8 @@ function Inner(): React.ReactElement {
   const swapToLibrary = { label: t("library.toggle"), testId: "library-toggle", icon: "library" }
   const swapToHistory = { label: t("history.toggle"), testId: "history-toggle", icon: "history" }
   const { selectedIds, stats } = views
+  // An emptied selection closes the sheet, so the next pick starts collapsed.
+  if (selectedIds.length === 0 && propsSheetOpen) setPropsSheetOpen(false)
 
   return (
     <main ref={rootRef} className="relative h-screen w-screen overflow-hidden">
@@ -122,7 +126,7 @@ function Inner(): React.ReactElement {
             <>
               {/* Insets clear the menu button and panel toggles; below 960px the toolbar
               moves its lower-priority groups into a "more tools" menu to stay one row. */}
-              <div className="pointer-events-none absolute left-16 right-16 top-3 z-30 flex justify-center">
+              <div className="pointer-events-none absolute left-16 right-16 top-3 z-30 flex justify-center max-[480px]:left-14 max-[480px]:right-14">
                 <Toolbar
                   className="pointer-events-auto"
                   t={t}
@@ -141,15 +145,26 @@ function Inner(): React.ReactElement {
               right:12px–48px, the open History panel right:12px–268px and the open
               Library panel right:12px–300px. Top offset sits below the toolbar. */}
               <div
-                className={`absolute ${historyOpen ? "right-[280px]" : libraryOpen ? "right-[312px]" : "right-14"} top-16 z-30`}
+                className={`absolute ${historyOpen ? "right-[280px]" : libraryOpen ? "right-[312px]" : "right-14"} top-16 z-30 max-[480px]:fixed max-[480px]:inset-x-0 max-[480px]:bottom-0 max-[480px]:top-auto max-[480px]:z-40 ${propsSheetOpen ? "" : "max-[480px]:hidden"}`}
               >
                 <PropertiesHost
                   scene={scene}
                   selectedIds={selectedIds}
                   selectedElements={views.selectedElements}
                   selectedLabels={views.selectedLabels}
+                  onClose={() => setPropsSheetOpen(false)}
                 />
               </div>
+              {selectedIds.length > 0 && !propsSheetOpen && (
+                <button
+                  type="button"
+                  data-testid="properties-open"
+                  onClick={() => setPropsSheetOpen(true)}
+                  className="fixed bottom-3 left-3 z-30 h-10 rounded-xl bg-panel px-4 text-sm shadow-panel hover:bg-panel-hover min-[480px]:hidden"
+                >
+                  {t("properties.label")}
+                </button>
+              )}
 
               {/* Side panels sharing an edge are exclusive: while one is open the other
               (and its floating toggle, which would sit on the open panel) is not
@@ -285,7 +300,7 @@ function Inner(): React.ReactElement {
               aria-label={t("menu.help")}
               title={`${t("menu.help")} (?)`}
               onClick={() => setOpenDialog("help")}
-              className="flex h-9 w-9 items-center justify-center rounded-xl bg-panel shadow-panel hover:bg-panel-hover"
+              className="flex h-9 w-9 items-center justify-center rounded-xl bg-panel shadow-panel hover:bg-panel-hover pointer-coarse:h-10 pointer-coarse:w-10"
             >
               <Icon name="help" />
             </button>

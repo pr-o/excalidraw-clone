@@ -16,7 +16,7 @@ export function ZoomWidget(): React.ReactElement {
         aria-label={t("shortcuts:zoomOut")}
         title={t("shortcuts:zoomOut")}
         onClick={() => zoomAboutCentre((z) => z / 1.1)}
-        className="flex h-7 w-7 items-center justify-center rounded-lg hover:bg-panel-hover"
+        className="flex h-7 w-7 items-center justify-center rounded-lg hover:bg-panel-hover pointer-coarse:h-10 pointer-coarse:w-10"
       >
         <Icon name="minus" />
       </button>
@@ -36,7 +36,7 @@ export function ZoomWidget(): React.ReactElement {
         aria-label={t("shortcuts:zoomIn")}
         title={t("shortcuts:zoomIn")}
         onClick={() => zoomAboutCentre((z) => z * 1.1)}
-        className="flex h-7 w-7 items-center justify-center rounded-lg hover:bg-panel-hover"
+        className="flex h-7 w-7 items-center justify-center rounded-lg hover:bg-panel-hover pointer-coarse:h-10 pointer-coarse:w-10"
       >
         <Icon name="plus" />
       </button>

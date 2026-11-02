@@ -48,7 +48,7 @@ export function Dialog({
         <button
           type="button"
           onClick={onClose}
-          className="flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-panel-hover"
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-panel-hover pointer-coarse:h-10 pointer-coarse:w-10"
           aria-label={t("common.close")}
           title={t("common.close")}
         >

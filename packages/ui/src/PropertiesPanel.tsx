@@ -10,6 +10,7 @@ import type {
   StrokeStyle,
   StrokeWidth,
 } from "@excalidraw-clone/scene"
+import { Icon } from "./shared/Icon"
 import { ArrangeSection, FlipRow, GroupSection } from "./properties/ArrangeSections"
 import { ArrowheadsSection, ArrowTypeSection } from "./properties/ArrowSections"
 import { BackgroundSection } from "./properties/BackgroundSection"
@@ -57,6 +58,8 @@ export interface PropertiesPanelProps {
   onTableAction?: (action: TableAction) => void
   /** Shown only for a single unlocked, cropped image. */
   onResetCrop?: () => void
+  /** Phones show the panel as a bottom sheet; this hides it (a close button shown < 480px). */
+  onClose?: () => void
   className?: string
 }
 
@@ -77,6 +80,7 @@ export function PropertiesPanel({
   onSetTextStyle,
   onTableAction,
   onResetCrop,
+  onClose,
   className,
 }: PropertiesPanelProps): React.ReactElement | null {
   if (selectedElements.length === 0) return null
@@ -98,9 +102,24 @@ export function PropertiesPanel({
 
   return (
     <aside
-      className={`flex max-h-[calc(100vh-8rem)] w-60 flex-col gap-3 overflow-y-auto rounded-xl bg-panel p-3 shadow-panel ${className ?? ""}`}
+      className={`flex max-h-[calc(100vh-8rem)] w-60 flex-col gap-3 overflow-y-auto rounded-xl bg-panel p-3 shadow-panel max-[480px]:max-h-[45vh] max-[480px]:w-full max-[480px]:rounded-b-none ${className ?? ""}`}
       aria-label={t("properties.label")}
     >
+      {onClose && (
+        <div className="sticky -top-3 z-10 -mx-3 -mt-3 flex items-center justify-between bg-panel px-3 py-1 min-[480px]:hidden">
+          <span className="text-sm font-semibold">{t("properties.label")}</span>
+          <button
+            type="button"
+            onClick={onClose}
+            data-testid="properties-close"
+            aria-label={t("common.close")}
+            title={t("common.close")}
+            className="flex h-10 w-10 items-center justify-center rounded-lg text-muted hover:bg-panel-hover"
+          >
+            <Icon name="close" />
+          </button>
+        </div>
+      )}
       <Section id="stroke" label={t("properties.stroke")}>
         <Swatches
           t={t}

@@ -3,7 +3,7 @@ import { Icon } from "./shared/Icon"
 
 // Small icon button inside a page tab.
 const TAB_BTN =
-  "flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted hover:bg-panel-hover hover:text-app disabled:pointer-events-none disabled:opacity-30 [&_svg]:h-3.5 [&_svg]:w-3.5"
+  "flex h-6 w-6 pointer-coarse:h-8 pointer-coarse:w-8 shrink-0 items-center justify-center rounded-md text-muted hover:bg-panel-hover hover:text-app disabled:pointer-events-none disabled:opacity-30 [&_svg]:h-3.5 [&_svg]:w-3.5"
 
 export interface PagesTabBarProps {
   t: (key: string) => string
@@ -104,7 +104,7 @@ export function PagesTabBar({
       data-testid="pages-tab-bar"
       onPointerMove={handleBarPointerMove}
       onPointerUp={handleBarPointerUp}
-      className={`fixed bottom-3 left-3 z-30 flex max-w-[calc(100vw-13rem)] items-center gap-1 overflow-x-auto rounded-xl bg-panel p-1 shadow-panel ${className ?? ""}`}
+      className={`fixed bottom-3 left-3 z-30 flex max-w-[calc(100vw-14rem)] max-[480px]:bottom-16 max-[480px]:max-w-[calc(100vw-1.5rem)] items-center gap-1 overflow-x-auto rounded-xl bg-panel p-1 shadow-panel ${className ?? ""}`}
     >
       {drag && drag.overIndex !== null && (
         <div
@@ -232,7 +232,7 @@ export function PagesTabBar({
           aria-label={t("pages.add")}
           title={t("pages.add")}
           onClick={onAdd}
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg hover:bg-panel-hover"
+          className="sticky right-0 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-panel hover:bg-panel-hover pointer-coarse:h-10 pointer-coarse:w-10"
         >
           <Icon name="plus" />
         </button>

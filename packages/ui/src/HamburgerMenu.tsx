@@ -60,7 +60,7 @@ export function HamburgerMenu(props: HamburgerMenuProps): React.ReactElement {
         aria-expanded={props.open}
         aria-label={props.t("menu.label")}
         title={props.t("menu.label")}
-        className="flex h-9 w-9 items-center justify-center rounded bg-panel shadow-panel hover:bg-panel-hover"
+        className="flex h-9 w-9 items-center justify-center rounded bg-panel shadow-panel hover:bg-panel-hover pointer-coarse:h-10 pointer-coarse:w-10"
       >
         <span aria-hidden dangerouslySetInnerHTML={{ __html: iconHTML("hamburger") }} />
       </button>

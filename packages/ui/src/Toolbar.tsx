@@ -19,6 +19,9 @@ const SHAPES_GROUP = 1
 /** How many leading groups stay inline at a viewport width; the rest move to
  *  the "more tools" overflow menu so the toolbar stays a single row. */
 const inlineGroupCount = (wide: boolean, medium: boolean): number => (wide ? 5 : medium ? 3 : 2)
+/** Phones (< 480px): only this many leading tools of each inline group stay inline
+ *  (selection; rectangle + ellipse), and the lock moves into the overflow menu too. */
+const NARROW_INLINE = [1, 2]
 
 function useMinWidth(px: number): boolean {
   const query = `(min-width: ${px}px)`
@@ -63,7 +66,16 @@ export function Toolbar({
   className,
 }: ToolbarProps): React.ReactElement {
   const inlineCount = inlineGroupCount(useMinWidth(960), useMinWidth(768))
-  const overflow = TOOL_GROUPS.slice(inlineCount)
+  const narrow = !useMinWidth(480)
+  const inlineGroups = TOOL_GROUPS.slice(0, inlineCount).map((g, i) =>
+    narrow ? g.slice(0, NARROW_INLINE[i]) : g,
+  )
+  const overflow = [
+    ...TOOL_GROUPS.slice(0, inlineCount)
+      .map((g, i) => g.slice(inlineGroups[i]!.length))
+      .filter((g) => g.length > 0),
+    ...TOOL_GROUPS.slice(inlineCount),
+  ]
   const [overflowOpen, setOverflowOpen] = useState(false)
   const overflowRef = useRef<HTMLDivElement | null>(null)
   useCloseOnEscape(overflowOpen, setOverflowOpen)
@@ -91,8 +103,19 @@ export function Toolbar({
       <Icon name={name} />
     </IconButton>
   )
+  const lockButton = (
+    <IconButton
+      label={t("toolbar.lock")}
+      shortcut="Q"
+      active={lockActiveTool}
+      onClick={() => onToggleLock(!lockActiveTool)}
+      data-testid="toolbar-lock"
+    >
+      <Icon name="pin" />
+    </IconButton>
+  )
   const divider =
-    "relative flex items-center gap-0.5 before:absolute before:-left-[6px] before:bottom-2 before:top-2 before:w-px before:bg-panel-active"
+    "relative flex items-center gap-0.5 first:before:hidden before:absolute before:-left-[6px] before:bottom-2 before:top-2 before:w-px before:bg-panel-active"
 
   return (
     <div
@@ -101,16 +124,8 @@ export function Toolbar({
       role="toolbar"
       aria-label={t("toolbar.label")}
     >
-      <IconButton
-        label={t("toolbar.lock")}
-        shortcut="Q"
-        active={lockActiveTool}
-        onClick={() => onToggleLock(!lockActiveTool)}
-        data-testid="toolbar-lock"
-      >
-        <Icon name="pin" />
-      </IconButton>
-      {TOOL_GROUPS.slice(0, inlineCount).map((group, i) => (
+      {!narrow && lockButton}
+      {inlineGroups.map((group, i) => (
         <div key={group[0]} className={divider}>
           {group.map((name) => renderItem(name))}
           {i === SHAPES_GROUP && (
@@ -143,8 +158,9 @@ export function Toolbar({
               aria-label={t("toolbar.moreTools")}
               className="absolute right-0 top-11 z-50 flex flex-col gap-1 rounded-xl bg-panel p-1 shadow-panel"
             >
-              {overflow.map((group) => (
+              {overflow.map((group, i) => (
                 <div key={group[0]} className="flex gap-0.5">
+                  {narrow && i === 0 && lockButton}
                   {group.map((name) => renderItem(name, true))}
                 </div>
               ))}

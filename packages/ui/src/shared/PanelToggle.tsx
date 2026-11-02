@@ -26,7 +26,7 @@ export function PanelToggle({
       title={label}
       aria-expanded={false}
       data-testid={testId}
-      className={`fixed ${position} z-30 flex h-9 w-9 items-center justify-center rounded-lg bg-panel shadow-panel hover:bg-panel-hover`}
+      className={`fixed ${position} z-30 flex h-9 w-9 items-center pointer-coarse:h-10 pointer-coarse:w-10 justify-center rounded-lg bg-panel shadow-panel hover:bg-panel-hover`}
     >
       <Icon name={icon} />
     </button>
@@ -107,7 +107,7 @@ export function PanelHeader({
         title={toggleLabel}
         aria-expanded
         data-testid={testId}
-        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-panel-hover"
+        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-panel-hover pointer-coarse:h-10 pointer-coarse:w-10"
       >
         <Icon name={side === "left" ? "chevron-left" : "chevron-right"} />
       </button>

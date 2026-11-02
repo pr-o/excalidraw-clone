@@ -131,6 +131,10 @@ body {
   background: var(--bg-app);
   color: var(--fg-app);
   font-family: ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+  /* A full-screen editor: no pull-to-refresh / scroll chaining, and no
+     double-tap zoom on the chrome (pinch zoom stays available for a11y). */
+  overscroll-behavior: none;
+  touch-action: manipulation;
 }
 
 :where(button, input, select, textarea, a):focus-visible {
