@@ -75,6 +75,9 @@ export function useDrawingDriver({
     renderer.setShowUserGuides(initial.rulersVisible && !isReadOnly(initial))
     renderer.start()
     onReady?.(renderer)
+    // CanvasShell resizes the canvas on window resize, which clears its bitmap.
+    const onResize = (): void => renderer.requestRedraw()
+    window.addEventListener("resize", onResize)
 
     const dispatch = createToolDispatch(scene, renderer, laser)
     const unsubStore = syncRendererWithStore(renderer, laser, dispatch)
@@ -348,6 +351,7 @@ export function useDrawingDriver({
       window.removeEventListener("keydown", onKeyDown)
       window.removeEventListener("keyup", onKeyUp)
       useAppStore.getState().setDispatchToolEvent(null)
+      window.removeEventListener("resize", onResize)
       unsubStore()
       laser.clear()
       renderer.stop()
