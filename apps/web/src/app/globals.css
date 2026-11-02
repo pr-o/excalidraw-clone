@@ -155,9 +155,37 @@ body {
   }
 }
 
-:where(button, input, select, textarea, a):focus-visible {
+:where(button, input, select, textarea, a, summary, [tabindex]:not([tabindex="-1"])):focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 1px;
+}
+
+/* Honour the OS "reduce motion" setting for CSS transitions/animations; the
+   scripted camera glides (find, presentation) check it in animateView. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Windows High Contrast / forced colors: selection state is shown with
+   background tints that the system palette erases, so add an outline; colour
+   swatches keep their real colour. */
+@media (forced-colors: active) {
+  [aria-pressed="true"],
+  [aria-checked="true"],
+  [aria-selected="true"] {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
+  button[style*="background-color"] {
+    forced-color-adjust: none;
+  }
 }
 
 .canvas-handwritten {

@@ -11,7 +11,7 @@ const lerp = (a: number, b: number, k: number): number => a + (b - a) * k
  * once per animation frame with the interpolated transform.
  *
  * The final frame is always exactly `to` (never an interpolated near-value).
- * A non-positive `durationMs` emits a single synchronous `onFrame(to)` and
+ * A non-positive `durationMs` (or the OS "reduce motion" setting) emits a single synchronous `onFrame(to)` and
  * schedules no animation frame at all.
  *
  * Pure view-layer helper: no store, no DOM — only `requestAnimationFrame`,
@@ -27,7 +27,10 @@ export function animateView(
   durationMs: number,
   onFrame: (v: ViewTransform) => void,
 ): () => void {
-  if (durationMs <= 0) {
+  // Reduced motion: jump straight to the target (same as a zero duration).
+  const reduced =
+    typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches
+  if (durationMs <= 0 || reduced) {
     onFrame(to)
     return () => {}
   }
