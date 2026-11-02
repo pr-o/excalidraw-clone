@@ -1,7 +1,7 @@
 import type { Comment } from "@excalidraw-clone/scene"
 import { useState } from "react"
 import { DeleteThreadButton } from "./CommentThread"
-import { type PanelSibling, PanelSwitch } from "./shared/PanelToggle"
+import { PanelHeader, type PanelSibling } from "./shared/PanelToggle"
 
 type Filter = "all" | "open" | "resolved"
 
@@ -48,19 +48,15 @@ export function CommentsPanel({
       data-testid="comments-panel"
       className="fixed left-3 top-16 z-40 flex h-[calc(100%-8.5rem)] w-72 flex-col overflow-hidden rounded-xl bg-panel shadow-panel"
     >
-      <div className="flex items-center gap-1 border-b px-3 py-2">
-        <span className="flex-1 text-sm font-medium">{t("comments.title")}</span>
-        {sibling && <PanelSwitch icon="comment" sibling={sibling} />}
-        <button
-          type="button"
-          data-testid="comments-panel-close"
-          aria-label={t("comments.close")}
-          onClick={onClose}
-          className="rounded px-1 text-sm hover:bg-panel-hover"
-        >
-          ✕
-        </button>
-      </div>
+      <PanelHeader
+        title={t("comments.title")}
+        toggleLabel={t("comments.close")}
+        testId="comments-panel-close"
+        side="left"
+        onToggle={onClose}
+        icon="comment"
+        sibling={sibling}
+      />
       <div role="group" className="flex gap-1 border-b px-3 py-2">
         {FILTERS.map((f) => (
           <button

@@ -43,7 +43,7 @@ export interface PanelSibling {
 }
 
 /** Icon pair in an open panel's header: this panel (highlighted) and its same-edge sibling. */
-export function PanelSwitch({
+function PanelSwitch({
   icon,
   sibling,
 }: {
