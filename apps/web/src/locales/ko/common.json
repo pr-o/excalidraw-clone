@@ -1,7 +1,7 @@
 {
   "toolbar": {
     "label": "도구 모음",
-    "lock": "도구 잠금",
+    "lock": "그린 뒤에도 선택한 도구 유지",
     "selection": "선택",
     "rectangle": "사각형",
     "ellipse": "타원",

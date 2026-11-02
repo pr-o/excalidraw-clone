@@ -1,7 +1,7 @@
 {
   "toolbar": {
     "label": "Toolbar",
-    "lock": "Lock active tool",
+    "lock": "Keep the selected tool active after drawing",
     "selection": "Selection",
     "rectangle": "Rectangle",
     "ellipse": "Ellipse",

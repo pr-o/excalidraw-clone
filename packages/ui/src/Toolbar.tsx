@@ -108,7 +108,7 @@ export function Toolbar({
         onClick={() => onToggleLock(!lockActiveTool)}
         data-testid="toolbar-lock"
       >
-        <Icon name={lockActiveTool ? "lock" : "unlock"} />
+        <Icon name="pin" />
       </IconButton>
       {TOOL_GROUPS.slice(0, inlineCount).map((group, i) => (
         <div key={group[0]} className={divider}>
