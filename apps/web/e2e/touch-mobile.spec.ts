@@ -79,6 +79,14 @@ test.describe("phone 360x640", () => {
     await expect(page.getByTestId("toolbar-more-tools")).toHaveAttribute("aria-pressed", "true")
   })
 
+  test("the More shapes flyout is not covered by the side panel toggles", async ({ page }) => {
+    await freshCanvas(page)
+    await page.getByTestId("toolbar-more-shapes").tap()
+    // tap() refuses an element another one intercepts.
+    await page.getByTestId("toolbar-stickers").tap({ timeout: 3000 })
+    await expect(page.getByTestId("sticker-search")).toBeVisible()
+  })
+
   test("properties open as a bottom sheet on demand and close again", async ({ page }) => {
     await freshCanvas(page)
     await drawRectByTouch(page)
