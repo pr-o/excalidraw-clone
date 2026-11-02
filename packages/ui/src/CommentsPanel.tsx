@@ -1,6 +1,7 @@
 import type { Comment } from "@excalidraw-clone/scene"
 import { useState } from "react"
 import { DeleteThreadButton } from "./CommentThread"
+import { type PanelSibling, PanelSwitch } from "./shared/PanelToggle"
 
 type Filter = "all" | "open" | "resolved"
 
@@ -14,6 +15,8 @@ export interface CommentsPanelProps {
   onToggleResolved: (id: string) => void
   onDelete: (id: string) => void
   onClose: () => void
+  /** Same-edge panel that one click in the header swaps to. */
+  sibling?: PanelSibling | undefined
 }
 
 const FILTERS: readonly Filter[] = ["all", "open", "resolved"]
@@ -32,6 +35,7 @@ export function CommentsPanel({
   onToggleResolved,
   onDelete,
   onClose,
+  sibling,
 }: CommentsPanelProps): React.ReactElement {
   const [filter, setFilter] = useState<Filter>("all")
   const rows = comments
@@ -44,8 +48,9 @@ export function CommentsPanel({
       data-testid="comments-panel"
       className="fixed left-3 top-16 z-40 flex h-[calc(100%-8.5rem)] w-72 flex-col overflow-hidden rounded-xl bg-panel shadow-panel"
     >
-      <div className="flex items-center justify-between border-b px-3 py-2">
-        <span className="text-sm font-medium">{t("comments.title")}</span>
+      <div className="flex items-center gap-1 border-b px-3 py-2">
+        <span className="flex-1 text-sm font-medium">{t("comments.title")}</span>
+        {sibling && <PanelSwitch icon="comment" sibling={sibling} />}
         <button
           type="button"
           data-testid="comments-panel-close"

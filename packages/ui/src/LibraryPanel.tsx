@@ -1,6 +1,6 @@
 import type { LibraryItem } from "@excalidraw-clone/scene"
 import { useState } from "react"
-import { PanelHeader, PanelToggle } from "./shared/PanelToggle"
+import { PanelHeader, type PanelSibling, PanelToggle } from "./shared/PanelToggle"
 
 export interface LibraryPanelProps {
   t: (key: string) => string
@@ -17,6 +17,8 @@ export interface LibraryPanelProps {
   onDelete: (id: string) => void
   /** Returns inline SVG markup for a thumbnail. App wires this with the renderer. */
   renderThumbnail: (item: LibraryItem) => string
+  /** Same-edge panel that one click in the header swaps to. */
+  sibling?: PanelSibling | undefined
 }
 
 interface ItemTileProps {
@@ -168,6 +170,8 @@ export function LibraryPanel(props: LibraryPanelProps): React.ReactElement {
         testId="library-toggle"
         side="right"
         onToggle={props.onToggle}
+        icon="library"
+        sibling={props.sibling}
       >
         <button
           type="button"

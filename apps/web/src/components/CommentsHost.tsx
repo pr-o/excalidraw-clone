@@ -9,7 +9,12 @@ import {
   type CommentAnchor,
   type Scene,
 } from "@excalidraw-clone/scene"
-import { CommentComposer, CommentsPanel, CommentThread } from "@excalidraw-clone/ui"
+import {
+  CommentComposer,
+  CommentsPanel,
+  CommentThread,
+  type PanelSibling,
+} from "@excalidraw-clone/ui"
 import React, { useEffect, useRef } from "react"
 import { useTranslation } from "react-i18next"
 import { useSceneRevision } from "../hooks/useSceneRevision"
@@ -23,7 +28,14 @@ const PIN = 22
  * Scene outside the undo stack, so every change is a plain `setComments`.
  * Hidden while presenting; read-only in view mode.
  */
-export function CommentsHost({ scene }: { scene: Scene }): React.ReactElement | null {
+export function CommentsHost({
+  scene,
+  sibling,
+}: {
+  scene: Scene
+  /** Same-edge panel (Layers) that one click in the header swaps to. */
+  sibling?: PanelSibling | undefined
+}): React.ReactElement | null {
   const { t } = useTranslation()
   useSceneRevision(scene)
   const scrollX = useAppStore((s) => s.scrollX)
@@ -165,6 +177,7 @@ export function CommentsHost({ scene }: { scene: Scene }): React.ReactElement | 
             if (id === activeId) close()
           }}
           onClose={() => useAppStore.getState().toggleCommentsPanel()}
+          sibling={sibling}
         />
       )}
     </>

@@ -1,6 +1,6 @@
 import { useMemo } from "react"
 import { describeHistoryChange, type ExcalidrawElement } from "@excalidraw-clone/scene"
-import { PanelHeader, PanelToggle } from "./shared/PanelToggle"
+import { PanelHeader, type PanelSibling, PanelToggle } from "./shared/PanelToggle"
 
 export interface HistoryPanelProps {
   t: (key: string, options?: { count: number }) => string
@@ -9,6 +9,8 @@ export interface HistoryPanelProps {
   open: boolean
   onToggle: () => void
   onJump: (index: number) => void
+  /** Same-edge panel that one click in the header swaps to. */
+  sibling?: PanelSibling | undefined
 }
 
 export function HistoryPanel({
@@ -18,6 +20,7 @@ export function HistoryPanel({
   open,
   onToggle,
   onJump,
+  sibling,
 }: HistoryPanelProps): React.ReactElement {
   // Hooks must run unconditionally, so this sits above the closed-state early
   // return. Scene.pushHistory always reassigns `this.history` to a new array
@@ -68,6 +71,8 @@ export function HistoryPanel({
         testId="history-toggle"
         side="right"
         onToggle={onToggle}
+        icon="history"
+        sibling={sibling}
       />
       <ul className="flex-1 overflow-y-auto px-2 py-2">
         {entries

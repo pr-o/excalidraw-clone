@@ -87,4 +87,29 @@ describe("HistoryPanel", () => {
     await userEvent.click(screen.getByTestId("history-toggle"))
     expect(onToggle).toHaveBeenCalled()
   })
+
+  it("offers its same-edge sibling in the open header for a one-click swap", async () => {
+    const onClick = vi.fn()
+    const sibling = { label: "library.toggle", testId: "library-toggle", icon: "library", onClick }
+    const { rerender } = render(
+      <HistoryPanel t={t} history={[[]]} currentIndex={0} open {...handlers} sibling={sibling} />,
+    )
+    const swap = screen.getByTestId("library-toggle")
+    expect(swap).toHaveAttribute("aria-label", "library.toggle")
+    await userEvent.click(swap)
+    expect(onClick).toHaveBeenCalledTimes(1)
+
+    // Closed, the panel shows only its own floating toggle.
+    rerender(
+      <HistoryPanel
+        t={t}
+        history={[[]]}
+        currentIndex={0}
+        open={false}
+        {...handlers}
+        sibling={sibling}
+      />,
+    )
+    expect(screen.queryByTestId("library-toggle")).toBeNull()
+  })
 })

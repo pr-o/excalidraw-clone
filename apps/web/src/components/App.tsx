@@ -83,6 +83,10 @@ function Inner(): React.ReactElement {
   const viewMode = useAppStore((s) => s.viewMode)
   const commentsPanelOpen = useAppStore((s) => s.commentsPanelOpen)
   const views = useSceneViews(scene)
+  const toggleCommentsPanel = useAppStore((s) => s.toggleCommentsPanel)
+  // Same-edge panels are exclusive; each open one offers its sibling in its header.
+  const swapToLibrary = { label: t("library.toggle"), testId: "library-toggle", icon: "library" }
+  const swapToHistory = { label: t("history.toggle"), testId: "history-toggle", icon: "history" }
   const { selectedIds, stats } = views
 
   return (
@@ -141,7 +145,8 @@ function Inner(): React.ReactElement {
               </div>
 
               {/* Side panels sharing an edge are exclusive: while one is open the other
-              (and its toggle, which would sit on the open panel) is not rendered. */}
+              (and its floating toggle, which would sit on the open panel) is not
+              rendered; the open panel's header offers it instead, so one click swaps. */}
               {!commentsPanelOpen && (
                 <LayersHost
                   scene={scene}
@@ -149,6 +154,13 @@ function Inner(): React.ReactElement {
                   selectedIds={selectedIds}
                   open={layersOpen}
                   onToggle={() => setLayersOpen((v) => !v)}
+                  sibling={{
+                    label: t("menu.comments"),
+                    testId: "comments-toggle",
+                    icon: "comment",
+                    // Layers stays open underneath, so closing Comments returns to it.
+                    onClick: toggleCommentsPanel,
+                  }}
                 />
               )}
 
@@ -157,6 +169,13 @@ function Inner(): React.ReactElement {
                   scene={scene}
                   open={libraryOpen}
                   onToggle={() => setLibraryOpen((v) => !v)}
+                  sibling={{
+                    ...swapToHistory,
+                    onClick: () => {
+                      setLibraryOpen(false)
+                      setHistoryOpen(true)
+                    },
+                  }}
                 />
               )}
             </>
@@ -203,6 +222,13 @@ function Inner(): React.ReactElement {
                   open={historyOpen}
                   onToggle={() => setHistoryOpen((v) => !v)}
                   onJump={(index) => scene.jumpToHistory(index)}
+                  sibling={{
+                    ...swapToLibrary,
+                    onClick: () => {
+                      setHistoryOpen(false)
+                      setLibraryOpen(true)
+                    },
+                  }}
                 />
               )}
 
@@ -271,7 +297,22 @@ function Inner(): React.ReactElement {
       />
       <TextEditingOverlay scene={scene} />
       <LinkOverlay scene={scene} />
-      <CommentsHost scene={scene} />
+      <CommentsHost
+        scene={scene}
+        sibling={
+          viewMode || zenMode
+            ? undefined
+            : {
+                label: t("layers.toggle"),
+                testId: "layers-toggle",
+                icon: "layers",
+                onClick: () => {
+                  toggleCommentsPanel()
+                  setLayersOpen(true)
+                },
+              }
+        }
+      />
     </main>
   )
 }

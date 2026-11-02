@@ -1,6 +1,6 @@
 import type { ExcalidrawElement } from "@excalidraw-clone/scene"
 import { Icon } from "./shared/Icon"
-import { PanelHeader, PanelToggle } from "./shared/PanelToggle"
+import { PanelHeader, type PanelSibling, PanelToggle } from "./shared/PanelToggle"
 
 export interface LayersPanelProps {
   t: (key: string) => string
@@ -13,6 +13,8 @@ export interface LayersPanelProps {
   onSendBackward: (id: string) => void
   onBringForward: (id: string) => void
   onBringToFront: (id: string) => void
+  /** Same-edge panel that one click in the header swaps to. */
+  sibling?: PanelSibling | undefined
 }
 
 export function LayersPanel({
@@ -26,6 +28,7 @@ export function LayersPanel({
   onSendBackward,
   onBringForward,
   onBringToFront,
+  sibling,
 }: LayersPanelProps): React.ReactElement {
   const rows = elements
     .filter((e) => !e.isDeleted)
@@ -63,6 +66,8 @@ export function LayersPanel({
         testId="layers-toggle"
         side="left"
         onToggle={onToggle}
+        icon="layers"
+        sibling={sibling}
       />
       <>
         <ul className="flex-1 overflow-y-auto px-2 py-2">

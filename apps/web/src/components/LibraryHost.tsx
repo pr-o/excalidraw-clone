@@ -16,7 +16,7 @@ import {
   normalizeToOrigin,
   Scene,
 } from "@excalidraw-clone/scene"
-import { LibraryPanel } from "@excalidraw-clone/ui"
+import { LibraryPanel, type PanelSibling } from "@excalidraw-clone/ui"
 import { useCallback, useEffect } from "react"
 import { useTranslation } from "react-i18next"
 import { useAppStore } from "../store"
@@ -25,6 +25,7 @@ export interface LibraryHostProps {
   scene: Scene
   open: boolean
   onToggle: () => void
+  sibling?: PanelSibling | undefined
 }
 
 /** Keeps library state in sync while the editor is mounted (whether or not the
@@ -54,7 +55,12 @@ export function useLibrarySync(): void {
 }
 
 /** Library panel wired to persistence. */
-export function LibraryHost({ scene, open, onToggle }: LibraryHostProps): React.ReactElement {
+export function LibraryHost({
+  scene,
+  open,
+  onToggle,
+  sibling,
+}: LibraryHostProps): React.ReactElement {
   const { t } = useTranslation()
   const selectedIds = useAppStore((s) => s.selectedIds)
   const libraryItems = useAppStore((s) => s.libraryItems)
@@ -151,6 +157,7 @@ export function LibraryHost({ scene, open, onToggle }: LibraryHostProps): React.
       onRename={(id, name) => void handleRename(id, name)}
       onDelete={(id) => void handleDelete(id)}
       renderThumbnail={renderThumbnail}
+      sibling={sibling}
     />
   )
 }
