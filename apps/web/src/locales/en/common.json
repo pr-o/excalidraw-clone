@@ -392,5 +392,17 @@
     "f8f9fa": "Off-white",
     "fff5f5": "Blush",
     "f3f0ff": "Lavender"
+  },
+  "a11y": {
+    "toolSelected": "{{tool}} tool",
+    "undo": "Undo",
+    "redo": "Redo",
+    "canvas": "Drawing canvas",
+    "canvasHint": "Tab and Shift+Tab move between elements, Enter edits or labels the selected element, arrow keys nudge it, Escape clears the selection.",
+    "element": "{{type}}{{label}}, x {{x}}, y {{y}}, {{width}} by {{height}}, {{index}} of {{count}}",
+    "elementLabel": " “{{text}}”",
+    "groupOf": "Group of {{count}}: ",
+    "selectionCleared": "Selection cleared",
+    "noElements": "No elements on this page"
   }
 }

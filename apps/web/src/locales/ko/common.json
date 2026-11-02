@@ -157,7 +157,9 @@
     "label": "보기 모드",
     "exit": "나가기"
   },
-  "common": { "close": "닫기" },
+  "common": {
+    "close": "닫기"
+  },
   "palette": {
     "title": "명령어 팔레트",
     "placeholder": "명령어 입력…",
@@ -268,7 +270,12 @@
     "emptyHintKeysBefore": "",
     "emptyHintKeysAfter": "키를 누르면 모든 단축키를 볼 수 있어요"
   },
-  "shortcuts": { "title": "키보드 단축키", "tools": "도구", "editor": "편집", "view": "보기" },
+  "shortcuts": {
+    "title": "키보드 단축키",
+    "tools": "도구",
+    "editor": "편집",
+    "view": "보기"
+  },
   "library": {
     "title": "라이브러리",
     "toggle": "라이브러리 열고 닫기",
@@ -378,5 +385,17 @@
     "f8f9fa": "미색",
     "fff5f5": "연분홍",
     "f3f0ff": "연보라"
+  },
+  "a11y": {
+    "toolSelected": "{{tool}} 도구",
+    "undo": "실행 취소",
+    "redo": "다시 실행",
+    "canvas": "그리기 캔버스",
+    "canvasHint": "Tab과 Shift+Tab으로 요소 사이를 이동하고, Enter로 선택한 요소를 편집하거나 레이블을 달고, 화살표 키로 미세 이동하며, Escape로 선택을 해제합니다.",
+    "element": "{{type}}{{label}}, x {{x}}, y {{y}}, {{width}} × {{height}}, {{count}}개 중 {{index}}번째",
+    "elementLabel": " “{{text}}”",
+    "groupOf": "{{count}}개 그룹: ",
+    "selectionCleared": "선택 해제됨",
+    "noElements": "이 페이지에 요소가 없습니다"
   }
 }

@@ -8,6 +8,8 @@ import {
   type Scene,
   ungroupElements,
 } from "@excalidraw-clone/scene"
+import i18next from "i18next"
+import { announce } from "../components/LiveAnnouncer"
 import { applyPropertiesPatch } from "../driver/applyPropertiesPatch"
 import { deleteElements, patchScene, replaceElements } from "../driver/patchScene"
 import { zoomAboutCentre } from "../driver/zoom"
@@ -89,11 +91,13 @@ export function attachShortcuts({
 
     if (isMeta && key === "z" && !e.shiftKey) {
       e.preventDefault()
+      if (scene.canUndo()) announce(i18next.t("a11y.undo"))
       scene.undo()
       return
     }
     if (isMeta && (key === "y" || (key === "z" && e.shiftKey))) {
       e.preventDefault()
+      if (scene.canRedo()) announce(i18next.t("a11y.redo"))
       scene.redo()
       return
     }
@@ -223,7 +227,10 @@ export function attachShortcuts({
       store.dispatchToolEvent?.({ type: "escape" })
       if (store.activeTool === "laser") store.setActiveTool("selection")
       // Crop mode owns Escape (revert the drag, or leave crop); keep the image selected.
-      if (store.cropElementId === null) store.setSelection([])
+      if (store.cropElementId === null) {
+        if (store.selectedIds.length > 0) announce(i18next.t("a11y.selectionCleared"))
+        store.setSelection([])
+      }
       return
     }
     if (key === "?" || (e.shiftKey && key === "/")) {

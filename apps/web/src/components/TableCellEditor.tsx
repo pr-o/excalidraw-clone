@@ -15,6 +15,7 @@ import React, { useEffect, useRef } from "react"
 import { commitTableCell, tableLineCounter } from "../driver/tableOps"
 import { useAppStore } from "../store"
 import { RichMirror, useRichText } from "./richText"
+import { focusCanvas } from "./CanvasShell"
 
 interface Props {
   scene: Scene
@@ -135,6 +136,7 @@ export function TableCellEditor({ scene, table, cell }: Props): React.ReactEleme
             e.preventDefault()
             // Same path as click-away: blur -> commit.
             e.currentTarget.blur()
+            focusCanvas()
             return
           }
           if (e.nativeEvent.isComposing || e.keyCode === 229) return

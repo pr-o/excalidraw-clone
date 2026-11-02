@@ -1,9 +1,19 @@
 "use client"
-import { hitTestUserGuide, type Point } from "@excalidraw-clone/geometry"
+import {
+  boundsCenter,
+  boundsContains,
+  centerViewOn,
+  hitTestUserGuide,
+  viewportSceneRect,
+  type Point,
+} from "@excalidraw-clone/geometry"
 import { CanvasRenderer } from "@excalidraw-clone/renderer"
-import type { Scene } from "@excalidraw-clone/scene"
+import { getElementsBounds, type Scene } from "@excalidraw-clone/scene"
+import i18next from "i18next"
 import { findHandleAt } from "@excalidraw-clone/tools"
 import { useEffect, useRef, type RefObject } from "react"
+import { announce } from "../components/LiveAnnouncer"
+import { describeUnit, stepSelection } from "../keyboard/canvasNavigation"
 import { useAppStore } from "../store"
 import { viewOf } from "../store/slices/view"
 import { openCanvasContextMenu } from "./canvasContextMenu"
@@ -353,6 +363,46 @@ export function useDrawingDriver({
 
     const onContextMenu = (e: MouseEvent): void => openCanvasContextMenu(scene, canvas, e)
 
+    // Keyboard element navigation while the canvas has focus. Tab/Enter are never
+    // tool keys (rebinding accepts single printable characters only); arrow-key
+    // nudge and Escape stay with the global shortcuts.
+    const onCanvasKeyDown = (e: KeyboardEvent): void => {
+      if (e.ctrlKey || e.metaKey || e.altKey) return
+      const store = useAppStore.getState()
+      if (isReadOnly(store)) return
+      if (e.key === "Tab") {
+        const elements = scene.getElements()
+        const step = stepSelection(elements, store.selectedIds, e.shiftKey ? -1 : 1)
+        // Past either end: let focus leave the canvas (no keyboard trap).
+        if (!step) return
+        e.preventDefault()
+        if (store.activeTool !== "selection") store.setActiveTool("selection")
+        store.setSelection(step.ids)
+        const idSet = new Set(step.ids)
+        const bounds = getElementsBounds(elements.filter((el) => idSet.has(el.id)))
+        const r = canvas.getBoundingClientRect()
+        const view = viewOf(store)
+        if (bounds && !boundsContains(viewportSceneRect(view, r.width, r.height), bounds)) {
+          store.setView(centerViewOn(boundsCenter(bounds), view, r.width, r.height))
+        }
+        announce(
+          describeUnit(step.ids, elements, step.index, step.count, (key, opts) =>
+            opts ? i18next.t(key, opts) : i18next.t(key),
+          ),
+        )
+        return
+      }
+      if (e.key === "Enter" && !e.shiftKey && store.activeTool === "selection") {
+        const id = store.selectedIds[0]
+        const el = id === undefined ? undefined : scene.getElements().find((x) => x.id === id)
+        if (!el) return
+        e.preventDefault()
+        const b = getElementsBounds([el])
+        const at = b ? boundsCenter(b) : { x: el.x, y: el.y }
+        dispatch({ type: "doubleClick", at, targetId: el.id }, NO_MODIFIERS)
+      }
+    }
+
     const onPointerEnter = (): void => useAppStore.getState().setPointerOverCanvas(true)
     const onPointerLeave = (): void => useAppStore.getState().setPointerOverCanvas(false)
 
@@ -362,6 +412,7 @@ export function useDrawingDriver({
     canvas.addEventListener("pointercancel", onPointerUp)
     canvas.addEventListener("dblclick", onNativeDoubleClick)
     canvas.addEventListener("contextmenu", onContextMenu)
+    canvas.addEventListener("keydown", onCanvasKeyDown)
     canvas.addEventListener("pointerenter", onPointerEnter)
     canvas.addEventListener("pointerleave", onPointerLeave)
     canvas.addEventListener("wheel", onWheel, { passive: false })
@@ -377,6 +428,7 @@ export function useDrawingDriver({
       canvas.removeEventListener("pointercancel", onPointerUp)
       canvas.removeEventListener("dblclick", onNativeDoubleClick)
       canvas.removeEventListener("contextmenu", onContextMenu)
+      canvas.removeEventListener("keydown", onCanvasKeyDown)
       canvas.removeEventListener("pointerenter", onPointerEnter)
       canvas.removeEventListener("pointerleave", onPointerLeave)
       useAppStore.getState().setPointerOverCanvas(false)

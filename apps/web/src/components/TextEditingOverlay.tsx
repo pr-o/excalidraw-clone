@@ -8,6 +8,7 @@ import { renameFrame } from "../driver/renameFrame"
 import { useAppStore } from "../store"
 import { RichMirror, useRichText } from "./richText"
 import { TableCellEditor } from "./TableCellEditor"
+import { focusCanvas } from "./CanvasShell"
 
 export function TextEditingOverlay({ scene }: { scene: Scene }): React.ReactElement | null {
   const id = useAppStore((s) => s.textEditElementId)
@@ -57,10 +58,12 @@ export function TextEditingOverlay({ scene }: { scene: Scene }): React.ReactElem
           if (e.key === "Enter") {
             e.preventDefault()
             commitName()
+            focusCanvas()
           }
           if (e.key === "Escape") {
             e.preventDefault()
             setId(null)
+            focusCanvas()
           }
         }}
         style={{
@@ -201,6 +204,7 @@ export function TextEditingOverlay({ scene }: { scene: Scene }): React.ReactElem
             // Blur rather than commit() directly: onBlur → commit() is the exact
             // click-away path, so typed text is kept and it can't double-commit.
             e.currentTarget.blur()
+            focusCanvas()
             return
           }
           const composing = e.nativeEvent.isComposing || e.keyCode === 229
