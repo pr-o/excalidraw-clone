@@ -9,6 +9,7 @@ import {
   type ExcalidrawElement,
   type PointBinding,
 } from "@excalidraw-clone/scene"
+import { updateElement } from "../../draft"
 import type { ToolEffect, ToolContext, ToolEvent } from "../../types"
 import { linearPatch } from "../linear"
 import type { SelectionState, Transition } from "./types"
@@ -52,41 +53,37 @@ export const buildEndpointMoveEffect = (
 ): ToolEffect => ({
   kind: "mutation",
   skipHistory: true,
-  apply: (draft) => {
-    const i = draft.findIndex((e) => e.id === elementId)
-    if (i < 0) return
-    const a = draft[i] as ExcalidrawArrowElement
-    const startAbs = end === "start" ? to : endpointAbs(a, "start")
-    const endAbs = end === "end" ? to : endpointAbs(a, "end")
-    const dragged = a[bindingKey(end)]
-    if (dragged) removeBackRef(draft, dragged.elementId, a.id)
-    draft[i] = { ...a, ...linearPatch(startAbs, endAbs), [bindingKey(end)]: null }
-  },
+  apply: (draft) =>
+    updateElement<ExcalidrawArrowElement>(draft, elementId, (a) => {
+      const startAbs = end === "start" ? to : endpointAbs(a, "start")
+      const endAbs = end === "end" ? to : endpointAbs(a, "end")
+      const dragged = a[bindingKey(end)]
+      if (dragged) removeBackRef(draft, dragged.elementId, a.id)
+      return { ...a, ...linearPatch(startAbs, endAbs), [bindingKey(end)]: null }
+    }),
 })
 
 export const buildEndpointCommitEffect = (elementId: string, end: "start" | "end"): ToolEffect => ({
   kind: "mutation",
-  apply: (draft) => {
-    const i = draft.findIndex((e) => e.id === elementId)
-    if (i < 0) return
-    const a = draft[i] as ExcalidrawArrowElement
-    if (a.type !== "arrow") return
-    const endpoint = endpointAbs(a, end)
-    const toward = endpointAbs(a, end === "start" ? "end" : "start")
-    const target = bindingTargetAt(endpoint, draft)
-    const old = a[bindingKey(end)]
-    if (old && old.elementId !== target?.id) removeBackRef(draft, old.elementId, a.id)
-    let binding: PointBinding | null = null
-    if (target) {
-      binding = {
-        elementId: target.id,
-        focus: computeFocus(target, endpoint, toward),
-        gap: BINDING_GAP,
+  apply: (draft) =>
+    updateElement<ExcalidrawArrowElement>(draft, elementId, (a) => {
+      if (a.type !== "arrow") return undefined
+      const endpoint = endpointAbs(a, end)
+      const toward = endpointAbs(a, end === "start" ? "end" : "start")
+      const target = bindingTargetAt(endpoint, draft)
+      const old = a[bindingKey(end)]
+      if (old && old.elementId !== target?.id) removeBackRef(draft, old.elementId, a.id)
+      let binding: PointBinding | null = null
+      if (target) {
+        binding = {
+          elementId: target.id,
+          focus: computeFocus(target, endpoint, toward),
+          gap: BINDING_GAP,
+        }
+        addBackRef(draft, target.id, a.id)
       }
-      addBackRef(draft, target.id, a.id)
-    }
-    draft[i] = { ...a, [bindingKey(end)]: binding }
-  },
+      return { ...a, [bindingKey(end)]: binding }
+    }),
 })
 
 export const buildEndpointRevertEffect = (
@@ -96,9 +93,7 @@ export const buildEndpointRevertEffect = (
   kind: "mutation",
   skipHistory: true,
   apply: (draft) => {
-    const i = draft.findIndex((e) => e.id === elementId)
-    if (i < 0) return
-    draft[i] = { ...(draft[i] as ExcalidrawArrowElement), ...origin }
+    updateElement<ExcalidrawArrowElement>(draft, elementId, (a) => ({ ...a, ...origin }))
     if (origin.startBinding) addBackRef(draft, origin.startBinding.elementId, elementId)
     if (origin.endBinding) addBackRef(draft, origin.endBinding.elementId, elementId)
   },

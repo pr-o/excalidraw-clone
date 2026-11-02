@@ -1,6 +1,12 @@
 import { type Point, boundsFromPoints } from "@excalidraw-clone/geometry"
 import { newFreedraw } from "@excalidraw-clone/scene"
-import { patchElement, removeElement } from "../draft"
+import {
+  addDraftEffect,
+  discardDraftEffect,
+  patchDraftEffect,
+  patchElement,
+  selectAndSwitchEffects,
+} from "../draft"
 import type { Tool, ToolContext, ToolEffect, ToolEvent } from "../types"
 
 export type FreedrawState =
@@ -45,18 +51,7 @@ export const freedrawTool: Tool<FreedrawState, ToolEvent> = {
           elementId: element.id,
           points: [event.at],
         }
-        return [
-          next,
-          [
-            {
-              kind: "mutation",
-              apply: (draft) => {
-                draft.push(element)
-              },
-              skipHistory: true,
-            },
-          ],
-        ]
+        return [next, [addDraftEffect(element)]]
       }
       return [state, []]
     }
@@ -65,31 +60,13 @@ export const freedrawTool: Tool<FreedrawState, ToolEvent> = {
         const points = [...state.points, event.at]
         const id = state.elementId
         const patch = freedrawPatch(points[0]!, points)
-        return [
-          { phase: "drawing", elementId: id, points },
-          [
-            {
-              kind: "mutation",
-              apply: (draft) => patchElement(draft, id, patch),
-              skipHistory: true,
-            },
-          ],
-        ]
+        return [{ phase: "drawing", elementId: id, points }, [patchDraftEffect(id, patch)]]
       }
       case "pointerUp": {
         const id = state.elementId
         const next: FreedrawState = { phase: "idle" }
         if (state.points.length < 2) {
-          return [
-            next,
-            [
-              {
-                kind: "mutation",
-                apply: (draft) => removeElement(draft, id),
-                skipHistory: true,
-              },
-            ],
-          ]
+          return [next, [discardDraftEffect(id)]]
         }
         const patch = freedrawPatch(state.points[0]!, state.points)
         return [
@@ -99,23 +76,13 @@ export const freedrawTool: Tool<FreedrawState, ToolEvent> = {
               kind: "mutation",
               apply: (draft) => patchElement(draft, id, patch),
             },
-            { kind: "select", ids: [id] },
-            { kind: "switchTool", tool: "selection" },
+            ...selectAndSwitchEffects(id),
           ],
         ]
       }
       case "escape": {
         const id = state.elementId
-        return [
-          { phase: "idle" },
-          [
-            {
-              kind: "mutation",
-              apply: (draft) => removeElement(draft, id),
-              skipHistory: true,
-            },
-          ],
-        ]
+        return [{ phase: "idle" }, [discardDraftEffect(id)]]
       }
       default:
         return [state, []]

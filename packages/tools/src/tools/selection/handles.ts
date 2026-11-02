@@ -54,6 +54,23 @@ const within = (p: Point, target: Point, half = HANDLE_HIT_HALF): boolean =>
 
 const isLinear = (e: ExcalidrawElement): boolean => e.type === "arrow" || e.type === "line"
 
+/** The eight resize handles of a quad given its corners in nw, ne, se, sw order. */
+const resizeHandlePoints = (
+  nw: Point,
+  ne: Point,
+  se: Point,
+  sw: Point,
+): { name: ResizeHandle; p: Point }[] => [
+  { name: "nw", p: nw },
+  { name: "ne", p: ne },
+  { name: "se", p: se },
+  { name: "sw", p: sw },
+  { name: "n", p: midPoint(nw, ne) },
+  { name: "e", p: midPoint(ne, se) },
+  { name: "s", p: midPoint(se, sw) },
+  { name: "w", p: midPoint(sw, nw) },
+]
+
 export const findHandleAt = (
   at: Point,
   selectedIds: readonly string[],
@@ -72,17 +89,7 @@ export const findHandleAt = (
     const ne = sceneToViewport({ x: bounds.x + bounds.width, y: bounds.y }, view)
     const se = sceneToViewport({ x: bounds.x + bounds.width, y: bounds.y + bounds.height }, view)
     const sw = sceneToViewport({ x: bounds.x, y: bounds.y + bounds.height }, view)
-    const handlePoints: { name: ResizeHandle; p: Point }[] = [
-      { name: "nw", p: nw },
-      { name: "ne", p: ne },
-      { name: "se", p: se },
-      { name: "sw", p: sw },
-      { name: "n", p: midPoint(nw, ne) },
-      { name: "e", p: midPoint(ne, se) },
-      { name: "s", p: midPoint(se, sw) },
-      { name: "w", p: midPoint(sw, nw) },
-    ]
-    for (const { name, p } of handlePoints) {
+    for (const { name, p } of resizeHandlePoints(nw, ne, se, sw)) {
       if (within(atV, p)) return { kind: "groupResize", handle: name, ids: selectedIds }
     }
     return null
@@ -142,17 +149,7 @@ export const findHandleAt = (
     return { kind: "rotate", elementId: id }
   }
 
-  const handlePoints: { name: ResizeHandle; p: Point }[] = [
-    { name: "nw", p: nw },
-    { name: "ne", p: ne },
-    { name: "se", p: se },
-    { name: "sw", p: sw },
-    { name: "n", p: midPoint(nw, ne) },
-    { name: "e", p: midPoint(ne, se) },
-    { name: "s", p: midPoint(se, sw) },
-    { name: "w", p: midPoint(sw, nw) },
-  ]
-  for (const { name, p } of handlePoints) {
+  for (const { name, p } of resizeHandlePoints(nw, ne, se, sw)) {
     if (within(atV, p)) return { kind: "resize", elementId: id, handle: name }
   }
   if (e.type === "table") {

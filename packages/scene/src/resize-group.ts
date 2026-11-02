@@ -2,6 +2,7 @@ import { boundsFromPoints, type Point } from "@excalidraw-clone/geometry"
 import { fitTableBox } from "./table"
 import type { ExcalidrawElement } from "./types"
 import { isBoundLabel } from "./bound-label"
+import { editableElements } from "./editable"
 
 /** Plain x/y/width/height box — the shape both the pre-drag combined
  *  selection bounds and the post-drag target bounds take. No `angle`: a
@@ -46,11 +47,8 @@ export function resizeElements(
   newBounds: ResizeBounds,
   anchor: { x: "start" | "end"; y: "start" | "end" } = { x: "start", y: "start" },
 ): ExcalidrawElement[] {
-  const byId = new Map(elements.map((e) => [e.id, e]))
   const idSet = new Set(ids)
-  const direct = ids
-    .map((id) => byId.get(id))
-    .filter((e): e is ExcalidrawElement => !!e && !e.isDeleted && !e.locked)
+  const direct = editableElements(elements, ids)
   if (direct.length === 0) return []
 
   // A zero-extent origin axis (a perfectly flat line, a single-point

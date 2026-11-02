@@ -7,7 +7,12 @@ import {
   pointsPatch,
 } from "@excalidraw-clone/scene"
 import type { ExcalidrawArrowElement, ExcalidrawElement } from "@excalidraw-clone/scene"
-import { patchElement, removeElement } from "../draft"
+import {
+  addDraftEffect,
+  discardDraftEffect,
+  patchDraftEffect,
+  selectAndSwitchEffects,
+} from "../draft"
 import type { Modifiers, ToolEffect } from "../types"
 
 export type LinearState =
@@ -77,18 +82,7 @@ export const linearReduce = ({
         startBindId: bindIdAt(event.at, bindTargets),
         endBindId: null,
       }
-      return [
-        next,
-        [
-          {
-            kind: "mutation",
-            apply: (draft) => {
-              draft.push(element)
-            },
-            skipHistory: true,
-          },
-        ],
-      ]
+      return [next, [addDraftEffect(element)]]
     }
     return [state, []]
   }
@@ -99,13 +93,7 @@ export const linearReduce = ({
       const patch = linearPatch(state.start, end)
       return [
         { ...state, current: end, endBindId: bindIdAt(end, bindTargets) },
-        [
-          {
-            kind: "mutation",
-            apply: (draft) => patchElement(draft, id, patch),
-            skipHistory: true,
-          },
-        ],
+        [patchDraftEffect(id, patch)],
       ]
     }
     case "pointerUp": {
@@ -115,16 +103,7 @@ export const linearReduce = ({
       const next: LinearState = { phase: "idle" }
       const zero = end.x === state.start.x && end.y === state.start.y
       if (zero) {
-        return [
-          next,
-          [
-            {
-              kind: "mutation",
-              apply: (draft) => removeElement(draft, id),
-              skipHistory: true,
-            },
-          ],
-        ]
+        return [next, [discardDraftEffect(id)]]
       }
       const startBindId = state.startBindId
       const endBindId = bindIdAt(end, bindTargets)
@@ -154,23 +133,13 @@ export const linearReduce = ({
               draft[i] = arrow
             },
           },
-          { kind: "select", ids: [id] },
-          { kind: "switchTool", tool: "selection" },
+          ...selectAndSwitchEffects(id),
         ],
       ]
     }
     case "escape": {
       const id = state.elementId
-      return [
-        { phase: "idle" },
-        [
-          {
-            kind: "mutation",
-            apply: (draft) => removeElement(draft, id),
-            skipHistory: true,
-          },
-        ],
-      ]
+      return [{ phase: "idle" }, [discardDraftEffect(id)]]
     }
     default:
       return [state, []]

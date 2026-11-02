@@ -4,6 +4,7 @@ import { expandIdsToFrameMembers } from "./frames"
 import { flipTable } from "./table"
 import type { ExcalidrawElement, PointBinding } from "./types"
 import { isBoundLabel } from "./bound-label"
+import { editableElements } from "./editable"
 
 export type FlipAxis = "x" | "y"
 
@@ -86,10 +87,7 @@ export function flipElements(
   ids: readonly string[],
   axis: FlipAxis,
 ): ExcalidrawElement[] {
-  const byId = new Map(elements.map((e) => [e.id, e]))
-  const direct = ids
-    .map((id) => byId.get(id))
-    .filter((e): e is ExcalidrawElement => !!e && !e.isDeleted && !e.locked)
+  const direct = editableElements(elements, ids)
   if (direct.length === 0) return []
 
   const solo = direct[0]!

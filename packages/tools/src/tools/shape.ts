@@ -1,6 +1,12 @@
 import type { Point } from "@excalidraw-clone/geometry"
 import type { ExcalidrawElement } from "@excalidraw-clone/scene"
-import { patchElement, removeElement } from "../draft"
+import {
+  addDraftEffect,
+  discardDraftEffect,
+  patchDraftEffect,
+  patchElement,
+  selectAndSwitchEffects,
+} from "../draft"
 import type { Modifiers, Tool, ToolContext, ToolEffect, ToolEvent, ToolName } from "../types"
 
 export interface ShapeBox {
@@ -63,18 +69,7 @@ export const shapeReduce = ({
         current: event.at,
         elementId: element.id,
       }
-      return [
-        next,
-        [
-          {
-            kind: "mutation",
-            apply: (draft) => {
-              draft.push(element)
-            },
-            skipHistory: true,
-          },
-        ],
-      ]
+      return [next, [addDraftEffect(element)]]
     }
     return [state, []]
   }
@@ -83,32 +78,14 @@ export const shapeReduce = ({
     case "pointerMove": {
       const box = computeBox(state.start, event.at, modifiers)
       const id = state.elementId
-      return [
-        { ...state, current: event.at },
-        [
-          {
-            kind: "mutation",
-            apply: (draft) => patchElement(draft, id, box),
-            skipHistory: true,
-          },
-        ],
-      ]
+      return [{ ...state, current: event.at }, [patchDraftEffect(id, box)]]
     }
     case "pointerUp": {
       const box = computeBox(state.start, event.at, modifiers)
       const id = state.elementId
       const next: ShapeState = { phase: "idle" }
       if (box.width === 0 || box.height === 0) {
-        return [
-          next,
-          [
-            {
-              kind: "mutation",
-              apply: (draft) => removeElement(draft, id),
-              skipHistory: true,
-            },
-          ],
-        ]
+        return [next, [discardDraftEffect(id)]]
       }
       return [
         next,
@@ -117,23 +94,13 @@ export const shapeReduce = ({
             kind: "mutation",
             apply: (draft) => patchElement(draft, id, box),
           },
-          { kind: "select", ids: [id] },
-          { kind: "switchTool", tool: "selection" },
+          ...selectAndSwitchEffects(id),
         ],
       ]
     }
     case "escape": {
       const id = state.elementId
-      return [
-        { phase: "idle" },
-        [
-          {
-            kind: "mutation",
-            apply: (draft) => removeElement(draft, id),
-            skipHistory: true,
-          },
-        ],
-      ]
+      return [{ phase: "idle" }, [discardDraftEffect(id)]]
     }
     default:
       return [state, []]

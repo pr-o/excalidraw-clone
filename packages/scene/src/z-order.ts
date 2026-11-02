@@ -1,12 +1,19 @@
 import type { ExcalidrawElement } from "./types"
 
+const partition = (
+  elements: readonly ExcalidrawElement[],
+  selectedIds: readonly string[],
+): { moved: ExcalidrawElement[]; remaining: ExcalidrawElement[] } => ({
+  moved: elements.filter((e) => selectedIds.includes(e.id)),
+  remaining: elements.filter((e) => !selectedIds.includes(e.id)),
+})
+
 /** Moves matched elements to the front of the array (rendered first = visual back). */
 export function sendToBack(
   elements: readonly ExcalidrawElement[],
   selectedIds: readonly string[],
 ): ExcalidrawElement[] {
-  const moved = elements.filter((e) => selectedIds.includes(e.id))
-  const remaining = elements.filter((e) => !selectedIds.includes(e.id))
+  const { moved, remaining } = partition(elements, selectedIds)
   return [...moved, ...remaining]
 }
 
@@ -15,8 +22,7 @@ export function bringToFront(
   elements: readonly ExcalidrawElement[],
   selectedIds: readonly string[],
 ): ExcalidrawElement[] {
-  const moved = elements.filter((e) => selectedIds.includes(e.id))
-  const remaining = elements.filter((e) => !selectedIds.includes(e.id))
+  const { moved, remaining } = partition(elements, selectedIds)
   return [...remaining, ...moved]
 }
 
