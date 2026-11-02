@@ -1,4 +1,4 @@
-import type { AlignEdge, DistributeAxis } from "@excalidraw-clone/scene"
+import type { AlignEdge, DistributeAxis, GraphLayoutMode } from "@excalidraw-clone/scene"
 import { ACTION, IconAction, Section, type T } from "./controls"
 
 const ALIGN_ICON: Record<AlignEdge, string> = {
@@ -56,12 +56,17 @@ export function ArrangeSection({
   onAlign,
   onDistribute,
   onTidy,
+  canAutoLayout = false,
+  onAutoLayout,
 }: {
   t: T
   count: number
   onAlign: (edge: AlignEdge) => void
   onDistribute: (axis: DistributeAxis) => void
   onTidy: () => void
+  /** True when the selection has arrows connecting its shapes. */
+  canAutoLayout?: boolean
+  onAutoLayout?: (mode: GraphLayoutMode) => void
 }): React.ReactElement {
   return (
     <Section id="arrange" label={t("properties.arrange")}>
@@ -94,6 +99,26 @@ export function ArrangeSection({
           onClick={onTidy}
         />
       </div>
+      {onAutoLayout && (
+        <div className="mt-1 flex gap-1">
+          {(
+            [
+              ["tree-down", "layout-tree-down"],
+              ["tree-right", "layout-tree-right"],
+              ["radial", "layout-radial"],
+            ] as const
+          ).map(([mode, icon]) => (
+            <IconAction
+              key={mode}
+              data-testid={`auto-layout-${mode}`}
+              label={t(`properties.auto_layout_${mode.replace("-", "_")}`)}
+              icon={icon}
+              disabled={!canAutoLayout}
+              onClick={() => onAutoLayout(mode)}
+            />
+          ))}
+        </div>
+      )}
     </Section>
   )
 }

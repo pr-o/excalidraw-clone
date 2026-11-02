@@ -78,6 +78,8 @@ export type {
 } from "./mermaid"
 export { alignElements, distributeElements, tidyElements } from "./arrange"
 export type { AlignEdge, DistributeAxis, PositionPatch } from "./arrange"
+export { graphEdges, layoutGraph, straightenConnectors } from "./graph-layout"
+export type { GraphEdge, GraphLayoutMode } from "./graph-layout"
 export { expandIdsToGroups, groupElements, ungroupElements } from "./groups"
 export { expandIdsToFrameMembers, reconcileFrameMembership } from "./frames"
 export { lockElements, unlockAll, unlockElements } from "./locking"

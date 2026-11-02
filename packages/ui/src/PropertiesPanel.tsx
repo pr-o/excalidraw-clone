@@ -1,5 +1,6 @@
 import type {
   AlignEdge,
+  GraphLayoutMode,
   DistributeAxis,
   ExcalidrawElement,
   ExcalidrawTextElement,
@@ -48,6 +49,10 @@ export interface PropertiesPanelProps {
   onAlign: (edge: AlignEdge) => void
   onDistribute: (axis: DistributeAxis) => void
   onTidy: () => void
+  /** Graph-aware layout of the connected selection; omit to hide the buttons. */
+  onAutoLayout?: (mode: GraphLayoutMode) => void
+  /** True when the selection has arrows connecting its shapes (enables `onAutoLayout`). */
+  canAutoLayout?: boolean
   onGroup: () => void
   onUngroup: () => void
   onLock: () => void
@@ -73,6 +78,8 @@ export function PropertiesPanel({
   onAlign,
   onDistribute,
   onTidy,
+  onAutoLayout,
+  canAutoLayout,
   onGroup,
   onUngroup,
   onLock,
@@ -260,6 +267,8 @@ export function PropertiesPanel({
           onAlign={onAlign}
           onDistribute={onDistribute}
           onTidy={onTidy}
+          {...(onAutoLayout ? { onAutoLayout } : {})}
+          canAutoLayout={canAutoLayout ?? false}
         />
       )}
 

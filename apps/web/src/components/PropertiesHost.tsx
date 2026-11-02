@@ -6,10 +6,14 @@ import {
   type ExcalidrawElement,
   type ExcalidrawTextElement,
   flipElements,
+  type GraphLayoutMode,
+  graphEdges,
   groupElements,
+  layoutGraph,
   lockElements,
   resetCrop,
   type Scene,
+  straightenConnectors,
   tidyElements,
   ungroupElements,
 } from "@excalidraw-clone/scene"
@@ -42,6 +46,19 @@ export function PropertiesHost({
     replaceElements(scene, (el) => {
       const p = byId.get(el.id)
       return p && { ...el, x: p.x, y: p.y }
+    })
+  }
+  const canAutoLayout = graphEdges(selectedElements, scene.getElements()).length > 0
+  const autoLayout = (mode: GraphLayoutMode): void => {
+    const all = scene.getElements()
+    const moved = layoutGraph(selectedElements, all, mode)
+    if (moved.length === 0) return
+    // One history entry: move the nodes and drop stale bends on their connectors.
+    const byId = new Map(moved.map((p) => [p.id, p]))
+    const straight = new Map(straightenConnectors(all, new Set(byId.keys())).map((a) => [a.id, a]))
+    replaceElements(scene, (el) => {
+      const p = byId.get(el.id)
+      return p ? { ...el, x: p.x, y: p.y } : straight.get(el.id)
     })
   }
   return (
@@ -78,6 +95,8 @@ export function PropertiesHost({
       onAlign={(edge) => moveTo(alignElements(selectedElements, edge))}
       onDistribute={(axis) => moveTo(distributeElements(selectedElements, axis))}
       onTidy={() => moveTo(tidyElements(selectedElements))}
+      canAutoLayout={canAutoLayout}
+      onAutoLayout={autoLayout}
       onGroup={() =>
         patchScene(scene, groupElements(selectedElements, selectedIds, crypto.randomUUID()))
       }
