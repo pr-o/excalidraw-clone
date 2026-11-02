@@ -143,6 +143,12 @@ describe("fitToContent", () => {
     expect(view.zoom).toBe(ZOOM_MAX)
   })
 
+  it("caps zoom at maxZoom and still centres the content", () => {
+    const t = fitToContent({ x: 100, y: 50, width: 20, height: 10 }, 800, 600, 2)
+    expect(t.zoom).toBe(2)
+    expect(sceneToViewport({ x: 110, y: 55 }, t)).toEqual({ x: 400, y: 300 })
+  })
+
   it("clamps zoom to ZOOM_MIN for very large content", () => {
     const bounds: Bounds = { x: 0, y: 0, width: 1_000_000, height: 1_000_000 }
     const view = fitToContent(bounds, 1000, 1000)

@@ -41,3 +41,6 @@ export function filterMatches(items: readonly SearchableItem[], query: string): 
 export function isSelectableMatch(el: ExcalidrawElement): boolean {
   return !el.locked
 }
+
+/** A find jump fits the match but never zooms past this, so small shapes keep context. */
+export const JUMP_MAX_ZOOM = 2

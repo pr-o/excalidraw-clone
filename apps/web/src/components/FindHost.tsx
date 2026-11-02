@@ -4,7 +4,12 @@ import { getElementBounds, type ExcalidrawElement, type Scene } from "@excalidra
 import { FindOverlay } from "@excalidraw-clone/ui"
 import React, { useEffect, useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { collectSearchableItems, filterMatches, isSelectableMatch } from "../driver/findMatches"
+import {
+  collectSearchableItems,
+  filterMatches,
+  isSelectableMatch,
+  JUMP_MAX_ZOOM,
+} from "../driver/findMatches"
 import { useSceneRevision } from "../hooks/useSceneRevision"
 import { animateView } from "../presentation/animateView"
 import { useAppStore } from "../store"
@@ -76,7 +81,12 @@ export function FindHost({ scene }: { scene: Scene }): React.ReactElement {
     const target = resolveTarget(el, elements)
 
     cancelRef.current?.()
-    const view = fitToContent(getElementBounds(target), window.innerWidth, window.innerHeight)
+    const view = fitToContent(
+      getElementBounds(target),
+      window.innerWidth,
+      window.innerHeight,
+      JUMP_MAX_ZOOM,
+    )
     const { scrollX, scrollY, zoom } = useAppStore.getState()
     cancelRef.current = animateView({ scrollX, scrollY, zoom }, view, JUMP_ANIMATION_MS, (v) =>
       useAppStore.getState().setView(v),

@@ -52,9 +52,10 @@ test("Ctrl+F finds an off-screen text element and cycling to a second match move
   await setDarkTheme(page)
 
   // Two matches on deliberately different-sized elements, so the fit-to-content
-  // jump computes a different zoom for each one.
+  // jump computes a different zoom for each one: the small note is capped at
+  // 200%, the wide one fits below that.
   await labelledNote(page, { x: 150, y: 120 }, { x: 280, y: 200 }, "findtarget-one")
-  await labelledNote(page, { x: 460, y: 380 }, { x: 900, y: 480 }, "findtarget-two")
+  await labelledNote(page, { x: 100, y: 380 }, { x: 1000, y: 480 }, "findtarget-two")
   await page.locator('[data-testid="toolbar-selection"]').click()
 
   // Pan far enough that neither note is anywhere near the viewport centre.
@@ -78,6 +79,8 @@ test("Ctrl+F finds an off-screen text element and cycling to a second match move
   const afterFirstJump = await maxChannelIn(page, cx, cy, 60, 30)
   expect(afterFirstJump).toBeGreaterThan(before)
   const zoomAfterFirst = await zoomPercent(page).textContent()
+  // A small shape is not blown up past 200%.
+  expect(zoomAfterFirst).toBe("200%")
 
   // Cycle to the second (differently-sized) match — the view moves again.
   await page.keyboard.press("Enter")

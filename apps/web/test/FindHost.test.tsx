@@ -12,6 +12,7 @@ import React from "react"
 import { I18nextProvider } from "react-i18next"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { FindHost } from "../src/components/FindHost"
+import { JUMP_MAX_ZOOM } from "../src/driver/findMatches"
 import { ensureI18n } from "../src/i18n"
 import { useAppStore } from "../src/store"
 import { currentView, expectViewToBe } from "./viewAssertions"
@@ -20,7 +21,7 @@ import { currentView, expectViewToBe } from "./viewAssertions"
 const SNAPSHOT: ViewTransform = { scrollX: 7, scrollY: 9, zoom: 1 }
 
 const expectedView = (el: ExcalidrawElement): ViewTransform =>
-  fitToContent(getElementBounds(el), window.innerWidth, window.innerHeight)
+  fitToContent(getElementBounds(el), window.innerWidth, window.innerHeight, JUMP_MAX_ZOOM)
 
 const renderHost = (scene: Scene) =>
   render(

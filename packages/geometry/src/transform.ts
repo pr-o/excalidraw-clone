@@ -34,13 +34,14 @@ export const fitToContent = (
   bounds: Bounds,
   viewportWidth: number,
   viewportHeight: number,
+  maxZoom = ZOOM_MAX,
 ): ViewTransform => {
   const width = Math.max(bounds.width, 1)
   const height = Math.max(bounds.height, 1)
   const zoom = clamp(
     Math.min(viewportWidth / (width * FIT_PADDING), viewportHeight / (height * FIT_PADDING)),
     ZOOM_MIN,
-    ZOOM_MAX,
+    maxZoom,
   )
   const centerX = bounds.x + bounds.width / 2
   const centerY = bounds.y + bounds.height / 2
