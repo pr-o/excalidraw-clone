@@ -58,7 +58,11 @@ export function FindHost({ scene }: { scene: Scene }): React.ReactElement {
   const hasJumpedRef = useRef(false)
   const cancelRef = useRef<(() => void) | null>(null)
 
-  const items = useMemo(() => collectSearchableItems(scene.getElements()), [scene, sceneRevision])
+  // Closed: nothing to search, so skip the O(n) collect on every scene edit.
+  const items = useMemo(
+    () => (open ? collectSearchableItems(scene.getElements()) : []),
+    [scene, sceneRevision, open],
+  )
   const matches = useMemo(() => filterMatches(items, query), [items, query])
 
   // A new query restarts the cursor: the next find-next must land on match 1.

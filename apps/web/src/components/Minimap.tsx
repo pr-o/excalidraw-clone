@@ -50,7 +50,11 @@ export function Minimap({
   const view = { scrollX, scrollY, zoom }
   const vrect = viewportSceneRect(view, vw, vh)
   // revision stands in for scene content (the Scene object is referentially stable).
-  const live = useMemo(() => scene.getElements().filter((e) => !e.isDeleted), [scene, revision])
+  // Hidden (the default): skip the per-edit bounds work entirely.
+  const live = useMemo(
+    () => (visible ? scene.getElements().filter((e) => !e.isDeleted) : []),
+    [scene, revision, visible],
+  )
   const fit = frozen ?? minimapFit(getElementsBounds(live), vrect, MINIMAP_W, MINIMAP_H, PADDING)
 
   useEffect(() => {

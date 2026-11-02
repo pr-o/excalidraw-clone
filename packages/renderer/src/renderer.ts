@@ -19,6 +19,12 @@ import type { CanvasRendererOptions, GridOptions, Theme } from "./types"
 
 const IDENTITY: ViewTransform = { scrollX: 0, scrollY: 0, zoom: 1 }
 
+/** One rough.js shape cache for every renderer (main canvas, page thumbnails):
+ *  entries are keyed by the immutable element object plus theme, so a
+ *  thumbnail re-render reuses the main canvas's shapes instead of
+ *  regenerating every element. */
+const SHARED_SHAPE_CACHE = new ShapeCache()
+
 export class CanvasRenderer {
   private readonly canvas: HTMLCanvasElement
   private readonly ctx: CanvasRenderingContext2D
@@ -31,7 +37,7 @@ export class CanvasRenderer {
   private grid: GridOptions
 
   private readonly rough: RoughCanvas
-  private readonly shapeCache = new ShapeCache()
+  private readonly shapeCache = SHARED_SHAPE_CACHE
   private readonly imageMap = new Map<string, HTMLImageElement>()
   private readonly imageLoads = new Map<string, Promise<void>>()
   private readonly overlayCanvas: HTMLCanvasElement | null
