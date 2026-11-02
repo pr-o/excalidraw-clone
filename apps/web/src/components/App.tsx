@@ -101,7 +101,10 @@ function Inner(): React.ReactElement {
 
       {!zenMode && !presenting && (
         <>
-          {!viewMode && !openDialog && views.layerElements.length === 0 && <EmptyCanvasHint />}
+          <EmptyCanvasHint
+            hasElements={views.layerElements.length > 0}
+            hidden={viewMode || openDialog !== null}
+          />
 
           <div className="absolute left-3 top-3 z-40">
             <MenuHost
