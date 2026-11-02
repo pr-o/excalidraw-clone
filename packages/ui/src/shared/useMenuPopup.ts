@@ -14,6 +14,11 @@ export function useMenuPopup(
 } {
   const ref = useRef<HTMLDivElement | null>(null)
   const [pos, setPos] = useState({ left: x, top: y })
+  // Captured at first render, before the menu takes focus (an effect would see
+  // the menu item itself under StrictMode's double-invoked effects).
+  const [previous] = useState(() =>
+    typeof document === "undefined" ? null : (document.activeElement as HTMLElement | null),
+  )
 
   useLayoutEffect(() => {
     const el = ref.current
@@ -25,8 +30,14 @@ export function useMenuPopup(
   }, [x, y])
 
   useEffect(() => {
+    // Return focus to where it was (e.g. the canvas) when the menu goes away,
+    // unless the user already moved it somewhere else.
     ref.current?.querySelector<HTMLButtonElement>('[role="menuitem"]')?.focus()
-  }, [])
+    return () => {
+      const lost = !document.activeElement || document.activeElement === document.body
+      if (lost && previous?.isConnected) previous.focus()
+    }
+  }, [previous])
 
   useEffect(() => {
     const moveFocus = (next: (current: number, count: number) => number): void => {

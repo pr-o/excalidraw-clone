@@ -83,7 +83,7 @@ describe("HamburgerMenu", () => {
   it("theme buttons emit onThemeChange and reflect current theme", async () => {
     const onThemeChange = vi.fn()
     render(<HamburgerMenu {...baseProps()} open theme="dark" onThemeChange={onThemeChange} />)
-    expect(screen.getByTestId("theme-dark")).toHaveAttribute("aria-pressed", "true")
+    expect(screen.getByTestId("theme-dark")).toHaveAttribute("aria-checked", "true")
     await userEvent.click(screen.getByTestId("theme-light"))
     expect(onThemeChange).toHaveBeenCalledWith("light")
   })
@@ -128,9 +128,9 @@ describe("HamburgerMenu", () => {
 
   it("aria-pressed is true only on the swatch matching canvasBg", () => {
     render(<HamburgerMenu {...baseProps()} open canvasBg="#f3f0ff" />)
-    expect(screen.getByTestId("canvas-bg-f3f0ff")).toHaveAttribute("aria-pressed", "true")
+    expect(screen.getByTestId("canvas-bg-f3f0ff")).toHaveAttribute("aria-checked", "true")
     for (const hex of ["ffffff", "f8f9fa", "fff5f5", "1e1e1e"]) {
-      expect(screen.getByTestId(`canvas-bg-${hex}`)).toHaveAttribute("aria-pressed", "false")
+      expect(screen.getByTestId(`canvas-bg-${hex}`)).toHaveAttribute("aria-checked", "false")
     }
   })
 
