@@ -126,7 +126,7 @@ function Inner(): React.ReactElement {
             <>
               {/* Insets clear the menu button and panel toggles; below 960px the toolbar
               moves its lower-priority groups into a "more tools" menu to stay one row. */}
-              <div className="pointer-events-none absolute left-16 right-16 top-3 z-30 flex justify-center max-[480px]:left-14 max-[480px]:right-14">
+              <div className="pointer-events-none absolute left-16 right-16 top-3 z-40 flex justify-center max-[480px]:left-14 max-[480px]:right-14">
                 <Toolbar
                   className="pointer-events-auto"
                   t={t}
