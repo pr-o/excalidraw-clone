@@ -1,4 +1,4 @@
-import type { ExcalidrawElement } from "@excalidraw-clone/scene"
+import { type ExcalidrawElement, newText } from "@excalidraw-clone/scene"
 import { describe, expect, it } from "vitest"
 import { textTool } from "../src"
 import { applyMutation, makeCtx, point } from "./test-utils"
@@ -42,5 +42,16 @@ describe("text tool", () => {
     applyMutation(esc[1], draft)
     expect(esc[0]).toEqual({ phase: "idle" })
     expect(draft.length).toBe(0)
+  })
+
+  it("pointerDown on existing text edits it instead of placing a new one", () => {
+    const existing = newText({ x: 0, y: 0 })
+    const ctx = makeCtx({ hitTest: () => existing })
+    const down = textTool.reduce(textTool.initial, { type: "pointerDown", at: point(5, 5) }, ctx)
+    expect(down[1]).toEqual([])
+    const up = textTool.reduce(down[0], { type: "pointerUp", at: point(5, 5) }, ctx)
+    expect(up).toEqual([{ phase: "idle" }, [{ kind: "startTextEdit", elementId: existing.id }]])
+    // Escape before release leaves the existing text alone.
+    expect(textTool.reduce(down[0], { type: "escape" }, ctx)).toEqual([{ phase: "idle" }, []])
   })
 })

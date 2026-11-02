@@ -183,3 +183,27 @@ test("changing font size to XL grows the text's box so its new area is click-sel
   await expect(xl).toBeVisible()
   await expect(xl).toHaveAttribute("aria-pressed", "true")
 })
+
+test("with the text tool still active, clicking existing text edits it (no duplicate)", async ({
+  page,
+}) => {
+  await freshCanvas(page, "toolbar-text")
+  await page.locator('[data-testid="toolbar-text"]').click()
+  await clickCanvas(page, { x: 200, y: 200 })
+  await page.keyboard.type("Hello")
+  await page.keyboard.press("Escape")
+  await expect(page.locator("textarea")).toHaveCount(0)
+
+  await clickCanvas(page, { x: 212, y: 210 })
+  await expect(page.locator("textarea")).toHaveValue("Hello")
+  await page.keyboard.press("End")
+  await page.keyboard.type("!")
+  await page.keyboard.press("Escape")
+  await page.waitForTimeout(900)
+
+  const sceneJson = await page.evaluate(() => localStorage.getItem("excalidraw-scene"))
+  const live = parseStoredScene<{ type: string; text?: string; isDeleted?: boolean }>(
+    sceneJson,
+  ).elements.filter((e) => !e.isDeleted)
+  expect(live.map((e) => e.text)).toEqual(["Hello!"])
+})
