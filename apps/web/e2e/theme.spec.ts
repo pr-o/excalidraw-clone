@@ -106,3 +106,19 @@ test("export dialog defaults to dark and dark PNG has a dark background", async 
   }, b64)
   expect(Math.max(corner[0]!, corner[1]!, corner[2]!)).toBeLessThan(70)
 })
+
+test("library template thumbnails follow the theme", async ({ page }) => {
+  await page.goto("/")
+  await page.evaluate(() => localStorage.clear())
+  await page.reload()
+  const strokes = () =>
+    page
+      .locator('[data-testid="template-item-builtin-flowchart"] [stroke]')
+      .evaluateAll((els) => [...new Set(els.map((e) => e.getAttribute("stroke")))])
+  await page.getByTestId("library-toggle").click()
+  expect(await strokes()).toEqual(["#1e1e1e"])
+  await page.getByRole("button", { name: /menu/i }).click()
+  await page.locator('[data-testid="theme-dark"]').click()
+  // Dark strokes would vanish on the dark tile: the thumbnail redraws light.
+  await expect.poll(strokes).toEqual(["#ececec"])
+})

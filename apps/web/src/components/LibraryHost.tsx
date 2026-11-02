@@ -137,10 +137,13 @@ export function LibraryHost({
     [refreshLibrary],
   )
 
-  const renderThumbnail = useCallback((item: LibraryItem): string => {
-    const tempScene = new Scene(item.elements)
-    return renderToSVG(tempScene, { padding: 4 })
-  }, [])
+  // Thumbnails sit on the themed panel, so draw them with the canvas's theme
+  // colours (dark strokes would vanish on the dark tile).
+  const theme = useAppStore((s) => s.resolvedTheme)
+  const renderThumbnail = useCallback(
+    (item: LibraryItem): string => renderToSVG(new Scene(item.elements), { padding: 4, theme }),
+    [theme],
+  )
 
   return (
     <LibraryPanel
