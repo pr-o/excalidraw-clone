@@ -81,7 +81,7 @@ export function LayersPanel({
               <li
                 key={element.id}
                 data-testid={`layer-row-${element.id}`}
-                className={`mb-0.5 flex items-center gap-1 rounded px-1 py-1 text-xs ${
+                className={`mb-0.5 flex items-center gap-1 rounded px-1 py-0.5 text-xs ${
                   selected ? "bg-accent-soft" : "hover:bg-panel-subtle"
                 } ${element.groupIds.length > 0 ? "border-l-2 border-accent pl-1" : ""}`}
               >
@@ -101,7 +101,7 @@ export function LayersPanel({
                   )}
                   <span className="truncate">{label}</span>
                 </button>
-                <div className="flex shrink-0 gap-0.5">
+                <div className="flex shrink-0">
                   {orderButtons.map(([slug, key, icon, run]) => (
                     <button
                       key={slug}
@@ -110,7 +110,7 @@ export function LayersPanel({
                       aria-label={t(`properties.${key}`)}
                       title={t(`properties.${key}`)}
                       onClick={() => run(element.id)}
-                      className="rounded p-0.5 text-muted hover:bg-panel-hover hover:text-app [&_svg]:h-3 [&_svg]:w-3"
+                      className="flex h-6 w-6 items-center justify-center rounded-md text-app hover:bg-panel-active [&_svg]:h-3.5 [&_svg]:w-3.5"
                     >
                       <Icon name={icon} />
                     </button>
