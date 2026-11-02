@@ -52,6 +52,18 @@ describe("applyEffects", () => {
     expect(useAppStore.getState().toolStates.rectangle).toBeUndefined()
   })
 
+  it("the toolbar lock keeps the drawing tool after the post-draw switch to selection", () => {
+    const scene = new Scene()
+    useAppStore.getState().setActiveTool("rectangle")
+    useAppStore.getState().toggleLockActiveTool()
+    try {
+      applyEffects(scene, [{ kind: "switchTool", tool: "selection" }])
+      expect(useAppStore.getState().activeTool).toBe("rectangle")
+    } finally {
+      useAppStore.getState().toggleLockActiveTool()
+    }
+  })
+
   it("skipHistory mutation calls scene.mutate with skipHistory", () => {
     const scene = new Scene()
     const spy = vi.spyOn(scene, "mutate")

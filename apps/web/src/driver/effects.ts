@@ -34,6 +34,8 @@ export function applyEffects(
         useAppStore.getState().removeFromSelection(eff.ids)
         break
       case "switchTool":
+        // The toolbar lock keeps the drawing tool active instead of the post-draw auto-switch.
+        if (useAppStore.getState().lockActiveTool && eff.tool === "selection") break
         useAppStore.getState().resetToolState(useAppStore.getState().activeTool)
         useAppStore.getState().setActiveTool(eff.tool)
         break
