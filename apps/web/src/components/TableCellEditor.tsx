@@ -118,6 +118,7 @@ export function TableCellEditor({ scene, table, cell }: Props): React.ReactEleme
         />
       )}
       <textarea
+        data-canvas-text
         data-testid="table-cell-input"
         ref={(node) => {
           ref.current = node

@@ -137,6 +137,24 @@ body {
   touch-action: manipulation;
 }
 
+/* iOS zooms the page when focusing a field under 16px. Canvas text editors
+   keep their WYSIWYG size (they track the drawing's zoom). */
+/* Two blocks: a comma-joined media list is dropped by the CSS pipeline. */
+@media (pointer: coarse) {
+  input:not([data-canvas-text]),
+  select,
+  textarea:not([data-canvas-text]) {
+    font-size: 16px !important;
+  }
+}
+@media (max-width: 480px) {
+  input:not([data-canvas-text]),
+  select,
+  textarea:not([data-canvas-text]) {
+    font-size: 16px !important;
+  }
+}
+
 :where(button, input, select, textarea, a):focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 1px;

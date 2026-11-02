@@ -169,6 +169,7 @@ export function TextEditingOverlay({ scene }: { scene: Scene }): React.ReactElem
         />
       )}
       <textarea
+        data-canvas-text
         ref={(node) => {
           ref.current = node
         }}

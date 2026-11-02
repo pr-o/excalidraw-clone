@@ -124,6 +124,27 @@ test.describe("phone 360x640", () => {
     await expect(page.getByTestId("context-menu")).toHaveCount(0)
   })
 
+  test("text fields are at least 16px so iOS does not zoom on focus", async ({ page }) => {
+    await freshCanvas(page)
+    const fontPx = (testId: string) =>
+      page.getByTestId(testId).evaluate((el) => parseFloat(getComputedStyle(el).fontSize))
+    await page.keyboard.press("Control+f")
+    expect(await fontPx("find-input")).toBeGreaterThanOrEqual(16)
+    await page.keyboard.press("Escape")
+
+    const tab = page.locator('[data-testid^="page-tab-"]').first()
+    const id = (await tab.getAttribute("data-testid"))!.replace("page-tab-", "")
+    await page.getByTestId(`page-switch-${id}`).dblclick()
+    expect(await fontPx(`page-rename-input-${id}`)).toBeGreaterThanOrEqual(16)
+    await page.keyboard.press("Escape")
+
+    await page.getByTestId("toolbar-more-tools").tap()
+    await page.getByRole("menu").getByTestId("toolbar-comment").tap()
+    await touch(page, "pointerdown", 180, 300)
+    await touch(page, "pointerup", 180, 300)
+    expect(await fontPx("comment-input")).toBeGreaterThanOrEqual(16)
+  })
+
   test("pages bar keeps Add page reachable with many pages", async ({ page }) => {
     await freshCanvas(page)
     for (let i = 0; i < 4; i += 1) await page.getByTestId("page-add").tap()
