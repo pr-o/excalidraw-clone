@@ -2,7 +2,7 @@
 import { getFile } from "@excalidraw-clone/persistence"
 import type { ExcalidrawElement } from "@excalidraw-clone/scene"
 import type { ExportOptions } from "@excalidraw-clone/ui"
-import { registerHandwrittenFont, svgUsesHandwritten } from "./exportFonts"
+import { registerHandwrittenFont, svgUsesHandwritten, svgUsesItalic } from "./exportFonts"
 import { renderExportSVG, type FileLoader } from "./exportSVG"
 import type { PageRecord } from "./pages"
 
@@ -56,7 +56,7 @@ export async function svgToPDF(svg: string): Promise<Blob> {
     compress: true,
     putOnlyUsedFonts: true,
   })
-  if (svgUsesHandwritten(root)) await registerHandwrittenFont(pdf)
+  if (svgUsesHandwritten(root)) await registerHandwrittenFont(pdf, svgUsesItalic(root))
   await svg2pdf(root, pdf, { x: 0, y: 0, width, height })
   return pdf.output("blob")
 }
@@ -77,7 +77,10 @@ export async function svgsToPDF(svgs: readonly string[]): Promise<Blob> {
     compress: true,
     putOnlyUsedFonts: true,
   })
-  if ([first, ...rest].some((p) => svgUsesHandwritten(p.root))) await registerHandwrittenFont(pdf)
+  const roots = [first, ...rest].map((p) => p.root)
+  if (roots.some(svgUsesHandwritten)) {
+    await registerHandwrittenFont(pdf, roots.some(svgUsesItalic))
+  }
   await svg2pdf(first.root, pdf, { x: 0, y: 0, width: first.width, height: first.height })
   for (const { root, width, height } of rest) {
     // addPage's orientation is sticky (omitted = previous page's), so always

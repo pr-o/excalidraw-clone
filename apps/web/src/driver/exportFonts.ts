@@ -15,8 +15,18 @@ const WOFF2_LATIN_EXT = {
   range:
     "U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF",
 }
+/** Synthetic oblique faces (scripts/make-caveat-oblique.py): Caveat has no italic. */
+const WOFF2_ITALIC = {
+  regular: "/fonts/caveat-italic.woff2",
+  bold: "/fonts/caveat-bolditalic.woff2",
+}
 /** jsPDF only embeds TrueType, so the PDF path uses static TTFs. */
-const TTF = { regular: "/fonts/caveat-regular.ttf", bold: "/fonts/caveat-bold.ttf" }
+const TTF = {
+  normal: "/fonts/caveat-regular.ttf",
+  bold: "/fonts/caveat-bold.ttf",
+  italic: "/fonts/caveat-italic.ttf",
+  bolditalic: "/fonts/caveat-bolditalic.ttf",
+} as const
 
 /** All text drawn in the hand-drawn font, or null when there is none. */
 export function handwrittenText(elements: readonly ExcalidrawElement[]): string | null {
@@ -27,6 +37,34 @@ export function handwrittenText(elements: readonly ExcalidrawElement[]): string 
     else if (e.type === "table") parts.push(e.cells.flat().join(""))
   }
   return parts.length > 0 ? parts.join("") : null
+}
+
+/** Which italic Caveat faces the hand-drawn text needs (upright weights come
+ *  from the variable latin subsets). */
+export function handwrittenItalics(elements: readonly ExcalidrawElement[]): {
+  regular: boolean
+  bold: boolean
+} {
+  const need = { regular: false, bold: false }
+  const mark = (bold: boolean): void => {
+    need[bold ? "bold" : "regular"] = true
+  }
+  for (const e of elements) {
+    if (e.isDeleted || !("fontFamily" in e) || e.fontFamily !== HANDWRITTEN) continue
+    if (e.type === "text") {
+      const bold = e.fontWeight === "bold"
+      if (e.fontStyle === "italic") mark(bold)
+      for (const s of e.spans ?? [])
+        if (s.italic || e.fontStyle === "italic") mark(bold || !!s.bold)
+    } else if (e.type === "table") {
+      e.cellSpans?.forEach((row, r) =>
+        row.forEach((spans) => {
+          for (const s of spans ?? []) if (s.italic) mark(!!s.bold || (e.headerRow && r === 0))
+        }),
+      )
+    }
+  }
+  return need
 }
 
 export type FontFetcher = (url: string) => Promise<ArrayBuffer>
@@ -57,10 +95,23 @@ export async function handwrittenFontFaceCSS(
   if (text === null) return undefined
   // eslint-disable-next-line no-control-regex
   const subsets = /[^\u0000-ÿ]/.test(text) ? [WOFF2_LATIN_EXT, WOFF2_LATIN] : [WOFF2_LATIN]
+  const italics = handwrittenItalics(elements)
+  const faces = [
+    ...subsets.map(({ url, range }) => ({
+      url,
+      rule: `font-weight:400 700;unicode-range:${range};`,
+    })),
+    ...(italics.regular
+      ? [{ url: WOFF2_ITALIC.regular, rule: "font-style:italic;font-weight:400;" }]
+      : []),
+    ...(italics.bold
+      ? [{ url: WOFF2_ITALIC.bold, rule: "font-style:italic;font-weight:700;" }]
+      : []),
+  ]
   const rules = await Promise.all(
-    subsets.map(async ({ url, range }) => {
+    faces.map(async ({ url, rule }) => {
       const data = toBase64(await fetchFont(url))
-      return `@font-face{font-family:"Caveat";font-weight:400 700;src:url(data:font/woff2;base64,${data}) format("woff2");unicode-range:${range};}`
+      return `@font-face{font-family:"Caveat";${rule}src:url(data:font/woff2;base64,${data}) format("woff2");}`
     }),
   )
   return rules.join("")
@@ -76,19 +127,25 @@ export interface FontRegistry {
 export const svgUsesHandwritten = (root: Element): boolean =>
   root.querySelector('[font-family*="Caveat"]') !== null
 
-/** Register Caveat with jsPDF so svg2pdf draws that text in Caveat rather
- *  than its Times fallback. Caveat has no italic: italic reuses the upright faces. */
+/** True when a parsed export SVG draws any italic text. */
+export const svgUsesItalic = (root: Element): boolean =>
+  root.querySelector('[font-style="italic"]') !== null
+
+/** Register Caveat's four faces with jsPDF so svg2pdf draws hand-drawn text in
+ *  Caveat rather than its Times fallback. The (synthetic oblique) italic faces
+ *  are only fetched when `withItalic` (some page has italic text). */
 export async function registerHandwrittenFont(
   pdf: FontRegistry,
+  withItalic: boolean,
   fetchFont: FontFetcher = defaultFetcher,
 ): Promise<void> {
-  const [regular, bold] = await Promise.all([fetchFont(TTF.regular), fetchFont(TTF.bold)])
-  pdf.addFileToVFS("caveat-regular.ttf", toBase64(regular))
-  pdf.addFileToVFS("caveat-bold.ttf", toBase64(bold))
-  for (const [file, styles] of [
-    ["caveat-regular.ttf", ["normal", "italic"]],
-    ["caveat-bold.ttf", ["bold", "bolditalic"]],
-  ] as const) {
-    for (const style of styles) pdf.addFont(file, "Caveat", style)
-  }
+  const styles = withItalic
+    ? (["normal", "bold", "italic", "bolditalic"] as const)
+    : (["normal", "bold"] as const)
+  const files = await Promise.all(styles.map((style) => fetchFont(TTF[style])))
+  styles.forEach((style, i) => {
+    const file = `caveat-${style}.ttf`
+    pdf.addFileToVFS(file, toBase64(files[i]!))
+    pdf.addFont(file, "Caveat", style)
+  })
 }

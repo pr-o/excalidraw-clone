@@ -3,7 +3,11 @@ import { resolve } from "node:path"
 import { newRectangle, newText } from "@excalidraw-clone/scene"
 import type { jsPDF } from "jspdf"
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { handwrittenFontFaceCSS, handwrittenText } from "../src/driver/exportFonts"
+import {
+  handwrittenFontFaceCSS,
+  handwrittenItalics,
+  handwrittenText,
+} from "../src/driver/exportFonts"
 import { svgToPDF } from "../src/driver/exportPDF"
 import { type FileLoader, renderExportSVG } from "../src/driver/exportSVG"
 
@@ -40,7 +44,36 @@ describe("handwrittenText", () => {
   })
 })
 
+describe("handwrittenItalics", () => {
+  it("finds the italic faces whole-element and span styles need", () => {
+    const plain = caveat("up")
+    const italic = { ...caveat("it"), fontStyle: "italic" as const }
+    const boldSpan = {
+      ...caveat("abc"),
+      spans: [{ start: 0, end: 1, bold: true as const, italic: true as const }],
+    }
+    expect(handwrittenItalics([plain])).toEqual({ regular: false, bold: false })
+    expect(handwrittenItalics([italic])).toEqual({ regular: true, bold: false })
+    expect(handwrittenItalics([boldSpan])).toEqual({ regular: false, bold: true })
+    // Italic in another family needs no Caveat italic.
+    expect(handwrittenItalics([{ ...helvetica("x"), fontStyle: "italic" as const }])).toEqual({
+      regular: false,
+      bold: false,
+    })
+  })
+})
+
 describe("SVG export font embedding", () => {
+  it("embeds the oblique face, as font-style italic, for italic hand-drawn text", async () => {
+    const fetchMock = stubFontFetch()
+    const italic = { ...caveat("slanted"), fontStyle: "italic" as const }
+    const svg = await renderExportSVG([italic], { background: "white" }, "#fff", noFiles)
+    expect(fetchMock).toHaveBeenCalledWith("/fonts/caveat-italic.woff2")
+    expect(fetchMock).not.toHaveBeenCalledWith("/fonts/caveat-bolditalic.woff2")
+    expect(svg).toContain('font-family:"Caveat";font-style:italic;font-weight:400;')
+    expect(svg).toContain('font-style="italic"')
+  })
+
   it("embeds Caveat as base64 woff2 in <defs><style> when hand-drawn text is present", async () => {
     const fetchMock = stubFontFetch()
     const svg = await renderExportSVG([caveat("Hello")], { background: "white" }, "#fff", noFiles)
@@ -85,17 +118,25 @@ describe("SVG export font embedding", () => {
 })
 
 describe("PDF export font registration", () => {
-  const svgWith = (family: string) =>
-    `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="50"><text font-family='${family}'>Hi</text></svg>`
+  const svgWith = (family: string, style = "normal") =>
+    `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="50"><text font-family='${family}' font-style='${style}'>Hi</text></svg>`
 
-  it("registers the Caveat TrueType faces with jsPDF for hand-drawn text", async () => {
+  it("registers upright Caveat faces only when no text is italic", async () => {
     const fetchMock = stubFontFetch()
     await svgToPDF(svgWith('"Caveat", cursive'))
     const pdf = svg2pdf.mock.calls[0]![1] as jsPDF
-    expect(pdf.getFontList().Caveat).toEqual(
-      expect.arrayContaining(["normal", "bold", "italic", "bolditalic"]),
-    )
+    expect(pdf.getFontList().Caveat?.sort()).toEqual(["bold", "normal"])
     expect(fetchMock).toHaveBeenCalledWith("/fonts/caveat-regular.ttf")
+    expect(fetchMock).not.toHaveBeenCalledWith("/fonts/caveat-italic.ttf")
+  })
+
+  it("registers the synthetic oblique faces for italic hand-drawn text", async () => {
+    const fetchMock = stubFontFetch()
+    await svgToPDF(svgWith('"Caveat", cursive', "italic"))
+    const pdf = svg2pdf.mock.calls[0]![1] as jsPDF
+    expect(pdf.getFontList().Caveat?.sort()).toEqual(["bold", "bolditalic", "italic", "normal"])
+    expect(fetchMock).toHaveBeenCalledWith("/fonts/caveat-italic.ttf")
+    expect(fetchMock).toHaveBeenCalledWith("/fonts/caveat-bolditalic.ttf")
   })
 
   it("fetches no font for a PDF without hand-drawn text", async () => {

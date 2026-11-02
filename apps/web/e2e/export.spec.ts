@@ -448,3 +448,48 @@ test("SVG export embeds Caveat only when hand-drawn text is present", async ({ p
   expect(withText).toContain('<defs><style>@font-face{font-family:"Caveat"')
   expect(withText).toContain("data:font/woff2;base64,")
 })
+
+test("italic hand-drawn text uses the oblique Caveat face on canvas, in SVG and in PDF", async ({
+  page,
+}) => {
+  await freshCanvas(page)
+  const box = await page.locator("canvas").first().boundingBox()
+  if (!box) throw new Error("canvas not found")
+  await page.locator('[data-testid="toolbar-text"]').click()
+  await page.mouse.click(box.x + 200, box.y + 200)
+  await page.locator("textarea").waitFor({ state: "visible" })
+  await page.keyboard.type("slanted")
+  await page.keyboard.press("ControlOrMeta+a")
+  await page.keyboard.press("ControlOrMeta+i")
+  await page.locator("textarea").blur()
+  await page.waitForTimeout(300)
+
+  // Canvas: the oblique face is fetched and loaded (no browser-faked slant).
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        [...document.fonts].some(
+          (f) => f.family.includes("Caveat") && f.style === "italic" && f.status === "loaded",
+        ),
+      ),
+    )
+    .toBe(true)
+
+  await openExportDialog(page)
+  await page.locator('[data-testid="format-svg"]').click()
+  const svgDownload = page.waitForEvent("download")
+  await exportButton(page).click()
+  const svg = readFileSync(await (await svgDownload).path(), "utf8")
+  expect(svg).toContain('font-family:"Caveat";font-style:italic;font-weight:400;')
+  await page.keyboard.press("Escape")
+
+  await openExportDialog(page)
+  await page.locator('[data-testid="format-pdf"]').click()
+  const pdf = await exportPDF(page)
+  const raw = pdf.bytes.toString("latin1")
+  // Only the oblique face is used: its FontBBox is the skewed outlines' bbox
+  // (upright Caveat Regular's is [-111 -290 911 960]).
+  expect(raw.match(/\/FontFile2/g)).toHaveLength(1)
+  expect(raw).toContain("/FontBBox [-134 -290 1115 960]")
+  expect(pdfTexts(pdf.bytes)).toContain("slanted")
+})

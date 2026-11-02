@@ -1,0 +1,10 @@
+Caveat (c) 2014 The Caveat Project Authors, https://github.com/googlefonts/caveat
+Licensed under the SIL Open Font License 1.1 (Caveat-OFL.txt). Caveat declares
+no Reserved Font Name.
+
+caveat-latin*.woff2, caveat-regular.ttf, caveat-bold.ttf: unmodified, from Google Fonts.
+
+caveat-italic.* and caveat-bolditalic.*: Modified Versions (synthetic oblique,
+outlines skewed 12 degrees, hinting removed), generated from caveat-regular.ttf
+and caveat-bold.ttf by scripts/make-caveat-oblique.py. Distributed under the
+same SIL Open Font License 1.1.

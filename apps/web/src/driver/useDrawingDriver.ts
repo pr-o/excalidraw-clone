@@ -79,14 +79,17 @@ export function useDrawingDriver({
     // CanvasShell resizes the canvas on window resize, which clears its bitmap.
     const onResize = (): void => renderer.requestRedraw()
     window.addEventListener("resize", onResize)
-    // Caveat is a web font: once it is ready, re-fit free text measured with
-    // the fallback and redraw (the first frame may have used the fallback).
+    // Caveat is a web font whose faces (upright, italic) load on first use:
+    // whenever one finishes loading, re-fit free text measured with the
+    // fallback and redraw (earlier frames may have used the fallback).
     let disposed = false
-    void document.fonts?.load('20px "Caveat"').then(() => {
+    const onFontsLoaded = (): void => {
       if (disposed) return
       refitFreeText(scene)
       renderer.requestRedraw()
-    })
+    }
+    void document.fonts?.load('20px "Caveat"').then(onFontsLoaded)
+    document.fonts?.addEventListener("loadingdone", onFontsLoaded)
 
     const dispatch = createToolDispatch(scene, renderer, laser)
     const unsubStore = syncRendererWithStore(renderer, laser, dispatch)
@@ -361,6 +364,7 @@ export function useDrawingDriver({
       window.removeEventListener("keyup", onKeyUp)
       useAppStore.getState().setDispatchToolEvent(null)
       disposed = true
+      document.fonts?.removeEventListener("loadingdone", onFontsLoaded)
       window.removeEventListener("resize", onResize)
       unsubStore()
       laser.clear()
