@@ -96,4 +96,19 @@ describe("LayersPanel", () => {
     await userEvent.click(screen.getByTestId(`layer-bring-to-front-${a.id}`))
     expect(onBringToFront).toHaveBeenCalledWith(a.id)
   })
+
+  it("windows long lists: renders only the rows near the viewport, spacers keep scroll height", () => {
+    const many = Array.from({ length: 2000 }, (_, i) =>
+      newRectangle({ x: i, y: 0, width: 10, height: 10 }),
+    )
+    const { container } = render(
+      <LayersPanel t={t} elements={many} selectedIds={[]} open {...handlers} />,
+    )
+    const rows = screen.getAllByTestId(/^layer-row-/)
+    expect(rows.length).toBeLessThan(200)
+    // Front-most element first, as with short lists.
+    expect(rows[0]!.dataset.testid).toBe(`layer-row-${many[1999]!.id}`)
+    const spacer = container.querySelector("ul > li[aria-hidden]:last-child") as HTMLElement
+    expect(parseInt(spacer.style.height, 10)).toBeGreaterThan(0)
+  })
 })

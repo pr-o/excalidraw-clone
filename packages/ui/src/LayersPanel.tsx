@@ -1,4 +1,5 @@
 import type { ExcalidrawElement } from "@excalidraw-clone/scene"
+import { useState } from "react"
 import { Icon } from "./shared/Icon"
 import { PanelHeader, type PanelSibling, PanelToggle } from "./shared/PanelToggle"
 
@@ -17,6 +18,13 @@ export interface LayersPanelProps {
   sibling?: PanelSibling | undefined
 }
 
+/** Fixed row height (px) so long lists can be windowed. */
+const ROW_H = 28
+/** Lists up to this long render every row; longer ones render only the rows in
+ *  view (plus overscan), so a 5000-element page doesn't mount 25k buttons. */
+const WINDOW_ABOVE = 100
+const OVERSCAN = 10
+
 export function LayersPanel({
   t,
   elements,
@@ -30,10 +38,18 @@ export function LayersPanel({
   onBringToFront,
   sibling,
 }: LayersPanelProps): React.ReactElement {
-  const rows = elements
-    .filter((e) => !e.isDeleted)
-    .slice()
-    .reverse()
+  const [scroll, setScroll] = useState({ top: 0, height: 0 })
+  const rows = elements.filter((e) => !e.isDeleted).reverse()
+  const selected = new Set(selectedIds)
+  // shortcut: keyboard Tab only reaches rendered rows of a windowed list; scroll (or
+  // arrow keys on the focused list) brings others in. Upgrade to roving focus if needed.
+  const windowed = rows.length > WINDOW_ABOVE
+  // jsdom/first paint report 0 height: assume a tall viewport rather than render nothing.
+  const viewH = scroll.height || 1200
+  const first = windowed ? Math.max(0, Math.floor(scroll.top / ROW_H) - OVERSCAN) : 0
+  const last = windowed
+    ? Math.min(rows.length, Math.ceil((scroll.top + viewH) / ROW_H) + OVERSCAN)
+    : rows.length
 
   const orderButtons = [
     ["send-to-back", "sendToBack", "send-to-back", onSendToBack],
@@ -70,9 +86,15 @@ export function LayersPanel({
         sibling={sibling}
       />
       <>
-        <ul className="flex-1 overflow-y-auto px-2 py-2">
-          {rows.map((element) => {
-            const selected = selectedIds.includes(element.id)
+        <ul
+          className="flex-1 overflow-y-auto px-2 py-2"
+          onScroll={(e) =>
+            setScroll({ top: e.currentTarget.scrollTop, height: e.currentTarget.clientHeight })
+          }
+        >
+          {first > 0 && <li aria-hidden style={{ height: first * ROW_H }} />}
+          {rows.slice(first, last).map((element) => {
+            const isSelected = selected.has(element.id)
             const label =
               element.type === "text"
                 ? element.text.trim() || t("toolbar.text")
@@ -81,8 +103,9 @@ export function LayersPanel({
               <li
                 key={element.id}
                 data-testid={`layer-row-${element.id}`}
-                className={`mb-0.5 flex items-center gap-1 rounded px-1 py-0.5 text-xs ${
-                  selected ? "bg-accent-soft" : "hover:bg-panel-subtle"
+                style={{ height: ROW_H }}
+                className={`flex items-center gap-1 rounded px-1 text-xs ${
+                  isSelected ? "bg-accent-soft" : "hover:bg-panel-subtle"
                 } ${element.groupIds.length > 0 ? "border-l-2 border-accent pl-1" : ""}`}
               >
                 <button
@@ -119,6 +142,9 @@ export function LayersPanel({
               </li>
             )
           })}
+          {last < rows.length && (
+            <li aria-hidden style={{ height: (rows.length - last) * ROW_H }} />
+          )}
         </ul>
       </>
     </aside>
