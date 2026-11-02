@@ -197,4 +197,20 @@ describe("selection — double click", () => {
     expect(edit && edit.kind === "startTextEdit" && edit.elementId).toBe(frame.id)
     expect(effects.some((e) => e.kind === "mutation")).toBe(false)
   })
+
+  it("targetId (keyboard Enter) edits that element without hit-testing", () => {
+    const t = newText({ x: 0, y: 0, text: "hi" })
+    const ctx = makeCtx({
+      readElements: () => [t],
+      hitTest: () => {
+        throw new Error("must not hit-test")
+      },
+    })
+    const r = selectionTool.reduce(
+      selectionTool.initial,
+      { type: "doubleClick", at: point(500, 500), targetId: t.id },
+      ctx,
+    )
+    expect(r[1]).toContainEqual({ kind: "startTextEdit", elementId: t.id })
+  })
 })

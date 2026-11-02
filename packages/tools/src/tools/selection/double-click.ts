@@ -12,8 +12,11 @@ import { buildBendRemoveEffect } from "./bend"
 import { findHandleAt } from "./handles"
 import type { Transition } from "./types"
 
-export const reduceDoubleClick = (at: Point, ctx: ToolContext): Transition => {
-  const handle = findHandleAt(at, ctx.selectedIds, ctx.readElements(), ctx.viewTransform)
+export const reduceDoubleClick = (at: Point, ctx: ToolContext, targetId?: string): Transition => {
+  const handle =
+    targetId === undefined
+      ? findHandleAt(at, ctx.selectedIds, ctx.readElements(), ctx.viewTransform)
+      : null
   if (handle && handle.kind === "bend") {
     return [{ phase: "idle" }, [buildBendRemoveEffect(handle.elementId, handle.index)]]
   }
@@ -36,7 +39,10 @@ export const reduceDoubleClick = (at: Point, ctx: ToolContext): Transition => {
       ]
     }
   }
-  const hit = ctx.hitTest(at)
+  const hit =
+    targetId === undefined
+      ? ctx.hitTest(at)
+      : (ctx.readElements().find((e) => e.id === targetId && !e.isDeleted) ?? null)
   if (hit) {
     const soleSelection = ctx.selectedIds.length === 1 && ctx.selectedIds[0] === hit.id
     if (hit.groupIds.length > 0 && !soleSelection) {

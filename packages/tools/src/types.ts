@@ -52,7 +52,8 @@ export type ToolEvent =
   | { type: "pointerDown"; at: Point }
   | { type: "pointerMove"; at: Point }
   | { type: "pointerUp"; at: Point }
-  | { type: "doubleClick"; at: Point }
+  /** `targetId`: act on that element (keyboard "Enter to edit") instead of hit-testing `at`. */
+  | { type: "doubleClick"; at: Point; targetId?: string }
   | { type: "escape" }
   | { type: "delete" }
 

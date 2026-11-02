@@ -194,6 +194,6 @@ export const reduceIdle = (event: ToolEvent, ctx: ToolContext): Transition => {
     if (ctx.selectedIds.length === 0) return [{ phase: "idle" }, []]
     return [{ phase: "idle" }, [{ kind: "select", ids: [] }]]
   }
-  if (event.type === "doubleClick") return reduceDoubleClick(event.at, ctx)
+  if (event.type === "doubleClick") return reduceDoubleClick(event.at, ctx, event.targetId)
   return [{ phase: "idle" }, []]
 }
