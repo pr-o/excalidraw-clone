@@ -326,10 +326,10 @@ test("PDF export of a table draws its grid and cell text as vector + real text",
   expect(texts).toContain("bold")
   // Every string here is bold (header row + the bolded cell), so the one embedded
   // face must be Caveat Bold: its FontBBox is the bold TTF's head-table bbox
-  // (Caveat Regular's is [-111 -290 911 960]).
+  // (Caveat Regular's is [-111 -299 1234 960]).
   const raw = pdf.bytes.toString("latin1")
   expect(raw.match(/\/FontFile2/g)).toHaveLength(1)
-  expect(raw).toContain("/FontBBox [-118 -290 984 960]")
+  expect(raw).toContain("/FontBBox [-118 -315 1252 974]")
   // the gradient background is a real axial shading, not flattened
   expect(pdf.bytes.toString("latin1")).toMatch(/\/ShadingType 2/)
 })
@@ -458,22 +458,25 @@ test("italic hand-drawn text uses the oblique Caveat face on canvas, in SVG and 
   await page.locator('[data-testid="toolbar-text"]').click()
   await page.mouse.click(box.x + 200, box.y + 200)
   await page.locator("textarea").waitFor({ state: "visible" })
-  await page.keyboard.type("slanted")
+  // "ł" and "č" are outside Latin-1: they need the latin-ext oblique subset.
+  await page.keyboard.type("slanted łč")
   await page.keyboard.press("ControlOrMeta+a")
   await page.keyboard.press("ControlOrMeta+i")
   await page.locator("textarea").blur()
   await page.waitForTimeout(300)
 
-  // Canvas: the oblique face is fetched and loaded (no browser-faked slant).
+  // Canvas: both oblique subsets are fetched and loaded (no browser-faked slant).
   await expect
     .poll(() =>
       page.evaluate(() =>
-        [...document.fonts].some(
-          (f) => f.family.includes("Caveat") && f.style === "italic" && f.status === "loaded",
-        ),
+        [...document.fonts]
+          .filter((f) => f.family.includes("Caveat") && f.style === "italic")
+          .filter((f) => f.weight === "400" && f.status === "loaded")
+          .map((f) => (f.unicodeRange.includes("U+100-2BA") ? "latin-ext" : "latin"))
+          .sort(),
       ),
     )
-    .toBe(true)
+    .toEqual(["latin", "latin-ext"])
 
   await openExportDialog(page)
   await page.locator('[data-testid="format-svg"]').click()
@@ -488,9 +491,27 @@ test("italic hand-drawn text uses the oblique Caveat face on canvas, in SVG and 
   const pdf = await exportPDF(page)
   const raw = pdf.bytes.toString("latin1")
   // Only the oblique face is used: its FontBBox is the skewed outlines' bbox
-  // (upright Caveat Regular's is [-111 -290 911 960]).
+  // (upright Caveat Regular's is [-111 -299 1234 960]).
   expect(raw.match(/\/FontFile2/g)).toHaveLength(1)
-  expect(raw).toContain("/FontBBox [-134 -290 1115 960]")
+  expect(raw).toContain("/FontBBox [-167 -299 1359 960]")
   expect(raw).toContain("/ItalicAngle -12")
-  expect(pdfTexts(pdf.bytes)).toContain("slanted")
+  expect(pdfTexts(pdf.bytes)).toContain("slanted łč")
+})
+
+test("PDF export embeds latin-ext hand-drawn text that reads back correctly", async ({ page }) => {
+  await freshCanvas(page)
+  const box = await page.locator("canvas").first().boundingBox()
+  if (!box) throw new Error("canvas not found")
+  await page.locator('[data-testid="toolbar-text"]').click()
+  await page.mouse.click(box.x + 200, box.y + 200)
+  await page.locator("textarea").waitFor({ state: "visible" })
+  await page.keyboard.type("Zażółć gęślą jaźń, čeština")
+  await page.locator("textarea").blur()
+  await page.waitForTimeout(300)
+
+  await openExportDialog(page)
+  await page.locator('[data-testid="format-pdf"]').click()
+  const pdf = await exportPDF(page)
+  // Every glyph maps back through the ToUnicode CMap: none is missing (".notdef").
+  expect(pdfTexts(pdf.bytes)).toContain("Zażółć gęślą jaźń, čeština")
 })
