@@ -49,6 +49,10 @@ export const drawElement = (
 ): void => {
   if (element.isDeleted) return
   ctx.save()
+  // `opacity` is a 0-100 percentage (the SVG export applies it too); a missing
+  // or malformed value from an imported file paints fully opaque.
+  const alpha = element.opacity / 100
+  if (Number.isFinite(alpha) && alpha < 1) ctx.globalAlpha = Math.max(0, alpha)
   ctx.translate(element.x, element.y)
   if (element.angle !== 0) {
     ctx.translate(element.width / 2, element.height / 2)
