@@ -29,6 +29,11 @@ export class Scene {
   /** Comment threads on this page; outside the undo stack like guides. */
   private comments: readonly Comment[]
   private static readonly MAX_HISTORY = 100
+  /** Element arrays this scene produced itself, already fully reconciled. */
+  private reconciled = new WeakSet<readonly ExcalidrawElement[]>()
+  /** Memo for `getElements`: the non-deleted view of `liveSource`. */
+  private liveSource: readonly ExcalidrawElement[] | null = null
+  private live: readonly ExcalidrawElement[] = []
 
   constructor(
     initial: readonly ExcalidrawElement[] = [],
@@ -58,10 +63,6 @@ export class Scene {
     }
     return this.live
   }
-  private reconciled = new WeakSet<readonly ExcalidrawElement[]>()
-  private liveSource: readonly ExcalidrawElement[] | null = null
-  private live: readonly ExcalidrawElement[] = []
-
   getGuides(): UserGuides {
     return this.guides
   }
@@ -229,8 +230,18 @@ export class Scene {
     }
   }
 
+  /** Calls every listener even if one throws (so a faulty subscriber cannot
+   *  starve the renderer or auto-save); the first error is rethrown afterwards. */
   protected notify(): void {
-    for (const fn of this.listeners) fn()
+    let failure: { error: unknown } | null = null
+    for (const fn of [...this.listeners]) {
+      try {
+        fn()
+      } catch (error) {
+        failure ??= { error }
+      }
+    }
+    if (failure) throw failure.error
   }
 
   protected setElements(next: readonly ExcalidrawElement[]): void {
