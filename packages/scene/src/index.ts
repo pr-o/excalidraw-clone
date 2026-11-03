@@ -47,7 +47,7 @@ export type {
   NewTextInput,
 } from "./factories"
 export { ELBOW_STUB, routeElbow, sideCenter, sideOf, type Side } from "./elbow"
-export { getElementBounds, getElementsBounds } from "./bounds"
+export { getElementBounds, getElementsBounds, rotatedCorners } from "./bounds"
 export { computeStats } from "./stats"
 export type { Stats } from "./stats"
 export { describeHistoryChange } from "./describe-history-change"

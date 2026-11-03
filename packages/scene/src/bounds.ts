@@ -7,17 +7,21 @@ import {
 } from "@excalidraw-clone/geometry"
 import type { ExcalidrawElement } from "./types"
 
-const cornersOf = (e: ExcalidrawElement): readonly Point[] => [
-  { x: e.x, y: e.y },
-  { x: e.x + e.width, y: e.y },
-  { x: e.x + e.width, y: e.y + e.height },
-  { x: e.x, y: e.y + e.height },
-]
+type Corners = readonly [Point, Point, Point, Point]
 
-const rotatedCorners = (e: ExcalidrawElement): readonly Point[] => {
-  if (e.angle === 0) return cornersOf(e)
+/** The element's four corners (clockwise from top-left), turned by its angle
+ *  about its centre — where it is actually drawn. */
+export const rotatedCorners = (e: ExcalidrawElement): Corners => {
+  const corners: Corners = [
+    { x: e.x, y: e.y },
+    { x: e.x + e.width, y: e.y },
+    { x: e.x + e.width, y: e.y + e.height },
+    { x: e.x, y: e.y + e.height },
+  ]
+  if (e.angle === 0) return corners
   const center: Point = { x: e.x + e.width / 2, y: e.y + e.height / 2 }
-  return cornersOf(e).map((c) => rotatePoint(c, center, e.angle))
+  const turn = (c: Point): Point => rotatePoint(c, center, e.angle)
+  return [turn(corners[0]), turn(corners[1]), turn(corners[2]), turn(corners[3])]
 }
 
 /** Elements are immutable (edits replace the object), so bounds can be cached

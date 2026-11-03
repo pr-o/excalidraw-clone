@@ -5,13 +5,13 @@ import {
   type ViewTransform,
   type UserGuides,
   boundsFromPoints,
-  rotatePoint,
   sceneToViewport,
 } from "@excalidraw-clone/geometry"
 import {
   type ExcalidrawElement,
   getElementBounds,
   getElementsBounds,
+  rotatedCorners,
 } from "@excalidraw-clone/scene"
 import type { Theme } from "./types"
 
@@ -45,13 +45,6 @@ const cornersOf = (b: Bounds): Point[] => [
   { x: b.x + b.width, y: b.y + b.height },
   { x: b.x, y: b.y + b.height },
 ]
-
-const elementCorners = (e: ExcalidrawElement): readonly Point[] => {
-  const corners = cornersOf(e)
-  if (e.angle === 0) return corners
-  const center: Point = { x: e.x + e.width / 2, y: e.y + e.height / 2 }
-  return corners.map((c) => rotatePoint(c, center, e.angle))
-}
 
 const midPoint = (a: Point, b: Point): Point => ({
   x: (a.x + b.x) / 2,
@@ -123,7 +116,7 @@ const drawElementOutline = (
   }
   strokePolygon(
     ctx,
-    elementCorners(e).map((p) => sceneToViewport(p, view)),
+    rotatedCorners(e).map((p) => sceneToViewport(p, view)),
     theme,
   )
 }
@@ -144,7 +137,7 @@ const drawElementChrome = (
     return
   }
   drawElementOutline(ctx, e, view, theme)
-  const corners = elementCorners(e).map((p) => sceneToViewport(p, view))
+  const corners = rotatedCorners(e).map((p) => sceneToViewport(p, view))
   for (const h of cornerAndEdgeHandles(corners)) drawHandle(ctx, h, theme)
 
   const [c0, c1] = corners as [Point, Point]

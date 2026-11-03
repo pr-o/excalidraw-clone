@@ -1,13 +1,9 @@
-import {
-  type Point,
-  type ViewTransform,
-  rotatePoint,
-  sceneToViewport,
-} from "@excalidraw-clone/geometry"
+import { type Point, type ViewTransform, sceneToViewport } from "@excalidraw-clone/geometry"
 import {
   type ExcalidrawElement,
   borderAtLocal,
   getElementsBounds,
+  rotatedCorners,
   toTableLocal,
 } from "@excalidraw-clone/scene"
 import type { ResizeHandle } from "./types"
@@ -26,23 +22,6 @@ export type HandleHit =
   | { kind: "bendAdd"; elementId: string; segmentIndex: number; at: Point }
   | { kind: "groupResize"; handle: ResizeHandle; ids: readonly string[] }
   | { kind: "tableBorder"; elementId: string; axis: "col" | "row"; index: number }
-
-const rotatedCorners = (e: ExcalidrawElement): readonly [Point, Point, Point, Point] => {
-  const corners: [Point, Point, Point, Point] = [
-    { x: e.x, y: e.y },
-    { x: e.x + e.width, y: e.y },
-    { x: e.x + e.width, y: e.y + e.height },
-    { x: e.x, y: e.y + e.height },
-  ]
-  if (e.angle === 0) return corners
-  const center: Point = { x: e.x + e.width / 2, y: e.y + e.height / 2 }
-  return [
-    rotatePoint(corners[0], center, e.angle),
-    rotatePoint(corners[1], center, e.angle),
-    rotatePoint(corners[2], center, e.angle),
-    rotatePoint(corners[3], center, e.angle),
-  ]
-}
 
 const midPoint = (a: Point, b: Point): Point => ({
   x: (a.x + b.x) / 2,
