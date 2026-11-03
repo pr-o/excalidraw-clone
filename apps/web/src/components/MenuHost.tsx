@@ -3,6 +3,8 @@ import type { CanvasRenderer } from "@excalidraw-clone/renderer"
 import type { ExcalidrawData } from "@excalidraw-clone/scene"
 import { HamburgerMenu } from "@excalidraw-clone/ui"
 import { useTranslation } from "react-i18next"
+import i18next from "i18next"
+import { notify } from "./LiveAnnouncer"
 import { openExcalidrawFromPicker } from "../driver/openFile"
 import type { PageRecord } from "../driver/pages"
 import { saveAsExcalidraw } from "../driver/saveFile"
@@ -70,9 +72,14 @@ export function MenuHost({
       onCommentsToggle={toggleCommentsPanel}
       onOpenFile={() => {
         void (async () => {
-          const data = await openExcalidrawFromPicker(renderer)
-          if (!data) return
-          onOpenDocument(data)
+          try {
+            const data = await openExcalidrawFromPicker(renderer)
+            if (!data) return
+            onOpenDocument(data)
+          } catch {
+            // Corrupt JSON, a newer file version, or a PNG without an embedded scene.
+            notify(i18next.t("a11y.openFailed"))
+          }
         })()
       }}
       onSaveFile={() => {

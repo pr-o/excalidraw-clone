@@ -25,7 +25,7 @@ import { FindHost } from "./FindHost"
 import { LayersHost } from "./LayersHost"
 import { LibraryHost, useLibrarySync } from "./LibraryHost"
 import { LinkOverlay } from "./LinkOverlay"
-import { LiveAnnouncer } from "./LiveAnnouncer"
+import { LiveAnnouncer, NoticeToast } from "./LiveAnnouncer"
 import { MenuHost } from "./MenuHost"
 import { Minimap } from "./Minimap"
 import { PaletteHost } from "./PaletteHost"
@@ -349,6 +349,7 @@ function Inner(): React.ReactElement {
       />
       <TextEditingOverlay scene={scene} />
       <LiveAnnouncer />
+      <NoticeToast />
       <LinkOverlay scene={scene} />
       <CommentsHost
         scene={scene}

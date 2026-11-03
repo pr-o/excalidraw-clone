@@ -18,6 +18,8 @@ import {
 } from "@excalidraw-clone/scene"
 import { LibraryPanel, type PanelSibling } from "@excalidraw-clone/ui"
 import { useCallback, useEffect } from "react"
+import i18next from "i18next"
+import { notify } from "./LiveAnnouncer"
 import { useTranslation } from "react-i18next"
 import { useAppStore } from "../store"
 
@@ -108,8 +110,8 @@ export function LibraryHost({
       try {
         await importLibraryFile(file)
         await refreshLibrary()
-      } catch (err) {
-        console.error("Library import failed", err)
+      } catch {
+        notify(i18next.t("a11y.libraryImportFailed"))
       }
     }
     input.click()

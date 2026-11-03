@@ -6,7 +6,7 @@ import {
   serializeDocument,
 } from "@excalidraw-clone/persistence"
 import i18next from "i18next"
-import { announce } from "../components/LiveAnnouncer"
+import { notify } from "../components/LiveAnnouncer"
 import { useAppStore } from "../store"
 import type { PageRecord } from "./pages"
 
@@ -20,7 +20,7 @@ export function startAutoSave(pages: readonly PageRecord[], activePageId: string
     delayMs: 500,
     flush: () => {
       const ok = saveScene(serializeDocument(pages, activePageId))
-      if (!ok && !saveFailing) announce(i18next.t("a11y.saveFailed"))
+      if (!ok && !saveFailing) notify(i18next.t("a11y.saveFailed"))
       saveFailing = !ok
     },
   })
