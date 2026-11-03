@@ -1,6 +1,6 @@
 "use client"
 import { CanvasRenderer } from "@excalidraw-clone/renderer"
-import type { ExcalidrawElement, Scene } from "@excalidraw-clone/scene"
+import { getElementsBounds, type Scene } from "@excalidraw-clone/scene"
 
 export const THUMBNAIL_WIDTH = 46
 export const THUMBNAIL_HEIGHT = 33
@@ -16,7 +16,8 @@ export async function renderPageThumbnail(
   const elements = scene.getElements()
   if (elements.length === 0) return undefined
 
-  const bbox = computeBBox(elements)
+  const bbox = getElementsBounds(elements)
+  if (!bbox) return undefined
   const canvas = document.createElement("canvas")
   canvas.width = THUMBNAIL_WIDTH * THUMBNAIL_CAPTURE_SCALE
   canvas.height = THUMBNAIL_HEIGHT * THUMBNAIL_CAPTURE_SCALE
@@ -44,23 +45,4 @@ export async function renderPageThumbnail(
   renderer.stop()
 
   return canvas.toDataURL("image/png")
-}
-
-function computeBBox(elements: readonly ExcalidrawElement[]): {
-  x: number
-  y: number
-  width: number
-  height: number
-} {
-  let minX = Infinity
-  let minY = Infinity
-  let maxX = -Infinity
-  let maxY = -Infinity
-  for (const el of elements) {
-    minX = Math.min(minX, el.x)
-    minY = Math.min(minY, el.y)
-    maxX = Math.max(maxX, el.x + el.width)
-    maxY = Math.max(maxY, el.y + el.height)
-  }
-  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY }
 }
