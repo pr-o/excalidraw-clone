@@ -44,3 +44,68 @@ test("placing an uploaded image renders it and persists its fileId", async ({ pa
   expect(pixel[1]!).toBeLessThan(100)
   expect(pixel[2]!).toBeLessThan(100)
 })
+
+test("a placed image is drawn again after a page reload", async ({ page }) => {
+  await page.goto("/")
+  await page.evaluate(() => localStorage.clear())
+  await page.reload()
+  await page.locator('[data-testid="toolbar-image"]').waitFor({ state: "visible" })
+
+  const png = await redPngBuffer(page)
+  const chooserPromise = page.waitForEvent("filechooser")
+  await page.locator('[data-testid="toolbar-image"]').click()
+  const chooser = await chooserPromise
+  await chooser.setFiles({ name: "red.png", mimeType: "image/png", buffer: png })
+  await page.waitForTimeout(300)
+  const box = await page.locator("canvas").first().boundingBox()
+  if (!box) throw new Error("canvas not found")
+  await page.mouse.click(box.x + 200, box.y + 150)
+  // Past the 500ms auto-save debounce, then reload: the scene comes from localStorage
+  // and the image binary from IndexedDB.
+  await page.waitForTimeout(1000)
+  await page.reload()
+  await page.locator('[data-testid="toolbar-image"]').waitFor({ state: "visible" })
+
+  await expect
+    .poll(async () =>
+      page.evaluate(() => {
+        const c = document.querySelector("canvas")!
+        const d = c.getContext("2d")!.getImageData(300, 250, 1, 1).data
+        return d[0]! > 150 && d[1]! < 100 && d[2]! < 100
+      }),
+    )
+    .toBe(true)
+})
+
+test("a placed image is still drawn after switching to another page and back", async ({ page }) => {
+  await page.goto("/")
+  await page.evaluate(() => localStorage.clear())
+  await page.reload()
+  await page.locator('[data-testid="toolbar-image"]').waitFor({ state: "visible" })
+
+  const png = await redPngBuffer(page)
+  const chooserPromise = page.waitForEvent("filechooser")
+  await page.locator('[data-testid="toolbar-image"]').click()
+  const chooser = await chooserPromise
+  await chooser.setFiles({ name: "red.png", mimeType: "image/png", buffer: png })
+  await page.waitForTimeout(300)
+  const box = await page.locator("canvas").first().boundingBox()
+  if (!box) throw new Error("canvas not found")
+  await page.mouse.click(box.x + 200, box.y + 150)
+  await page.waitForTimeout(500)
+
+  await page.locator('[data-testid="page-add"]').click()
+  await page.waitForTimeout(400)
+  await page.locator('[data-testid^="page-switch-"]').first().click()
+  await page.waitForTimeout(400)
+
+  await expect
+    .poll(async () =>
+      page.evaluate(() => {
+        const c = document.querySelector("canvas")!
+        const d = c.getContext("2d")!.getImageData(300, 250, 1, 1).data
+        return d[0]! > 150 && d[1]! < 100 && d[2]! < 100
+      }),
+    )
+    .toBe(true)
+})

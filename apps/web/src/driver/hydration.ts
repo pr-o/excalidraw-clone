@@ -44,8 +44,14 @@ export function hydrateUI(): void {
   if (isOneOf(Object.keys(TOOLS) as ToolName[], ui.activeTool)) store.setActiveTool(ui.activeTool)
 }
 
+/** Stored images are loaded into the shared renderer cache once per page load. */
+let filesPreloaded = false
+
+/** Loads every stored image binary so image elements draw after a reload. The
+ *  renderer's image cache is shared, so one call serves every page's renderer. */
 export async function preloadFiles(renderer: CanvasRenderer | null): Promise<void> {
-  if (!renderer) return
+  if (!renderer || filesPreloaded) return
+  filesPreloaded = true
   const files = await getAllFiles()
   for (const f of files) {
     void renderer.preloadImage(f.id, f.dataURL)

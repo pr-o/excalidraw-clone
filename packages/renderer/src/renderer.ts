@@ -25,6 +25,14 @@ const IDENTITY: ViewTransform = { scrollX: 0, scrollY: 0, zoom: 1 }
  *  regenerating every element. */
 const SHARED_SHAPE_CACHE = new ShapeCache()
 
+/** Decoded images, shared by every renderer. Image ids are content hashes, so an
+ *  id always means the same bytes. Each page gets its own renderer, so a
+ *  per-renderer map left images blank after a page switch or reload. */
+const SHARED_IMAGES = new Map<string, HTMLImageElement>()
+const SHARED_IMAGE_LOADS = new Map<string, Promise<void>>()
+/** Renderers currently drawing; an image finishing its load redraws all of them. */
+const RUNNING = new Set<CanvasRenderer>()
+
 export class CanvasRenderer {
   private readonly canvas: HTMLCanvasElement
   private readonly ctx: CanvasRenderingContext2D
@@ -38,8 +46,8 @@ export class CanvasRenderer {
 
   private readonly rough: RoughCanvas
   private readonly shapeCache = SHARED_SHAPE_CACHE
-  private readonly imageMap = new Map<string, HTMLImageElement>()
-  private readonly imageLoads = new Map<string, Promise<void>>()
+  private readonly imageMap = SHARED_IMAGES
+  private readonly imageLoads = SHARED_IMAGE_LOADS
   private readonly overlayCanvas: HTMLCanvasElement | null
   private readonly overlayCtx: CanvasRenderingContext2D | null
   private marquee: MarqueeBox | null = null
@@ -86,6 +94,7 @@ export class CanvasRenderer {
   start(): void {
     if (this.running) return
     this.running = true
+    RUNNING.add(this)
     this.unsubscribe = this.scene.subscribe(() => this.requestRedraw())
     this.requestRedraw()
   }
@@ -93,6 +102,7 @@ export class CanvasRenderer {
   stop(): void {
     if (!this.running) return
     this.running = false
+    RUNNING.delete(this)
     if (this.unsubscribe) {
       this.unsubscribe()
       this.unsubscribe = null
@@ -166,7 +176,7 @@ export class CanvasRenderer {
     const img = new Image()
     const load = new Promise<void>((resolve) => {
       img.onload = () => {
-        this.requestRedraw()
+        for (const renderer of RUNNING) renderer.requestRedraw()
         resolve()
       }
       img.onerror = () => resolve()

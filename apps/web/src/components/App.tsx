@@ -4,6 +4,7 @@ import { unlockAll } from "@excalidraw-clone/scene"
 import { HistoryPanel, Icon, PagesTabBar, StatsPanel, Toolbar } from "@excalidraw-clone/ui"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { I18nextProvider, useTranslation } from "react-i18next"
+import { preloadFiles } from "../driver/hydration"
 import { cyclePageId } from "../driver/pages"
 import { patchScene } from "../driver/patchScene"
 import { toggleViewMode } from "../driver/viewMode"
@@ -68,7 +69,10 @@ function Inner(): React.ReactElement {
   // Phones (< 480px) show properties as a bottom sheet, opened on demand.
   const [propsSheetOpen, setPropsSheetOpen] = useState(false)
   const [renderer, setRenderer] = useState<CanvasRenderer | null>(null)
-  const onRendererReady = useCallback((r: CanvasRenderer): void => setRenderer(r), [])
+  const onRendererReady = useCallback((r: CanvasRenderer): void => {
+    setRenderer(r)
+    void preloadFiles(r)
+  }, [])
   const onRendererTeardown = useCallback((): void => setRenderer(null), [])
 
   useEffect(() => {
