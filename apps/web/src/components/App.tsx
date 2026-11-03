@@ -5,7 +5,8 @@ import { HistoryPanel, Icon, PagesTabBar, StatsPanel, Toolbar } from "@excalidra
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { I18nextProvider, useTranslation } from "react-i18next"
 import { preloadFiles } from "../driver/hydration"
-import { cyclePageId } from "../driver/pages"
+import { serializeDocument } from "@excalidraw-clone/persistence"
+import { createPageRecord, cyclePageId } from "../driver/pages"
 import { patchScene } from "../driver/patchScene"
 import { toggleViewMode } from "../driver/viewMode"
 import { useKeyboardAvoidance } from "../hooks/useKeyboardAvoidance"
@@ -334,7 +335,15 @@ function Inner(): React.ReactElement {
 
       {presenting && <PresentationHost scene={scene} rootEl={rootRef} />}
 
-      <Dialogs scene={scene} pages={pages} activePageId={activePageId} />
+      <Dialogs
+        scene={scene}
+        pages={pages}
+        activePageId={activePageId}
+        onResetDocument={() => {
+          const fresh = createPageRecord("Page 1")
+          doc.loadDocument(serializeDocument([fresh], fresh.id))
+        }}
+      />
       <PaletteHost scene={scene} />
       <SnapshotsHost
         pages={pages}
