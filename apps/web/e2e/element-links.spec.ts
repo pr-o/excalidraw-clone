@@ -64,8 +64,8 @@ test("Cmd/Ctrl-click on a linked element opens it in a new tab", async ({ page }
   await page.keyboard.down("ControlOrMeta")
   const [popup] = await Promise.all([page.waitForEvent("popup"), page.mouse.click(c.x, c.y)])
   await page.keyboard.up("ControlOrMeta")
-  await popup.waitForLoadState("domcontentloaded").catch(() => {})
-  expect(popup.url()).toContain("example.com")
+  // The popup starts on about:blank and navigates; wait for the URL instead of reading it once.
+  await expect.poll(() => popup.url()).toContain("example.com")
 })
 
 test("clicking the link indicator opens the link", async ({ page }) => {
@@ -76,8 +76,8 @@ test("clicking the link indicator opens the link", async ({ page }) => {
   const indicator = page.locator('[data-testid="link-indicator"]')
   await expect(indicator).toBeVisible()
   const [popup] = await Promise.all([page.waitForEvent("popup"), indicator.click()])
-  await popup.waitForLoadState("domcontentloaded").catch(() => {})
-  expect(popup.url()).toContain("example.com")
+  // The popup starts on about:blank and navigates; wait for the URL instead of reading it once.
+  await expect.poll(() => popup.url()).toContain("example.com")
 })
 
 test("context menu: Create link, then Edit/Remove, then the indicator is gone", async ({
