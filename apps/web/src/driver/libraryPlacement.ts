@@ -1,6 +1,7 @@
 "use client"
 import { sceneToViewport, type ViewTransform } from "@excalidraw-clone/geometry"
 import { putFile } from "@excalidraw-clone/persistence"
+import { preloadSharedImage } from "@excalidraw-clone/renderer"
 import {
   cloneElementsWithNewIds,
   type ExcalidrawElement,
@@ -16,6 +17,8 @@ export function placeLibraryItem(item: LibraryItem, x: number, y: number, scene:
   if (item.files) {
     for (const bin of Object.values(item.files)) {
       void putFile(bin)
+      // The elements below reference these images by id; decode them now so they draw.
+      void preloadSharedImage(bin.id, bin.dataURL)
     }
   }
   const placed: ExcalidrawElement[] = cloneElementsWithNewIds(item.elements).map((el) => ({

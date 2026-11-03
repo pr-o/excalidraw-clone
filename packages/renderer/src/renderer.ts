@@ -33,6 +33,25 @@ const SHARED_IMAGE_LOADS = new Map<string, Promise<void>>()
 /** Renderers currently drawing; an image finishing its load redraws all of them. */
 const RUNNING = new Set<CanvasRenderer>()
 
+/** Decodes `dataURL` into the shared image cache (once per `fileId`) and redraws
+ *  every running renderer when it is ready. Safe to call before any renderer exists. */
+export function preloadSharedImage(fileId: string, dataURL: string): Promise<void> {
+  const pending = SHARED_IMAGE_LOADS.get(fileId)
+  if (pending) return pending
+  const img = new Image()
+  const load = new Promise<void>((resolve) => {
+    img.onload = () => {
+      for (const renderer of RUNNING) renderer.requestRedraw()
+      resolve()
+    }
+    img.onerror = () => resolve()
+  })
+  img.src = dataURL
+  SHARED_IMAGES.set(fileId, img)
+  SHARED_IMAGE_LOADS.set(fileId, load)
+  return load
+}
+
 export class CanvasRenderer {
   private readonly canvas: HTMLCanvasElement
   private readonly ctx: CanvasRenderingContext2D
@@ -171,20 +190,7 @@ export class CanvasRenderer {
   }
 
   preloadImage(fileId: string, dataURL: string): Promise<void> {
-    const pending = this.imageLoads.get(fileId)
-    if (pending) return pending
-    const img = new Image()
-    const load = new Promise<void>((resolve) => {
-      img.onload = () => {
-        for (const renderer of RUNNING) renderer.requestRedraw()
-        resolve()
-      }
-      img.onerror = () => resolve()
-    })
-    img.src = dataURL
-    this.imageMap.set(fileId, img)
-    this.imageLoads.set(fileId, load)
-    return load
+    return preloadSharedImage(fileId, dataURL)
   }
 
   unloadImage(fileId: string): void {
