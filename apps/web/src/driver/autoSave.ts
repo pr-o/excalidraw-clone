@@ -47,12 +47,21 @@ export function startAutoSave(pages: readonly PageRecord[], activePageId: string
     sceneSaver.flushNow()
     uiSaver.flushNow()
   }
+  // `beforeunload` is unreliable on mobile browsers (and skipped when a tab is
+  // discarded), so also flush whenever the page is hidden or being stored.
+  const onVisibilityChange = (): void => {
+    if (document.visibilityState === "hidden") onBeforeUnload()
+  }
   window.addEventListener("beforeunload", onBeforeUnload)
+  window.addEventListener("pagehide", onBeforeUnload)
+  document.addEventListener("visibilitychange", onVisibilityChange)
 
   return () => {
     for (const unsub of unsubScenes) unsub()
     unsubStore()
     window.removeEventListener("beforeunload", onBeforeUnload)
+    window.removeEventListener("pagehide", onBeforeUnload)
+    document.removeEventListener("visibilitychange", onVisibilityChange)
     sceneSaver.dispose()
     uiSaver.dispose()
   }

@@ -148,8 +148,7 @@ export function useDrawingDriver({
       if (!panDragRef.current) canvas.style.cursor = "grab"
     }
 
-    const onKeyUp = (e: KeyboardEvent): void => {
-      if (e.code !== "Space") return
+    const releaseSpace = (): void => {
       spaceHeldRef.current = false
       const drag = panDragRef.current
       if (drag) {
@@ -160,6 +159,14 @@ export function useDrawingDriver({
       }
       panDragRef.current = null
       canvas.style.cursor = ""
+    }
+    const onKeyUp = (e: KeyboardEvent): void => {
+      if (e.code === "Space") releaseSpace()
+    }
+    // The keyup never arrives if the window loses focus while Space is held
+    // (Alt-Tab, a dialog stealing focus), which would leave pan mode stuck on.
+    const onWindowBlur = (): void => {
+      if (spaceHeldRef.current || panDragRef.current) releaseSpace()
     }
 
     const doubleTap = createDoubleTap()
@@ -418,6 +425,7 @@ export function useDrawingDriver({
     canvas.addEventListener("wheel", onWheel, { passive: false })
     window.addEventListener("keydown", onKeyDown)
     window.addEventListener("keyup", onKeyUp)
+    window.addEventListener("blur", onWindowBlur)
 
     useAppStore.getState().setDispatchToolEvent((e) => dispatch(e, NO_MODIFIERS))
 
@@ -435,6 +443,7 @@ export function useDrawingDriver({
       canvas.removeEventListener("wheel", onWheel)
       window.removeEventListener("keydown", onKeyDown)
       window.removeEventListener("keyup", onKeyUp)
+      window.removeEventListener("blur", onWindowBlur)
       useAppStore.getState().setDispatchToolEvent(null)
       disposed = true
       document.fonts?.removeEventListener("loadingdone", onFontsLoaded)
