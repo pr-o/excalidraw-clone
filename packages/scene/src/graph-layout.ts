@@ -2,6 +2,7 @@ import { type Bounds } from "@excalidraw-clone/geometry"
 import { canBindTo } from "./bindings"
 import { getElementBounds } from "./bounds"
 import type { PositionPatch } from "./arrange"
+import { layerGraph } from "./layering"
 import type { ExcalidrawElement } from "./types"
 import { isBoundLabel } from "./bound-label"
 
@@ -89,67 +90,24 @@ function components(nodes: readonly GNode[], edges: readonly GraphEdge[]): GNode
   return out
 }
 
-/**
- * Longest-path layering. Back edges (cycles) are found by DFS and ignored so
- * every cycle still gets a sensible, finite layering.
- */
+/** Layers one component; roots (fewest incoming arrows) are tried first. */
 function assignLayers(
   comp: readonly GNode[],
   edges: readonly GraphEdge[],
   crossKey: (n: GNode) => number,
 ): { layerOf: Map<string, number>; dag: GraphEdge[] } {
   const ids = new Set(comp.map((n) => n.id))
-  const out = new Map<string, GraphEdge[]>(comp.map((n) => [n.id, []]))
+  const inComp = edges.filter((e) => ids.has(e.from) && ids.has(e.to))
   const indegree = new Map<string, number>(comp.map((n) => [n.id, 0]))
-  for (const e of edges) {
-    if (!ids.has(e.from) || !ids.has(e.to)) continue
-    out.get(e.from)!.push(e)
-    indegree.set(e.to, indegree.get(e.to)! + 1)
-  }
-
-  // Roots first so a DAG's natural sources start the DFS; for pure cycles the
-  // leftmost/topmost node does.
+  for (const e of inComp) indegree.set(e.to, indegree.get(e.to)! + 1)
+  // For pure cycles the leftmost/topmost node starts, so it decides the dropped edge.
   const starts = [...comp].sort(
     (p, q) => indegree.get(p.id)! - indegree.get(q.id)! || crossKey(p) - crossKey(q),
   )
-  const state = new Map<string, 1 | 2>() // 1 = on stack, 2 = done
-  const dag: GraphEdge[] = []
-  const post: string[] = []
-  // Iterative DFS (explicit stack) so a long chain cannot overflow the call stack.
-  for (const start of starts) {
-    if (state.has(start.id)) continue
-    state.set(start.id, 1)
-    const stack: { id: string; next: number }[] = [{ id: start.id, next: 0 }]
-    while (stack.length) {
-      const frame = stack[stack.length - 1]!
-      const edge = out.get(frame.id)![frame.next]
-      if (!edge) {
-        state.set(frame.id, 2)
-        post.push(frame.id)
-        stack.pop()
-        continue
-      }
-      frame.next += 1
-      const s = state.get(edge.to)
-      if (s === 1) continue // back edge: drop
-      dag.push(edge)
-      if (s === undefined) {
-        state.set(edge.to, 1)
-        stack.push({ id: edge.to, next: 0 })
-      }
-    }
-  }
-
-  const layerOf = new Map<string, number>(comp.map((n) => [n.id, 0]))
-  const dagOut = new Map<string, GraphEdge[]>(comp.map((n) => [n.id, []]))
-  for (const e of dag) dagOut.get(e.from)!.push(e)
-  for (let i = post.length - 1; i >= 0; i -= 1) {
-    const id = post[i]!
-    for (const e of dagOut.get(id)!) {
-      layerOf.set(e.to, Math.max(layerOf.get(e.to)!, layerOf.get(id)! + 1))
-    }
-  }
-  return { layerOf, dag }
+  return layerGraph(
+    starts.map((n) => n.id),
+    inComp,
+  )
 }
 
 function layoutLayered(

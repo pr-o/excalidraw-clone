@@ -167,6 +167,10 @@ export function usePages(): PagesState {
       const opened = pagesFromDocument(data)
       setPages(opened.pages)
       setActivePageId(opened.activePageId)
+      // The thumbnail effect only re-runs on theme/background changes, so a freshly
+      // opened (or restored) document's tabs would stay blank until visited.
+      setThumbnails({})
+      for (const page of opened.pages) refreshThumbnail(page.scene, page.id)
     },
     addPage: () => {
       const updated = addPage(pages)
