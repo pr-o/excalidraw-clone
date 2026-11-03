@@ -1,20 +1,19 @@
 "use client"
-import {
-  duplicateElements,
-  expandIdsToFrameMembers,
-  flipElements,
-  groupElements,
-  lockElements,
-  type Scene,
-  ungroupElements,
-  isBoundLabel,
-} from "@excalidraw-clone/scene"
+import { expandIdsToFrameMembers, type Scene, isBoundLabel } from "@excalidraw-clone/scene"
 import i18next from "i18next"
 import { announce } from "../components/LiveAnnouncer"
 import { applyPropertiesPatch } from "../driver/applyPropertiesPatch"
-import { deleteElements, patchScene, replaceElements } from "../driver/patchScene"
+import { replaceElements } from "../driver/patchScene"
 import { zoomAboutCentre } from "../driver/zoom"
 import { toggleViewMode } from "../driver/viewMode"
+import {
+  deleteSelection,
+  duplicateSelection,
+  flipSelection,
+  groupSelection,
+  lockSelection,
+  ungroupSelection,
+} from "../driver/selectionActions"
 import { useAppStore } from "../store"
 import { type ChainDirection, createChainedShape } from "./flowchartChain"
 import { applyStyle, extractStyle, type StyleClipboard } from "./styleClipboard"
@@ -104,22 +103,17 @@ export function attachShortcuts({
     }
     if (isMeta && e.shiftKey && key === "g") {
       e.preventDefault()
-      const ids = useAppStore.getState().selectedIds
-      patchScene(scene, ungroupElements(scene.getElements(), ids))
+      ungroupSelection(scene, useAppStore.getState().selectedIds)
       return
     }
     if (isMeta && key === "g") {
       e.preventDefault()
-      const ids = useAppStore.getState().selectedIds
-      patchScene(scene, groupElements(scene.getElements(), ids, crypto.randomUUID()))
+      groupSelection(scene, useAppStore.getState().selectedIds)
       return
     }
     if (isMeta && e.shiftKey && key === "l") {
       e.preventDefault()
-      const ids = useAppStore.getState().selectedIds
-      if (ids.length === 0) return
-      patchScene(scene, lockElements(scene.getElements(), ids))
-      useAppStore.getState().setSelection([])
+      lockSelection(scene, useAppStore.getState().selectedIds)
       return
     }
     // Must precede the tool-key dispatch, which is not gated on `!isMeta`:
@@ -133,13 +127,7 @@ export function attachShortcuts({
     }
     if (isMeta && !e.shiftKey && !e.altKey && key === "d") {
       e.preventDefault()
-      const ids = useAppStore.getState().selectedIds
-      if (ids.length === 0) return
-      const copies = duplicateElements(scene.getElements(), ids)
-      scene.mutate((draft) => {
-        draft.push(...copies)
-      })
-      useAppStore.getState().setSelection(copies.filter((c) => !isBoundLabel(c)).map((c) => c.id))
+      duplicateSelection(scene, useAppStore.getState().selectedIds)
       return
     }
     if (isMeta && e.altKey && key === "c") {
@@ -238,8 +226,7 @@ export function attachShortcuts({
       const ids = useAppStore.getState().selectedIds
       if (ids.length === 0) return
       e.preventDefault()
-      deleteElements(scene, ids)
-      useAppStore.getState().setSelection([])
+      deleteSelection(scene, ids)
       return
     }
     if (isMeta && key === "a") {
@@ -286,7 +273,7 @@ export function attachShortcuts({
       const ids = useAppStore.getState().selectedIds
       if (ids.length === 0) return
       e.preventDefault()
-      patchScene(scene, flipElements(scene.getElements(), ids, key === "h" ? "x" : "y"))
+      flipSelection(scene, ids, key === "h" ? "x" : "y")
       return
     }
     // Must precede the tool-key dispatch: Shift+R would otherwise pick the rectangle.

@@ -6,16 +6,11 @@ import {
   toTableLocal,
   TABLE_MAX_TRACKS,
   bringToFront,
-  duplicateElements,
-  flipElements,
   resetCrop,
   getElementsBounds,
-  groupElements,
-  lockElements,
   type Scene,
   sendBackward,
   sendToBack,
-  ungroupElements,
   unlockElements,
 } from "@excalidraw-clone/scene"
 import { ContextMenu, type ContextMenuItem, PagePickerFlyout } from "@excalidraw-clone/ui"
@@ -26,6 +21,14 @@ import { commitElementLink } from "../driver/link"
 import { canMoveElementToPage } from "../driver/moveToPage"
 import { deleteElements, patchScene, reorderElements } from "../driver/patchScene"
 import { applyTableOp, type TableOp } from "../driver/tableOps"
+import {
+  deleteSelection,
+  duplicateSelection,
+  flipSelection,
+  groupSelection,
+  lockSelection,
+  ungroupSelection,
+} from "../driver/selectionActions"
 import { useAppStore } from "../store"
 
 export interface ContextMenuHostProps {
@@ -135,13 +138,7 @@ export function ContextMenuHost({
         items.push({
           id: "duplicate",
           label: t("properties.duplicate"),
-          perform: () => {
-            const copies = duplicateElements(scene.getElements(), elementIds)
-            scene.mutate((draft) => {
-              draft.push(...copies)
-            })
-            useAppStore.getState().setSelection(selectableIds(copies))
-          },
+          perform: () => duplicateSelection(scene, elementIds),
         })
         items.push({
           id: "array-duplicate",
@@ -155,12 +152,12 @@ export function ContextMenuHost({
         items.push({
           id: "flip-horizontal",
           label: t("properties.flip_horizontal"),
-          perform: () => patchScene(scene, flipElements(scene.getElements(), elementIds, "x")),
+          perform: () => flipSelection(scene, elementIds, "x"),
         })
         items.push({
           id: "flip-vertical",
           label: t("properties.flip_vertical"),
-          perform: () => patchScene(scene, flipElements(scene.getElements(), elementIds, "y")),
+          perform: () => flipSelection(scene, elementIds, "y"),
         })
         if (selectedElements.length === 1 && selectedElements[0]?.type === "frame") {
           items.push({
@@ -234,10 +231,7 @@ export function ContextMenuHost({
         items.push({
           id: "delete",
           label: t("properties.delete"),
-          perform: () => {
-            deleteElements(scene, elementIds)
-            useAppStore.getState().setSelection([])
-          },
+          perform: () => deleteSelection(scene, elementIds),
         })
         items.push({
           id: "bring-to-front",
@@ -263,24 +257,20 @@ export function ContextMenuHost({
           items.push({
             id: "group",
             label: t("properties.group"),
-            perform: () =>
-              patchScene(scene, groupElements(selectedElements, elementIds, crypto.randomUUID())),
+            perform: () => groupSelection(scene, elementIds),
           })
         }
         if (selectedElements.some((el) => el.groupIds.length > 0)) {
           items.push({
             id: "ungroup",
             label: t("properties.ungroup"),
-            perform: () => patchScene(scene, ungroupElements(selectedElements, elementIds)),
+            perform: () => ungroupSelection(scene, elementIds),
           })
         }
         items.push({
           id: "lock",
           label: t("properties.lock"),
-          perform: () => {
-            patchScene(scene, lockElements(scene.getElements(), elementIds))
-            useAppStore.getState().setSelection([])
-          },
+          perform: () => lockSelection(scene, elementIds),
         })
       }
     }

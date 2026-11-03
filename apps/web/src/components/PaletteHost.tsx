@@ -1,9 +1,10 @@
 "use client"
-import { lockElements, type Scene, unlockAll } from "@excalidraw-clone/scene"
+import { type Scene, unlockAll } from "@excalidraw-clone/scene"
 import { CommandPalette, type PaletteCommand } from "@excalidraw-clone/ui"
 import { useTranslation } from "react-i18next"
 import { patchScene } from "../driver/patchScene"
 import { toggleViewMode } from "../driver/viewMode"
+import { lockSelection } from "../driver/selectionActions"
 import { useAppStore } from "../store"
 
 export function PaletteHost({ scene }: { scene: Scene }): React.ReactElement {
@@ -91,12 +92,7 @@ export function PaletteHost({ scene }: { scene: Scene }): React.ReactElement {
       id: "lock-selection",
       label: t("palette.lockSelection"),
       hint: "Ctrl+Shift+L",
-      perform: () => {
-        const { selectedIds, setSelection } = useAppStore.getState()
-        if (selectedIds.length === 0) return
-        patchScene(scene, lockElements(scene.getElements(), selectedIds))
-        setSelection([])
-      },
+      perform: () => lockSelection(scene, useAppStore.getState().selectedIds),
     },
     {
       id: "array-duplicate",

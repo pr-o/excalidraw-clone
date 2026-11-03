@@ -2,27 +2,30 @@
 import {
   alignElements,
   distributeElements,
-  duplicateElements,
   type ExcalidrawElement,
   type ExcalidrawTextElement,
-  flipElements,
   type GraphLayoutMode,
   graphEdges,
-  groupElements,
   layoutGraph,
-  lockElements,
   resetCrop,
   type Scene,
   straightenConnectors,
   tidyElements,
-  ungroupElements,
   isBoundLabel,
 } from "@excalidraw-clone/scene"
 import { PropertiesPanel } from "@excalidraw-clone/ui"
 import { useTranslation } from "react-i18next"
 import { applySelectionPatch, setWholeTextStyle } from "../driver/applyPropertiesPatch"
-import { deleteElements, patchScene, replaceElements } from "../driver/patchScene"
+import { patchScene, replaceElements } from "../driver/patchScene"
 import { applyTableOp } from "../driver/tableOps"
+import {
+  deleteSelection,
+  duplicateSelection,
+  flipSelection,
+  groupSelection,
+  lockSelection,
+  ungroupSelection,
+} from "../driver/selectionActions"
 import { useAppStore } from "../store"
 
 export interface PropertiesHostProps {
@@ -77,33 +80,17 @@ export function PropertiesHost({
             : undefined,
         )
       }
-      onDelete={() => {
-        deleteElements(scene, selectedIds)
-        useAppStore.getState().setSelection([])
-      }}
-      onDuplicate={() => {
-        const copies = duplicateElements(scene.getElements(), selectedIds)
-        scene.mutate((draft) => {
-          draft.push(...copies)
-        })
-        useAppStore.getState().setSelection(copies.filter((c) => !isBoundLabel(c)).map((c) => c.id))
-      }}
+      onDelete={() => deleteSelection(scene, selectedIds)}
+      onDuplicate={() => duplicateSelection(scene, selectedIds)}
       onAlign={(edge) => moveTo(alignElements(selectedElements, edge))}
       onDistribute={(axis) => moveTo(distributeElements(selectedElements, axis))}
       onTidy={() => moveTo(tidyElements(selectedElements))}
       canAutoLayout={canAutoLayout}
       onAutoLayout={autoLayout}
-      onGroup={() =>
-        patchScene(scene, groupElements(selectedElements, selectedIds, crypto.randomUUID()))
-      }
-      onUngroup={() => patchScene(scene, ungroupElements(selectedElements, selectedIds))}
-      onLock={() => {
-        patchScene(scene, lockElements(scene.getElements(), selectedIds))
-        useAppStore.getState().setSelection([])
-      }}
-      onFlip={(axis) => {
-        patchScene(scene, flipElements(scene.getElements(), selectedIds, axis))
-      }}
+      onGroup={() => groupSelection(scene, selectedIds)}
+      onUngroup={() => ungroupSelection(scene, selectedIds)}
+      onLock={() => lockSelection(scene, selectedIds)}
+      onFlip={(axis) => flipSelection(scene, selectedIds, axis)}
       onTableAction={(action) => {
         const id = selectedIds[0]
         if (!id) return
