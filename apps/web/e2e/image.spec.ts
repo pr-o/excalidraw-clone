@@ -109,3 +109,62 @@ test("a placed image is still drawn after switching to another page and back", a
     )
     .toBe(true)
 })
+
+test("on startup, old unreferenced images are cleaned up and used ones are kept", async ({
+  page,
+}) => {
+  await page.goto("/")
+  await page.evaluate(() => localStorage.clear())
+  await page.reload()
+  await page.locator('[data-testid="toolbar-image"]').waitFor({ state: "visible" })
+
+  const png = await redPngBuffer(page)
+  const chooserPromise = page.waitForEvent("filechooser")
+  await page.locator('[data-testid="toolbar-image"]').click()
+  const chooser = await chooserPromise
+  await chooser.setFiles({ name: "red.png", mimeType: "image/png", buffer: png })
+  await page.waitForTimeout(300)
+  const box = await page.locator("canvas").first().boundingBox()
+  if (!box) throw new Error("canvas not found")
+  await page.mouse.click(box.x + 200, box.y + 150)
+  await page.waitForTimeout(1000)
+
+  // A day-old picture that no element uses (a deleted image's leftover).
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve, reject) => {
+        const open = indexedDB.open("excalidraw-clone")
+        open.onerror = () => reject(new Error(String(open.error)))
+        open.onsuccess = () => {
+          const tx = open.result.transaction("files", "readwrite")
+          tx.objectStore("files").put({
+            id: "orphan",
+            mimeType: "image/png",
+            dataURL: "data:image/png;base64,AAAA",
+            created: 1,
+          })
+          tx.oncomplete = () => resolve()
+          tx.onerror = () => reject(new Error(String(tx.error)))
+        }
+      }),
+  )
+  const storedIds = (): Promise<string[]> =>
+    page.evaluate(
+      () =>
+        new Promise<string[]>((resolve, reject) => {
+          const open = indexedDB.open("excalidraw-clone")
+          open.onerror = () => reject(new Error(String(open.error)))
+          open.onsuccess = () => {
+            const req = open.result.transaction("files").objectStore("files").getAllKeys()
+            req.onsuccess = () => resolve((req.result as string[]).sort())
+            req.onerror = () => reject(new Error(String(req.error)))
+          }
+        }),
+    )
+  expect(await storedIds()).toContain("orphan")
+
+  await page.reload()
+  await page.locator('[data-testid="toolbar-image"]').waitFor({ state: "visible" })
+  await expect.poll(storedIds).not.toContain("orphan")
+  expect((await storedIds()).length).toBe(1)
+})

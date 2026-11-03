@@ -7,13 +7,18 @@ import type { Theme } from "../store/slices/theme"
 import { useAppStore } from "../store"
 import { createPageRecord, pagesFromDocument, type PageRecord } from "./pages"
 
-export function hydratePages(): { pages: PageRecord[]; activePageId: string } {
+export function hydratePages(): {
+  pages: PageRecord[]
+  activePageId: string
+  /** True when a stored document was read, false for a fresh start (or unreadable storage). */
+  restored: boolean
+} {
   const data = loadScene()
   if (!data) {
     const page = createPageRecord("Page 1")
-    return { pages: [page], activePageId: page.id }
+    return { pages: [page], activePageId: page.id, restored: false }
   }
-  return pagesFromDocument(data)
+  return { ...pagesFromDocument(data), restored: true }
 }
 
 const THEMES: readonly Theme[] = ["light", "dark", "system"]

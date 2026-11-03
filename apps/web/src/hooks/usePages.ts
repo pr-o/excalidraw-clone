@@ -1,5 +1,5 @@
 "use client"
-import { createAutoSaver } from "@excalidraw-clone/persistence"
+import { collectUnreferencedFiles, createAutoSaver } from "@excalidraw-clone/persistence"
 import type { ExcalidrawData, Scene } from "@excalidraw-clone/scene"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { startAutoSave } from "../driver/autoSave"
@@ -44,6 +44,15 @@ export function usePages(): PagesState {
   const initialDoc = useMemo(() => hydratePages(), [])
   const [pages, setPages] = useState<PageRecord[]>(initialDoc.pages)
   const [activePageId, setActivePageId] = useState<string>(initialDoc.activePageId)
+  // Once per page load, drop stored images nothing references any more. Skipped on a
+  // fresh start or unreadable storage: with no document to compare against, every
+  // stored image would look unused.
+  useEffect(() => {
+    if (!initialDoc.restored) return
+    void collectUnreferencedFiles(
+      initialDoc.pages.map((p) => p.scene.getElementsIncludingDeleted()),
+    ).catch(() => {})
+  }, [initialDoc])
   const [thumbnails, setThumbnails] = useState<Record<string, string | undefined>>({})
   const scene = useMemo(
     () => pages.find((p) => p.id === activePageId)!.scene,
