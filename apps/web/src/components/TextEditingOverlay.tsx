@@ -29,6 +29,7 @@ export function TextEditingOverlay({ scene }: { scene: Scene }): React.ReactElem
       el?.type === "text" ? normalizeSpans(el.spans, el.text.length) : [],
     )
     queueMicrotask(() => ref.current?.focus())
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- re-initialise only when the edited element changes
   }, [id, scene])
 
   if (!id) return null

@@ -49,6 +49,7 @@ export function TableCellEditor({ scene, table, cell }: Props): React.ReactEleme
       node.focus()
       node.setSelectionRange(node.value.length, node.value.length)
     })
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- focus once on mount
   }, [])
 
   const finish = (next: { row: number; col: number } | null, appendRow = false): void => {

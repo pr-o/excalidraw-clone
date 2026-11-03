@@ -42,6 +42,7 @@ export function PresentationHost({ scene, rootEl }: PresentationHostProps): Reac
   // The `scene` reference is stable across mutations, so the revision is what
   // makes this recompute on live edits (mirrors App.tsx's derived views).
   const sceneRevision = useSceneRevision(scene)
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- the revision invalidates this memo: the Scene mutates in place
   const slides = useMemo(() => scene.getElements().filter(isSlide), [scene, sceneRevision])
 
   const slideIndex = useAppStore((s) => s.slideIndex)
@@ -79,6 +80,7 @@ export function PresentationHost({ scene, rootEl }: PresentationHostProps): Reac
       store.setView(entrySnapshot)
       if (store.activeTool === "laser") store.setActiveTool("selection")
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- enter/exit presentation once per mount
   }, [])
 
   // Keep the index inside the slide set; an empty set ends the presentation.

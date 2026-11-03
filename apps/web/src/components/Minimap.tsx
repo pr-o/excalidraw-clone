@@ -53,6 +53,7 @@ export function Minimap({
   // Hidden (the default): skip the per-edit bounds work entirely.
   const live = useMemo(
     () => (visible ? scene.getElements().filter((e) => !e.isDeleted) : []),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- the revision invalidates this memo: the Scene mutates in place
     [scene, revision, visible],
   )
   const fit = frozen ?? minimapFit(getElementsBounds(live), vrect, MINIMAP_W, MINIMAP_H, PADDING)
@@ -98,6 +99,7 @@ export function Minimap({
       ctx.globalAlpha = 1
     })
     return () => cancelAnimationFrame(raf)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `fit` is rebuilt every render; its fields are the dependencies.
   }, [visible, live, fit.scale, fit.originX, fit.originY, fit.offsetX, fit.offsetY, theme])
 
   if (!visible) return null

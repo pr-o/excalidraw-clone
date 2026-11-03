@@ -3,6 +3,7 @@ import js from "@eslint/js"
 import tseslint from "typescript-eslint"
 import importX from "eslint-plugin-import-x"
 import globals from "globals"
+import reactHooks from "eslint-plugin-react-hooks"
 
 const ALLOWED_DEPS = {
   "@excalidraw-clone/geometry": [],
@@ -63,8 +64,10 @@ export default tseslint.config(
       },
       globals: { ...globals.browser, ...globals.node },
     },
-    plugins: { "import-x": importX },
+    plugins: { "import-x": importX, "react-hooks": reactHooks },
     rules: {
+      "react-hooks/rules-of-hooks": "error",
+      "react-hooks/exhaustive-deps": "warn",
       "import-x/no-cycle": ["error", { maxDepth: 10 }],
       "import-x/no-self-import": "error",
       "@typescript-eslint/consistent-type-imports": ["error", { prefer: "type-imports" }],

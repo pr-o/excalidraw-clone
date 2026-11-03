@@ -61,6 +61,7 @@ export function FindHost({ scene }: { scene: Scene }): React.ReactElement {
   // Closed: nothing to search, so skip the O(n) collect on every scene edit.
   const items = useMemo(
     () => (open ? collectSearchableItems(scene.getElements()) : []),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- the revision invalidates this memo: the Scene mutates in place
     [scene, sceneRevision, open],
   )
   const matches = useMemo(() => filterMatches(items, query), [items, query])
@@ -119,6 +120,7 @@ export function FindHost({ scene }: { scene: Scene }): React.ReactElement {
       hasJumpedRef.current = true
       jumpTo(clampedIndex)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- re-centre only when Find (re)opens, not on every match change
   }, [open])
 
   // An in-flight glide must not outlive the host.

@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps -- `sceneRevision` is the invalidation key: the Scene mutates in place, so its identity never changes. */
 "use client"
 import {
   computeStats,

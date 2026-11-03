@@ -46,6 +46,13 @@ export function App(): React.ReactElement {
 
 function Inner(): React.ReactElement {
   const { t, i18n } = useTranslation()
+  // i18next's TFunction overloads aren't directly assignable to the panels'
+  // `(key, options?)` shape under exactOptionalPropertyTypes. Memoized on `t`
+  // (which changes with the language) so panels can list it as a dependency.
+  const panelT = useCallback(
+    (key: string, options?: Record<string, unknown>) => (options ? t(key, options) : t(key)),
+    [t],
+  )
   useEditorEnvironment(i18n)
   useKeyboardAvoidance()
   const doc = usePages()
@@ -249,9 +256,7 @@ function Inner(): React.ReactElement {
 
               {!libraryOpen && (
                 <HistoryPanel
-                  // i18next's TFunction overloads aren't directly assignable to the
-                  // panel's `(key, options?)` shape under exactOptionalPropertyTypes.
-                  t={(key, options) => (options ? t(key, options) : t(key))}
+                  t={panelT}
                   history={views.historyEntries}
                   currentIndex={scene.getHistoryIndex()}
                   open={historyOpen}
