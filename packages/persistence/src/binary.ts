@@ -7,14 +7,17 @@ export async function sha256Hex(blob: Blob): Promise<string> {
   return out
 }
 
+/** Encodes in 32 KiB slices: one `fromCharCode` call per slice instead of one
+ *  string concatenation per byte, which is slow on multi-megabyte images. */
 export async function blobToDataURL(blob: Blob): Promise<string> {
-  const buf = await blob.arrayBuffer()
-  const bytes = new Uint8Array(buf)
+  const bytes = new Uint8Array(await blob.arrayBuffer())
+  const SLICE = 0x8000
   let binary = ""
-  for (let i = 0; i < bytes.length; i += 1) binary += String.fromCharCode(bytes[i]!)
-  const b64 = btoa(binary)
+  for (let i = 0; i < bytes.length; i += SLICE) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + SLICE))
+  }
   const mime = blob.type !== "" ? blob.type : "application/octet-stream"
-  return `data:${mime};base64,${b64}`
+  return `data:${mime};base64,${btoa(binary)}`
 }
 
 export function dataURLToBlob(url: string): Blob {

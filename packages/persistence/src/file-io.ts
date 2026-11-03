@@ -45,7 +45,8 @@ export function download(blob: Blob, filename: string): void {
   document.body.appendChild(a)
   a.click()
   a.remove()
-  URL.revokeObjectURL(url)
+  // Revoking synchronously can cancel the download in some browsers.
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
 export async function parseExcalidrawFile(file: File): Promise<ExcalidrawData> {

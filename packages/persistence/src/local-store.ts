@@ -4,17 +4,20 @@ import { migrate } from "./migrations"
 const SCENE_KEY = "excalidraw-scene"
 const UI_KEY = "excalidraw-ui"
 
-/** Best-effort JSON write to localStorage. */
-export function saveJSON(key: string, value: unknown): void {
+/** Best-effort JSON write to localStorage. Returns false when the write was
+ *  rejected (quota exceeded, storage disabled) so callers can tell the user. */
+export function saveJSON(key: string, value: unknown): boolean {
   try {
     localStorage.setItem(key, JSON.stringify(value))
+    return true
   } catch {
-    // Quota exceeded or storage disabled — silent. Caller can't do anything useful.
+    return false
   }
 }
 
-export function saveScene(data: ExcalidrawData): void {
-  saveJSON(SCENE_KEY, data)
+/** Persists the document; false when it could not be stored. */
+export function saveScene(data: ExcalidrawData): boolean {
+  return saveJSON(SCENE_KEY, data)
 }
 
 export function loadScene(): ExcalidrawData | null {
@@ -24,7 +27,18 @@ export function loadScene(): ExcalidrawData | null {
     const parsed: unknown = JSON.parse(raw)
     return migrate(parsed)
   } catch {
+    // The next auto-save would overwrite whatever is stored; keep the
+    // unreadable text under a side key so it can still be recovered by hand.
+    saveRaw(`${SCENE_KEY}-unreadable`, raw)
     return null
+  }
+}
+
+function saveRaw(key: string, raw: string): void {
+  try {
+    localStorage.setItem(key, raw)
+  } catch {
+    // Quota exceeded or storage disabled — nothing more to do.
   }
 }
 

@@ -5,15 +5,24 @@ import {
   saveUI,
   serializeDocument,
 } from "@excalidraw-clone/persistence"
+import i18next from "i18next"
+import { announce } from "../components/LiveAnnouncer"
 import { useAppStore } from "../store"
 import type { PageRecord } from "./pages"
 
 export function startAutoSave(pages: readonly PageRecord[], activePageId: string): () => void {
   // Two savers: the document (large on big scenes) is re-serialized only when a
   // Scene changes, not on every pan/zoom/selection store update.
+  // Tell the user once per failure streak (not on every retry) when the browser
+  // refuses the write, e.g. localStorage quota exceeded on a very large drawing.
+  let saveFailing = false
   const sceneSaver = createAutoSaver({
     delayMs: 500,
-    flush: () => saveScene(serializeDocument(pages, activePageId)),
+    flush: () => {
+      const ok = saveScene(serializeDocument(pages, activePageId))
+      if (!ok && !saveFailing) announce(i18next.t("a11y.saveFailed"))
+      saveFailing = !ok
+    },
   })
   const uiSaver = createAutoSaver({
     delayMs: 500,

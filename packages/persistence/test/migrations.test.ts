@@ -216,3 +216,38 @@ describe("migrate — table validation", () => {
     expect(migrate(data).pages[0]!.elements).toEqual([{ id: "r", type: "rectangle", x: 1 }])
   })
 })
+
+describe("migrate: malformed pages from untrusted files", () => {
+  it("tolerates a page with no element list and non-object entries", () => {
+    const out = migrate({
+      type: "excalidraw",
+      version: 3,
+      source: "x",
+      activePageId: "p1",
+      pages: [
+        { id: "p1", name: "A" },
+        { id: "p2", name: "B", elements: [null, 7, { id: "e", type: "rectangle" }] },
+      ],
+    })
+    expect(out.pages[0]!.elements).toEqual([])
+    expect(out.pages[1]!.elements).toHaveLength(1)
+  })
+
+  it("never produces NaN crop fractions from missing fields", () => {
+    const out = migrate({
+      type: "excalidraw",
+      version: 3,
+      source: "x",
+      activePageId: "p1",
+      pages: [
+        {
+          id: "p1",
+          name: "A",
+          elements: [{ id: "i", type: "image", crop: { naturalWidth: 100, naturalHeight: 100 } }],
+        },
+      ],
+    })
+    const crop = (out.pages[0]!.elements[0] as { crop: unknown }).crop
+    expect(crop).toBeNull()
+  })
+})

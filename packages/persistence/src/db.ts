@@ -36,6 +36,10 @@ export function getDB(): Promise<IDBPDatabase<ExcalidrawDB>> {
           db.createObjectStore(SNAPSHOTS_STORE, { keyPath: "id" })
         }
       },
+    }).catch((err: unknown) => {
+      // Do not cache a failed open (blocked upgrade, private mode): let the next call retry.
+      dbPromise = null
+      throw err
     })
   }
   return dbPromise

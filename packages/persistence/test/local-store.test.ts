@@ -1,5 +1,5 @@
 import { newRectangle, type ExcalidrawData } from "@excalidraw-clone/scene"
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 import { clearLocal, loadScene, loadUI, saveScene, saveUI } from "../src/local-store"
 
 const sampleData = (): ExcalidrawData => ({
@@ -72,5 +72,22 @@ describe("local-store: clearLocal", () => {
     clearLocal()
     expect(loadScene()).toBeNull()
     expect(loadUI()).toBeNull()
+  })
+})
+
+describe("local-store: failure handling", () => {
+  it("keeps an unreadable stored scene under a side key instead of losing it", () => {
+    localStorage.setItem("excalidraw-scene", "{not json")
+    expect(loadScene()).toBeNull()
+    expect(localStorage.getItem("excalidraw-scene-unreadable")).toBe("{not json")
+  })
+
+  it("saveScene reports false when the browser rejects the write", () => {
+    const spy = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new DOMException("full", "QuotaExceededError")
+    })
+    expect(saveScene(sampleData())).toBe(false)
+    spy.mockRestore()
+    expect(saveScene(sampleData())).toBe(true)
   })
 })

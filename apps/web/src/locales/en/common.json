@@ -397,6 +397,7 @@
     "f3f0ff": "Lavender"
   },
   "a11y": {
+    "saveFailed": "Could not save your drawing in this browser (storage is full or unavailable). Export it to a file to keep it.",
     "toolSelected": "{{tool}} tool",
     "undo": "Undo",
     "redo": "Redo",

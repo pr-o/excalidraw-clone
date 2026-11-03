@@ -76,14 +76,16 @@ function normalizeCrop(crop: unknown): unknown {
   const c = crop as Record<string, number>
   const { naturalWidth: nw, naturalHeight: nh } = c
   if (typeof nw !== "number" || typeof nh !== "number") return crop
-  if (!(nw > 0 && nh > 0 && c.width! > 0 && c.height! > 0)) return null
-  const x = clamp01(c.x! / nw)
-  const y = clamp01(c.y! / nh)
+  // Untrusted input: a missing/NaN field must not leak NaN into the fractions.
+  const num = (v: unknown): number => (typeof v === "number" && Number.isFinite(v) ? v : 0)
+  if (!(nw > 0 && nh > 0 && num(c.width) > 0 && num(c.height) > 0)) return null
+  const x = clamp01(num(c.x) / nw)
+  const y = clamp01(num(c.y) / nh)
   return {
     x,
     y,
-    width: Math.min(c.width! / nw, 1 - x),
-    height: Math.min(c.height! / nh, 1 - y),
+    width: Math.min(num(c.width) / nw, 1 - x),
+    height: Math.min(num(c.height) / nh, 1 - y),
   }
 }
 
@@ -105,18 +107,25 @@ function normalizeTextSpans(el: Record<string, unknown>): Record<string, unknown
   return clean ? { ...rest, spans: clean } : rest
 }
 
+function asElements(v: unknown): Record<string, unknown>[] {
+  return Array.isArray(v)
+    ? v.filter((el): el is Record<string, unknown> => typeof el === "object" && el !== null)
+    : []
+}
+
 function normalizePages(data: AnyData): AnyData {
-  const pages =
-    (data.pages as
-      | { elements: Record<string, unknown>[]; guides?: unknown; comments?: unknown }[]
-      | undefined) ?? []
+  const pages = Array.isArray(data.pages)
+    ? (data.pages as { elements?: unknown; guides?: unknown; comments?: unknown }[])
+    : []
   return {
     ...data,
-    pages: pages.map(({ guides, comments, ...page }) => ({
+    pages: pages.map(({ guides, comments, elements, ...page }) => ({
       ...page,
       ...normalizeGuides(guides),
       ...(comments === undefined ? {} : { comments: sanitizeComments(comments) }),
-      elements: page.elements.map((el) =>
+      // Untrusted file: a page without an element list, or with non-object
+      // entries, loads as far as it can rather than throwing mid-migration.
+      elements: asElements(elements).map((el) =>
         el.type === "image"
           ? { ...el, crop: normalizeCrop(el.crop) }
           : el.type === "text"
