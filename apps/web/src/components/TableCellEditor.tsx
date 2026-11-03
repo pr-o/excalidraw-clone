@@ -109,7 +109,7 @@ export function TableCellEditor({ scene, table, cell }: Props): React.ReactEleme
     >
       {styled && (
         <RichMirror
-          mirrorRef={mirror}
+          ref={mirror}
           value={value}
           spans={spans}
           weight={weight}

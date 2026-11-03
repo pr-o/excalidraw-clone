@@ -113,7 +113,7 @@ export function RichMirror({
   fontSize,
   color,
   style,
-  mirrorRef,
+  ref,
 }: {
   value: string
   spans: readonly TextSpan[]
@@ -121,11 +121,12 @@ export function RichMirror({
   fontSize: number
   color: string
   style: React.CSSProperties
-  mirrorRef?: React.Ref<HTMLDivElement>
+  /** React 19: `ref` is an ordinary prop on function components (no forwardRef). */
+  ref?: React.Ref<HTMLDivElement>
 }): React.ReactElement {
   return (
     <div
-      ref={mirrorRef}
+      ref={ref}
       aria-hidden
       data-testid="text-mirror"
       style={{

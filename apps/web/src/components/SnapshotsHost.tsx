@@ -53,7 +53,7 @@ export function SnapshotsHost({
       open={open}
       onClose={() => setOpenDialog(null)}
       snapshots={snapshots}
-      onSave={(name) => void saveSnapshot(name, current()).then(refresh)}
+      onSave={(name) => saveSnapshot(name, current()).then(refresh)}
       onDelete={(id) => void deleteSnapshot(id).then(refresh)}
       onRestore={(id) => {
         void (async () => {

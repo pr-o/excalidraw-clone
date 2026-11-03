@@ -175,7 +175,7 @@ export function TextEditingOverlay({ scene }: { scene: Scene }): React.ReactElem
     >
       {styled && (
         <RichMirror
-          mirrorRef={mirror}
+          ref={mirror}
           value={value}
           spans={spans}
           weight={weight}

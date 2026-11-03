@@ -2,7 +2,14 @@
 import { fitToContent } from "@excalidraw-clone/geometry"
 import { getElementBounds, type ExcalidrawElement, type Scene } from "@excalidraw-clone/scene"
 import { FindOverlay } from "@excalidraw-clone/ui"
-import React, { useEffect, useEffectEvent, useMemo, useRef, useState } from "react"
+import React, {
+  useDeferredValue,
+  useEffect,
+  useEffectEvent,
+  useMemo,
+  useRef,
+  useState,
+} from "react"
 import { useTranslation } from "react-i18next"
 import {
   collectSearchableItems,
@@ -67,7 +74,10 @@ export function FindHost({ scene }: { scene: Scene }): React.ReactElement {
 
   // Closed: nothing to search, so skip the O(n) collect on every scene edit.
   const items = useMemo(() => (open ? collectSearchableItems(elements) : []), [elements, open])
-  const matches = useMemo(() => filterMatches(items, query), [items, query])
+  // On a large drawing, filtering every searchable element per keystroke can lag the
+  // input; the deferred query lets typing stay responsive while results catch up.
+  const deferredQuery = useDeferredValue(query)
+  const matches = useMemo(() => filterMatches(items, deferredQuery), [items, deferredQuery])
 
   const clampedIndex = matches.length === 0 ? 0 : Math.min(index, matches.length - 1)
 

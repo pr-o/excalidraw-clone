@@ -73,4 +73,18 @@ describe("SnapshotsDialog", () => {
     await userEvent.click(screen.getByTestId("snapshot-restore-confirm"))
     expect(props.onRestore).toHaveBeenCalledWith("b")
   })
+
+  it("keeps Save disabled while an async save is pending, then re-enables it", async () => {
+    let finish: () => void = () => {}
+    const onSave = vi.fn(() => new Promise<void>((resolve) => (finish = resolve)))
+    setup({ onSave })
+    const save = screen.getByTestId("snapshots-save")
+    await userEvent.click(save)
+    expect(onSave).toHaveBeenCalledTimes(1)
+    expect(save).toBeDisabled()
+    await userEvent.click(save)
+    expect(onSave).toHaveBeenCalledTimes(1)
+    finish()
+    await vi.waitFor(() => expect(save).toBeEnabled())
+  })
 })

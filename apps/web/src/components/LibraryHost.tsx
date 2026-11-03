@@ -17,7 +17,7 @@ import {
   Scene,
 } from "@excalidraw-clone/scene"
 import { LibraryPanel, type PanelSibling } from "@excalidraw-clone/ui"
-import { useCallback, useEffect } from "react"
+import { useCallback, useEffect, useOptimistic, useTransition } from "react"
 import i18next from "i18next"
 import { notify } from "./LiveAnnouncer"
 import { useTranslation } from "react-i18next"
@@ -55,6 +55,8 @@ export function useLibrarySync(): void {
     clearPendingItem()
   }, [activeTool, openDialog, clearPendingItem])
 }
+
+type LibraryChange = { kind: "rename"; id: string; name: string } | { kind: "delete"; id: string }
 
 /** Library panel wired to persistence. */
 export function LibraryHost({
@@ -125,21 +127,28 @@ export function LibraryHost({
     download(blob, `library-${date}.excalidrawlib`)
   }, [])
 
-  const handleRename = useCallback(
-    async (id: string, name: string): Promise<void> => {
+  // Renames and deletes show at once; the stored list replaces the optimistic one
+  // when the write settles (and a failed write simply falls back to it).
+  const [items, applyOptimistic] = useOptimistic(
+    libraryItems,
+    (current, change: LibraryChange): LibraryItem[] =>
+      change.kind === "delete"
+        ? current.filter((i) => i.id !== change.id)
+        : current.map((i) => (i.id === change.id ? { ...i, name: change.name } : i)),
+  )
+  const [, startWrite] = useTransition()
+  const handleRename = (id: string, name: string): void =>
+    startWrite(async () => {
+      applyOptimistic({ kind: "rename", id, name })
       await renameLibraryItem(id, name)
       await refreshLibrary()
-    },
-    [refreshLibrary],
-  )
-
-  const handleDelete = useCallback(
-    async (id: string): Promise<void> => {
+    })
+  const handleDelete = (id: string): void =>
+    startWrite(async () => {
+      applyOptimistic({ kind: "delete", id })
       await deleteLibraryItem(id)
       await refreshLibrary()
-    },
-    [refreshLibrary],
-  )
+    })
 
   // Thumbnails sit on the themed panel, so draw them with the canvas's theme
   // colours (dark strokes would vanish on the dark tile).
@@ -164,15 +173,15 @@ export function LibraryHost({
         t={t}
         open={open}
         onToggle={onToggle}
-        items={libraryItems}
+        items={items}
         templates={BUILTIN_TEMPLATES}
         selectedCount={selectedIds.length}
         onAddFromSelection={() => void handleAddFromSelection()}
         onItemClick={armLibraryItem}
         onImport={handleImport}
         onExport={() => void handleExport()}
-        onRename={(id, name) => void handleRename(id, name)}
-        onDelete={(id) => void handleDelete(id)}
+        onRename={handleRename}
+        onDelete={handleDelete}
         renderThumbnail={renderThumbnail}
         sibling={sibling}
       />
