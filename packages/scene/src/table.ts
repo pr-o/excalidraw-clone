@@ -23,8 +23,6 @@ const clampTracks = (n: number): number => Math.min(TABLE_MAX_TRACKS, Math.max(1
 
 const evenSplit = (total: number, n: number): number[] => Array.from({ length: n }, () => total / n)
 
-export const isTable = (e: ExcalidrawElement): e is ExcalidrawTableElement => e.type === "table"
-
 /** Geometry for a fresh table: an even split of the box (grown to the minimum
  *  size); no box ⟹ the default 120x40 cells. */
 export const tableGeometry = (

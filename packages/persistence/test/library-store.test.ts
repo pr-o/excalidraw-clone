@@ -1,7 +1,6 @@
 import type { LibraryItem } from "@excalidraw-clone/scene"
 import { describe, expect, it } from "vitest"
 import {
-  clearLibrary,
   deleteLibraryItem,
   getAllLibraryItems,
   getLibraryItem,
@@ -57,12 +56,5 @@ describe("library-store CRUD", () => {
 
   it("renameLibraryItem on a missing id is a no-op (does not throw)", async () => {
     await expect(renameLibraryItem("nope", "X")).resolves.toBeUndefined()
-  })
-
-  it("clearLibrary wipes the store", async () => {
-    await putLibraryItem(item("a", "A", 100))
-    await putLibraryItem(item("b", "B", 200))
-    await clearLibrary()
-    expect(await getAllLibraryItems()).toEqual([])
   })
 })

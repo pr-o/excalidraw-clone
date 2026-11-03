@@ -20,7 +20,6 @@ export {
 
 // IndexedDB library
 export {
-  clearLibrary,
   deleteLibraryItem,
   EXCALIDRAWLIB_VERSION,
   exportLibraryFile,

@@ -43,11 +43,6 @@ export async function renameLibraryItem(id: string, name: string): Promise<void>
   await putLibraryItem({ ...existing, name })
 }
 
-export async function clearLibrary(): Promise<void> {
-  const db = await getDB()
-  await db.clear(LIBRARY_STORE)
-}
-
 export async function exportLibraryFile(): Promise<Blob> {
   const libraryItems = await getAllLibraryItems()
   const files: Record<string, ExcalidrawBinaryFile> = {}

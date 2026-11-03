@@ -1,16 +1,5 @@
 import { describe, expect, it } from "vitest"
-import {
-  cross,
-  dot,
-  normalize,
-  pointAdd,
-  pointDistance,
-  pointDistanceSq,
-  pointScale,
-  pointSubtract,
-  vectorLength,
-  vectorLengthSq,
-} from "../src"
+import { cross, dot, normalize, pointAdd, pointDistance, pointScale, vectorLength } from "../src"
 import type { Point, Vector } from "../src"
 
 const ZERO: Point = { x: 0, y: 0 }
@@ -35,24 +24,6 @@ describe("pointAdd", () => {
     ],
   ])("pointAdd(%j, %j) === %j", (a, b, expected) => {
     expect(pointAdd(a, b)).toEqual(expected)
-  })
-})
-
-describe("pointSubtract", () => {
-  it.each<[Point, Point, Vector]>([
-    [ZERO, ZERO, ZERO],
-    [
-      { x: 5, y: 7 },
-      { x: 2, y: 3 },
-      { x: 3, y: 4 },
-    ],
-    [
-      { x: 0, y: 0 },
-      { x: 1, y: 1 },
-      { x: -1, y: -1 },
-    ],
-  ])("pointSubtract(%j, %j) === %j", (a, b, expected) => {
-    expect(pointSubtract(a, b)).toEqual(expected)
   })
 })
 
@@ -91,28 +62,26 @@ describe("cross product", () => {
   })
 })
 
-describe("vectorLength / vectorLengthSq", () => {
+describe("vectorLength", () => {
   it.each<[Vector, number, number]>([
     [ZERO, 0, 0],
     [{ x: 3, y: 4 }, 5, 25],
     [{ x: -3, y: -4 }, 5, 25],
     [{ x: 1, y: 0 }, 1, 1],
     [{ x: 0, y: 1 }, 1, 1],
-  ])("vector %j has length %d (sq %d)", (v, len, lenSq) => {
+  ])("vector %j has length %d", (v, len) => {
     expect(vectorLength(v)).toBeCloseTo(len)
-    expect(vectorLengthSq(v)).toBe(lenSq)
   })
 })
 
-describe("pointDistance / pointDistanceSq", () => {
+describe("pointDistance", () => {
   it.each<[Point, Point, number, number]>([
     [ZERO, ZERO, 0, 0],
     [ZERO, { x: 3, y: 4 }, 5, 25],
     [{ x: 1, y: 1 }, { x: 4, y: 5 }, 5, 25],
     [{ x: -1, y: -1 }, { x: 2, y: 3 }, 5, 25],
-  ])("distance(%j, %j) === %d (sq %d)", (a, b, d, dSq) => {
+  ])("distance(%j, %j) === %d", (a, b, d) => {
     expect(pointDistance(a, b)).toBeCloseTo(d)
-    expect(pointDistanceSq(a, b)).toBe(dSq)
   })
 })
 

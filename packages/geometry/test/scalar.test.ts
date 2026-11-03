@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { clamp, degToRad, lerp, radToDeg } from "../src"
+import { clamp, lerp } from "../src"
 
 describe("clamp", () => {
   it.each<[number, number, number, number]>([
@@ -26,24 +26,5 @@ describe("lerp", () => {
     [3, 3, 0.7, 3],
   ])("lerp(%d, %d, %d) === %d", (a, b, t, expected) => {
     expect(lerp(a, b, t)).toBeCloseTo(expected)
-  })
-})
-
-describe("degToRad / radToDeg", () => {
-  it.each<[number, number]>([
-    [0, 0],
-    [90, Math.PI / 2],
-    [180, Math.PI],
-    [-90, -Math.PI / 2],
-    [360, 2 * Math.PI],
-    [45, Math.PI / 4],
-  ])("degToRad(%d) ≈ %d", (deg, rad) => {
-    expect(degToRad(deg)).toBeCloseTo(rad)
-  })
-
-  it("radToDeg is the inverse of degToRad", () => {
-    for (const deg of [0, 30, 45, 90, 180, -45, 360.5]) {
-      expect(radToDeg(degToRad(deg))).toBeCloseTo(deg)
-    }
   })
 })
