@@ -25,15 +25,18 @@ export function EmptyCanvasHint({
 }): React.ReactElement | null {
   const { t } = useTranslation()
   const [dismissed, setDismissed] = useState(readDismissed)
+  // The first element dismisses the hint for good: adjust the state while rendering
+  // (React's pattern for state that follows a prop) rather than in an effect.
+  if (hasElements && !dismissed) setDismissed(true)
+  // Persisting the choice is the only side effect.
   useEffect(() => {
-    if (!hasElements || dismissed) return
-    setDismissed(true)
+    if (!dismissed) return
     try {
       localStorage.setItem(DISMISSED_KEY, "1")
     } catch {
       // Not remembered; dismissed for this session only.
     }
-  }, [hasElements, dismissed])
+  }, [dismissed])
 
   if (dismissed || hasElements || hidden) return null
   return (

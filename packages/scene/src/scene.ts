@@ -103,7 +103,6 @@ export class Scene {
     // re-checking frame membership of elements it carries over untouched.
     reconcileFrameMembership(draft, this.reconciled.has(this.elements) ? this.elements : undefined)
     this.reconciled.add(draft)
-    this.setElements(draft)
     // A value-identical commit (e.g. a plain click-to-select, which replaces an
     // element with an unchanged clone) must not pollute the undo stack — under
     // MAX_HISTORY such no-ops can otherwise evict every real entry.
@@ -117,6 +116,8 @@ export class Scene {
       const recorded = this.history[this.historyIndex]
       if (!recorded || !Scene.isSameSnapshot(recorded, draft)) this.pushHistory(draft)
     }
+    // Notify last, so listeners see the new elements *and* the history entry recording them.
+    this.setElements(draft)
   }
 
   /** Deep value-equality for two element snapshots (plain JSON-safe objects). */

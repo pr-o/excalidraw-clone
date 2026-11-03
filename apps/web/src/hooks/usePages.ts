@@ -1,7 +1,7 @@
 "use client"
 import { collectUnreferencedFiles, createAutoSaver } from "@excalidraw-clone/persistence"
 import type { ExcalidrawData, Scene } from "@excalidraw-clone/scene"
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useEffectEvent, useMemo, useState } from "react"
 import { startAutoSave } from "../driver/autoSave"
 import { hydratePages } from "../driver/hydration"
 import {
@@ -60,10 +60,6 @@ export function usePages(): PagesState {
   )
   const canvasBg = useAppStore((s) => s.canvasBg)
   const resolvedTheme = useAppStore((s) => s.resolvedTheme)
-  // Read at fire time by the re-theme-all effect below, which must see the live
-  // page list without re-running for every unrelated `pages` mutation.
-  const pagesRef = useRef<PageRecord[]>(pages)
-  pagesRef.current = pages
   // Re-render one page's thumbnail; a failed render (e.g. a tainted canvas)
   // keeps the last good thumbnail rather than blanking it.
   const refreshThumbnail = useCallback(
@@ -90,15 +86,17 @@ export function usePages(): PagesState {
   useEffect(() => {
     return startAutoSave(pages, activePageId)
   }, [pages, activePageId])
+  // The live page list, read when the re-theme pass below starts and again when it
+  // finishes. Effect Events always see current values, so that pass re-runs only on a
+  // theme/background change — not for every page added, renamed or reordered.
+  const currentPages = useEffectEvent((): readonly PageRecord[] => pages)
   // Hydrates every page's thumbnail on mount, and re-renders them all whenever
-  // the theme or canvas background changes. Deliberately keyed only on those two
-  // so adding/renaming/reordering a page does not re-render every thumbnail;
-  // the live page list is read from a ref at fire time instead.
+  // the theme or canvas background changes.
   useEffect(() => {
     let cancelled = false
     void (async () => {
       const entries = await Promise.all(
-        pagesRef.current.map(async (p) => {
+        currentPages().map(async (p) => {
           try {
             return [p.id, await renderPageThumbnail(p.scene, canvasBg, resolvedTheme)] as const
           } catch {
@@ -110,7 +108,7 @@ export function usePages(): PagesState {
       if (cancelled) return
       // Only touch pages that still exist, so a delete's cache removal is never
       // undone and a removed page's Scene is not kept reachable.
-      const live = new Set(pagesRef.current.map((p) => p.id))
+      const live = new Set(currentPages().map((p) => p.id))
       setThumbnails((prev) => {
         const next: Record<string, string | undefined> = {}
         for (const [id, thumb] of Object.entries(prev)) {
