@@ -274,6 +274,11 @@
     "emptyHintKeysAfter": "키를 누르면 모든 단축키를 볼 수 있어요"
   },
   "shortcuts": {
+    "undo": "실행 취소",
+    "redo": "다시 실행",
+    "selectAll": "모두 선택",
+    "deselect": "선택 해제",
+    "toggleGrid": "격자 전환",
     "title": "키보드 단축키",
     "tools": "도구",
     "editor": "편집",
@@ -391,7 +396,6 @@
   },
   "a11y": {
     "openFailed": "파일을 열 수 없습니다. 손상되었거나 더 새로운 버전의 파일일 수 있습니다.",
-    "libraryImportFailed": "라이브러리 파일을 가져올 수 없습니다.",
     "dismissNotice": "닫기",
     "saveFailed": "이 브라우저에 그림을 저장하지 못했습니다(저장 공간이 가득 찼거나 사용할 수 없음). 파일로 내보내 보관하세요.",
     "toolSelected": "{{tool}} 도구",

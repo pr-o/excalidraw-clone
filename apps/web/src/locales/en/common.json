@@ -274,6 +274,11 @@
     "emptyHintKeysAfter": "to see every keyboard shortcut"
   },
   "shortcuts": {
+    "undo": "Undo",
+    "redo": "Redo",
+    "selectAll": "Select all",
+    "deselect": "Deselect",
+    "toggleGrid": "Toggle grid",
     "title": "Keyboard shortcuts",
     "tools": "Tools",
     "editor": "Editor",
@@ -398,7 +403,6 @@
   },
   "a11y": {
     "openFailed": "Could not open that file. It may be damaged or from a newer version.",
-    "libraryImportFailed": "Could not import that library file.",
     "dismissNotice": "Dismiss",
     "saveFailed": "Could not save your drawing in this browser (storage is full or unavailable). Export it to a file to keep it.",
     "toolSelected": "{{tool}} tool",

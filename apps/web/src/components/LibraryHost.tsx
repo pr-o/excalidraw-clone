@@ -68,6 +68,7 @@ export function LibraryHost({
   const libraryItems = useAppStore((s) => s.libraryItems)
   const setLibraryItems = useAppStore((s) => s.setLibraryItems)
   const armLibraryItem = useAppStore((s) => s.armLibraryItem)
+  const placing = useAppStore((s) => s.pendingItem !== null)
 
   const refreshLibrary = useCallback(async (): Promise<void> => {
     setLibraryItems(await getAllLibraryItems())
@@ -108,10 +109,11 @@ export function LibraryHost({
       const file = input.files?.[0]
       if (!file) return
       try {
-        await importLibraryFile(file)
+        const { added, skipped } = await importLibraryFile(file)
         await refreshLibrary()
+        notify(i18next.t("library.imported", { added, skipped }))
       } catch {
-        notify(i18next.t("a11y.libraryImportFailed"))
+        notify(i18next.t("library.importError"))
       }
     }
     input.click()
@@ -148,21 +150,32 @@ export function LibraryHost({
   )
 
   return (
-    <LibraryPanel
-      t={t}
-      open={open}
-      onToggle={onToggle}
-      items={libraryItems}
-      templates={BUILTIN_TEMPLATES}
-      selectedCount={selectedIds.length}
-      onAddFromSelection={() => void handleAddFromSelection()}
-      onItemClick={armLibraryItem}
-      onImport={handleImport}
-      onExport={() => void handleExport()}
-      onRename={(id, name) => void handleRename(id, name)}
-      onDelete={(id) => void handleDelete(id)}
-      renderThumbnail={renderThumbnail}
-      sibling={sibling}
-    />
+    <>
+      {placing && (
+        <div
+          role="status"
+          data-testid="library-placing-hint"
+          className="absolute left-1/2 top-3 z-40 -translate-x-1/2 rounded-full bg-panel px-4 py-1.5 text-xs shadow-panel"
+        >
+          {t("library.placing")}
+        </div>
+      )}
+      <LibraryPanel
+        t={t}
+        open={open}
+        onToggle={onToggle}
+        items={libraryItems}
+        templates={BUILTIN_TEMPLATES}
+        selectedCount={selectedIds.length}
+        onAddFromSelection={() => void handleAddFromSelection()}
+        onItemClick={armLibraryItem}
+        onImport={handleImport}
+        onExport={() => void handleExport()}
+        onRename={(id, name) => void handleRename(id, name)}
+        onDelete={(id) => void handleDelete(id)}
+        renderThumbnail={renderThumbnail}
+        sibling={sibling}
+      />
+    </>
   )
 }
