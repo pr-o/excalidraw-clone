@@ -1,6 +1,7 @@
 import {
   SCENE_FORMAT_VERSION,
   sanitizeComments,
+  sanitizeElements,
   sanitizeSpans,
   sanitizeTable,
   type ExcalidrawData,
@@ -107,10 +108,9 @@ function normalizeTextSpans(el: Record<string, unknown>): Record<string, unknown
   return clean ? { ...rest, spans: clean } : rest
 }
 
+/** Untrusted element list → usable elements only (see `sanitizeElement`). */
 function asElements(v: unknown): Record<string, unknown>[] {
-  return Array.isArray(v)
-    ? v.filter((el): el is Record<string, unknown> => typeof el === "object" && el !== null)
-    : []
+  return sanitizeElements(v) as unknown as Record<string, unknown>[]
 }
 
 function normalizePages(data: AnyData): AnyData {

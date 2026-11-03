@@ -3,6 +3,7 @@ import {
   expandIdsToCopyClosure,
   getElementBounds,
   newText,
+  sanitizeElements,
   type ExcalidrawElement,
   isBoundLabel,
 } from "@excalidraw-clone/scene"
@@ -54,8 +55,10 @@ export function buildPaste(text: string, at: { x: number; y: number }): Excalidr
   if (envelope === null) {
     return [newText({ x: at.x, y: at.y, text })]
   }
-  if (envelope.elements.length === 0) return []
-  return centerAt(cloneElementsWithNewIds(envelope.elements), at)
+  // The clipboard is untrusted: drop anything that would break the renderer.
+  const elements = sanitizeElements(envelope.elements)
+  if (elements.length === 0) return []
+  return centerAt(cloneElementsWithNewIds(elements), at)
 }
 
 /** Ids to select after inserting `els`: everything but bound labels. */

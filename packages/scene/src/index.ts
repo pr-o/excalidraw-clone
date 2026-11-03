@@ -147,6 +147,7 @@ export type {
   TextAlign,
   VerticalAlign,
 } from "./types"
+export { sanitizeElement, sanitizeElements } from "./validate"
 export { isBoundLabel } from "./bound-label"
 export type { BoundLabel } from "./bound-label"
 export { elementShadow, shadowMargin } from "./shadow"
