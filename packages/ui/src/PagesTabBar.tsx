@@ -104,6 +104,10 @@ export function PagesTabBar({
       data-testid="pages-tab-bar"
       onPointerMove={handleBarPointerMove}
       onPointerUp={handleBarPointerUp}
+      // Releasing (or losing) the pointer outside the bar must not leave a drag
+      // half-started with its drop line stuck on screen.
+      onPointerLeave={() => setDrag(null)}
+      onPointerCancel={() => setDrag(null)}
       className={`fixed bottom-3 left-3 z-30 flex max-w-[calc(100vw-14rem)] max-[480px]:bottom-16 max-[480px]:max-w-[calc(100vw-1.5rem)] items-center gap-1 overflow-x-auto rounded-xl bg-panel p-1 shadow-panel ${className ?? ""}`}
     >
       {drag && drag.overIndex !== null && (
