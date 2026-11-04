@@ -68,11 +68,15 @@ function cpuMsPerMutate(n: number, batches = 1): number {
 describe("Scene scaling (regression guard against quadratic per-mutate work)", () => {
   it("one-element mutate grows ~linearly with scene size", () => {
     cpuMsPerMutate(500) // warm up the JIT
-    const small = cpuMsPerMutate(1000, 5)
-    const large = cpuMsPerMutate(8000, 5)
+    const small = cpuMsPerMutate(1000, 9)
+    const large = cpuMsPerMutate(8000, 9)
     // 8x the elements: linear ≈ 8x, quadratic ≈ 64x. The bound sits halfway (on a log
     // scale) so cache and GC noise on a busy machine cannot trip it.
-    expect(large / Math.max(small, 0.05)).toBeLessThan(32)
+    const ratio = large / Math.max(small, 0.05)
+    expect(
+      ratio,
+      `8000 vs 1000 elements: ${small.toFixed(3)} -> ${large.toFixed(3)} ms`,
+    ).toBeLessThan(32)
   })
 
   it("getElements returns one cached array until the elements change", () => {
