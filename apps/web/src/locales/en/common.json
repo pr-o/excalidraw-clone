@@ -402,6 +402,7 @@
     "f3f0ff": "Lavender"
   },
   "a11y": {
+    "syncedFromOtherTab": "Updated with changes from another tab",
     "openFailed": "Could not open that file. It may be damaged or from a newer version.",
     "dismissNotice": "Dismiss",
     "saveFailed": "Could not save your drawing in this browser (storage is full or unavailable). Export it to a file to keep it.",

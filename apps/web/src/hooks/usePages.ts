@@ -1,9 +1,16 @@
 "use client"
-import { collectUnreferencedFiles, createAutoSaver } from "@excalidraw-clone/persistence"
+import {
+  collectUnreferencedFiles,
+  createAutoSaver,
+  loadScene,
+  SCENE_KEY,
+} from "@excalidraw-clone/persistence"
 import type { ExcalidrawData, Scene } from "@excalidraw-clone/scene"
-import { useCallback, useEffect, useEffectEvent, useMemo, useState } from "react"
-import { startAutoSave } from "../driver/autoSave"
-import { hydratePages } from "../driver/hydration"
+import i18next from "i18next"
+import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from "react"
+import { announce } from "../components/LiveAnnouncer"
+import { startAutoSave, type AutoSave } from "../driver/autoSave"
+import { hydratePages, loadStoredImages } from "../driver/hydration"
 import {
   addPage,
   deletePage,
@@ -29,7 +36,7 @@ export interface PagesState {
   thumbnails: Record<string, string | undefined>
   switchToPage: (targetId: string) => void
   /** Swap in a whole document (all pages) with fresh Scenes, e.g. opening a file. */
-  loadDocument: (data: ExcalidrawData) => void
+  loadDocument: (data: ExcalidrawData, options?: { keepActivePage?: boolean }) => void
   addPage: () => void
   deletePage: (id: string) => void
   duplicatePage: (id: string) => void
@@ -83,9 +90,47 @@ export function usePages(): PagesState {
     },
     [activePageId, pages, refreshThumbnail],
   )
+  /** Swaps in a whole document. `keepActivePage` stays on the current page when the
+   *  document still has it (adopting another tab's save should not move this tab). */
+  const loadDocument = (data: ExcalidrawData, { keepActivePage = false } = {}): void => {
+    const opened = pagesFromDocument(data)
+    const keep = keepActivePage && opened.pages.some((p) => p.id === activePageId)
+    setPages(opened.pages)
+    setActivePageId(keep ? activePageId : opened.activePageId)
+    // The thumbnail effect only re-runs on theme/background changes, so a freshly
+    // opened (or restored) document's tabs would stay blank until visited.
+    setThumbnails({})
+    for (const page of opened.pages) refreshThumbnail(page.scene, page.id)
+  }
+  // Set when this tab adopts the document another tab saved, so the auto-saver that
+  // starts for the adopted pages does not immediately write them back.
+  const adoptedRef = useRef(false)
+  const autoSaveRef = useRef<AutoSave | null>(null)
   useEffect(() => {
-    return startAutoSave(pages, activePageId)
+    const saver = startAutoSave(pages, activePageId, { saveOnStart: !adoptedRef.current })
+    adoptedRef.current = false
+    autoSaveRef.current = saver
+    return saver.stop
   }, [pages, activePageId])
+  // Every tab auto-saves the whole document to the same storage key, so without this
+  // the last tab to save silently erased the other tab's edits. When another tab saves,
+  // this tab adopts that document — unless it has unsaved edits of its own, in which
+  // case its own save (which follows within the debounce) is the newer one. Pending
+  // edits are written when a window loses focus, so the tab you switch to is current.
+  const adoptOtherTabDocument = useEffectEvent((e: StorageEvent) => {
+    if (e.key !== SCENE_KEY || e.newValue === null) return
+    if (autoSaveRef.current?.hasPendingSave()) return
+    const data = loadScene()
+    if (!data) return
+    adoptedRef.current = true
+    loadDocument(data, { keepActivePage: true })
+    void loadStoredImages()
+    announce(i18next.t("a11y.syncedFromOtherTab"))
+  })
+  useEffect(() => {
+    window.addEventListener("storage", adoptOtherTabDocument)
+    return () => window.removeEventListener("storage", adoptOtherTabDocument)
+  }, [])
   // The live page list, read when the re-theme pass below starts and again when it
   // finishes. Effect Events always see current values, so that pass re-runs only on a
   // theme/background change — not for every page added, renamed or reordered.
@@ -170,15 +215,7 @@ export function usePages(): PagesState {
     scene,
     thumbnails,
     switchToPage,
-    loadDocument: (data) => {
-      const opened = pagesFromDocument(data)
-      setPages(opened.pages)
-      setActivePageId(opened.activePageId)
-      // The thumbnail effect only re-runs on theme/background changes, so a freshly
-      // opened (or restored) document's tabs would stay blank until visited.
-      setThumbnails({})
-      for (const page of opened.pages) refreshThumbnail(page.scene, page.id)
-    },
+    loadDocument,
     addPage: () => {
       const updated = addPage(pages)
       const created = updated[updated.length - 1]!

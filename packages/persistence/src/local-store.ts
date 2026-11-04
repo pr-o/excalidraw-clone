@@ -1,7 +1,8 @@
 import type { ExcalidrawData } from "@excalidraw-clone/scene"
 import { migrate } from "./migrations"
 
-const SCENE_KEY = "excalidraw-scene"
+/** localStorage key of the auto-saved document (also what a `storage` event names). */
+export const SCENE_KEY = "excalidraw-scene"
 const UI_KEY = "excalidraw-ui"
 
 /** Best-effort JSON write to localStorage. Returns false when the write was

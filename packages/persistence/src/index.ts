@@ -6,7 +6,15 @@ export const DEPENDS_ON: readonly string[] = [SCENE_NAME]
 export { blobToDataURL, dataURLToBlob, sha256Hex } from "./binary"
 
 // localStorage scene + UI
-export { clearLocal, loadScene, loadUI, saveJSON, saveScene, saveUI } from "./local-store"
+export {
+  clearLocal,
+  loadScene,
+  loadUI,
+  saveJSON,
+  saveScene,
+  saveUI,
+  SCENE_KEY,
+} from "./local-store"
 
 // IndexedDB image binaries
 export {

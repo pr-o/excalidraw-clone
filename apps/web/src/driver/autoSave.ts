@@ -10,7 +10,24 @@ import { notify } from "../components/LiveAnnouncer"
 import { useAppStore } from "../store"
 import type { PageRecord } from "./pages"
 
-export function startAutoSave(pages: readonly PageRecord[], activePageId: string): () => void {
+export interface AutoSave {
+  stop: () => void
+  /** True while document edits are waiting to be written. */
+  hasPendingSave: () => boolean
+}
+
+/**
+ * Persists the document and UI preferences as they change.
+ *
+ * `saveOnStart: false` skips the initial write — used right after adopting the
+ * document another tab saved, which must not be written straight back (the other
+ * tab would adopt it again, and so on).
+ */
+export function startAutoSave(
+  pages: readonly PageRecord[],
+  activePageId: string,
+  { saveOnStart = true }: { saveOnStart?: boolean } = {},
+): AutoSave {
   // Two savers: the document (large on big scenes) is re-serialized only when a
   // Scene changes, not on every pan/zoom/selection store update.
   // Tell the user once per failure streak (not on every retry) when the browser
@@ -49,7 +66,7 @@ export function startAutoSave(pages: readonly PageRecord[], activePageId: string
   // Opening a file swaps in freshly-built Scenes rather than mutating the
   // existing one, so no subscriber fires for the new document. Schedule once up
   // front so a newly loaded document is persisted without waiting for an edit.
-  sceneSaver.schedule()
+  if (saveOnStart) sceneSaver.schedule()
   uiSaver.schedule()
 
   const onBeforeUnload = (): void => {
@@ -63,15 +80,20 @@ export function startAutoSave(pages: readonly PageRecord[], activePageId: string
   }
   window.addEventListener("beforeunload", onBeforeUnload)
   window.addEventListener("pagehide", onBeforeUnload)
+  // Moving to another window (perhaps another tab of this app) writes pending edits
+  // first, so that tab adopts them instead of overwriting them.
+  window.addEventListener("blur", onBeforeUnload)
   document.addEventListener("visibilitychange", onVisibilityChange)
 
-  return () => {
+  const stop = (): void => {
     for (const unsub of unsubScenes) unsub()
     unsubStore()
     window.removeEventListener("beforeunload", onBeforeUnload)
     window.removeEventListener("pagehide", onBeforeUnload)
+    window.removeEventListener("blur", onBeforeUnload)
     document.removeEventListener("visibilitychange", onVisibilityChange)
     sceneSaver.dispose()
     uiSaver.dispose()
   }
+  return { stop, hasPendingSave: () => sceneSaver.isPending() }
 }

@@ -1,6 +1,6 @@
 "use client"
 import { getAllFiles, loadScene, loadUI } from "@excalidraw-clone/persistence"
-import type { CanvasRenderer } from "@excalidraw-clone/renderer"
+import { preloadSharedImage, type CanvasRenderer } from "@excalidraw-clone/renderer"
 import { TOOLS, type ToolName } from "@excalidraw-clone/tools"
 import type { Locale } from "../store/slices/i18n"
 import type { Theme } from "../store/slices/theme"
@@ -47,6 +47,13 @@ export function hydrateUI(): void {
   if (typeof ui.canvasBg === "string") store.setCanvasBg(ui.canvasBg)
   if (typeof ui.zenMode === "boolean" && ui.zenMode !== store.zenMode) store.toggleZenMode()
   if (isOneOf(Object.keys(TOOLS) as ToolName[], ui.activeTool)) store.setActiveTool(ui.activeTool)
+}
+
+/** Decodes every stored image into the shared renderer cache (already-loaded ones
+ *  are skipped there). Used when another tab's document is adopted: it may use
+ *  images this tab has never seen. */
+export async function loadStoredImages(): Promise<void> {
+  for (const f of await getAllFiles()) void preloadSharedImage(f.id, f.dataURL)
 }
 
 /** Stored images are loaded into the shared renderer cache once per page load. */
