@@ -1,3 +1,10 @@
 packages:
   - "apps/*"
   - "packages/*"
+
+# Minimum versions for transitive dependencies with security advisories
+# (dompurify via jspdf; source-map-js via next > postcss). Both stay within the
+# ranges their parents ask for; drop an entry once the parent requires the fix.
+overrides:
+  dompurify: ">=3.4.17 <4"
+  source-map-js: ">=1.2.2 <2"
