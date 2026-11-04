@@ -11,6 +11,7 @@ import i18next from "i18next"
 import { notify } from "../components/LiveAnnouncer"
 import { useAppStore } from "../store"
 import { measureImage } from "./imageUpload"
+import { setCurrentFile } from "./fileHandle"
 import { openSceneFile, pngHasEmbeddedScene } from "./openFile"
 import { isReadOnly } from "./viewMode"
 
@@ -95,10 +96,12 @@ export async function handleDroppedFiles(
   files: readonly File[],
   at: Point,
   target: DropTarget,
+  /** Per file, where the browser offers it: the file itself, to save back to. */
+  handles: readonly Promise<FileSystemHandle | null>[] = [],
 ): Promise<void> {
   if (isReadOnly(useAppStore.getState())) return
   let offset = 0
-  for (const file of files) {
+  for (const [index, file] of files.entries()) {
     try {
       const kind = await classifyDroppedFile(file)
       if (kind === "image") {
@@ -107,7 +110,11 @@ export async function handleDroppedFiles(
       } else if (kind === "scene") {
         if (target.hasContent() && !window.confirm(i18next.t("drop.confirmReplace"))) continue
         const data = await openSceneFile(file)
-        if (data) target.openDocument(data)
+        if (!data) continue
+        target.openDocument(data)
+        // "Save" now writes to the dropped file, or asks when there is no handle to it.
+        const handle = await (handles[index] ?? Promise.resolve(null))
+        setCurrentFile(handle?.kind === "file" ? (handle as FileSystemFileHandle) : null)
       } else if (kind === "library") {
         const { added, skipped } = await importLibraryFile(file)
         useAppStore.getState().setLibraryItems(await getAllLibraryItems())

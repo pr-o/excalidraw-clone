@@ -41,6 +41,7 @@ import {
   validateToolKey,
 } from "../keyboard/toolKeys"
 import type { PageRecord } from "../driver/pages"
+import { setCurrentFile } from "../driver/fileHandle"
 import { useAppStore } from "../store"
 
 export interface DialogsProps {
@@ -98,6 +99,8 @@ export function Dialogs({
   // (and the stored images, which no page can reference afterwards).
   const onResetConfirm = (): void => {
     onResetDocument()
+    // A fresh drawing must not be saved over the file the old one came from.
+    setCurrentFile(null)
     clearLocal()
     void clearAllFiles()
     useAppStore.getState().setSelection([])

@@ -6,7 +6,7 @@ import i18next from "i18next"
 import { notify } from "./LiveAnnouncer"
 import { openExcalidrawFromPicker } from "../driver/openFile"
 import type { PageRecord } from "../driver/pages"
-import { saveAsExcalidraw } from "../driver/saveFile"
+import { saveDrawing } from "../driver/fileHandle"
 import { toggleViewMode } from "../driver/viewMode"
 import { useAppStore } from "../store"
 
@@ -79,9 +79,8 @@ export function MenuHost({
           }
         })()
       }}
-      onSaveFile={() => {
-        void saveAsExcalidraw(pages, activePageId)
-      }}
+      onSave={() => void saveDrawing(pages, activePageId)}
+      onSaveFile={() => void saveDrawing(pages, activePageId, { saveAs: true })}
       onExport={() => setOpenDialog("export")}
       onImportMermaid={() => setOpenDialog("mermaid-import")}
       onExportMermaid={() => setOpenDialog("mermaid-export")}

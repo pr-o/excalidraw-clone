@@ -128,6 +128,7 @@
   "menu": {
     "label": "Menu",
     "open": "Open…",
+    "save": "Save",
     "saveAs": "Save as…",
     "snapshots": "Snapshots…",
     "export": "Export image…",
@@ -420,5 +421,9 @@
   "drop": {
     "confirmReplace": "Open the dropped drawing? It replaces everything on the canvas.",
     "unsupported": "Can't use “{{name}}”: drop an image, a .excalidraw drawing or a .excalidrawlib library."
+  },
+  "file": {
+    "saved": "Saved to {{name}}",
+    "saveFailed": "Could not save the file."
   }
 }

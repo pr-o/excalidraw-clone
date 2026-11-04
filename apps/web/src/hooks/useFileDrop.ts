@@ -6,6 +6,15 @@ import { handleDroppedFiles } from "../driver/insertFiles"
 import { useAppStore } from "../store"
 import { viewOf } from "../store/slices/view"
 
+type HandleItem = DataTransferItem & {
+  getAsFileSystemHandle?: () => Promise<FileSystemHandle | null>
+}
+
+const fileHandleOf = (item: DataTransferItem): Promise<FileSystemHandle | null> => {
+  const get = (item as HandleItem).getAsFileSystemHandle
+  return get ? get.call(item).catch(() => null) : Promise.resolve(null)
+}
+
 const carriesFiles = (e: DragEvent): boolean => e.dataTransfer?.types.includes("Files") ?? false
 
 /**
@@ -27,12 +36,17 @@ export function useFileDrop({
     e.preventDefault()
     const files = Array.from(e.dataTransfer?.files ?? [])
     if (files.length === 0) return
+    // Chromium can hand over the dropped file itself, so "Save" writes back to it. The
+    // handles must be requested now: the drop's data is cleared once this event ends.
+    const handles = Array.from(e.dataTransfer?.items ?? [])
+      .filter((item) => item.kind === "file")
+      .map((item) => fileHandleOf(item))
     const canvas = document.querySelector<HTMLCanvasElement>("canvas[data-main-canvas]")
     const view = viewOf(useAppStore.getState())
     const at = canvas
       ? clientToScene(canvas, view, e)
       : { x: e.clientX / view.zoom - view.scrollX, y: e.clientY / view.zoom - view.scrollY }
-    void handleDroppedFiles(files, at, { scene, openDocument, hasContent })
+    void handleDroppedFiles(files, at, { scene, openDocument, hasContent }, handles)
   })
 
   useEffect(() => {

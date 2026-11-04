@@ -8,10 +8,21 @@ import {
 } from "@excalidraw-clone/persistence"
 import { preloadSharedImage } from "@excalidraw-clone/renderer"
 import type { ExcalidrawData } from "@excalidraw-clone/scene"
+import { canPickFileHandle, pickDrawingFile, setCurrentFile } from "./fileHandle"
 
+/** Asks for a drawing to open. Where the browser can, the opened file becomes the
+ *  target of "Save"; elsewhere a plain file input is used. */
 export async function openExcalidrawFromPicker(): Promise<ExcalidrawData | null> {
+  if (canPickFileHandle()) {
+    const file = await pickDrawingFile()
+    return file ? openSceneFile(file) : null
+  }
   const file = await pickFile(".excalidraw,.png,application/json,image/png")
-  return file ? openSceneFile(file) : null
+  if (!file) return null
+  const data = await openSceneFile(file)
+  // A file from a plain input has no handle: "Save" must ask, not write elsewhere.
+  if (data) setCurrentFile(null)
+  return data
 }
 
 /** Reads a `.excalidraw` file (or a PNG with an embedded scene), stores the images

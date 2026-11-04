@@ -17,6 +17,7 @@ import { useSceneViews } from "../hooks/useSceneViews"
 import { ensureI18n } from "../i18n"
 import { attachClipboard } from "../keyboard/clipboard"
 import { attachShortcuts } from "../keyboard/shortcuts"
+import { saveDrawing } from "../driver/fileHandle"
 import { PresentationHost } from "../presentation/PresentationHost"
 import { useAppStore } from "../store"
 import { CanvasShell } from "./CanvasShell"
@@ -83,6 +84,7 @@ function Inner(): React.ReactElement {
       onNextPage: () => switchToPage(cyclePageId(pages, activePageId, "next")),
       onPrevPage: () => switchToPage(cyclePageId(pages, activePageId, "prev")),
       onToggleStats: () => setStatsOpen((v) => !v),
+      onSave: (saveAs) => void saveDrawing(pages, activePageId, { saveAs }),
     })
   }, [scene, pages, activePageId, switchToPage])
   useEffect(() => {

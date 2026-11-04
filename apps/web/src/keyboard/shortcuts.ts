@@ -31,6 +31,8 @@ interface Bindings {
   onNextPage?: () => void
   onPrevPage?: () => void
   onToggleStats?: () => void
+  /** Ctrl+S (`saveAs` false) / Ctrl+Shift+S (`saveAs` true). */
+  onSave?: (saveAs: boolean) => void
 }
 
 /** Ephemeral, app-lifetime style clipboard for Cmd/Ctrl+Alt+C / +V. Module-level
@@ -50,6 +52,7 @@ interface KeyContext {
     onNextPage?: (() => void) | undefined
     onPrevPage?: (() => void) | undefined
     onToggleStats?: (() => void) | undefined
+    onSave?: ((saveAs: boolean) => void) | undefined
   }
 }
 
@@ -95,6 +98,12 @@ const VIEW_RULES: readonly Rule[] = [
     () => store().toggleMinimap(),
   ),
 ]
+
+/** Saving the drawing to a file: also allowed in view mode (it changes nothing). */
+const SAVE_RULE: Rule = command(
+  (c) => isCmd(c, "s"),
+  (c) => c.nav.onSave?.(c.e.shiftKey),
+)
 
 /** Editing commands, blocked by the view-mode filter. */
 const RULES: readonly Rule[] = [
@@ -307,8 +316,9 @@ export function attachShortcuts({
   onNextPage,
   onPrevPage,
   onToggleStats,
+  onSave,
 }: Bindings): () => void {
-  const nav: KeyContext["nav"] = { onNextPage, onPrevPage, onToggleStats }
+  const nav: KeyContext["nav"] = { onNextPage, onPrevPage, onToggleStats, onSave }
   const handler = (e: KeyboardEvent): void => {
     if (isTypingTarget(e.target as HTMLElement | null)) return
     // Presentation mode is read-only: every editor shortcut below is inert.
@@ -324,7 +334,7 @@ export function attachShortcuts({
       nav,
     }
 
-    if (VIEW_RULES.some((rule) => rule(c))) return
+    if (VIEW_RULES.some((rule) => rule(c)) || SAVE_RULE(c)) return
     if (store().viewMode && !allowedInViewMode(c)) return
     if (RULES.some((rule) => rule(c))) return
 

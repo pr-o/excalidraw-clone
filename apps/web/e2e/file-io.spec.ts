@@ -1,7 +1,13 @@
 import { expect, test } from "@playwright/test"
 import { dragOnCanvas, parseStoredScene } from "./_helpers"
 
-test("save as → open round-trips the scene", async ({ page }) => {
+test("save as → open round-trips the scene (browsers without file handles)", async ({ page }) => {
+  // Without the File System Access API, "Save as" downloads and "Open" uses a file input.
+  await page.addInitScript(() => {
+    const w = window as unknown as Record<string, unknown>
+    delete w.showSaveFilePicker
+    delete w.showOpenFilePicker
+  })
   await page.goto("/")
   await page.evaluate(() => localStorage.clear())
   await page.reload()

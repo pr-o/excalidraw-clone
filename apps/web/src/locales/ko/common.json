@@ -128,6 +128,7 @@
   "menu": {
     "label": "메뉴",
     "open": "열기…",
+    "save": "저장",
     "saveAs": "다른 이름으로 저장…",
     "snapshots": "스냅샷…",
     "export": "이미지 내보내기…",
@@ -413,5 +414,9 @@
   "drop": {
     "confirmReplace": "끌어다 놓은 그림을 열까요? 캔버스의 모든 내용이 바뀝니다.",
     "unsupported": "“{{name}}”은(는) 사용할 수 없습니다. 이미지, .excalidraw 그림 또는 .excalidrawlib 라이브러리를 놓으세요."
+  },
+  "file": {
+    "saved": "{{name}}에 저장했습니다",
+    "saveFailed": "파일을 저장하지 못했습니다."
   }
 }
