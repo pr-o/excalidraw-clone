@@ -36,7 +36,7 @@ const runDraw = (
   ;[s, e] = arrowTool.reduce(state, { type: "pointerMove", at: to }, ctx)
   apply(e)
   state = s
-  ;[s, e] = arrowTool.reduce(state, { type: "pointerUp", at: to }, ctx)
+  ;[, e] = arrowTool.reduce(state, { type: "pointerUp", at: to }, ctx)
   apply(e)
   return draft
 }
