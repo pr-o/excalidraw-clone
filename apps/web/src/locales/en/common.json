@@ -416,5 +416,9 @@
     "groupOf": "Group of {{count}}: ",
     "selectionCleared": "Selection cleared",
     "noElements": "No elements on this page"
+  },
+  "drop": {
+    "confirmReplace": "Open the dropped drawing? It replaces everything on the canvas.",
+    "unsupported": "Can't use “{{name}}”: drop an image, a .excalidraw drawing or a .excalidrawlib library."
   }
 }

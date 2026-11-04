@@ -10,6 +10,7 @@ import { createPageRecord, cyclePageId } from "../driver/pages"
 import { patchScene } from "../driver/patchScene"
 import { toggleViewMode } from "../driver/viewMode"
 import { useKeyboardAvoidance } from "../hooks/useKeyboardAvoidance"
+import { useFileDrop } from "../hooks/useFileDrop"
 import { useEditorEnvironment, useImageToolUpload } from "../hooks/useEditorEnvironment"
 import { usePages } from "../hooks/usePages"
 import { useSceneViews } from "../hooks/useSceneViews"
@@ -89,6 +90,14 @@ function Inner(): React.ReactElement {
   }, [scene])
   useImageToolUpload(renderer)
   useLibrarySync()
+  useFileDrop({
+    scene,
+    openDocument: (data) => {
+      useAppStore.getState().setSelection([])
+      doc.loadDocument(data)
+    },
+    hasContent: () => pages.some((p) => p.scene.getElements().length > 0),
+  })
 
   const activeTool = useAppStore((s) => s.activeTool)
   const toolKeyOverrides = useAppStore((s) => s.toolKeyOverrides)
@@ -129,7 +138,6 @@ function Inner(): React.ReactElement {
             <MenuHost
               open={menuOpen}
               onOpenChange={setMenuOpen}
-              renderer={renderer}
               pages={pages}
               activePageId={activePageId}
               canPresent={views.frames.length > 0}

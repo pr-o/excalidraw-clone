@@ -67,6 +67,7 @@ export function CanvasShell({
     <div ref={wrapperRef} className="absolute inset-0">
       <canvas
         ref={canvasRef}
+        data-main-canvas
         // Focusable so keyboard users can Tab into the drawing and walk its
         // elements (see onCanvasKeyDown in useDrawingDriver).
         tabIndex={0}

@@ -6,28 +6,34 @@ import {
   PNG_EXCALIDRAW_KEYWORD,
   putFile,
 } from "@excalidraw-clone/persistence"
-import type { CanvasRenderer } from "@excalidraw-clone/renderer"
+import { preloadSharedImage } from "@excalidraw-clone/renderer"
 import type { ExcalidrawData } from "@excalidraw-clone/scene"
 
-export async function openExcalidrawFromPicker(
-  renderer: CanvasRenderer | null,
-): Promise<ExcalidrawData | null> {
+export async function openExcalidrawFromPicker(): Promise<ExcalidrawData | null> {
   const file = await pickFile(".excalidraw,.png,application/json,image/png")
-  if (!file) return null
+  return file ? openSceneFile(file) : null
+}
+
+/** Reads a `.excalidraw` file (or a PNG with an embedded scene), stores the images
+ *  it carries and decodes them for drawing. Throws when the file is not a scene. */
+export async function openSceneFile(file: File): Promise<ExcalidrawData | null> {
   const data = await readSceneFromFile(file)
   if (!data) return null
-  if (data.files) {
-    for (const id of Object.keys(data.files)) {
-      const f = data.files[id]!
-      await putFile(f)
-      void renderer?.preloadImage(id, f.dataURL)
-    }
+  for (const f of Object.values(data.files ?? {})) {
+    await putFile(f)
+    void preloadSharedImage(f.id, f.dataURL)
   }
   return data
 }
 
+/** True for a PNG exported with "Embed scene" (it can be opened as a drawing). */
+export async function pngHasEmbeddedScene(file: Blob): Promise<boolean> {
+  return (await extractTextChunk(file, PNG_EXCALIDRAW_KEYWORD).catch(() => null)) !== null
+}
+
 async function readSceneFromFile(file: File): Promise<ExcalidrawData | null> {
-  const isPng = file.type === "image/png" || file.name.toLowerCase().endsWith(".png")
+  const name = file.name.toLowerCase()
+  const isPng = file.type === "image/png" || name.endsWith(".png")
   if (!isPng) return parseExcalidrawFile(file)
 
   const text = await extractTextChunk(file, PNG_EXCALIDRAW_KEYWORD)

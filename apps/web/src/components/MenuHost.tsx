@@ -1,5 +1,4 @@
 "use client"
-import type { CanvasRenderer } from "@excalidraw-clone/renderer"
 import type { ExcalidrawData } from "@excalidraw-clone/scene"
 import { HamburgerMenu } from "@excalidraw-clone/ui"
 import { useTranslation } from "react-i18next"
@@ -14,7 +13,6 @@ import { useAppStore } from "../store"
 export interface MenuHostProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  renderer: CanvasRenderer | null
   pages: readonly PageRecord[]
   activePageId: string
   canPresent: boolean
@@ -26,7 +24,6 @@ export interface MenuHostProps {
 export function MenuHost({
   open,
   onOpenChange,
-  renderer,
   pages,
   activePageId,
   canPresent,
@@ -73,7 +70,7 @@ export function MenuHost({
       onOpenFile={() => {
         void (async () => {
           try {
-            const data = await openExcalidrawFromPicker(renderer)
+            const data = await openExcalidrawFromPicker()
             if (!data) return
             onOpenDocument(data)
           } catch {

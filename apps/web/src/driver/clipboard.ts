@@ -46,6 +46,9 @@ const parseEnvelope = (text: string): ClipboardEnvelope | null => {
   return null
 }
 
+/** True when `text` is this app's own copied-elements envelope. */
+export const isElementsEnvelope = (text: string): boolean => parseEnvelope(text) !== null
+
 /** Turn clipboard text into elements to append: envelope → fresh-id clones
  *  whose bounding-box center lands at `at`; other non-blank text → one text
  *  element at `at`; blank/empty → nothing. */

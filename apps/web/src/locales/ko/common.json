@@ -409,5 +409,9 @@
     "groupOf": "{{count}}개 그룹: ",
     "selectionCleared": "선택 해제됨",
     "noElements": "이 페이지에 요소가 없습니다"
+  },
+  "drop": {
+    "confirmReplace": "끌어다 놓은 그림을 열까요? 캔버스의 모든 내용이 바뀝니다.",
+    "unsupported": "“{{name}}”은(는) 사용할 수 없습니다. 이미지, .excalidraw 그림 또는 .excalidrawlib 라이브러리를 놓으세요."
   }
 }

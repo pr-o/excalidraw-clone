@@ -1,6 +1,7 @@
 "use client"
 import type { Scene } from "@excalidraw-clone/scene"
-import { buildPaste, copyPayload, selectableIds } from "../driver/clipboard"
+import { buildPaste, copyPayload, isElementsEnvelope, selectableIds } from "../driver/clipboard"
+import { insertImageBlob, isInsertableImage } from "../driver/insertFiles"
 import { isReadOnly } from "../driver/viewMode"
 import { useAppStore } from "../store"
 
@@ -52,6 +53,15 @@ export function attachClipboard({ scene }: Bindings): () => void {
     const at = store.lastScenePointer ?? {
       x: window.innerWidth / 2 / store.zoom - store.scrollX,
       y: window.innerHeight / 2 / store.zoom - store.scrollY,
+    }
+    // A pasted picture (a screenshot, an image copied from a page) becomes an image
+    // element — unless the clipboard holds this app's own copied shapes, which also
+    // carry text and must round-trip as shapes.
+    const image = Array.from(e.clipboardData?.files ?? []).find(isInsertableImage)
+    if (image && !isElementsEnvelope(text)) {
+      e.preventDefault()
+      void insertImageBlob(scene, image, at)
+      return
     }
     const pasted = buildPaste(text, at)
     if (pasted.length === 0) return
