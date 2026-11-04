@@ -98,12 +98,14 @@ function ExportDialogBody({
     // The transition callback runs synchronously, so onCopy issues its clipboard
     // write inside the click's user activation (Safari requires that).
     startCopy(async () => {
+      // Updates after an `await` are not part of the transition unless wrapped again:
+      // wrapping them makes the result and the end of `isCopying` commit together.
       try {
         // Clipboard images are PNG-only, whatever the format toggle says.
         await onCopy({ ...currentOptions(), format: "png" })
-        setCopyResult("copied")
+        startCopy(() => setCopyResult("copied"))
       } catch {
-        setCopyResult("error")
+        startCopy(() => setCopyResult("error"))
       }
     })
   }
