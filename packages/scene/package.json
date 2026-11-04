@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "@excalidraw-clone/geometry": "workspace:*",
-    "nanoid": "^5.1.16"
+    "nanoid": "^6.0.2"
   },
   "devDependencies": {
     "@types/node": "^22.20.5",
