@@ -2,6 +2,8 @@
 import {
   download,
   getAllFiles,
+  loadCurrentFileHandle,
+  storeCurrentFileHandle,
   serializeDocument,
   toExcalidrawBlob,
 } from "@excalidraw-clone/persistence"
@@ -51,10 +53,34 @@ export const canPickFileHandle = (): boolean => typeof fsa().showOpenFilePicker 
 /** The file "Save" writes to; null until the drawing was opened from or saved to one. */
 let current: FileSystemFileHandle | null = null
 
-/** Remembers where the open drawing lives. A PNG is never written back (it would lose
- *  its image), so a drawing opened from one is saved to a new .excalidraw file. */
+const writable = (handle: FileSystemFileHandle | null): FileSystemFileHandle | null =>
+  handle && handle.name.toLowerCase().endsWith(".png") ? null : handle
+
+/** Remembers where the open drawing lives, also across reloads. A PNG is never written
+ *  back (it would lose its image), so a drawing opened from one is saved to a new file. */
 export function setCurrentFile(handle: FileSystemFileHandle | null): void {
-  current = handle && handle.name.toLowerCase().endsWith(".png") ? null : handle
+  current = writable(handle)
+  void storeCurrentFileHandle(current)
+}
+
+/** Picks up the save file remembered by an earlier session, or by another tab that
+ *  just saved the document this tab adopted. */
+export async function restoreCurrentFile(): Promise<void> {
+  current = writable(await loadCurrentFileHandle())
+}
+
+type PermissionHandle = FileSystemFileHandle & {
+  queryPermission?: (d: { mode: "readwrite" }) => Promise<PermissionState>
+  requestPermission?: (d: { mode: "readwrite" }) => Promise<PermissionState>
+}
+
+/** A remembered handle needs write permission again in each session: ask once (the
+ *  Ctrl+S or menu click is the user activation the browser requires). */
+async function canWrite(handle: FileSystemFileHandle): Promise<boolean> {
+  const h = handle as PermissionHandle
+  if (!h.queryPermission) return true
+  if ((await h.queryPermission({ mode: "readwrite" })) === "granted") return true
+  return (await h.requestPermission?.({ mode: "readwrite" })) === "granted"
 }
 
 export const currentFileName = (): string | null => current?.name ?? null
@@ -101,13 +127,15 @@ export async function saveDrawing(
   activePageId: string,
   { saveAs = false }: { saveAs?: boolean } = {},
 ): Promise<boolean> {
-  const blob = await documentBlob(pages, activePageId)
   if (!canSaveToFile()) {
-    download(blob, current?.name ?? DEFAULT_NAME)
+    download(await documentBlob(pages, activePageId), current?.name ?? DEFAULT_NAME)
     return true
   }
   try {
+    // Permission first, while the click/keypress still counts as a user activation.
     let target = saveAs ? null : current
+    if (target && !(await canWrite(target).catch(() => false))) target = null
+    const blob = await documentBlob(pages, activePageId)
     if (target) {
       try {
         await write(target, blob)

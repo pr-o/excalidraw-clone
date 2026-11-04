@@ -29,6 +29,9 @@ export {
 // Cleanup of image binaries nothing references
 export { collectUnreferencedFiles, GC_MIN_AGE_MS } from "./image-gc"
 
+// The file "Save" writes to, remembered across reloads
+export { loadCurrentFileHandle, storeCurrentFileHandle } from "./handle-store"
+
 // IndexedDB library
 export {
   deleteLibraryItem,

@@ -91,3 +91,53 @@ test("Ctrl+Shift+S always asks for a new location", async ({ page }) => {
   await page.keyboard.press("ControlOrMeta+Shift+s")
   await expect.poll(async () => (await fsaState(page)).saves).toBe(2)
 })
+
+/** A picker backed by the origin-private file system: its handles are real
+ *  FileSystemFileHandles, so (unlike in-memory fakes) they can be remembered in
+ *  IndexedDB across a reload, just like a handle from the real picker. */
+async function stubWithRealHandles(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    const w = window as unknown as Record<string, unknown>
+    w.showSaveFilePicker = async () => {
+      localStorage.setItem("__saves", String(Number(localStorage.getItem("__saves") ?? 0) + 1))
+      const root = await navigator.storage.getDirectory()
+      return root.getFileHandle("plan.excalidraw", { create: true })
+    }
+  })
+}
+
+const savedFile = (page: Page) =>
+  page.evaluate(async () => {
+    const root = await navigator.storage.getDirectory()
+    const file = await (await root.getFileHandle("plan.excalidraw", { create: true })).getFile()
+    return { text: await file.text(), saves: Number(localStorage.getItem("__saves") ?? 0) }
+  })
+
+const rects = (text: string): number => (text ? rectCount(text) : 0)
+
+// Restoring the remembered file after a reload is covered by unit tests
+// (test/fileHandle.test.ts): headless Chromium in CI crashes when it reads a stored
+// FileSystemFileHandle back from IndexedDB, so this test stays within one page load.
+test("saving with a real file handle, and Reset forgets the file", async ({ page }) => {
+  await stubWithRealHandles(page)
+  await freshCanvas(page)
+  await page.evaluate(async () => {
+    const root = await navigator.storage.getDirectory()
+    await root.removeEntry("plan.excalidraw").catch(() => {})
+  })
+  await drawRect(page, { x: 100, y: 120 }, { x: 200, y: 200 })
+  await page.keyboard.press("ControlOrMeta+s")
+  await expect.poll(async () => rects((await savedFile(page)).text)).toBe(1)
+
+  await drawRect(page, { x: 300, y: 120 }, { x: 400, y: 200 })
+  await page.keyboard.press("ControlOrMeta+s")
+  await expect.poll(async () => rects((await savedFile(page)).text)).toBe(2)
+  expect((await savedFile(page)).saves).toBe(1)
+
+  // Resetting the canvas starts a new drawing: it must not be saved over that file.
+  await page.getByRole("button", { name: /menu/i }).click()
+  await page.getByRole("menuitem", { name: "Reset the canvas" }).click()
+  await page.getByRole("button", { name: "Reset canvas" }).click()
+  await page.keyboard.press("ControlOrMeta+s")
+  await expect.poll(async () => (await savedFile(page)).saves).toBe(2)
+})

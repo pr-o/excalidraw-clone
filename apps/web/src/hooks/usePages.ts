@@ -10,6 +10,7 @@ import i18next from "i18next"
 import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from "react"
 import { announce } from "../components/LiveAnnouncer"
 import { startAutoSave, type AutoSave } from "../driver/autoSave"
+import { restoreCurrentFile, setCurrentFile } from "../driver/fileHandle"
 import { hydratePages, loadStoredImages } from "../driver/hydration"
 import {
   addPage,
@@ -54,6 +55,11 @@ export function usePages(): PagesState {
   // Once per page load, drop stored images nothing references any more. Skipped on a
   // fresh start or unreadable storage: with no document to compare against, every
   // stored image would look unused.
+  // The save file remembered with the stored drawing; a fresh start has none.
+  useEffect(() => {
+    if (initialDoc.restored) void restoreCurrentFile()
+    else setCurrentFile(null)
+  }, [initialDoc])
   useEffect(() => {
     if (!initialDoc.restored) return
     void collectUnreferencedFiles(
@@ -125,6 +131,8 @@ export function usePages(): PagesState {
     adoptedRef.current = true
     loadDocument(data, { keepActivePage: true })
     void loadStoredImages()
+    // That tab may have saved to (or opened) a different file.
+    void restoreCurrentFile()
     announce(i18next.t("a11y.syncedFromOtherTab"))
   })
   useEffect(() => {
