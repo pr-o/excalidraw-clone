@@ -651,9 +651,7 @@ import type { Point as RoughPoint } from "roughjs/bin/geometry"
 import { strokeLineDash } from "./stroke-dash"
 
 type PolygonElement =
-  | ExcalidrawTriangleElement
-  | ExcalidrawParallelogramElement
-  | ExcalidrawHexagonElement
+  ExcalidrawTriangleElement | ExcalidrawParallelogramElement | ExcalidrawHexagonElement
 
 const polygonOptions = (e: PolygonElement): Options => {
   const opts: Options = {

@@ -52,15 +52,7 @@ export interface ExcalidrawElementBase {
 }
 
 export type ElementType =
-  | "rectangle"
-  | "diamond"
-  | "ellipse"
-  | "arrow"
-  | "line"
-  | "freedraw"
-  | "text"
-  | "image"
-  | "frame"
+  "rectangle" | "diamond" | "ellipse" | "arrow" | "line" | "freedraw" | "text" | "image" | "frame"
 
 // Concrete subtypes add their fields:
 export interface ExcalidrawTextElement extends ExcalidrawElementBase {
@@ -209,8 +201,7 @@ Each tool is a discriminated-union state machine in `packages/tools/src/tools/<n
 ```ts
 // packages/tools/src/tools/rectangle.ts
 type RectangleState =
-  | { phase: "idle" }
-  | { phase: "drawing"; start: Point; current: Point; elementId: string }
+  { phase: "idle" } | { phase: "drawing"; start: Point; current: Point; elementId: string }
 
 type RectangleEvent =
   | { type: "pointerDown"; at: Point }

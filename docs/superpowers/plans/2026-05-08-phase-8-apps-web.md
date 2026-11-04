@@ -2394,9 +2394,8 @@ useEffect(() => {
   let cancelled = false
   void (async () => {
     const event = await pickAndUploadImage({ x: 100, y: 100 })
-    if (cancelled || !event)
-      return // dispatch via the driver — we need a way to push events. Easiest: expose
-      // a window-level ref or extend useDrawingDriver to take a `dispatchRef`.
+    if (cancelled || !event) return // dispatch via the driver — we need a way to push events. Easiest: expose
+    // a window-level ref or extend useDrawingDriver to take a `dispatchRef`.
     ;(window as unknown as { __dispatchToolEvent?: (e: unknown) => void }).__dispatchToolEvent?.(
       event,
     )
@@ -2534,16 +2533,14 @@ export function TextEditingOverlay({ scene }: { scene: Scene }): React.ReactElem
   useEffect(() => {
     if (!id) return
     const el = scene.getElementsIncludingDeleted().find((e) => e.id === id) as
-      | ExcalidrawTextElement
-      | undefined
+      ExcalidrawTextElement | undefined
     setValue(el?.text ?? "")
     queueMicrotask(() => ref.current?.focus())
   }, [id, scene])
 
   if (!id) return null
   const el = scene.getElementsIncludingDeleted().find((e) => e.id === id) as
-    | ExcalidrawTextElement
-    | undefined
+    ExcalidrawTextElement | undefined
   if (!el) return null
 
   const left = (el.x + view.scrollX) * view.zoom

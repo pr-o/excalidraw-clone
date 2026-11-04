@@ -10,8 +10,7 @@ import {
 import type { Tool, ToolContext, ToolEffect, ToolEvent } from "../types"
 
 export type FreedrawState =
-  | { phase: "idle" }
-  | { phase: "drawing"; elementId: string; points: readonly Point[] }
+  { phase: "idle" } | { phase: "drawing"; elementId: string; points: readonly Point[] }
 
 const FREEDRAW_INITIAL: FreedrawState = { phase: "idle" }
 

@@ -39,15 +39,7 @@ import type { Point } from "@excalidraw-clone/geometry"
 
 // Core enums + literal unions
 export type ElementType =
-  | "rectangle"
-  | "diamond"
-  | "ellipse"
-  | "arrow"
-  | "line"
-  | "freedraw"
-  | "text"
-  | "image"
-  | "frame"
+  "rectangle" | "diamond" | "ellipse" | "arrow" | "line" | "freedraw" | "text" | "image" | "frame"
 
 export type FillStyle = "hachure" | "cross-hatch" | "solid"
 export type StrokeStyle = "solid" | "dashed" | "dotted"

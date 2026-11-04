@@ -17,8 +17,7 @@ export interface ShapeBox {
 }
 
 export type ShapeState =
-  | { phase: "idle" }
-  | { phase: "drawing"; start: Point; current: Point; elementId: string }
+  { phase: "idle" } | { phase: "drawing"; start: Point; current: Point; elementId: string }
 
 export const SHAPE_INITIAL: ShapeState = { phase: "idle" }
 

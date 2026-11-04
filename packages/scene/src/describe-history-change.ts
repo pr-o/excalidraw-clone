@@ -1,14 +1,7 @@
 import type { ExcalidrawElement, ExcalidrawElementBase } from "./types"
 
 export type HistoryChangeCategory =
-  | "initial"
-  | "added"
-  | "removed"
-  | "moved"
-  | "resized"
-  | "restyled"
-  | "reordered"
-  | "modified"
+  "initial" | "added" | "removed" | "moved" | "resized" | "restyled" | "reordered" | "modified"
 
 export interface HistoryChangeDescription {
   category: HistoryChangeCategory
@@ -30,13 +23,7 @@ const STYLE_FIELDS: readonly (keyof ExcalidrawElementBase)[] = [
 const VOLATILE_FIELDS = ["versionNonce", "updated"] as const
 
 type ElementCategory =
-  | "added"
-  | "removed"
-  | "moved"
-  | "resized"
-  | "restyled"
-  | "modified"
-  | "unchanged"
+  "added" | "removed" | "moved" | "resized" | "restyled" | "modified" | "unchanged"
 
 /** The subset of `ElementCategory` that represents an actual change. */
 type ChangedElementCategory = Exclude<ElementCategory, "unchanged">

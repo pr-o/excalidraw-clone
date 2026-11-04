@@ -201,7 +201,7 @@ function layoutRadial(comp: readonly GNode[], edges: readonly GraphEdge[]): Plac
   const depth = new Map<string, number>([[root.id, 0]])
   const parent = new Map<string, string>()
   const rings: GNode[][] = [[root]]
-  for (let queue = [root]; queue.length; ) {
+  for (let queue = [root]; queue.length;) {
     const next: GNode[] = []
     for (const n of queue) {
       for (const id of nbrs.get(n.id)!) {

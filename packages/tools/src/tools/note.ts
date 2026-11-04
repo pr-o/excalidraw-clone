@@ -5,8 +5,7 @@ import type { Tool, ToolContext, ToolEvent } from "../types"
 import { computeBox } from "./shape"
 
 export type NoteState =
-  | { phase: "idle" }
-  | { phase: "drawing"; start: Point; containerId: string; textId: string }
+  { phase: "idle" } | { phase: "drawing"; start: Point; containerId: string; textId: string }
 
 const NOTE_INITIAL: NoteState = { phase: "idle" }
 

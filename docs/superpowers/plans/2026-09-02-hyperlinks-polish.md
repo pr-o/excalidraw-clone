@@ -219,7 +219,7 @@ const { left, top } = clampLinkOverlayPos(
 )
 ```
 
-and change the editor's `style` prop from `top: \`${top - 40}px\`` to `top: \`${top}px\``(and`left`stays`\`${left}px\``):
+and change the editor's `style` prop from `top: \`${top - 40}px\``to`top: \`${top}px\``(and`left`stays`\`${left}px\``):
 
 ```ts
         style={{ position: "absolute", left: `${left}px`, top: `${top}px` }}
@@ -248,7 +248,7 @@ const { left, top } = clampLinkOverlayPos(
 )
 ```
 
-and change the indicator's `style` prop from `top: \`${top - 22}px\`` to `top: \`${top}px\``:
+and change the indicator's `style` prop from `top: \`${top - 22}px\``to`top: \`${top}px\``:
 
 ```ts
       style={{ position: "absolute", left: `${left}px`, top: `${top}px` }}

@@ -10,8 +10,7 @@ import {
 export type ImageEvent = AnyToolEvent
 
 export type ImageState =
-  | { phase: "idle" }
-  | { phase: "placing"; fileId: string; mimeType: string; aspect: number }
+  { phase: "idle" } | { phase: "placing"; fileId: string; mimeType: string; aspect: number }
 
 const DEFAULT_PLACED_WIDTH = 200
 
