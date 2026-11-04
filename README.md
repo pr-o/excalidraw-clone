@@ -1,29 +1,65 @@
-# https://excalidraw-clone-web-rose.vercel.app/
-
 # Excalidraw Clone
 
-A solo-drawing clone of [Excalidraw](https://excalidraw.com/) built with TypeScript, React 19, Next.js 16, and TurboRepo. v1 is single-user only — no collaboration, no accounts.
+A hand-drawn style whiteboard in the spirit of [Excalidraw](https://excalidraw.com/), built with TypeScript, React 19, Next.js 16 and TurboRepo. It runs entirely in the browser: no server, no accounts, no real-time collaboration.
 
-> Scope decision and full feature inventory live in [`docs/superpowers/exploration/`](./docs/superpowers/exploration/).
-> The implementation plan and design spec will live under [`docs/superpowers/specs/`](./docs/superpowers/specs/).
+**Live:** https://excalidraw-clone-web-rose.vercel.app/
+
+> Scope decisions and the feature inventory: [`docs/superpowers/exploration/`](./docs/superpowers/exploration/). Design specs and per-feature implementation plans: [`docs/superpowers/specs/`](./docs/superpowers/specs/) and [`docs/superpowers/plans/`](./docs/superpowers/plans/).
+
+---
+
+## Features
+
+**Drawing** — rectangle, ellipse, diamond, triangle, parallelogram, hexagon, pentagon, octagon, line, arrow (straight, multi-point, elbow), freehand, text with bold/italic and bullets, sticky notes, tables, frames, images (with crop), stickers. Hand-drawn rendering with rough.js, stroke/fill/roughness/opacity, gradients and drop shadows, light and dark themes.
+
+**Diagramming** — arrows bind to shapes and follow them, arrow labels, flowchart quick-create (Ctrl/Cmd+Arrow), auto layout (tree top-down / left-right, radial), align / distribute / tidy, alignment guides, snap to grid, rulers with guides, Mermaid flowchart import and export.
+
+**Editing** — selection, lasso, eraser, groups, locking, flip, z-order, duplicate and array-duplicate, copy/paste (shapes, text and images), copy/paste style, undo/redo with a history panel, find on canvas, layers panel, command palette, rebindable tool keys, keyboard navigation of elements, context menus, touch gestures (pinch, long-press, double-tap).
+
+**Documents** — multiple pages with thumbnails, comments, element links, presentation mode (frames as slides, laser pointer), view and zen modes, minimap, stats.
+
+**Files and storage** — auto-save in the browser; tabs of the app stay in sync (concurrent edits are merged); named snapshots; a component library with `.excalidrawlib` import/export and templates. Open/save `.excalidraw` files — Ctrl+S writes back to the file you opened or saved (File System Access API, remembered across reloads; other browsers download). Drag and drop images, drawings and libraries onto the canvas. Export PNG / SVG / PDF (single page, selection, frame, or every page as a zip / multi-page PDF), optionally with the drawing embedded; copy as PNG.
+
+**Languages** — English and Korean (a guard test keeps both complete).
+
+---
+
+## Getting started
+
+Requires Node ≥ 22 and pnpm ≥ 10.
+
+```bash
+pnpm install
+pnpm dev            # http://localhost:3000
+```
+
+| Command                                   | What it does                                                        |
+| ----------------------------------------- | ------------------------------------------------------------------- |
+| `pnpm build`                              | Production build of every package and the app                       |
+| `pnpm lint` / `pnpm typecheck`            | ESLint (incl. React-Compiler hook rules) / TypeScript, all packages |
+| `pnpm test`                               | Vitest unit tests, all packages                                     |
+| `pnpm --filter @excalidraw-clone/web e2e` | Playwright end-to-end tests (starts the dev server)                 |
+| `pnpm format` / `pnpm format:check`       | Prettier                                                            |
+
+A pre-commit hook runs ESLint and Prettier on staged files.
 
 ---
 
 ## Stack
 
-| Layer               | Choice                                                              | Notes                                                            |
-| ------------------- | ------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| Runtime / framework | **Next.js 16** + **React 19**                                       | App Router. Static export supported.                             |
-| Language            | **TypeScript**                                                      | Strict mode across all packages.                                 |
-| Monorepo            | **TurboRepo** + **pnpm** workspaces                                 | Standard for the toolchain.                                      |
-| Styling             | **Tailwind CSS v4**                                                 | First-class Next 16 integration.                                 |
-| Drawing engine      | **rough.js**                                                        | Non-negotiable for the hand-drawn look.                          |
-| State               | Vanilla store + tool FSMs + **Zustand**                             | See [State Management](#state-management---three-layers) below.  |
-| Persistence         | **localStorage** + **IndexedDB** (`idb`)                            | Scene in localStorage; image binaries in IndexedDB.              |
-| File format         | `.excalidraw` JSON                                                  | Same shape as upstream → files interop with the real Excalidraw. |
-| i18n                | **i18next**                                                         | English + Korean only for v1.                                    |
-| Tests               | **Vitest** (unit, per package) + **Playwright** (e2e in `apps/web`) |                                                                  |
-| Deploy              | **Vercel** (primary) + static export for self-hosting               |                                                                  |
+| Layer               | Choice                                                              | Notes                                                                                                            |
+| ------------------- | ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Runtime / framework | **Next.js 16** + **React 19**                                       | App Router. Static export supported.                                                                             |
+| Language            | **TypeScript**                                                      | Strict mode across all packages.                                                                                 |
+| Monorepo            | **TurboRepo** + **pnpm** workspaces                                 | Standard for the toolchain.                                                                                      |
+| Styling             | **Tailwind CSS v4**                                                 | First-class Next 16 integration.                                                                                 |
+| Drawing engine      | **rough.js**                                                        | Non-negotiable for the hand-drawn look.                                                                          |
+| State               | Vanilla store + tool FSMs + **Zustand**                             | See [State Management](#state-management---three-layers) below.                                                  |
+| Persistence         | **localStorage** + **IndexedDB** (`idb`)                            | Document in localStorage (synced across tabs); images, library, snapshots and the save-file handle in IndexedDB. |
+| File format         | `.excalidraw` JSON                                                  | Same shape as upstream → files interop with the real Excalidraw.                                                 |
+| i18n                | **i18next**                                                         | English + Korean only for v1.                                                                                    |
+| Tests               | **Vitest** (unit, per package) + **Playwright** (e2e in `apps/web`) |                                                                                                                  |
+| Deploy              | **Vercel** (primary) + static export for self-hosting               |                                                                                                                  |
 
 ---
 
@@ -63,7 +99,7 @@ An Excalidraw-style app has three different _kinds_ of state, each best handled 
 
 **What it holds:** the actual elements on the canvas. The source of truth for "what's drawn."
 
-**Implementation:** a **vanilla TypeScript `Store` class** with a pub/sub interface. No React, no state library.
+**Implementation:** a **vanilla TypeScript `Scene` class** with a pub/sub interface. No React, no state library. Every getter returns an immutable value that is replaced on change, so React components read the scene with `useSyncExternalStore` (`useSceneElements` / `useSceneSnapshot` in `apps/web/src/hooks/useScene.ts`) and use those values directly as memo/effect dependencies.
 
 **Why:**
 
@@ -128,11 +164,17 @@ The arrows are **one-way**: UI tells tools which is active; tools commit to scen
 
 ---
 
-## Project status
+## Testing
 
-This README captures decisions made during initial brainstorming on **2026-04-28**. The next deliverables:
+- **Unit tests** (Vitest, per package) cover the geometry, scene model and its invariants, tools as pure reducers, rendering against a recording canvas, persistence against `fake-indexeddb`, and React components with Testing Library.
+- **End-to-end tests** (Playwright, `apps/web/e2e`) drive the real app: drawing and editing, files and exports, multiple tabs, paste and drop, accessibility scans (axe) in both themes, touch layouts, and performance budgets on large scenes (`e2e/perf`).
+- Bugs are fixed test-first where possible: a regression test that fails before the fix.
 
-1. Design spec — `docs/superpowers/specs/2026-04-28-excalidraw-clone-design.md`
-2. Implementation plan — to follow once the spec is reviewed.
+## React and Next.js notes
 
-See [`docs/superpowers/exploration/v1-scope-decision.md`](./docs/superpowers/exploration/v1-scope-decision.md) for the full in/out/deferred feature list.
+- React 19.2: `useSyncExternalStore` for the scene, `useEffectEvent` instead of suppressed effect dependencies, form Actions with `useFormStatus`, async transitions, `useOptimistic`, `useDeferredValue`, `ref` as a prop, and `preload()` for the hand-drawn font.
+- `eslint-plugin-react-hooks` v7 with its React-Compiler-based rules enabled as errors; there are no hook-rule suppressions.
+- The React Compiler itself is **not** enabled: a few components read the mutable `Scene` during render, which the compiler would memoize into stale values.
+- The app is client-only (`next/dynamic` with `ssr: false`): the editor needs `window`, canvas and storage APIs from the first render.
+
+See [`docs/superpowers/exploration/v1-scope-decision.md`](./docs/superpowers/exploration/v1-scope-decision.md) for the original in/out/deferred feature list.
