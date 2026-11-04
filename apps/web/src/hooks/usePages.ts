@@ -4,6 +4,7 @@ import {
   createAutoSaver,
   loadScene,
   SCENE_KEY,
+  serializeDocument,
 } from "@excalidraw-clone/persistence"
 import type { ExcalidrawData, Scene } from "@excalidraw-clone/scene"
 import i18next from "i18next"
@@ -12,6 +13,7 @@ import { announce } from "../components/LiveAnnouncer"
 import { startAutoSave, type AutoSave } from "../driver/autoSave"
 import { restoreCurrentFile, setCurrentFile } from "../driver/fileHandle"
 import { hydratePages, loadStoredImages } from "../driver/hydration"
+import { mergeDocuments } from "../driver/mergeDocuments"
 import {
   addPage,
   deletePage,
@@ -112,24 +114,43 @@ export function usePages(): PagesState {
   // starts for the adopted pages does not immediately write them back.
   const adoptedRef = useRef(false)
   const autoSaveRef = useRef<AutoSave | null>(null)
+  // The last document this tab and the stored copy agreed on (loaded, saved or adopted):
+  // the common ancestor when both this tab and another one changed it.
+  const syncedRef = useRef<ExcalidrawData | null>(null)
   useEffect(() => {
-    const saver = startAutoSave(pages, activePageId, { saveOnStart: !adoptedRef.current })
+    syncedRef.current = serializeDocument(initialDoc.pages, initialDoc.activePageId)
+  }, [initialDoc])
+  useEffect(() => {
+    const saver = startAutoSave(pages, activePageId, {
+      saveOnStart: !adoptedRef.current,
+      onSaved: (doc) => {
+        syncedRef.current = doc
+      },
+    })
     adoptedRef.current = false
     autoSaveRef.current = saver
     return saver.stop
   }, [pages, activePageId])
   // Every tab auto-saves the whole document to the same storage key, so without this
   // the last tab to save silently erased the other tab's edits. When another tab saves,
-  // this tab adopts that document — unless it has unsaved edits of its own, in which
-  // case its own save (which follows within the debounce) is the newer one. Pending
-  // edits are written when a window loses focus, so the tab you switch to is current.
+  // this tab adopts that document. If this tab has unsaved edits of its own, the two
+  // are merged against the last version both agreed on, and the merge is saved (the
+  // other tab then adopts it). Pending edits are also written when a window loses
+  // focus, so the tab you switch to is normally current already.
   const adoptOtherTabDocument = useEffectEvent((e: StorageEvent) => {
     if (e.key !== SCENE_KEY || e.newValue === null) return
-    if (autoSaveRef.current?.hasPendingSave()) return
-    const data = loadScene()
-    if (!data) return
-    adoptedRef.current = true
-    loadDocument(data, { keepActivePage: true })
+    const remote = loadScene()
+    if (!remote) return
+    const base = syncedRef.current
+    syncedRef.current = remote
+    if (autoSaveRef.current?.hasPendingSave() && base) {
+      const local = serializeDocument(pages, activePageId)
+      // Not marked as adopted: the merged document must be saved for the other tab.
+      loadDocument(mergeDocuments(base, local, remote), { keepActivePage: true })
+    } else {
+      adoptedRef.current = true
+      loadDocument(remote, { keepActivePage: true })
+    }
     void loadStoredImages()
     // That tab may have saved to (or opened) a different file.
     void restoreCurrentFile()

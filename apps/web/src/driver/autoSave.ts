@@ -7,6 +7,7 @@ import {
 } from "@excalidraw-clone/persistence"
 import i18next from "i18next"
 import { notify } from "../components/LiveAnnouncer"
+import type { ExcalidrawData } from "@excalidraw-clone/scene"
 import { useAppStore } from "../store"
 import type { PageRecord } from "./pages"
 
@@ -26,7 +27,14 @@ export interface AutoSave {
 export function startAutoSave(
   pages: readonly PageRecord[],
   activePageId: string,
-  { saveOnStart = true }: { saveOnStart?: boolean } = {},
+  {
+    saveOnStart = true,
+    onSaved,
+  }: {
+    saveOnStart?: boolean
+    /** Called with each document successfully written. */
+    onSaved?: (doc: ExcalidrawData) => void
+  } = {},
 ): AutoSave {
   // Two savers: the document (large on big scenes) is re-serialized only when a
   // Scene changes, not on every pan/zoom/selection store update.
@@ -36,7 +44,9 @@ export function startAutoSave(
   const sceneSaver = createAutoSaver({
     delayMs: 500,
     flush: () => {
-      const ok = saveScene(serializeDocument(pages, activePageId))
+      const doc = serializeDocument(pages, activePageId)
+      const ok = saveScene(doc)
+      if (ok) onSaved?.(doc)
       if (!ok && !saveFailing) notify(i18next.t("a11y.saveFailed"))
       saveFailing = !ok
     },
