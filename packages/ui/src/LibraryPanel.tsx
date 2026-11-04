@@ -39,6 +39,9 @@ interface ItemTileProps {
   t: (key: string) => string
 }
 
+const svgDataUrl = (svg: string): string =>
+  `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
+
 function ItemTile(props: ItemTileProps): React.ReactElement {
   const { item } = props
   return (
@@ -47,10 +50,18 @@ function ItemTile(props: ItemTileProps): React.ReactElement {
         type="button"
         onClick={() => props.onItemClick(item)}
         aria-label={item.name}
-        className="flex h-20 w-full items-center justify-center overflow-hidden rounded border bg-panel-subtle p-1 hover:border-accent [&>svg]:h-full [&>svg]:w-full"
-        // biome-ignore lint/security/noDangerouslySetInnerHtml: renderer-controlled SVG
-        dangerouslySetInnerHTML={{ __html: props.renderThumbnail(item) }}
-      />
+        className="flex h-20 w-full items-center justify-center overflow-hidden rounded border bg-panel-subtle p-1 hover:border-accent"
+      >
+        {/* An image, not inline SVG: the thumbnail is decoration, and its text (a
+            template's labels) must not become part of the tile's accessible name
+            (WCAG 2.5.3). It also keeps rendered markup out of the page DOM. */}
+        <img
+          alt=""
+          draggable={false}
+          src={svgDataUrl(props.renderThumbnail(item))}
+          className="h-full w-full object-contain"
+        />
+      </button>
       {!props.readOnly && props.renamingId === item.id ? (
         <input
           autoFocus

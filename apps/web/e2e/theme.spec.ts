@@ -111,10 +111,15 @@ test("library template thumbnails follow the theme", async ({ page }) => {
   await page.goto("/")
   await page.evaluate(() => localStorage.clear())
   await page.reload()
+  // The thumbnail is an <img> of an SVG data URL: decode it and read its stroke colours.
   const strokes = () =>
-    page
-      .locator('[data-testid="template-item-builtin-flowchart"] [stroke]')
-      .evaluateAll((els) => [...new Set(els.map((e) => e.getAttribute("stroke")))])
+    page.locator('[data-testid="template-item-builtin-flowchart"] img').evaluate((img) => {
+      const svg = decodeURIComponent((img as HTMLImageElement).src.split(",")[1] ?? "")
+      const doc = new DOMParser().parseFromString(svg, "image/svg+xml")
+      return [
+        ...new Set([...doc.querySelectorAll("[stroke]")].map((e) => e.getAttribute("stroke"))),
+      ]
+    })
   await page.getByTestId("library-toggle").click()
   expect(await strokes()).toEqual(["#1e1e1e"])
   await page.getByRole("button", { name: /menu/i }).click()
