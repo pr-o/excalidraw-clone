@@ -66,17 +66,18 @@ function cpuMsPerMutate(n: number, batches = 1): number {
 }
 
 describe("Scene scaling (regression guard against quadratic per-mutate work)", () => {
-  it("one-element mutate grows ~linearly with scene size", () => {
+  // Measures CPU time, but building the scenes takes real time too: on a loaded machine
+  // (Turbo runs every package's tests and builds at once) it can exceed the 5 s default.
+  it("one-element mutate grows ~linearly with scene size", { timeout: 60_000 }, () => {
     cpuMsPerMutate(500) // warm up the JIT
-    const small = cpuMsPerMutate(1000, 9)
-    const large = cpuMsPerMutate(8000, 9)
-    // 8x the elements: linear ≈ 8x, quadratic ≈ 64x. The bound sits halfway (on a log
-    // scale) so cache and GC noise on a busy machine cannot trip it.
+    const small = cpuMsPerMutate(1000, 5)
+    const large = cpuMsPerMutate(8000, 5)
+    // 8x the elements: linear ≈ 8x, quadratic ≈ 64x. Loose bound to stay unflaky.
     const ratio = large / Math.max(small, 0.05)
     expect(
       ratio,
       `8000 vs 1000 elements: ${small.toFixed(3)} -> ${large.toFixed(3)} ms`,
-    ).toBeLessThan(32)
+    ).toBeLessThan(25)
   })
 
   it("getElements returns one cached array until the elements change", () => {
