@@ -63,3 +63,18 @@ describe("createAutoSaver", () => {
     expect(flush).not.toHaveBeenCalled()
   })
 })
+
+describe("createAutoSaver.isPending", () => {
+  it("is true between schedule and the write, false after", () => {
+    vi.useFakeTimers()
+    const flush = vi.fn()
+    const saver = createAutoSaver({ delayMs: 100, flush })
+    expect(saver.isPending()).toBe(false)
+    saver.schedule()
+    expect(saver.isPending()).toBe(true)
+    vi.advanceTimersByTime(100)
+    expect(saver.isPending()).toBe(false)
+    expect(flush).toHaveBeenCalledTimes(1)
+    vi.useRealTimers()
+  })
+})

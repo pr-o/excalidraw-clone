@@ -75,3 +75,22 @@ describe("buildPaste", () => {
     ).toEqual([])
   })
 })
+
+describe("buildPaste with a hostile or corrupt envelope", () => {
+  it("drops elements that would break the renderer and pastes the valid ones", () => {
+    const good = newRectangle({ x: 0, y: 0, width: 20, height: 20 })
+    const text = JSON.stringify({
+      type: CLIPBOARD_TYPE,
+      version: 1,
+      elements: [good, { id: "x", type: "arrow", x: 0, y: 0, width: 1, height: 1 }, null, 42],
+    })
+    const pasted = buildPaste(text, { x: 100, y: 100 })
+    expect(pasted).toHaveLength(1)
+    expect(pasted[0]!.type).toBe("rectangle")
+  })
+
+  it("pastes nothing when no element in the envelope is usable", () => {
+    const text = JSON.stringify({ type: CLIPBOARD_TYPE, version: 1, elements: [null, { id: "a" }] })
+    expect(buildPaste(text, { x: 0, y: 0 })).toEqual([])
+  })
+})

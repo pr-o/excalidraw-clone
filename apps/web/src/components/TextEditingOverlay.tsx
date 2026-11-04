@@ -1,7 +1,7 @@
 "use client"
 import { fontFamilyName } from "@excalidraw-clone/renderer"
 import { enterOnBullet, normalizeSpans, type Scene } from "@excalidraw-clone/scene"
-import React, { useEffect, useRef } from "react"
+import React, { useEffect, useEffectEvent, useRef } from "react"
 import { commitTextEdit } from "../driver/commitTextEdit"
 import { measureStandaloneText } from "../driver/measureStandaloneText"
 import { renameFrame } from "../driver/renameFrame"
@@ -21,14 +21,18 @@ export function TextEditingOverlay({ scene }: { scene: Scene }): React.ReactElem
   const { ref, value, setValue, spans } = rich
   const mirror = useRef<HTMLDivElement | null>(null)
 
-  useEffect(() => {
-    if (!id) return
-    const el = scene.getElementsIncludingDeleted().find((e) => e.id === id)
+  // Loads the edited element's text into the editor. An Effect Event: it reads the
+  // latest editor state, but only a change of the edited element re-runs it.
+  const startEditing = useEffectEvent((editedId: string) => {
+    const el = scene.getElementsIncludingDeleted().find((e) => e.id === editedId)
     rich.reset(
       el?.type === "frame" ? (el.name ?? "") : el?.type === "text" ? el.text : "",
       el?.type === "text" ? normalizeSpans(el.spans, el.text.length) : [],
     )
     queueMicrotask(() => ref.current?.focus())
+  })
+  useEffect(() => {
+    if (id) startEditing(id)
   }, [id, scene])
 
   if (!id) return null
@@ -171,7 +175,7 @@ export function TextEditingOverlay({ scene }: { scene: Scene }): React.ReactElem
     >
       {styled && (
         <RichMirror
-          mirrorRef={mirror}
+          ref={mirror}
           value={value}
           spans={spans}
           weight={weight}

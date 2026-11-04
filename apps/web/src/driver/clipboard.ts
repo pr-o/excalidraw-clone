@@ -3,7 +3,9 @@ import {
   expandIdsToCopyClosure,
   getElementBounds,
   newText,
+  sanitizeElements,
   type ExcalidrawElement,
+  isBoundLabel,
 } from "@excalidraw-clone/scene"
 
 export const CLIPBOARD_TYPE = "excalidraw-clone/clipboard"
@@ -44,6 +46,9 @@ const parseEnvelope = (text: string): ClipboardEnvelope | null => {
   return null
 }
 
+/** True when `text` is this app's own copied-elements envelope. */
+export const isElementsEnvelope = (text: string): boolean => parseEnvelope(text) !== null
+
 /** Turn clipboard text into elements to append: envelope → fresh-id clones
  *  whose bounding-box center lands at `at`; other non-blank text → one text
  *  element at `at`; blank/empty → nothing. */
@@ -53,13 +58,15 @@ export function buildPaste(text: string, at: { x: number; y: number }): Excalidr
   if (envelope === null) {
     return [newText({ x: at.x, y: at.y, text })]
   }
-  if (envelope.elements.length === 0) return []
-  return centerAt(cloneElementsWithNewIds(envelope.elements), at)
+  // The clipboard is untrusted: drop anything that would break the renderer.
+  const elements = sanitizeElements(envelope.elements)
+  if (elements.length === 0) return []
+  return centerAt(cloneElementsWithNewIds(elements), at)
 }
 
 /** Ids to select after inserting `els`: everything but bound labels. */
 export const selectableIds = (els: readonly ExcalidrawElement[]): string[] =>
-  els.filter((el) => !(el.type === "text" && el.containerId !== null)).map((el) => el.id)
+  els.filter((el) => !isBoundLabel(el)).map((el) => el.id)
 
 /** Translates `els` so their combined bounding-box center lands at `at`. */
 export function centerAt(

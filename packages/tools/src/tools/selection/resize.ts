@@ -1,4 +1,4 @@
-import type { Point } from "@excalidraw-clone/geometry"
+import { rotatePoint, type Point } from "@excalidraw-clone/geometry"
 import { fitTableBox, type ExcalidrawElement } from "@excalidraw-clone/scene"
 import type { Modifiers, ToolEffect, ToolContext, ToolEvent } from "../../types"
 import { buildRecommitEffect } from "./recommit"
@@ -22,8 +22,11 @@ export const computeResize = (
   at: Point,
   modifiers: Modifiers,
 ): { x: number; y: number; width: number; height: number } => {
-  const dx = at.x - start.x
-  const dy = at.y - start.y
+  // The box is resized in the element's own (unrotated) frame, so the drag is
+  // measured along its axes; a turned element's handles move along turned axes.
+  const angle = origin.angle
+  const drag = { x: at.x - start.x, y: at.y - start.y }
+  const { x: dx, y: dy } = angle === 0 ? drag : rotatePoint(drag, { x: 0, y: 0 }, -angle)
   let { x, y, width, height } = origin
   switch (handle) {
     case "nw":
@@ -88,6 +91,17 @@ export const computeResize = (
   if (height < 0) {
     y = y + height
     height = -height
+  }
+  if (angle !== 0) {
+    // The element turns about its centre, which just moved; shift the box so the
+    // corner opposite the dragged handle stays where it is on screen.
+    const shift = {
+      x: x + width / 2 - (origin.x + origin.width / 2),
+      y: y + height / 2 - (origin.y + origin.height / 2),
+    }
+    const turned = rotatePoint(shift, { x: 0, y: 0 }, angle)
+    x += turned.x - shift.x
+    y += turned.y - shift.y
   }
   return { x, y, width, height }
 }

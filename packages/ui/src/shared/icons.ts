@@ -91,6 +91,12 @@ export const ICONS: Record<string, string> = {
     '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="3" x2="3" y2="17"/><line x1="17" y1="3" x2="17" y2="17"/><rect x="8.5" y="6" width="3" height="8" rx="1"/></svg>',
   "distribute-v":
     '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="3" x2="17" y2="3"/><line x1="3" y1="17" x2="17" y2="17"/><rect x="6" y="8.5" width="8" height="3" rx="1"/></svg>',
+  "layout-tree-down":
+    '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="6" height="4" rx="1"/><rect x="2" y="14" width="6" height="4" rx="1"/><rect x="12" y="14" width="6" height="4" rx="1"/><path d="M10 6v3M5 14v-2.5h10V14"/></svg>',
+  "layout-tree-right":
+    '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="4" height="6" rx="1"/><rect x="14" y="2" width="4" height="6" rx="1"/><rect x="14" y="12" width="4" height="6" rx="1"/><path d="M6 10h3M9 10V5h5M9 10v5h5"/></svg>',
+  "layout-radial":
+    '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="7.5" y="7.5" width="5" height="5" rx="1"/><circle cx="10" cy="3" r="1.6"/><circle cx="10" cy="17" r="1.6"/><circle cx="3" cy="10" r="1.6"/><circle cx="17" cy="10" r="1.6"/><path d="M10 4.6v2.9M10 12.5v2.9M4.6 10h2.9M12.5 10h2.9"/></svg>',
   tidy: '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="5" height="5" rx="1"/><rect x="12" y="3" width="5" height="5" rx="1"/><rect x="3" y="12" width="5" height="5" rx="1"/><rect x="12" y="12" width="5" height="5" rx="1"/></svg>',
   "send-to-back":
     '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="4" x2="4" y2="16"/><polyline points="14,4 8,10 14,16"/></svg>',

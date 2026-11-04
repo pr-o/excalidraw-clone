@@ -6,7 +6,15 @@ export const DEPENDS_ON: readonly string[] = [SCENE_NAME]
 export { blobToDataURL, dataURLToBlob, sha256Hex } from "./binary"
 
 // localStorage scene + UI
-export { clearLocal, loadScene, loadUI, saveJSON, saveScene, saveUI } from "./local-store"
+export {
+  clearLocal,
+  loadScene,
+  loadUI,
+  saveJSON,
+  saveScene,
+  saveUI,
+  SCENE_KEY,
+} from "./local-store"
 
 // IndexedDB image binaries
 export {
@@ -18,9 +26,14 @@ export {
   putFile,
 } from "./image-store"
 
+// Cleanup of image binaries nothing references
+export { collectUnreferencedFiles, GC_MIN_AGE_MS } from "./image-gc"
+
+// The file "Save" writes to, remembered across reloads
+export { loadCurrentFileHandle, storeCurrentFileHandle } from "./handle-store"
+
 // IndexedDB library
 export {
-  clearLibrary,
   deleteLibraryItem,
   EXCALIDRAWLIB_VERSION,
   exportLibraryFile,

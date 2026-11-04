@@ -58,8 +58,7 @@ function ArrayDuplicateBody({
       className={className}
     >
       <form
-        onSubmit={(e) => {
-          e.preventDefault()
+        action={() => {
           if (copies > 0) onConfirm(opts)
         }}
       >

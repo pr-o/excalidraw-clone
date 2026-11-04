@@ -1,18 +1,18 @@
 "use client"
-import type { CanvasRenderer } from "@excalidraw-clone/renderer"
 import type { ExcalidrawData } from "@excalidraw-clone/scene"
 import { HamburgerMenu } from "@excalidraw-clone/ui"
 import { useTranslation } from "react-i18next"
+import i18next from "i18next"
+import { notify } from "./LiveAnnouncer"
 import { openExcalidrawFromPicker } from "../driver/openFile"
 import type { PageRecord } from "../driver/pages"
-import { saveAsExcalidraw } from "../driver/saveFile"
+import { saveDrawing } from "../driver/fileHandle"
 import { toggleViewMode } from "../driver/viewMode"
 import { useAppStore } from "../store"
 
 export interface MenuHostProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  renderer: CanvasRenderer | null
   pages: readonly PageRecord[]
   activePageId: string
   canPresent: boolean
@@ -24,7 +24,6 @@ export interface MenuHostProps {
 export function MenuHost({
   open,
   onOpenChange,
-  renderer,
   pages,
   activePageId,
   canPresent,
@@ -70,14 +69,18 @@ export function MenuHost({
       onCommentsToggle={toggleCommentsPanel}
       onOpenFile={() => {
         void (async () => {
-          const data = await openExcalidrawFromPicker(renderer)
-          if (!data) return
-          onOpenDocument(data)
+          try {
+            const data = await openExcalidrawFromPicker()
+            if (!data) return
+            onOpenDocument(data)
+          } catch {
+            // Corrupt JSON, a newer file version, or a PNG without an embedded scene.
+            notify(i18next.t("a11y.openFailed"))
+          }
         })()
       }}
-      onSaveFile={() => {
-        void saveAsExcalidraw(pages, activePageId)
-      }}
+      onSave={() => void saveDrawing(pages, activePageId)}
+      onSaveFile={() => void saveDrawing(pages, activePageId, { saveAs: true })}
       onExport={() => setOpenDialog("export")}
       onImportMermaid={() => setOpenDialog("mermaid-import")}
       onExportMermaid={() => setOpenDialog("mermaid-export")}

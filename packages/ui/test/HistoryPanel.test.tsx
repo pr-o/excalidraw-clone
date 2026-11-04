@@ -112,4 +112,15 @@ describe("HistoryPanel", () => {
     )
     expect(screen.queryByTestId("library-toggle")).toBeNull()
   })
+
+  it("re-translates labels when the translate function changes (language switch)", () => {
+    const history = [[]] as const
+    const { rerender } = render(
+      <HistoryPanel t={t} history={history} currentIndex={0} open {...handlers} />,
+    )
+    expect(screen.getByTestId("history-jump-0")).toHaveTextContent("history.initial")
+    const ko = (key: string): string => `ko:${key}`
+    rerender(<HistoryPanel t={ko} history={history} currentIndex={0} open {...handlers} />)
+    expect(screen.getByTestId("history-jump-0")).toHaveTextContent("ko:history.initial")
+  })
 })

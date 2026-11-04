@@ -16,6 +16,7 @@ import { mirrorOf } from "./flip"
 import { hitTestElement } from "./hit-test"
 import { pointsPatch } from "./points-patch"
 import type { ElementType, ExcalidrawElement, PointBinding } from "./types"
+import { isBoundLabel } from "./bound-label"
 
 export const BINDING_GAP = 4
 /** How far outside a shape's edge (scene px) an arrow endpoint still binds to it. */
@@ -57,14 +58,14 @@ export const bindingTargetAt = (
   for (let i = elements.length - 1; i >= 0; i -= 1) {
     const el = elements[i]!
     if (!canBindTo(el) || el.locked) continue
-    if (el.type === "text" && el.containerId !== null) continue
+    if (isBoundLabel(el)) continue
     if (hitTestElement(el, point)) return el
   }
   // Near miss: a point just outside a shape's edge (where users aim arrows) still binds.
   for (let i = elements.length - 1; i >= 0; i -= 1) {
     const el = elements[i]!
     if (!canBindTo(el) || el.locked) continue
-    if (el.type === "text" && el.containerId !== null) continue
+    if (isBoundLabel(el)) continue
     const center = boundsCenter(getElementBounds(el))
     const d = Math.hypot(center.x - point.x, center.y - point.y)
     if (d === 0) continue

@@ -1,5 +1,5 @@
 import { expandIdsToFrameMembers } from "./frames"
-import type { ExcalidrawElement } from "./types"
+import type { ExcalidrawElement, PointBinding } from "./types"
 
 /**
  * Expands a selection to its copyable closure: frame members of any selected
@@ -24,8 +24,11 @@ export function expandIdsToCopyClosure(
 /**
  * Deep-clones elements with fresh ids, rewriting every internal reference
  * (bindings, bound elements, container, frame, group membership) through the old->new id map.
- * References to ids outside the given set are left as-is. Positions are
- * untouched — callers offset separately.
+ * Arrow bindings and back-references to elements outside the given set are
+ * dropped: a copy must not stay glued to (or claim) an original it was not
+ * cloned with, or binding reconciliation would snap it back onto that
+ * original. Other outside references (frame, container, group) are left
+ * as-is. Positions are untouched — callers offset separately.
  */
 export function cloneElementsWithNewIds(
   elements: readonly ExcalidrawElement[],
@@ -35,6 +38,10 @@ export function cloneElementsWithNewIds(
     idMap.set(el.id, crypto.randomUUID())
   }
   const remap = (id: string): string => idMap.get(id) ?? id
+  const remapBinding = (binding: PointBinding | null): PointBinding | null =>
+    binding && idMap.has(binding.elementId)
+      ? { ...binding, elementId: remap(binding.elementId) }
+      : null
   const groupIdMap = new Map<string, string>()
   const remapGroup = (gid: string): string => {
     let next = groupIdMap.get(gid)
@@ -55,15 +62,12 @@ export function cloneElementsWithNewIds(
       next.frameId = remap(next.frameId)
     }
     if (next.boundElements != null) {
-      next.boundElements = next.boundElements.map((b) => ({ ...b, id: remap(b.id) }))
+      const kept = next.boundElements.filter((b) => idMap.has(b.id))
+      next.boundElements = kept.map((b) => ({ ...b, id: remap(b.id) }))
     }
     if (next.type === "arrow" || next.type === "line") {
-      if (next.startBinding) {
-        next.startBinding = { ...next.startBinding, elementId: remap(next.startBinding.elementId) }
-      }
-      if (next.endBinding) {
-        next.endBinding = { ...next.endBinding, elementId: remap(next.endBinding.elementId) }
-      }
+      next.startBinding = remapBinding(next.startBinding)
+      next.endBinding = remapBinding(next.endBinding)
     }
     if (next.type === "text" && next.containerId != null) {
       next.containerId = remap(next.containerId)

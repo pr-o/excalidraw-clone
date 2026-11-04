@@ -72,6 +72,9 @@
     "distribute_horizontal": "가로로 분배",
     "distribute_vertical": "세로로 분배",
     "tidy_up": "정리하기",
+    "auto_layout_tree_down": "자동 배치: 트리 (위에서 아래로)",
+    "auto_layout_tree_right": "자동 배치: 트리 (왼쪽에서 오른쪽으로)",
+    "auto_layout_radial": "자동 배치: 방사형",
     "group": "그룹",
     "ungroup": "그룹 해제",
     "arrowheads": "화살촉",
@@ -125,6 +128,7 @@
   "menu": {
     "label": "메뉴",
     "open": "열기…",
+    "save": "저장",
     "saveAs": "다른 이름으로 저장…",
     "snapshots": "스냅샷…",
     "export": "이미지 내보내기…",
@@ -271,6 +275,11 @@
     "emptyHintKeysAfter": "키를 누르면 모든 단축키를 볼 수 있어요"
   },
   "shortcuts": {
+    "undo": "실행 취소",
+    "redo": "다시 실행",
+    "selectAll": "모두 선택",
+    "deselect": "선택 해제",
+    "toggleGrid": "격자 전환",
     "title": "키보드 단축키",
     "tools": "도구",
     "editor": "편집",
@@ -387,6 +396,10 @@
     "f3f0ff": "연보라"
   },
   "a11y": {
+    "syncedFromOtherTab": "다른 탭의 변경 내용으로 업데이트했습니다",
+    "openFailed": "파일을 열 수 없습니다. 손상되었거나 더 새로운 버전의 파일일 수 있습니다.",
+    "dismissNotice": "닫기",
+    "saveFailed": "이 브라우저에 그림을 저장하지 못했습니다(저장 공간이 가득 찼거나 사용할 수 없음). 파일로 내보내 보관하세요.",
     "toolSelected": "{{tool}} 도구",
     "undo": "실행 취소",
     "redo": "다시 실행",
@@ -397,5 +410,13 @@
     "groupOf": "{{count}}개 그룹: ",
     "selectionCleared": "선택 해제됨",
     "noElements": "이 페이지에 요소가 없습니다"
+  },
+  "drop": {
+    "confirmReplace": "끌어다 놓은 그림을 열까요? 캔버스의 모든 내용이 바뀝니다.",
+    "unsupported": "“{{name}}”은(는) 사용할 수 없습니다. 이미지, .excalidraw 그림 또는 .excalidrawlib 라이브러리를 놓으세요."
+  },
+  "file": {
+    "saved": "{{name}}에 저장했습니다",
+    "saveFailed": "파일을 저장하지 못했습니다."
   }
 }

@@ -1,5 +1,5 @@
 import { Icon } from "./Icon"
-import { useEffect, useRef } from "react"
+import { useEffect, useId, useRef } from "react"
 
 export interface DialogProps {
   open: boolean
@@ -19,6 +19,9 @@ export function Dialog({
   className,
 }: DialogProps): React.ReactElement {
   const ref = useRef<HTMLDialogElement | null>(null)
+  // Several dialogs stay mounted (closed) at once, so the title id must be unique
+  // per dialog or aria-labelledby resolves to the first one in the document.
+  const titleId = useId()
 
   useEffect(() => {
     const dlg = ref.current
@@ -39,10 +42,10 @@ export function Dialog({
     <dialog
       ref={ref}
       className={`m-auto rounded-xl bg-panel p-0 text-app shadow-panel backdrop:bg-black/40 ${className ?? ""}`}
-      aria-labelledby="dialog-title"
+      aria-labelledby={titleId}
     >
       <div className="flex items-center justify-between border-b border-panel-subtle px-4 py-3">
-        <h2 id="dialog-title" className="text-base font-semibold">
+        <h2 id={titleId} className="text-base font-semibold">
           {title}
         </h2>
         <button

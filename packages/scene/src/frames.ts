@@ -1,6 +1,7 @@
 import { boundsContains } from "@excalidraw-clone/geometry"
 import { getElementBounds } from "./bounds"
 import type { ExcalidrawElement } from "./types"
+import { isBoundLabel } from "./bound-label"
 
 /**
  * Enforce frame membership as a scene invariant on a mutation draft: every
@@ -34,7 +35,7 @@ export function reconcileFrameMembership(
     if (unchanged?.has(e)) continue
     if (e.isDeleted) continue
     if (e.type === "frame") continue
-    if (e.type === "text" && e.containerId !== null) continue
+    if (isBoundLabel(e)) continue
     let owner: string | null = null
     const eb = getElementBounds(e)
     for (const frame of frames) if (boundsContains(frame.b, eb)) owner = frame.id

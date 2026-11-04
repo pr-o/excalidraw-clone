@@ -143,3 +143,30 @@ describe("importLibraryFile", () => {
     expect(result).toEqual({ added: 0, skipped: 2 })
   })
 })
+
+describe("importLibraryFile with untrusted content", () => {
+  it("skips malformed items and drops unusable elements instead of failing the whole import", async () => {
+    const good = item("301", ["binA"])
+    const payload = {
+      type: "excalidrawlib",
+      version: 2,
+      source: "x",
+      libraryItems: [
+        good,
+        null,
+        { id: "302" },
+        { id: "303", name: "no usable elements", elements: [{ id: "a", type: "arrow" }] },
+        {
+          ...item("304", ["binA"]),
+          elements: [...item("304", ["binA"]).elements, { id: "junk" }],
+        },
+      ],
+      files: { binA },
+    }
+    const out = await importLibraryFile(new Blob([JSON.stringify(payload)]))
+    expect(out).toEqual({ added: 2, skipped: 3 })
+    const stored = await getAllLibraryItems()
+    const four = stored.find((i) => i.id === "304")!
+    expect(four.elements).toHaveLength(1)
+  })
+})

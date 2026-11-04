@@ -44,6 +44,17 @@ describe("HamburgerMenu", () => {
     expect(screen.getByText("menu.help")).toBeInTheDocument()
   })
 
+  it("shows Save only when the host can save to a file, next to Save as", async () => {
+    const { unmount } = render(<HamburgerMenu {...baseProps()} open />)
+    expect(screen.queryByTestId("menu-save")).not.toBeInTheDocument()
+    expect(screen.getByTestId("menu-save-as")).toBeInTheDocument()
+    unmount()
+    const onSave = vi.fn()
+    render(<HamburgerMenu {...baseProps()} open onSave={onSave} />)
+    await userEvent.click(screen.getByTestId("menu-save"))
+    expect(onSave).toHaveBeenCalledTimes(1)
+  })
+
   it("Rulers entry reflects state and toggles", async () => {
     const onRulersToggle = vi.fn()
     render(<HamburgerMenu {...baseProps()} open rulersVisible onRulersToggle={onRulersToggle} />)

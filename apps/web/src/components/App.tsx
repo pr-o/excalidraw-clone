@@ -4,16 +4,20 @@ import { unlockAll } from "@excalidraw-clone/scene"
 import { HistoryPanel, Icon, PagesTabBar, StatsPanel, Toolbar } from "@excalidraw-clone/ui"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { I18nextProvider, useTranslation } from "react-i18next"
-import { cyclePageId } from "../driver/pages"
+import { preloadFiles } from "../driver/hydration"
+import { serializeDocument } from "@excalidraw-clone/persistence"
+import { createPageRecord, cyclePageId } from "../driver/pages"
 import { patchScene } from "../driver/patchScene"
 import { toggleViewMode } from "../driver/viewMode"
 import { useKeyboardAvoidance } from "../hooks/useKeyboardAvoidance"
+import { useFileDrop } from "../hooks/useFileDrop"
 import { useEditorEnvironment, useImageToolUpload } from "../hooks/useEditorEnvironment"
 import { usePages } from "../hooks/usePages"
 import { useSceneViews } from "../hooks/useSceneViews"
 import { ensureI18n } from "../i18n"
 import { attachClipboard } from "../keyboard/clipboard"
 import { attachShortcuts } from "../keyboard/shortcuts"
+import { saveDrawing } from "../driver/fileHandle"
 import { PresentationHost } from "../presentation/PresentationHost"
 import { useAppStore } from "../store"
 import { CanvasShell } from "./CanvasShell"
@@ -25,7 +29,7 @@ import { FindHost } from "./FindHost"
 import { LayersHost } from "./LayersHost"
 import { LibraryHost, useLibrarySync } from "./LibraryHost"
 import { LinkOverlay } from "./LinkOverlay"
-import { LiveAnnouncer } from "./LiveAnnouncer"
+import { LiveAnnouncer, NoticeToast } from "./LiveAnnouncer"
 import { MenuHost } from "./MenuHost"
 import { Minimap } from "./Minimap"
 import { PaletteHost } from "./PaletteHost"
@@ -46,6 +50,13 @@ export function App(): React.ReactElement {
 
 function Inner(): React.ReactElement {
   const { t, i18n } = useTranslation()
+  // i18next's TFunction overloads aren't directly assignable to the panels'
+  // `(key, options?)` shape under exactOptionalPropertyTypes. Memoized on `t`
+  // (which changes with the language) so panels can list it as a dependency.
+  const panelT = useCallback(
+    (key: string, options?: Record<string, unknown>) => (options ? t(key, options) : t(key)),
+    [t],
+  )
   useEditorEnvironment(i18n)
   useKeyboardAvoidance()
   const doc = usePages()
@@ -61,7 +72,10 @@ function Inner(): React.ReactElement {
   // Phones (< 480px) show properties as a bottom sheet, opened on demand.
   const [propsSheetOpen, setPropsSheetOpen] = useState(false)
   const [renderer, setRenderer] = useState<CanvasRenderer | null>(null)
-  const onRendererReady = useCallback((r: CanvasRenderer): void => setRenderer(r), [])
+  const onRendererReady = useCallback((r: CanvasRenderer): void => {
+    setRenderer(r)
+    void preloadFiles(r)
+  }, [])
   const onRendererTeardown = useCallback((): void => setRenderer(null), [])
 
   useEffect(() => {
@@ -70,6 +84,7 @@ function Inner(): React.ReactElement {
       onNextPage: () => switchToPage(cyclePageId(pages, activePageId, "next")),
       onPrevPage: () => switchToPage(cyclePageId(pages, activePageId, "prev")),
       onToggleStats: () => setStatsOpen((v) => !v),
+      onSave: (saveAs) => void saveDrawing(pages, activePageId, { saveAs }),
     })
   }, [scene, pages, activePageId, switchToPage])
   useEffect(() => {
@@ -77,6 +92,14 @@ function Inner(): React.ReactElement {
   }, [scene])
   useImageToolUpload(renderer)
   useLibrarySync()
+  useFileDrop({
+    scene,
+    openDocument: (data) => {
+      useAppStore.getState().setSelection([])
+      doc.loadDocument(data)
+    },
+    hasContent: () => pages.some((p) => p.scene.getElements().length > 0),
+  })
 
   const activeTool = useAppStore((s) => s.activeTool)
   const toolKeyOverrides = useAppStore((s) => s.toolKeyOverrides)
@@ -117,7 +140,6 @@ function Inner(): React.ReactElement {
             <MenuHost
               open={menuOpen}
               onOpenChange={setMenuOpen}
-              renderer={renderer}
               pages={pages}
               activePageId={activePageId}
               canPresent={views.frames.length > 0}
@@ -249,9 +271,7 @@ function Inner(): React.ReactElement {
 
               {!libraryOpen && (
                 <HistoryPanel
-                  // i18next's TFunction overloads aren't directly assignable to the
-                  // panel's `(key, options?)` shape under exactOptionalPropertyTypes.
-                  t={(key, options) => (options ? t(key, options) : t(key))}
+                  t={panelT}
                   history={views.historyEntries}
                   currentIndex={scene.getHistoryIndex()}
                   open={historyOpen}
@@ -325,7 +345,15 @@ function Inner(): React.ReactElement {
 
       {presenting && <PresentationHost scene={scene} rootEl={rootRef} />}
 
-      <Dialogs scene={scene} pages={pages} activePageId={activePageId} />
+      <Dialogs
+        scene={scene}
+        pages={pages}
+        activePageId={activePageId}
+        onResetDocument={() => {
+          const fresh = createPageRecord("Page 1")
+          doc.loadDocument(serializeDocument([fresh], fresh.id))
+        }}
+      />
       <PaletteHost scene={scene} />
       <SnapshotsHost
         pages={pages}
@@ -344,6 +372,7 @@ function Inner(): React.ReactElement {
       />
       <TextEditingOverlay scene={scene} />
       <LiveAnnouncer />
+      <NoticeToast />
       <LinkOverlay scene={scene} />
       <CommentsHost
         scene={scene}

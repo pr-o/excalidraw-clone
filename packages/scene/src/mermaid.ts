@@ -15,6 +15,8 @@ import type {
   ExcalidrawElement,
   ExcalidrawTextElement,
 } from "./types"
+import { isBoundLabel } from "./bound-label"
+import { layerGraph } from "./layering"
 
 export type MermaidDirection = "TD" | "TB" | "LR" | "BT" | "RL"
 export type MermaidShape = "rectangle" | "ellipse" | "diamond"
@@ -207,36 +209,11 @@ const nodeSize = (n: MermaidNode): { width: number; height: number } => {
 }
 
 /** Longest-path layer per node; back edges (found by DFS) are ignored. */
-function assignLayers(f: MermaidFlowchart): Map<string, number> {
-  const out = new Map<string, string[]>()
-  for (const n of f.nodes) out.set(n.id, [])
-  for (const e of f.edges) out.get(e.from)!.push(e.to)
-
-  const state = new Map<string, 1 | 2>() // 1 = on stack, 2 = done
-  const forward = new Map<string, string[]>()
-  const order: string[] = [] // reverse postorder = topological over forward edges
-  const visit = (id: string): void => {
-    state.set(id, 1)
-    const fwd: string[] = []
-    for (const to of out.get(id)!) {
-      if (state.get(to) === 1) continue // back edge
-      fwd.push(to)
-      if (!state.has(to)) visit(to)
-    }
-    forward.set(id, fwd)
-    state.set(id, 2)
-    order.push(id)
-  }
-  for (const n of f.nodes) if (!state.has(n.id)) visit(n.id)
-
-  const layer = new Map<string, number>(f.nodes.map((n) => [n.id, 0]))
-  for (const id of order.reverse()) {
-    for (const to of forward.get(id)!) {
-      layer.set(to, Math.max(layer.get(to)!, layer.get(id)! + 1))
-    }
-  }
-  return layer
-}
+const assignLayers = (f: MermaidFlowchart): Map<string, number> =>
+  layerGraph(
+    f.nodes.map((n) => n.id),
+    f.edges,
+  ).layerOf
 
 /**
  * Lays out a parsed flowchart as scene elements: layered (longest path),
@@ -371,8 +348,7 @@ export function exportMermaidFlowchart(
   const idOf = new Map(nodes.map((e, i) => [e.id, nodeId(i)]))
   const labelOf = new Map<string, string>()
   for (const e of live) {
-    if (e.type === "text" && e.containerId !== null && e.text.trim() !== "")
-      labelOf.set(e.containerId, e.text)
+    if (isBoundLabel(e) && e.text.trim() !== "") labelOf.set(e.containerId, e.text)
   }
 
   const lines = nodes.map((e) => {

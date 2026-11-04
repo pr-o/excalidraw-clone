@@ -50,7 +50,7 @@ describe("cloneElementsWithNewIds", () => {
     expect(container.boundElements?.some((b) => b.id === text.id)).toBe(true)
   })
 
-  it("leaves an unmapped external reference unchanged", () => {
+  it("drops an arrow binding to an element outside the cloned set", () => {
     const arrow: ExcalidrawArrowElement = {
       ...newArrow({ x: 0, y: 0 }),
       points: [
@@ -61,7 +61,7 @@ describe("cloneElementsWithNewIds", () => {
       endBinding: null,
     }
     const [carrow] = cloneElementsWithNewIds([arrow]) as [ExcalidrawArrowElement]
-    expect(carrow.startBinding?.elementId).toBe("external-id-not-in-set")
+    expect(carrow.startBinding).toBeNull()
   })
 
   it("remaps groupIds to a fresh id shared within the clone set", () => {
@@ -84,5 +84,25 @@ describe("cloneElementsWithNewIds", () => {
     const a = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
     const [ca] = cloneElementsWithNewIds([a]) as [ExcalidrawElement]
     expect(ca.groupIds).toEqual([])
+  })
+
+  it("detaches bindings and back-references that point outside the cloned set", () => {
+    const a = newRectangle({ x: 0, y: 0, width: 10, height: 10 })
+    const b = newRectangle({ x: 100, y: 0, width: 10, height: 10 })
+    const arrow: ExcalidrawArrowElement = {
+      ...newArrow({ x: 0, y: 0 }),
+      startBinding: { elementId: a.id, focus: 0, gap: 4 },
+      endBinding: { elementId: b.id, focus: 0, gap: 4 },
+    }
+    const withRef = { ...a, boundElements: [{ id: arrow.id, type: "arrow" as const }] }
+
+    // The arrow alone: its targets are not copied, so the clone must not stay glued to them.
+    const [arrowCopy] = cloneElementsWithNewIds([arrow]) as [ExcalidrawArrowElement]
+    expect(arrowCopy.startBinding).toBeNull()
+    expect(arrowCopy.endBinding).toBeNull()
+
+    // The shape alone: it must not claim a binding with the original arrow.
+    const [shapeCopy] = cloneElementsWithNewIds([withRef]) as [ExcalidrawElement]
+    expect(shapeCopy.boundElements ?? []).toEqual([])
   })
 })

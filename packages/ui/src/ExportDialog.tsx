@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useState, useTransition } from "react"
 import { Dialog } from "./shared/Dialog"
 
 export interface ExportOptions {
@@ -42,11 +42,14 @@ export interface ExportDialogProps {
 
 const SCALES = [1, 2, 3] as const
 
-type CopyStatus = "idle" | "copying" | "copied" | "error"
+/** Mounted only while open, so each opening starts from the defaults (background,
+ *  scope, page) instead of an effect resetting the previous session's choices. */
+export function ExportDialog({ open, ...props }: ExportDialogProps): React.ReactElement | null {
+  return open ? <ExportDialogBody {...props} /> : null
+}
 
-export function ExportDialog({
+function ExportDialogBody({
   t,
-  open,
   onClose,
   onExport,
   onCopy,
@@ -56,30 +59,19 @@ export function ExportDialog({
   defaultScope = "page",
   defaultBackground,
   className,
-}: ExportDialogProps): React.ReactElement | null {
+}: Omit<ExportDialogProps, "open">): React.ReactElement {
   const [format, setFormat] = useState<ExportOptions["format"]>("png")
   const [scale, setScale] = useState<ExportOptions["scale"]>(1)
   const [background, setBackground] = useState<ExportOptions["background"]>(
     defaultBackground ?? "white",
   )
   const [embedScene, setEmbedScene] = useState(false)
-  const [scope, setScope] = useState<ExportOptions["scope"]>("page")
+  const [scope, setScope] = useState<ExportOptions["scope"]>(defaultScope)
   const [pageId, setPageId] = useState(activePageId)
   const [allPages, setAllPages] = useState(false)
-  const [copyStatus, setCopyStatus] = useState<CopyStatus>("idle")
-
-  // The component stays mounted while closed, so per-session choices are
-  // reset every time the dialog opens.
-  useEffect(() => {
-    if (!open) return
-    setBackground(defaultBackground ?? "white")
-    setScope(defaultScope)
-    setPageId(activePageId)
-    setAllPages(false)
-    setCopyStatus("idle")
-  }, [open, defaultBackground, defaultScope, activePageId])
-
-  if (!open) return null
+  // Copying is an async transition: `isCopying` is pending until the clipboard write settles.
+  const [isCopying, startCopy] = useTransition()
+  const [copyResult, setCopyResult] = useState<"copied" | "error" | null>(null)
 
   // A picked page that no longer exists falls back to the active page.
   const targetPageId = pages.some((p) => p.id === pageId) ? pageId : activePageId
@@ -102,20 +94,22 @@ export function ExportDialog({
 
   const handleCopy = (): void => {
     if (!onCopy) return
-    setCopyStatus("copying")
-    try {
-      // Clipboard images are PNG-only, whatever the format toggle says.
-      void onCopy({ ...currentOptions(), format: "png" }).then(
-        () => setCopyStatus("copied"),
-        () => setCopyStatus("error"),
-      )
-    } catch {
-      setCopyStatus("error")
-    }
+    setCopyResult(null)
+    // The transition callback runs synchronously, so onCopy issues its clipboard
+    // write inside the click's user activation (Safari requires that).
+    startCopy(async () => {
+      try {
+        // Clipboard images are PNG-only, whatever the format toggle says.
+        await onCopy({ ...currentOptions(), format: "png" })
+        setCopyResult("copied")
+      } catch {
+        setCopyResult("error")
+      }
+    })
   }
 
   return (
-    <Dialog t={t} open={open} onClose={onClose} title={t("export.title")} className={className}>
+    <Dialog t={t} open onClose={onClose} title={t("export.title")} className={className}>
       <div className="space-y-4">
         {showAllPagesToggle && (
           <label className="flex items-center gap-2 text-sm">
@@ -201,12 +195,12 @@ export function ExportDialog({
           />
           {t("export.embed")}
         </label>
-        {copyStatus === "error" && (
+        {copyResult === "error" && (
           <p role="alert" data-testid="export-copy-error" className="text-sm text-danger">
             {t("export.copyFailed")}
           </p>
         )}
-        {copyStatus === "copied" && (
+        {copyResult === "copied" && (
           <p role="status" data-testid="export-copy-success" className="text-sm text-muted">
             {t("export.copied")}
           </p>
@@ -224,7 +218,7 @@ export function ExportDialog({
               type="button"
               data-testid="export-copy"
               onClick={handleCopy}
-              disabled={copyStatus === "copying"}
+              disabled={isCopying}
               className="rounded border border-panel px-3 py-1 text-sm disabled:opacity-50"
             >
               {t("export.copy")}

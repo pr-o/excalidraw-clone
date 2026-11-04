@@ -1,3 +1,4 @@
+import { isBoundLabel } from "@excalidraw-clone/scene"
 import type { ExcalidrawElement } from "@excalidraw-clone/scene"
 
 /**
@@ -16,7 +17,7 @@ export function canMoveElementToPage(
   if (element.groupIds.length > 0) return false
   if (element.frameId !== null) return false
   if (element.boundElements !== null && element.boundElements.length > 0) return false
-  if (element.type === "text" && element.containerId !== null) return false
+  if (isBoundLabel(element)) return false
   if (element.type === "arrow" || element.type === "line") {
     if (element.startBinding !== null || element.endBinding !== null) return false
   }

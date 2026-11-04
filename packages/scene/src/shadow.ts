@@ -1,8 +1,9 @@
 import type { ExcalidrawElement, Shadow } from "./types"
+import { isBoundLabel } from "./bound-label"
 
 /** The shadow that actually renders for `el`: frames and bound text labels never cast one. */
 export const elementShadow = (el: ExcalidrawElement): Shadow | undefined =>
-  el.type === "frame" || (el.type === "text" && el.containerId !== null) ? undefined : el.shadow
+  el.type === "frame" || isBoundLabel(el) ? undefined : el.shadow
 
 /** How far a rendered shadow can extend past the element on any side (scene units). */
 export const shadowMargin = (el: ExcalidrawElement): number => {

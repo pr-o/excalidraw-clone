@@ -1,4 +1,8 @@
-import type { ExcalidrawBinaryFile, LibraryItem } from "@excalidraw-clone/scene"
+import {
+  sanitizeElements,
+  type ExcalidrawBinaryFile,
+  type LibraryItem,
+} from "@excalidraw-clone/scene"
 import { getDB, LIBRARY_STORE } from "./db"
 import { getFile, putFile } from "./image-store"
 
@@ -37,11 +41,6 @@ export async function renameLibraryItem(id: string, name: string): Promise<void>
   const existing = await getLibraryItem(id)
   if (!existing) return
   await putLibraryItem({ ...existing, name })
-}
-
-export async function clearLibrary(): Promise<void> {
-  const db = await getDB()
-  await db.clear(LIBRARY_STORE)
 }
 
 export async function exportLibraryFile(): Promise<Blob> {
@@ -98,7 +97,19 @@ export async function importLibraryFile(blob: Blob): Promise<{ added: number; sk
 
   let added = 0
   let skipped = 0
-  for (const item of p.libraryItems) {
+  for (const rawItem of p.libraryItems) {
+    // Untrusted file: skip entries that are not usable items, and drop unusable elements.
+    if (typeof rawItem !== "object" || rawItem === null || typeof rawItem.id !== "string") {
+      skipped++
+      continue
+    }
+    const rawElements: unknown = rawItem.elements
+    const elements = sanitizeElements(rawElements)
+    if (!Array.isArray(rawElements) || (elements.length === 0 && rawElements.length > 0)) {
+      skipped++
+      continue
+    }
+    const item: LibraryItem = { ...rawItem, elements }
     if (await getLibraryItem(item.id)) {
       skipped++
       continue

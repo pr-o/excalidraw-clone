@@ -39,6 +39,8 @@ export function useEditorEnvironment(i18n: I18n): void {
   const locale = useAppStore((s) => s.locale)
   useEffect(() => {
     void i18n.changeLanguage(locale)
+    // Screen readers choose their voice and pronunciation from <html lang>.
+    document.documentElement.lang = locale
   }, [locale, i18n])
 }
 

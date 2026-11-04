@@ -1,6 +1,6 @@
 import { Scene } from "@excalidraw-clone/scene"
 import { describe, expect, it } from "vitest"
-import { CanvasRenderer } from "../src/renderer"
+import { CanvasRenderer, preloadSharedImage } from "../src/renderer"
 import { createMockCanvas } from "../src/test-utils/mock-canvas"
 
 const DATA = "data:image/png;base64,iVBORw0KGgo="
@@ -22,5 +22,14 @@ describe("CanvasRenderer.preloadImage", () => {
     renderer.unloadImage("abc")
     const p2 = renderer.preloadImage("abc", DATA)
     expect(p2).not.toBe(p1)
+  })
+
+  it("shares decoded images across renderers and the standalone preloader", () => {
+    const a = new CanvasRenderer(createMockCanvas().canvas, new Scene())
+    const b = new CanvasRenderer(createMockCanvas().canvas, new Scene())
+    const first = a.preloadImage("shared-1", DATA)
+    // A second renderer (another page) and the free function reuse the same load.
+    expect(b.preloadImage("shared-1", DATA)).toBe(first)
+    expect(preloadSharedImage("shared-1", DATA)).toBe(first)
   })
 })

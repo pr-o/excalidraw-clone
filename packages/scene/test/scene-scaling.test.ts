@@ -37,32 +37,39 @@ function bigScene(n: number): ExcalidrawElement[] {
   return out
 }
 
-/** Median ms of one drag-frame style mutate (skipHistory, one element moved). */
-function medianMutateMs(n: number): number {
+/** Fastest of several batches: CPU ms per drag-frame style mutate (skipHistory, one
+ *  element moved) on a single n-element scene. CPU time, not wall-clock, so being
+ *  descheduled while other test files run in parallel does not count; the minimum
+ *  over batches discards the remaining noise (GC, cache). The scene is built once
+ *  because building it dominates the cost. */
+function cpuMsPerMutate(n: number, batches = 1): number {
   const scene = new Scene(bigScene(n))
   scene.mutate(() => {}) // reconcile once, like any edited scene
   const id = scene.getElements()[Math.floor(n / 2)]!.id
-  const times: number[] = []
-  for (let r = 0; r < 15; r += 1) {
-    const t0 = performance.now()
-    scene.mutate(
-      (d) => {
-        const i = d.findIndex((e) => e.id === id)
-        d[i] = { ...d[i]!, x: d[i]!.x + 1 }
-      },
-      { skipHistory: true },
-    )
-    times.push(performance.now() - t0)
+  const perBatch = 15
+  let best = Infinity
+  for (let b = 0; b < batches; b += 1) {
+    const t0 = process.cpuUsage()
+    for (let r = 0; r < perBatch; r += 1) {
+      scene.mutate(
+        (d) => {
+          const i = d.findIndex((e) => e.id === id)
+          d[i] = { ...d[i]!, x: d[i]!.x + 1 }
+        },
+        { skipHistory: true },
+      )
+    }
+    const used = process.cpuUsage(t0)
+    best = Math.min(best, (used.user + used.system) / 1000 / perBatch)
   }
-  times.sort((a, b) => a - b)
-  return times[7]!
+  return best
 }
 
 describe("Scene scaling (regression guard against quadratic per-mutate work)", () => {
   it("one-element mutate grows ~linearly with scene size", () => {
-    medianMutateMs(500) // warm up the JIT
-    const small = medianMutateMs(1000)
-    const large = medianMutateMs(8000)
+    cpuMsPerMutate(500) // warm up the JIT
+    const small = cpuMsPerMutate(1000, 5)
+    const large = cpuMsPerMutate(8000, 5)
     // 8x the elements: linear ≈ 8x, quadratic ≈ 64x. Loose bound to stay unflaky.
     expect(large / Math.max(small, 0.05)).toBeLessThan(25)
   })

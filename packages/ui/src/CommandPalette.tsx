@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useMemo, useState } from "react"
 
 export interface PaletteCommand {
   id: string
@@ -16,24 +16,20 @@ export interface CommandPaletteProps {
   className?: string
 }
 
-export function CommandPalette({
+/** Mounted only while open, so every opening starts from an empty query and the
+ *  first command highlighted — no effect resetting state on `open`. */
+export function CommandPalette({ open, ...props }: CommandPaletteProps): React.ReactElement | null {
+  return open ? <PaletteBody {...props} /> : null
+}
+
+function PaletteBody({
   t,
-  open,
   onClose,
   commands,
   className,
-}: CommandPaletteProps): React.ReactElement | null {
+}: Omit<CommandPaletteProps, "open">): React.ReactElement {
   const [query, setQuery] = useState("")
-  const [highlight, setHighlight] = useState(0)
-  const inputRef = useRef<HTMLInputElement | null>(null)
-
-  useEffect(() => {
-    if (open) {
-      setQuery("")
-      setHighlight(0)
-      queueMicrotask(() => inputRef.current?.focus())
-    }
-  }, [open])
+  const [hovered, setHighlight] = useState(0)
 
   const filtered = useMemo(() => {
     if (query.trim() === "") return commands
@@ -45,19 +41,16 @@ export function CommandPalette({
     })
   }, [commands, query])
 
-  useEffect(() => {
-    if (highlight >= filtered.length) setHighlight(Math.max(0, filtered.length - 1))
-  }, [filtered.length, highlight])
-
-  if (!open) return null
+  // Derived, not synced: a narrower filter clamps the highlight to the last match.
+  const highlight = Math.min(hovered, Math.max(0, filtered.length - 1))
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>): void => {
     if (e.key === "ArrowDown") {
       e.preventDefault()
-      setHighlight((h) => Math.min(h + 1, filtered.length - 1))
+      setHighlight(Math.min(highlight + 1, filtered.length - 1))
     } else if (e.key === "ArrowUp") {
       e.preventDefault()
-      setHighlight((h) => Math.max(h - 1, 0))
+      setHighlight(Math.max(highlight - 1, 0))
     } else if (e.key === "Enter") {
       e.preventDefault()
       filtered[highlight]?.perform()
@@ -81,7 +74,7 @@ export function CommandPalette({
         onClick={(e) => e.stopPropagation()}
       >
         <input
-          ref={inputRef}
+          autoFocus
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}

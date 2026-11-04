@@ -53,4 +53,25 @@ describe("Dialog", () => {
     dlg.dispatchEvent(new Event("close"))
     expect(onClose).toHaveBeenCalled()
   })
+
+  it("labels each dialog with its own title even when several are mounted", () => {
+    const { container } = render(
+      <>
+        <Dialog t={t} open={false} onClose={() => {}} title="First">
+          a
+        </Dialog>
+        <Dialog t={t} open={false} onClose={() => {}} title="Second">
+          b
+        </Dialog>
+      </>,
+    )
+    const dialogs = [...container.querySelectorAll("dialog")]
+    expect(dialogs).toHaveLength(2)
+    const ids = dialogs.map((d) => d.getAttribute("aria-labelledby")!)
+    expect(new Set(ids).size).toBe(2)
+    expect(ids.map((id) => container.ownerDocument.getElementById(id)?.textContent)).toEqual([
+      "First",
+      "Second",
+    ])
+  })
 })

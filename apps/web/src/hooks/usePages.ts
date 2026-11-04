@@ -1,9 +1,19 @@
 "use client"
-import { createAutoSaver } from "@excalidraw-clone/persistence"
+import {
+  collectUnreferencedFiles,
+  createAutoSaver,
+  loadScene,
+  SCENE_KEY,
+  serializeDocument,
+} from "@excalidraw-clone/persistence"
 import type { ExcalidrawData, Scene } from "@excalidraw-clone/scene"
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { startAutoSave } from "../driver/autoSave"
-import { hydratePages } from "../driver/hydration"
+import i18next from "i18next"
+import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from "react"
+import { announce } from "../components/LiveAnnouncer"
+import { startAutoSave, type AutoSave } from "../driver/autoSave"
+import { restoreCurrentFile, setCurrentFile } from "../driver/fileHandle"
+import { hydratePages, loadStoredImages } from "../driver/hydration"
+import { mergeDocuments } from "../driver/mergeDocuments"
 import {
   addPage,
   deletePage,
@@ -29,7 +39,7 @@ export interface PagesState {
   thumbnails: Record<string, string | undefined>
   switchToPage: (targetId: string) => void
   /** Swap in a whole document (all pages) with fresh Scenes, e.g. opening a file. */
-  loadDocument: (data: ExcalidrawData) => void
+  loadDocument: (data: ExcalidrawData, options?: { keepActivePage?: boolean }) => void
   addPage: () => void
   deletePage: (id: string) => void
   duplicatePage: (id: string) => void
@@ -44,6 +54,20 @@ export function usePages(): PagesState {
   const initialDoc = useMemo(() => hydratePages(), [])
   const [pages, setPages] = useState<PageRecord[]>(initialDoc.pages)
   const [activePageId, setActivePageId] = useState<string>(initialDoc.activePageId)
+  // Once per page load, drop stored images nothing references any more. Skipped on a
+  // fresh start or unreadable storage: with no document to compare against, every
+  // stored image would look unused.
+  // The save file remembered with the stored drawing; a fresh start has none.
+  useEffect(() => {
+    if (initialDoc.restored) void restoreCurrentFile()
+    else setCurrentFile(null)
+  }, [initialDoc])
+  useEffect(() => {
+    if (!initialDoc.restored) return
+    void collectUnreferencedFiles(
+      initialDoc.pages.map((p) => p.scene.getElementsIncludingDeleted()),
+    ).catch(() => {})
+  }, [initialDoc])
   const [thumbnails, setThumbnails] = useState<Record<string, string | undefined>>({})
   const scene = useMemo(
     () => pages.find((p) => p.id === activePageId)!.scene,
@@ -51,10 +75,6 @@ export function usePages(): PagesState {
   )
   const canvasBg = useAppStore((s) => s.canvasBg)
   const resolvedTheme = useAppStore((s) => s.resolvedTheme)
-  // Read at fire time by the re-theme-all effect below, which must see the live
-  // page list without re-running for every unrelated `pages` mutation.
-  const pagesRef = useRef<PageRecord[]>(pages)
-  pagesRef.current = pages
   // Re-render one page's thumbnail; a failed render (e.g. a tainted canvas)
   // keeps the last good thumbnail rather than blanking it.
   const refreshThumbnail = useCallback(
@@ -78,18 +98,79 @@ export function usePages(): PagesState {
     },
     [activePageId, pages, refreshThumbnail],
   )
+  /** Swaps in a whole document. `keepActivePage` stays on the current page when the
+   *  document still has it (adopting another tab's save should not move this tab). */
+  const loadDocument = (data: ExcalidrawData, { keepActivePage = false } = {}): void => {
+    const opened = pagesFromDocument(data)
+    const keep = keepActivePage && opened.pages.some((p) => p.id === activePageId)
+    setPages(opened.pages)
+    setActivePageId(keep ? activePageId : opened.activePageId)
+    // The thumbnail effect only re-runs on theme/background changes, so a freshly
+    // opened (or restored) document's tabs would stay blank until visited.
+    setThumbnails({})
+    for (const page of opened.pages) refreshThumbnail(page.scene, page.id)
+  }
+  // Set when this tab adopts the document another tab saved, so the auto-saver that
+  // starts for the adopted pages does not immediately write them back.
+  const adoptedRef = useRef(false)
+  const autoSaveRef = useRef<AutoSave | null>(null)
+  // The last document this tab and the stored copy agreed on (loaded, saved or adopted):
+  // the common ancestor when both this tab and another one changed it.
+  const syncedRef = useRef<ExcalidrawData | null>(null)
   useEffect(() => {
-    return startAutoSave(pages, activePageId)
+    syncedRef.current = serializeDocument(initialDoc.pages, initialDoc.activePageId)
+  }, [initialDoc])
+  useEffect(() => {
+    const saver = startAutoSave(pages, activePageId, {
+      saveOnStart: !adoptedRef.current,
+      onSaved: (doc) => {
+        syncedRef.current = doc
+      },
+    })
+    adoptedRef.current = false
+    autoSaveRef.current = saver
+    return saver.stop
   }, [pages, activePageId])
+  // Every tab auto-saves the whole document to the same storage key, so without this
+  // the last tab to save silently erased the other tab's edits. When another tab saves,
+  // this tab adopts that document. If this tab has unsaved edits of its own, the two
+  // are merged against the last version both agreed on, and the merge is saved (the
+  // other tab then adopts it). Pending edits are also written when a window loses
+  // focus, so the tab you switch to is normally current already.
+  const adoptOtherTabDocument = useEffectEvent((e: StorageEvent) => {
+    if (e.key !== SCENE_KEY || e.newValue === null) return
+    const remote = loadScene()
+    if (!remote) return
+    const base = syncedRef.current
+    syncedRef.current = remote
+    if (autoSaveRef.current?.hasPendingSave() && base) {
+      const local = serializeDocument(pages, activePageId)
+      // Not marked as adopted: the merged document must be saved for the other tab.
+      loadDocument(mergeDocuments(base, local, remote), { keepActivePage: true })
+    } else {
+      adoptedRef.current = true
+      loadDocument(remote, { keepActivePage: true })
+    }
+    void loadStoredImages()
+    // That tab may have saved to (or opened) a different file.
+    void restoreCurrentFile()
+    announce(i18next.t("a11y.syncedFromOtherTab"))
+  })
+  useEffect(() => {
+    window.addEventListener("storage", adoptOtherTabDocument)
+    return () => window.removeEventListener("storage", adoptOtherTabDocument)
+  }, [])
+  // The live page list, read when the re-theme pass below starts and again when it
+  // finishes. Effect Events always see current values, so that pass re-runs only on a
+  // theme/background change — not for every page added, renamed or reordered.
+  const currentPages = useEffectEvent((): readonly PageRecord[] => pages)
   // Hydrates every page's thumbnail on mount, and re-renders them all whenever
-  // the theme or canvas background changes. Deliberately keyed only on those two
-  // so adding/renaming/reordering a page does not re-render every thumbnail;
-  // the live page list is read from a ref at fire time instead.
+  // the theme or canvas background changes.
   useEffect(() => {
     let cancelled = false
     void (async () => {
       const entries = await Promise.all(
-        pagesRef.current.map(async (p) => {
+        currentPages().map(async (p) => {
           try {
             return [p.id, await renderPageThumbnail(p.scene, canvasBg, resolvedTheme)] as const
           } catch {
@@ -101,7 +182,7 @@ export function usePages(): PagesState {
       if (cancelled) return
       // Only touch pages that still exist, so a delete's cache removal is never
       // undone and a removed page's Scene is not kept reachable.
-      const live = new Set(pagesRef.current.map((p) => p.id))
+      const live = new Set(currentPages().map((p) => p.id))
       setThumbnails((prev) => {
         const next: Record<string, string | undefined> = {}
         for (const [id, thumb] of Object.entries(prev)) {
@@ -163,11 +244,7 @@ export function usePages(): PagesState {
     scene,
     thumbnails,
     switchToPage,
-    loadDocument: (data) => {
-      const opened = pagesFromDocument(data)
-      setPages(opened.pages)
-      setActivePageId(opened.activePageId)
-    },
+    loadDocument,
     addPage: () => {
       const updated = addPage(pages)
       const created = updated[updated.length - 1]!

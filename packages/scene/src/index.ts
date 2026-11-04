@@ -47,7 +47,7 @@ export type {
   NewTextInput,
 } from "./factories"
 export { ELBOW_STUB, routeElbow, sideCenter, sideOf, type Side } from "./elbow"
-export { getElementBounds, getElementsBounds } from "./bounds"
+export { getElementBounds, getElementsBounds, rotatedCorners } from "./bounds"
 export { computeStats } from "./stats"
 export type { Stats } from "./stats"
 export { describeHistoryChange } from "./describe-history-change"
@@ -78,6 +78,8 @@ export type {
 } from "./mermaid"
 export { alignElements, distributeElements, tidyElements } from "./arrange"
 export type { AlignEdge, DistributeAxis, PositionPatch } from "./arrange"
+export { graphEdges, layoutGraph, straightenConnectors } from "./graph-layout"
+export type { GraphEdge, GraphLayoutMode } from "./graph-layout"
 export { expandIdsToGroups, groupElements, ungroupElements } from "./groups"
 export { expandIdsToFrameMembers, reconcileFrameMembership } from "./frames"
 export { lockElements, unlockAll, unlockElements } from "./locking"
@@ -145,6 +147,9 @@ export type {
   TextAlign,
   VerticalAlign,
 } from "./types"
+export { sanitizeElement, sanitizeElements } from "./validate"
+export { isBoundLabel } from "./bound-label"
+export type { BoundLabel } from "./bound-label"
 export { elementShadow, shadowMargin } from "./shadow"
 export { pointsPatch } from "./points-patch"
 export { addBackRef, removeBackRef } from "./binding-refs"

@@ -1,9 +1,9 @@
 "use client"
 import { fitToContent, type Bounds, type ViewTransform } from "@excalidraw-clone/geometry"
 import type { ExcalidrawElement, ExcalidrawFrameElement, Scene } from "@excalidraw-clone/scene"
-import React, { useEffect, useMemo, useRef } from "react"
+import React, { useEffect, useEffectEvent, useMemo, useRef } from "react"
 import { useTranslation } from "react-i18next"
-import { useSceneRevision } from "../hooks/useSceneRevision"
+import { useSceneElements } from "../hooks/useScene"
 import { useAppStore } from "../store"
 import { animateView } from "./animateView"
 import { PresentationOverlay } from "./PresentationOverlay"
@@ -39,10 +39,9 @@ export interface PresentationHostProps {
 export function PresentationHost({ scene, rootEl }: PresentationHostProps): React.ReactElement {
   const { t } = useTranslation()
 
-  // The `scene` reference is stable across mutations, so the revision is what
-  // makes this recompute on live edits (mirrors App.tsx's derived views).
-  const sceneRevision = useSceneRevision(scene)
-  const slides = useMemo(() => scene.getElements().filter(isSlide), [scene, sceneRevision])
+  // Recomputes on live edits: the elements snapshot changes whenever the scene does.
+  const elements = useSceneElements(scene)
+  const slides = useMemo(() => elements.filter(isSlide), [elements])
 
   const slideIndex = useAppStore((s) => s.slideIndex)
   const activeTool = useAppStore((s) => s.activeTool)
@@ -64,21 +63,24 @@ export function PresentationHost({ scene, rootEl }: PresentationHostProps): Reac
   }
   const entrySnapshot: ViewTransform = snapshotRef.current
 
-  // Entry / exit. Runs once per mount; its cleanup is the exit path — it must
-  // fire only on unmount, so `rootEl` (a stable ref object) stays out of deps
-  // and is dereferenced at effect time.
-  useEffect(() => {
+  // Entry / exit. Runs once per mount; its cleanup is the exit path, so it must
+  // fire only on unmount. The props it reads are Effect Events: always current,
+  // never a reason to re-run (which would exit and re-enter fullscreen).
+  const enter = useEffectEvent(() => {
     const target = rootEl?.current ?? document.documentElement
     void target.requestFullscreen?.().catch(() => {})
-
-    return () => {
-      cancelRef.current?.()
-      cancelRef.current = null
-      if (document.fullscreenElement) void document.exitFullscreen?.().catch(() => {})
-      const store = useAppStore.getState()
-      store.setView(entrySnapshot)
-      if (store.activeTool === "laser") store.setActiveTool("selection")
-    }
+  })
+  const exit = useEffectEvent(() => {
+    cancelRef.current?.()
+    cancelRef.current = null
+    if (document.fullscreenElement) void document.exitFullscreen?.().catch(() => {})
+    const store = useAppStore.getState()
+    store.setView(entrySnapshot)
+    if (store.activeTool === "laser") store.setActiveTool("selection")
+  })
+  useEffect(() => {
+    enter()
+    return () => exit()
   }, [])
 
   // Keep the index inside the slide set; an empty set ends the presentation.

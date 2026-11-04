@@ -4,7 +4,7 @@ import {
   type Point,
   type UserGuides,
 } from "@excalidraw-clone/geometry"
-import { getElementBounds, getElementsBounds } from "@excalidraw-clone/scene"
+import { getElementBounds, getElementsBounds, isBoundLabel } from "@excalidraw-clone/scene"
 import type { ToolContext } from "../../types"
 import type { ResizeOrigin } from "./resize"
 import type { ResizeHandle } from "./types"
@@ -65,13 +65,7 @@ export const computeDragAlignment = (
     height: liveBounds.height,
   }
   const candidateBounds = elements
-    .filter(
-      (e) =>
-        !e.isDeleted &&
-        !e.locked &&
-        !movedSet.has(e.id) &&
-        !(e.type === "text" && e.containerId !== null),
-    )
+    .filter((e) => !e.isDeleted && !e.locked && !movedSet.has(e.id) && !isBoundLabel(e))
     .map(getElementBounds)
   const threshold = ALIGNMENT_THRESHOLD_SCREEN_PX / ctx.viewTransform.zoom
   const snap = computeAlignmentSnap(movingBounds, candidateBounds, threshold, ctx.userGuides)

@@ -11,7 +11,7 @@ import { resolveColor } from "@excalidraw-clone/renderer"
 import { getElementBounds, getElementsBounds, type Scene } from "@excalidraw-clone/scene"
 import React, { useEffect, useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { useSceneRevision } from "../hooks/useSceneRevision"
+import { useSceneElements } from "../hooks/useScene"
 import { useAppStore } from "../store"
 import { viewOf } from "../store/slices/view"
 
@@ -39,7 +39,7 @@ export function Minimap({
   const scrollY = useAppStore((s) => s.scrollY)
   const zoom = useAppStore((s) => s.zoom)
   const theme = useAppStore((s) => s.resolvedTheme)
-  const revision = useSceneRevision(scene)
+  const elements = useSceneElements(scene)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   // Fit includes the viewport, so panning could move the mapping under a drag; freeze it.
   const [frozen, setFrozen] = useState<MinimapFit | null>(null)
@@ -49,13 +49,21 @@ export function Minimap({
   const vh = typeof window === "undefined" ? 0 : window.innerHeight
   const view = { scrollX, scrollY, zoom }
   const vrect = viewportSceneRect(view, vw, vh)
-  // revision stands in for scene content (the Scene object is referentially stable).
   // Hidden (the default): skip the per-edit bounds work entirely.
-  const live = useMemo(
-    () => (visible ? scene.getElements().filter((e) => !e.isDeleted) : []),
-    [scene, revision, visible],
+  const live = useMemo(() => (visible ? elements : []), [elements, visible])
+  // Memoized on its inputs so the draw effect below re-runs only when the mapping changes.
+  const liveFit = useMemo(
+    () =>
+      minimapFit(
+        getElementsBounds(live),
+        viewportSceneRect({ scrollX, scrollY, zoom }, vw, vh),
+        MINIMAP_W,
+        MINIMAP_H,
+        PADDING,
+      ),
+    [live, scrollX, scrollY, zoom, vw, vh],
   )
-  const fit = frozen ?? minimapFit(getElementsBounds(live), vrect, MINIMAP_W, MINIMAP_H, PADDING)
+  const fit = frozen ?? liveFit
 
   useEffect(() => {
     if (!visible) return
@@ -98,7 +106,7 @@ export function Minimap({
       ctx.globalAlpha = 1
     })
     return () => cancelAnimationFrame(raf)
-  }, [visible, live, fit.scale, fit.originX, fit.originY, fit.offsetX, fit.offsetY, theme])
+  }, [visible, live, fit, theme])
 
   if (!visible) return null
 

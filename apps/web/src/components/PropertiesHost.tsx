@@ -2,22 +2,30 @@
 import {
   alignElements,
   distributeElements,
-  duplicateElements,
   type ExcalidrawElement,
   type ExcalidrawTextElement,
-  flipElements,
-  groupElements,
-  lockElements,
+  type GraphLayoutMode,
+  graphEdges,
+  layoutGraph,
   resetCrop,
   type Scene,
+  straightenConnectors,
   tidyElements,
-  ungroupElements,
+  isBoundLabel,
 } from "@excalidraw-clone/scene"
 import { PropertiesPanel } from "@excalidraw-clone/ui"
 import { useTranslation } from "react-i18next"
 import { applySelectionPatch, setWholeTextStyle } from "../driver/applyPropertiesPatch"
-import { deleteElements, patchScene, replaceElements } from "../driver/patchScene"
+import { patchScene, replaceElements } from "../driver/patchScene"
 import { applyTableOp } from "../driver/tableOps"
+import {
+  deleteSelection,
+  duplicateSelection,
+  flipSelection,
+  groupSelection,
+  lockSelection,
+  ungroupSelection,
+} from "../driver/selectionActions"
 import { useAppStore } from "../store"
 
 export interface PropertiesHostProps {
@@ -44,6 +52,19 @@ export function PropertiesHost({
       return p && { ...el, x: p.x, y: p.y }
     })
   }
+  const canAutoLayout = graphEdges(selectedElements, scene.getElements()).length > 0
+  const autoLayout = (mode: GraphLayoutMode): void => {
+    const all = scene.getElements()
+    const moved = layoutGraph(selectedElements, all, mode)
+    if (moved.length === 0) return
+    // One history entry: move the nodes and drop stale bends on their connectors.
+    const byId = new Map(moved.map((p) => [p.id, p]))
+    const straight = new Map(straightenConnectors(all, new Set(byId.keys())).map((a) => [a.id, a]))
+    replaceElements(scene, (el) => {
+      const p = byId.get(el.id)
+      return p ? { ...el, x: p.x, y: p.y } : straight.get(el.id)
+    })
+  }
   return (
     <PropertiesPanel
       t={t}
@@ -54,41 +75,22 @@ export function PropertiesHost({
       }
       onSetTextStyle={(style, on) =>
         replaceElements(scene, (el) =>
-          selectedIds.includes(el.id) ||
-          (el.type === "text" && el.containerId !== null && selectedIds.includes(el.containerId))
+          selectedIds.includes(el.id) || (isBoundLabel(el) && selectedIds.includes(el.containerId))
             ? setWholeTextStyle(el, style, on)
             : undefined,
         )
       }
-      onDelete={() => {
-        deleteElements(scene, selectedIds)
-        useAppStore.getState().setSelection([])
-      }}
-      onDuplicate={() => {
-        const copies = duplicateElements(scene.getElements(), selectedIds)
-        scene.mutate((draft) => {
-          draft.push(...copies)
-        })
-        useAppStore
-          .getState()
-          .setSelection(
-            copies.filter((c) => !(c.type === "text" && c.containerId !== null)).map((c) => c.id),
-          )
-      }}
+      onDelete={() => deleteSelection(scene, selectedIds)}
+      onDuplicate={() => duplicateSelection(scene, selectedIds)}
       onAlign={(edge) => moveTo(alignElements(selectedElements, edge))}
       onDistribute={(axis) => moveTo(distributeElements(selectedElements, axis))}
       onTidy={() => moveTo(tidyElements(selectedElements))}
-      onGroup={() =>
-        patchScene(scene, groupElements(selectedElements, selectedIds, crypto.randomUUID()))
-      }
-      onUngroup={() => patchScene(scene, ungroupElements(selectedElements, selectedIds))}
-      onLock={() => {
-        patchScene(scene, lockElements(scene.getElements(), selectedIds))
-        useAppStore.getState().setSelection([])
-      }}
-      onFlip={(axis) => {
-        patchScene(scene, flipElements(scene.getElements(), selectedIds, axis))
-      }}
+      canAutoLayout={canAutoLayout}
+      onAutoLayout={autoLayout}
+      onGroup={() => groupSelection(scene, selectedIds)}
+      onUngroup={() => ungroupSelection(scene, selectedIds)}
+      onLock={() => lockSelection(scene, selectedIds)}
+      onFlip={(axis) => flipSelection(scene, selectedIds, axis)}
       onTableAction={(action) => {
         const id = selectedIds[0]
         if (!id) return

@@ -17,7 +17,7 @@ import {
 } from "@excalidraw-clone/ui"
 import React, { useEffect, useRef } from "react"
 import { useTranslation } from "react-i18next"
-import { useSceneRevision } from "../hooks/useSceneRevision"
+import { useSceneSnapshot } from "../hooks/useScene"
 import { useAppStore } from "../store"
 
 const PIN = 22
@@ -37,7 +37,9 @@ export function CommentsHost({
   sibling?: PanelSibling | undefined
 }): React.ReactElement | null {
   const { t } = useTranslation()
-  useSceneRevision(scene)
+  const comments = useSceneSnapshot(scene, (s) => s.getComments())
+  // Including deleted ones: a pin on a deleted element stays where it was (see resolveCommentPosition).
+  const elements = useSceneSnapshot(scene, (s) => s.getElementsIncludingDeleted())
   const scrollX = useAppStore((s) => s.scrollX)
   const scrollY = useAppStore((s) => s.scrollY)
   const zoom = useAppStore((s) => s.zoom)
@@ -67,8 +69,6 @@ export function CommentsHost({
 
   if (presenting) return null
 
-  const comments = scene.getComments()
-  const elements = scene.getElementsIncludingDeleted()
   const toScreen = (p: { x: number; y: number }): { left: number; top: number } => ({
     left: (p.x + scrollX) * zoom,
     top: (p.y + scrollY) * zoom,

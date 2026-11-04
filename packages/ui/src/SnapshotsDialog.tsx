@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useFormStatus } from "react-dom"
 import { Dialog } from "./shared/Dialog"
 
 export interface SnapshotListItem {
@@ -12,7 +13,8 @@ export interface SnapshotsDialogProps {
   open: boolean
   onClose: () => void
   snapshots: readonly SnapshotListItem[]
-  onSave: (name: string) => void
+  /** May be async: the Save button shows as busy until it settles. */
+  onSave: (name: string) => void | Promise<void>
   onRestore: (id: string) => void
   onDelete: (id: string) => void
 }
@@ -32,7 +34,7 @@ function SnapshotsDialogBody({
   onRestore,
   onDelete,
 }: SnapshotsDialogProps): React.ReactElement {
-  const [name, setName] = useState(
+  const [defaultName] = useState(
     () => `${t("snapshots.defaultName")} ${new Date().toLocaleString()}`,
   )
   const [confirmId, setConfirmId] = useState<string | null>(null)
@@ -40,27 +42,24 @@ function SnapshotsDialogBody({
 
   return (
     <Dialog t={t} open={open} onClose={onClose} title={t("snapshots.title")}>
+      {/* A form Action: React handles submission (no preventDefault) and keeps
+          the form pending while an async onSave runs. */}
       <form
         className="mb-4 flex gap-2"
-        onSubmit={(e) => {
-          e.preventDefault()
-          if (name.trim()) onSave(name.trim())
+        action={async (data) => {
+          const raw = data.get("name")
+          const name = typeof raw === "string" ? raw.trim() : ""
+          if (name) await onSave(name)
         }}
       >
         <input
+          name="name"
           data-testid="snapshots-name"
           aria-label={t("snapshots.name")}
-          value={name}
-          onChange={(e) => setName(e.target.value)}
+          defaultValue={defaultName}
           className="w-64 rounded border border-panel bg-transparent px-2 py-1 text-sm"
         />
-        <button
-          type="submit"
-          data-testid="snapshots-save"
-          className="rounded bg-accent px-3 py-1 text-sm text-white"
-        >
-          {t("snapshots.save")}
-        </button>
+        <SaveButton label={t("snapshots.save")} />
       </form>
       {snapshots.length === 0 ? (
         <p className="text-sm text-muted">{t("snapshots.empty")}</p>
@@ -118,5 +117,21 @@ function SnapshotsDialogBody({
         </ul>
       )}
     </Dialog>
+  )
+}
+
+/** Reads its form's pending state, so a slow save cannot be submitted twice. */
+function SaveButton({ label }: { label: string }): React.ReactElement {
+  const { pending } = useFormStatus()
+  return (
+    <button
+      type="submit"
+      data-testid="snapshots-save"
+      disabled={pending}
+      aria-busy={pending}
+      className="rounded bg-accent px-3 py-1 text-sm text-white disabled:opacity-50"
+    >
+      {label}
+    </button>
   )
 }

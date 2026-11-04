@@ -29,6 +29,11 @@ export class Scene {
   /** Comment threads on this page; outside the undo stack like guides. */
   private comments: readonly Comment[]
   private static readonly MAX_HISTORY = 100
+  /** Element arrays this scene produced itself, already fully reconciled. */
+  private reconciled = new WeakSet<readonly ExcalidrawElement[]>()
+  /** Memo for `getElements`: the non-deleted view of `liveSource`. */
+  private liveSource: readonly ExcalidrawElement[] | null = null
+  private live: readonly ExcalidrawElement[] = []
 
   constructor(
     initial: readonly ExcalidrawElement[] = [],
@@ -58,10 +63,6 @@ export class Scene {
     }
     return this.live
   }
-  private reconciled = new WeakSet<readonly ExcalidrawElement[]>()
-  private liveSource: readonly ExcalidrawElement[] | null = null
-  private live: readonly ExcalidrawElement[] = []
-
   getGuides(): UserGuides {
     return this.guides
   }
@@ -102,7 +103,6 @@ export class Scene {
     // re-checking frame membership of elements it carries over untouched.
     reconcileFrameMembership(draft, this.reconciled.has(this.elements) ? this.elements : undefined)
     this.reconciled.add(draft)
-    this.setElements(draft)
     // A value-identical commit (e.g. a plain click-to-select, which replaces an
     // element with an unchanged clone) must not pollute the undo stack — under
     // MAX_HISTORY such no-ops can otherwise evict every real entry.
@@ -116,6 +116,8 @@ export class Scene {
       const recorded = this.history[this.historyIndex]
       if (!recorded || !Scene.isSameSnapshot(recorded, draft)) this.pushHistory(draft)
     }
+    // Notify last, so listeners see the new elements *and* the history entry recording them.
+    this.setElements(draft)
   }
 
   /** Deep value-equality for two element snapshots (plain JSON-safe objects). */
@@ -229,8 +231,18 @@ export class Scene {
     }
   }
 
+  /** Calls every listener even if one throws (so a faulty subscriber cannot
+   *  starve the renderer or auto-save); the first error is rethrown afterwards. */
   protected notify(): void {
-    for (const fn of this.listeners) fn()
+    let failure: { error: unknown } | null = null
+    for (const fn of [...this.listeners]) {
+      try {
+        fn()
+      } catch (error) {
+        failure ??= { error }
+      }
+    }
+    if (failure) throw failure.error
   }
 
   protected setElements(next: readonly ExcalidrawElement[]): void {

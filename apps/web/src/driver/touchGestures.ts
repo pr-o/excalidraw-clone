@@ -18,7 +18,7 @@ export function createTouchGestures(
   canvas: HTMLCanvasElement,
   dispatch: ToolDispatch,
   onLongPress?: (clientX: number, clientY: number) => void,
-): (type: "down" | "move" | "up", e: PointerEvent) => boolean {
+): ((type: "down" | "move" | "up", e: PointerEvent) => boolean) & { dispose: () => void } {
   const touches = new Map<number, Point>()
   let pinch: { ids: [number, number]; view: ViewTransform; from: [Point, Point] } | null = null
   let touchDead = false
@@ -31,7 +31,7 @@ export function createTouchGestures(
     const r = canvas.getBoundingClientRect()
     return { x: e.clientX - r.left, y: e.clientY - r.top }
   }
-  return (type, e) => {
+  const handle = (type: "down" | "move" | "up", e: PointerEvent): boolean => {
     if (e.pointerType !== "touch" || useAppStore.getState().presenting) return false
     if (type === "up") {
       cancelLongPress()
@@ -83,4 +83,6 @@ export function createTouchGestures(
     }
     return touchDead
   }
+  // A pending long-press must not fire after the driver is torn down.
+  return Object.assign(handle, { dispose: cancelLongPress })
 }

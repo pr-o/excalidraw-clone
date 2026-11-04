@@ -54,7 +54,6 @@ export const buildGroupResizeCommitEffect = (ids: readonly string[]): ToolEffect
   buildRecommitEffect(ids)
 
 export const buildGroupResizeRevertEffect = (
-  ids: readonly string[],
   originalElements: readonly ExcalidrawElement[],
 ): ToolEffect => ({
   kind: "mutation",
@@ -87,7 +86,7 @@ export const reduceGroupResizing = (
     case "pointerUp":
       return [{ phase: "idle" }, [buildGroupResizeCommitEffect(state.ids)]]
     case "escape":
-      return [{ phase: "idle" }, [buildGroupResizeRevertEffect(state.ids, state.originalElements)]]
+      return [{ phase: "idle" }, [buildGroupResizeRevertEffect(state.originalElements)]]
     default:
       return [state, []]
   }

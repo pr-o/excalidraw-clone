@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises"
 import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
 import { describe, expect, it } from "vitest"
+import { newRectangle } from "@excalidraw-clone/scene"
 import { migrate } from "../src/migrations"
 
 const HERE = dirname(fileURLToPath(import.meta.url))
@@ -206,13 +207,87 @@ describe("migrate — table validation", () => {
   })
 
   it("old documents without any table load unchanged", () => {
+    const rect = newRectangle({ x: 1, y: 2, width: 3, height: 4 })
     const data = {
       type: "excalidraw",
       version: 3,
       source: "t",
       activePageId: "p",
-      pages: [{ id: "p", name: "P", elements: [{ id: "r", type: "rectangle", x: 1 }] }],
+      pages: [{ id: "p", name: "P", elements: [rect] }],
     }
-    expect(migrate(data).pages[0]!.elements).toEqual([{ id: "r", type: "rectangle", x: 1 }])
+    expect(migrate(data).pages[0]!.elements).toEqual([rect])
+  })
+})
+
+describe("migrate: malformed pages from untrusted files", () => {
+  it("tolerates a page with no element list and non-object entries", () => {
+    const out = migrate({
+      type: "excalidraw",
+      version: 3,
+      source: "x",
+      activePageId: "p1",
+      pages: [
+        { id: "p1", name: "A" },
+        {
+          id: "p2",
+          name: "B",
+          elements: [null, 7, { id: "e", type: "rectangle", x: 0, y: 0, width: 10, height: 10 }],
+        },
+      ],
+    })
+    expect(out.pages[0]!.elements).toEqual([])
+    expect(out.pages[1]!.elements).toHaveLength(1)
+  })
+
+  it("never produces NaN crop fractions from missing fields", () => {
+    const out = migrate({
+      type: "excalidraw",
+      version: 3,
+      source: "x",
+      activePageId: "p1",
+      pages: [
+        {
+          id: "p1",
+          name: "A",
+          elements: [
+            {
+              id: "i",
+              type: "image",
+              x: 0,
+              y: 0,
+              width: 10,
+              height: 10,
+              crop: { naturalWidth: 100, naturalHeight: 100 },
+            },
+          ],
+        },
+      ],
+    })
+    const crop = (out.pages[0]!.elements[0] as { crop: unknown }).crop
+    expect(crop).toBeNull()
+  })
+})
+
+describe("migrate: unusable elements", () => {
+  it("drops elements that would crash the renderer but keeps and repairs the rest", () => {
+    const out = migrate({
+      type: "excalidraw",
+      version: 3,
+      source: "x",
+      activePageId: "p1",
+      pages: [
+        {
+          id: "p1",
+          name: "A",
+          elements: [
+            { id: "ok", type: "rectangle", x: 0, y: 0, width: 10, height: 10 },
+            { id: "bad-arrow", type: "arrow", x: 0, y: 0, width: 1, height: 1 },
+          ],
+        },
+      ],
+    })
+    const els = out.pages[0]!.elements
+    expect(els.map((e) => e.id)).toEqual(["ok"])
+    expect(els[0]!.groupIds).toEqual([])
   })
 })

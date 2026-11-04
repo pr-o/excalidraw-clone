@@ -216,3 +216,15 @@ describe("Scene.normalize — history-silent fixes", () => {
     expect(calls).toBe(0)
   })
 })
+
+describe("Scene notification order", () => {
+  it("listeners already see the history entry of the mutation that notified them", () => {
+    const scene = new Scene()
+    const seen: number[] = []
+    scene.subscribe(() => seen.push(scene.getHistory().length))
+    scene.mutate((d) => {
+      d.push(newRectangle({ x: 0, y: 0, width: 10, height: 10 }))
+    })
+    expect(seen).toEqual([2])
+  })
+})

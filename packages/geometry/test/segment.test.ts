@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { distancePointToSegment, pointOnSegment } from "../src"
+import { distancePointToSegment } from "../src"
 import type { Point } from "../src"
 
 describe("distancePointToSegment", () => {
@@ -32,22 +32,5 @@ describe("distancePointToSegment", () => {
     // but (-3,4) projects off the 'a' end so we get distance to (0,0) = 5.
     const p: Point = { x: -3, y: 4 }
     expect(distancePointToSegment(p, { x: 0, y: 0 }, { x: 4, y: 3 })).toBeCloseTo(5)
-  })
-})
-
-describe("pointOnSegment", () => {
-  const a: Point = { x: 0, y: 0 }
-  const b: Point = { x: 10, y: 0 }
-
-  it.each<[Point, number, boolean]>([
-    [{ x: 5, y: 0 }, 1, true], // on segment, threshold 1
-    [{ x: 5, y: 0.5 }, 1, true], // close, within threshold
-    [{ x: 5, y: 1 }, 1, true], // exactly threshold (inclusive)
-    [{ x: 5, y: 1.01 }, 1, false], // just over threshold
-    [{ x: 5, y: 5 }, 1, false], // far
-    [{ x: -3, y: 0 }, 5, true], // off-end, within threshold
-    [{ x: -3, y: 0 }, 2, false], // off-end, beyond threshold
-  ])("on segment(%j, threshold %d) === %s", (p, threshold, expected) => {
-    expect(pointOnSegment(p, a, b, threshold)).toBe(expected)
   })
 })

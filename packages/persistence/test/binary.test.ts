@@ -27,6 +27,12 @@ describe("blob <-> dataURL round-trip", () => {
     expect([...buf]).toEqual([1, 2, 3, 4, 5])
   })
 
+  it("gives an untyped blob an explicit octet-stream media type", async () => {
+    const url = await blobToDataURL(new Blob([new Uint8Array([9])]))
+    expect(url.startsWith("data:application/octet-stream;base64,")).toBe(true)
+    expect(dataURLToBlob(url).size).toBe(1)
+  })
+
   it("dataURLToBlob throws on malformed input", () => {
     expect(() => dataURLToBlob("not-a-data-url")).toThrow()
   })

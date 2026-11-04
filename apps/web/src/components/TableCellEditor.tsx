@@ -11,7 +11,7 @@ import {
   type ExcalidrawTableElement,
   type Scene,
 } from "@excalidraw-clone/scene"
-import React, { useEffect, useRef } from "react"
+import React, { useEffect, useEffectEvent, useRef } from "react"
 import { commitTableCell, tableLineCounter } from "../driver/tableOps"
 import { useAppStore } from "../store"
 import { RichMirror, useRichText } from "./richText"
@@ -42,14 +42,14 @@ export function TableCellEditor({ scene, table, cell }: Props): React.ReactEleme
   // Set once the edit is committed, so the blur caused by unmounting can't commit twice.
   const done = useRef(false)
 
-  useEffect(() => {
-    queueMicrotask(() => {
-      const node = ref.current
-      if (!node) return
-      node.focus()
-      node.setSelectionRange(node.value.length, node.value.length)
-    })
-  }, [])
+  const focusAtEnd = useEffectEvent(() => {
+    const node = ref.current
+    if (!node) return
+    node.focus()
+    node.setSelectionRange(node.value.length, node.value.length)
+  })
+  // Once per mount (the editor is keyed per cell); deferred past the click that opened it.
+  useEffect(() => queueMicrotask(focusAtEnd), [])
 
   const finish = (next: { row: number; col: number } | null, appendRow = false): void => {
     if (done.current) return
@@ -109,7 +109,7 @@ export function TableCellEditor({ scene, table, cell }: Props): React.ReactEleme
     >
       {styled && (
         <RichMirror
-          mirrorRef={mirror}
+          ref={mirror}
           value={value}
           spans={spans}
           weight={weight}

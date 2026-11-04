@@ -42,9 +42,9 @@ export function HistoryPanel({
             return { index: i, label }
           })
         : [],
-    // `t` is intentionally omitted: it is a stable i18next binding here, and
-    // including it would defeat the memo on every render.
-    [open, history],
+    // `t` must be referentially stable (the host memoizes it per language) so
+    // labels re-translate on a language switch without recomputing every render.
+    [open, history, t],
   )
 
   if (!open) {

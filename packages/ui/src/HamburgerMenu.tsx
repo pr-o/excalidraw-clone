@@ -29,7 +29,10 @@ export interface HamburgerMenuProps {
   commentsOpen?: boolean
   onCommentsToggle?: () => void
   onOpenFile: () => void
+  /** "Save as…": always asks where to save. */
   onSaveFile: () => void
+  /** "Save": writes back to the current file when there is one. Omit to hide the item. */
+  onSave?: () => void
   onSnapshots?: () => void
   onExport: () => void
   onImportMermaid: () => void
@@ -87,7 +90,14 @@ export function HamburgerMenu(props: HamburgerMenuProps): React.ReactElement {
           {!props.viewMode && (
             <MenuItem onClick={wrap(props.onOpenFile)}>{props.t("menu.open")}</MenuItem>
           )}
-          <MenuItem onClick={wrap(props.onSaveFile)}>{props.t("menu.saveAs")}</MenuItem>
+          {props.onSave && (
+            <MenuItem onClick={wrap(props.onSave)} testId="menu-save">
+              {props.t("menu.save")}
+            </MenuItem>
+          )}
+          <MenuItem onClick={wrap(props.onSaveFile)} testId="menu-save-as">
+            {props.t("menu.saveAs")}
+          </MenuItem>
           {props.onSnapshots && !props.viewMode && (
             <MenuItem onClick={wrap(props.onSnapshots)}>{props.t("menu.snapshots")}</MenuItem>
           )}

@@ -2,10 +2,12 @@ import type { ExcalidrawBinaryFile, ExcalidrawData, LibraryItem } from "@excalid
 import { type IDBPDatabase, openDB } from "idb"
 
 export const DB_NAME = "excalidraw-clone"
-export const DB_VERSION = 3
+export const DB_VERSION = 4
 export const FILES_STORE = "files"
 export const LIBRARY_STORE = "library_items"
 export const SNAPSHOTS_STORE = "snapshots"
+/** Out-of-line keys: small named values that do not fit the other stores. */
+export const HANDLES_STORE = "handles"
 
 export interface Snapshot {
   id: string
@@ -18,6 +20,7 @@ export interface ExcalidrawDB {
   files: { key: string; value: ExcalidrawBinaryFile }
   library_items: { key: string; value: LibraryItem }
   snapshots: { key: string; value: Snapshot }
+  handles: { key: string; value: FileSystemFileHandle }
 }
 
 let dbPromise: Promise<IDBPDatabase<ExcalidrawDB>> | null = null
@@ -35,7 +38,14 @@ export function getDB(): Promise<IDBPDatabase<ExcalidrawDB>> {
         if (!db.objectStoreNames.contains(SNAPSHOTS_STORE)) {
           db.createObjectStore(SNAPSHOTS_STORE, { keyPath: "id" })
         }
+        if (!db.objectStoreNames.contains(HANDLES_STORE)) {
+          db.createObjectStore(HANDLES_STORE)
+        }
       },
+    }).catch((err: unknown) => {
+      // Do not cache a failed open (blocked upgrade, private mode): let the next call retry.
+      dbPromise = null
+      throw err
     })
   }
   return dbPromise

@@ -191,6 +191,25 @@ describe("PagesTabBar", () => {
     expect(screen.queryByTestId("page-drop-line")).not.toBeInTheDocument()
   })
 
+  it("leaving the bar mid-drag cancels it: no stuck drop line and no move", () => {
+    const onMove = vi.fn()
+    render(<PagesTabBar t={t} pages={pages} activePageId="p1" {...handlers} onMove={onMove} />)
+    const tab1 = screen.getByTestId("page-tab-p1")
+    const tab2 = screen.getByTestId("page-tab-p2")
+    stubRect(tab1, { left: 0, width: 100 })
+    stubRect(tab2, { left: 100, width: 100 })
+    const bar = screen.getByTestId("pages-tab-bar")
+
+    firePointer(tab1, "pointerdown")
+    firePointer(bar, "pointermove", 160)
+    expect(screen.getByTestId("page-drop-line")).toBeInTheDocument()
+
+    fireEvent.pointerLeave(bar)
+    expect(screen.queryByTestId("page-drop-line")).not.toBeInTheDocument()
+    firePointer(bar, "pointerup")
+    expect(onMove).not.toHaveBeenCalled()
+  })
+
   it("pointerdown on a reorder/duplicate/delete button does not start a drag", () => {
     const onMove = vi.fn()
     render(<PagesTabBar t={t} pages={pages} activePageId="p1" {...handlers} onMove={onMove} />)

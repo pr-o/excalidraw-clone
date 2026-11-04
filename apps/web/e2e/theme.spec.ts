@@ -122,3 +122,20 @@ test("library template thumbnails follow the theme", async ({ page }) => {
   // Dark strokes would vanish on the dark tile: the thumbnail redraws light.
   await expect.poll(strokes).toEqual(["#ececec"])
 })
+
+test("switching the language updates the document language", async ({ page }) => {
+  await page.goto("/")
+  await page.evaluate(() => localStorage.clear())
+  await page.reload()
+  await page.locator('[data-testid="toolbar-rectangle"]').waitFor({ state: "visible" })
+  await expect(page.locator("html")).toHaveAttribute("lang", "en")
+
+  await page.getByRole("button", { name: /menu/i }).click()
+  await page.locator('[data-testid="locale-ko"]').click()
+  await expect(page.locator("html")).toHaveAttribute("lang", "ko")
+
+  // The choice is persisted, so the document language follows it after a reload too.
+  await page.reload()
+  await page.locator('[data-testid="toolbar-rectangle"]').waitFor({ state: "visible" })
+  await expect(page.locator("html")).toHaveAttribute("lang", "ko")
+})

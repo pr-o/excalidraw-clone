@@ -202,3 +202,17 @@ describe("Scene.mutate — skipHistory option", () => {
     expect(s.getElements().length).toBe(1)
   })
 })
+
+describe("Scene listener isolation", () => {
+  it("notifies every listener even when one throws, then rethrows the first error", () => {
+    const scene = new Scene()
+    const seen: string[] = []
+    scene.subscribe(() => {
+      seen.push("a")
+      throw new Error("boom")
+    })
+    scene.subscribe(() => seen.push("b"))
+    expect(() => scene.mutate(() => {})).toThrow("boom")
+    expect(seen).toEqual(["a", "b"])
+  })
+})

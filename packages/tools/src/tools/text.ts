@@ -1,5 +1,5 @@
 import { newText } from "@excalidraw-clone/scene"
-import { removeElement } from "../draft"
+import { addDraftEffect, discardDraftEffect } from "../draft"
 import type { Tool, ToolContext, ToolEffect, ToolEvent } from "../types"
 
 export type TextState = { phase: "idle" } | { phase: "placing"; elementId: string; existing?: true }
@@ -17,18 +17,7 @@ export const textTool: Tool<TextState, ToolEvent> = {
         if (hit?.type === "text")
           return [{ phase: "placing", elementId: hit.id, existing: true }, []]
         const element = newText({ x: event.at.x, y: event.at.y })
-        return [
-          { phase: "placing", elementId: element.id },
-          [
-            {
-              kind: "mutation",
-              apply: (draft) => {
-                draft.push(element)
-              },
-              skipHistory: true,
-            },
-          ],
-        ]
+        return [{ phase: "placing", elementId: element.id }, [addDraftEffect(element)]]
       }
       return [state, []]
     }
@@ -45,16 +34,7 @@ export const textTool: Tool<TextState, ToolEvent> = {
     }
     if (event.type === "escape") {
       if (state.existing) return [{ phase: "idle" }, []]
-      return [
-        { phase: "idle" },
-        [
-          {
-            kind: "mutation",
-            apply: (draft) => removeElement(draft, elementId),
-            skipHistory: true,
-          },
-        ],
-      ]
+      return [{ phase: "idle" }, [discardDraftEffect(elementId)]]
     }
     return [state, []]
   },

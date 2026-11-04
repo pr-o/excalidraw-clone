@@ -41,15 +41,23 @@ import {
   validateToolKey,
 } from "../keyboard/toolKeys"
 import type { PageRecord } from "../driver/pages"
+import { setCurrentFile } from "../driver/fileHandle"
 import { useAppStore } from "../store"
 
 export interface DialogsProps {
   scene: Scene
   pages: readonly PageRecord[]
   activePageId: string
+  /** Replaces the whole document (every page) with one empty page. */
+  onResetDocument: () => void
 }
 
-export function Dialogs({ scene, pages, activePageId }: DialogsProps): React.ReactElement {
+export function Dialogs({
+  scene,
+  pages,
+  activePageId,
+  onResetDocument,
+}: DialogsProps): React.ReactElement {
   const { t } = useTranslation()
   const openDialog = useAppStore((s) => s.openDialog)
   const setOpenDialog = useAppStore((s) => s.setOpenDialog)
@@ -87,10 +95,12 @@ export function Dialogs({ scene, pages, activePageId }: DialogsProps): React.Rea
     return copyPNGToClipboard(() => exportToPNG(target.elements, opts, canvasBg, target.pageName))
   }
 
+  // The dialog promises to remove *all* work, so reset every page, not just the open one
+  // (and the stored images, which no page can reference afterwards).
   const onResetConfirm = (): void => {
-    scene.mutate((draft) => {
-      draft.length = 0
-    })
+    onResetDocument()
+    // A fresh drawing must not be saved over the file the old one came from.
+    setCurrentFile(null)
     clearLocal()
     void clearAllFiles()
     useAppStore.getState().setSelection([])

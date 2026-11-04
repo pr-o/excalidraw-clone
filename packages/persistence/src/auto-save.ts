@@ -2,6 +2,8 @@ export interface AutoSaver {
   schedule(): void
   flushNow(): void
   dispose(): void
+  /** True while a change is scheduled but not yet written. */
+  isPending(): boolean
 }
 
 export interface AutoSaverOptions {
@@ -38,6 +40,9 @@ export function createAutoSaver({ delayMs, flush }: AutoSaverOptions): AutoSaver
       if (!pending) return
       pending = false
       flush()
+    },
+    isPending() {
+      return pending
     },
     dispose() {
       cancel()

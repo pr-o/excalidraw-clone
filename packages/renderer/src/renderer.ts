@@ -1,5 +1,5 @@
 import type { AlignmentGuide, Bounds, Point, ViewTransform } from "@excalidraw-clone/geometry"
-import { LABELABLE_TYPES, LINEAR_LABELABLE_TYPES } from "@excalidraw-clone/scene"
+import { LABELABLE_TYPES, LINEAR_LABELABLE_TYPES, isBoundLabel } from "@excalidraw-clone/scene"
 import type { ExcalidrawElement, Scene } from "@excalidraw-clone/scene"
 import { RoughCanvas } from "roughjs/bin/canvas"
 import { drawCropDim } from "./crop-overlay"
@@ -25,6 +25,33 @@ const IDENTITY: ViewTransform = { scrollX: 0, scrollY: 0, zoom: 1 }
  *  regenerating every element. */
 const SHARED_SHAPE_CACHE = new ShapeCache()
 
+/** Decoded images, shared by every renderer. Image ids are content hashes, so an
+ *  id always means the same bytes. Each page gets its own renderer, so a
+ *  per-renderer map left images blank after a page switch or reload. */
+const SHARED_IMAGES = new Map<string, HTMLImageElement>()
+const SHARED_IMAGE_LOADS = new Map<string, Promise<void>>()
+/** Renderers currently drawing; an image finishing its load redraws all of them. */
+const RUNNING = new Set<CanvasRenderer>()
+
+/** Decodes `dataURL` into the shared image cache (once per `fileId`) and redraws
+ *  every running renderer when it is ready. Safe to call before any renderer exists. */
+export function preloadSharedImage(fileId: string, dataURL: string): Promise<void> {
+  const pending = SHARED_IMAGE_LOADS.get(fileId)
+  if (pending) return pending
+  const img = new Image()
+  const load = new Promise<void>((resolve) => {
+    img.onload = () => {
+      for (const renderer of RUNNING) renderer.requestRedraw()
+      resolve()
+    }
+    img.onerror = () => resolve()
+  })
+  img.src = dataURL
+  SHARED_IMAGES.set(fileId, img)
+  SHARED_IMAGE_LOADS.set(fileId, load)
+  return load
+}
+
 export class CanvasRenderer {
   private readonly canvas: HTMLCanvasElement
   private readonly ctx: CanvasRenderingContext2D
@@ -38,8 +65,8 @@ export class CanvasRenderer {
 
   private readonly rough: RoughCanvas
   private readonly shapeCache = SHARED_SHAPE_CACHE
-  private readonly imageMap = new Map<string, HTMLImageElement>()
-  private readonly imageLoads = new Map<string, Promise<void>>()
+  private readonly imageMap = SHARED_IMAGES
+  private readonly imageLoads = SHARED_IMAGE_LOADS
   private readonly overlayCanvas: HTMLCanvasElement | null
   private readonly overlayCtx: CanvasRenderingContext2D | null
   private marquee: MarqueeBox | null = null
@@ -86,6 +113,7 @@ export class CanvasRenderer {
   start(): void {
     if (this.running) return
     this.running = true
+    RUNNING.add(this)
     this.unsubscribe = this.scene.subscribe(() => this.requestRedraw())
     this.requestRedraw()
   }
@@ -93,6 +121,7 @@ export class CanvasRenderer {
   stop(): void {
     if (!this.running) return
     this.running = false
+    RUNNING.delete(this)
     if (this.unsubscribe) {
       this.unsubscribe()
       this.unsubscribe = null
@@ -161,20 +190,7 @@ export class CanvasRenderer {
   }
 
   preloadImage(fileId: string, dataURL: string): Promise<void> {
-    const pending = this.imageLoads.get(fileId)
-    if (pending) return pending
-    const img = new Image()
-    const load = new Promise<void>((resolve) => {
-      img.onload = () => {
-        this.requestRedraw()
-        resolve()
-      }
-      img.onerror = () => resolve()
-    })
-    img.src = dataURL
-    this.imageMap.set(fileId, img)
-    this.imageLoads.set(fileId, load)
-    return load
+    return preloadSharedImage(fileId, dataURL)
   }
 
   unloadImage(fileId: string): void {
@@ -224,10 +240,7 @@ export class CanvasRenderer {
         element.id === this.hiddenId && element.type === "table" ? this.hiddenCell : null
       if ((element.id === this.hiddenId && !hiddenCell) || !isElementVisible(element, view))
         continue
-      const container =
-        element.type === "text" && element.containerId !== null
-          ? byId.get(element.containerId)
-          : undefined
+      const container = isBoundLabel(element) ? byId.get(element.containerId) : undefined
       const labelOpts = hiddenCell
         ? { hiddenCell }
         : container === undefined

@@ -6,6 +6,7 @@ import {
   mirrorOf,
   shadowMargin,
   sliceRuns,
+  isBoundLabel,
 } from "@excalidraw-clone/scene"
 import type {
   ExcalidrawElement,
@@ -149,8 +150,7 @@ export function renderToSVG(scene: Scene, opts: SVGRenderOptions = {}): string {
     theme,
   )
   for (const el of elements) {
-    const container =
-      el.type === "text" && el.containerId !== null ? byId.get(el.containerId) : undefined
+    const container = isBoundLabel(el) ? byId.get(el.containerId) : undefined
     const backing =
       measure && container && LINEAR_LABELABLE_TYPES.has(container.type)
         ? { background: labelBg, measure }

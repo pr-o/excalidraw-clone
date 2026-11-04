@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import { duplicateElements } from "../src/duplicate"
-import { newFrame, newLabelFor, newRectangle } from "../src/factories"
+import { newArrow, newFrame, newLabelFor, newRectangle } from "../src/factories"
+import { Scene } from "../src/scene"
 import type { ExcalidrawElement } from "../src/types"
 
 describe("duplicateElements", () => {
@@ -41,5 +42,32 @@ describe("duplicateElements", () => {
     duplicateElements([a], [a.id])
     expect(a.x).toBe(10)
     expect(a.y).toBe(20)
+  })
+})
+
+describe("duplicateElements with bound arrows", () => {
+  it("a duplicated arrow stays at its offset instead of snapping back onto its original targets", () => {
+    const a = newRectangle({ x: 0, y: 0, width: 100, height: 50 })
+    const b = newRectangle({ x: 400, y: 0, width: 100, height: 50 })
+    const arrow = {
+      ...newArrow({ x: 104, y: 25 }),
+      width: 292,
+      points: [
+        { x: 0, y: 0 },
+        { x: 292, y: 0 },
+      ],
+      startBinding: { elementId: a.id, focus: 0, gap: 4 },
+      endBinding: { elementId: b.id, focus: 0, gap: 4 },
+    }
+    const scene = new Scene()
+    scene.mutate((d) => {
+      d.push(a, b, arrow)
+    })
+    const [copy] = duplicateElements(scene.getElements(), [arrow.id], 60)
+    scene.mutate((d) => {
+      d.push(copy!)
+    })
+    const placed = scene.getElements().find((e) => e.id === copy!.id)!
+    expect([placed.x, placed.y]).toEqual([164, 85])
   })
 })

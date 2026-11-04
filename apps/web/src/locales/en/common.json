@@ -72,6 +72,9 @@
     "distribute_horizontal": "Distribute horizontally",
     "distribute_vertical": "Distribute vertically",
     "tidy_up": "Tidy up",
+    "auto_layout_tree_down": "Auto layout: tree (top to bottom)",
+    "auto_layout_tree_right": "Auto layout: tree (left to right)",
+    "auto_layout_radial": "Auto layout: radial",
     "group": "Group",
     "ungroup": "Ungroup",
     "arrowheads": "Arrowheads",
@@ -125,6 +128,7 @@
   "menu": {
     "label": "Menu",
     "open": "Open…",
+    "save": "Save",
     "saveAs": "Save as…",
     "snapshots": "Snapshots…",
     "export": "Export image…",
@@ -271,6 +275,11 @@
     "emptyHintKeysAfter": "to see every keyboard shortcut"
   },
   "shortcuts": {
+    "undo": "Undo",
+    "redo": "Redo",
+    "selectAll": "Select all",
+    "deselect": "Deselect",
+    "toggleGrid": "Toggle grid",
     "title": "Keyboard shortcuts",
     "tools": "Tools",
     "editor": "Editor",
@@ -394,6 +403,10 @@
     "f3f0ff": "Lavender"
   },
   "a11y": {
+    "syncedFromOtherTab": "Updated with changes from another tab",
+    "openFailed": "Could not open that file. It may be damaged or from a newer version.",
+    "dismissNotice": "Dismiss",
+    "saveFailed": "Could not save your drawing in this browser (storage is full or unavailable). Export it to a file to keep it.",
     "toolSelected": "{{tool}} tool",
     "undo": "Undo",
     "redo": "Redo",
@@ -404,5 +417,13 @@
     "groupOf": "Group of {{count}}: ",
     "selectionCleared": "Selection cleared",
     "noElements": "No elements on this page"
+  },
+  "drop": {
+    "confirmReplace": "Open the dropped drawing? It replaces everything on the canvas.",
+    "unsupported": "Can't use “{{name}}”: drop an image, a .excalidraw drawing or a .excalidrawlib library."
+  },
+  "file": {
+    "saved": "Saved to {{name}}",
+    "saveFailed": "Could not save the file."
   }
 }

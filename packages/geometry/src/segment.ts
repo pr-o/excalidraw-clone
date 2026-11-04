@@ -12,6 +12,3 @@ export const distancePointToSegment = (p: Point, a: Point, b: Point): number => 
   const projY = a.y + t * dy
   return Math.hypot(p.x - projX, p.y - projY)
 }
-
-export const pointOnSegment = (p: Point, a: Point, b: Point, threshold: number): boolean =>
-  distancePointToSegment(p, a, b) <= threshold

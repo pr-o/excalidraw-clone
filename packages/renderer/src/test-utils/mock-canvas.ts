@@ -102,6 +102,3 @@ export const createMockCanvas = (
 
 export const callsOf = (ctx: MockCanvasContext, method: string): readonly RecordedCall[] =>
   ctx.__calls.filter((c) => c.method === method)
-
-export const findCallIndex = (ctx: MockCanvasContext, method: string): number =>
-  ctx.__calls.findIndex((c) => c.method === method)

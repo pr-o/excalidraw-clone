@@ -32,9 +32,18 @@ export function SnapshotsHost({
   const [snapshots, setSnapshots] = useState<SnapshotMeta[]>([])
   const refresh = useCallback(async () => setSnapshots(await listSnapshots()), [])
 
+  // Load the list each time the dialog opens; a response that lands after it
+  // closed again is dropped.
   useEffect(() => {
-    if (open) void refresh()
-  }, [open, refresh])
+    if (!open) return
+    let current = true
+    void listSnapshots().then((list) => {
+      if (current) setSnapshots(list)
+    })
+    return () => {
+      current = false
+    }
+  }, [open])
 
   const current = (): ExcalidrawData => serializeDocument(pages, activePageId)
 
@@ -44,7 +53,7 @@ export function SnapshotsHost({
       open={open}
       onClose={() => setOpenDialog(null)}
       snapshots={snapshots}
-      onSave={(name) => void saveSnapshot(name, current()).then(refresh)}
+      onSave={(name) => saveSnapshot(name, current()).then(refresh)}
       onDelete={(id) => void deleteSnapshot(id).then(refresh)}
       onRestore={(id) => {
         void (async () => {
