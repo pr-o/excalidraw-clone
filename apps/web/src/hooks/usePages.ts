@@ -27,7 +27,7 @@ import {
   type PageRecord,
 } from "../driver/pages"
 import { renderPageThumbnail } from "../driver/pageThumbnails"
-import { replaceElements } from "../driver/patchScene"
+import { mapElements } from "../driver/patchScene"
 import { useAppStore } from "../store"
 import { viewOf } from "../store/slices/view"
 
@@ -221,7 +221,7 @@ export function usePages(): PagesState {
       const element = scene.getElements().find((el) => el.id === elementId)
       const target = pages.find((p) => p.id === targetPageId)
       if (!element || !target) return
-      replaceElements(scene, (el) => (el.id === elementId ? { ...el, isDeleted: true } : undefined))
+      mapElements(scene, (el) => (el.id === elementId ? { ...el, isDeleted: true } : undefined))
       target.scene.mutate((draft) => {
         draft.push(element)
       })

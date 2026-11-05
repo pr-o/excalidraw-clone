@@ -1,6 +1,6 @@
 import { newText } from "@excalidraw-clone/scene"
 import { addDraftEffect, discardDraftEffect } from "../draft"
-import type { Tool, ToolContext, ToolEffect, ToolEvent } from "../types"
+import type { Tool, ToolEffect, ToolEvent } from "../types"
 
 export type TextState = { phase: "idle" } | { phase: "placing"; elementId: string; existing?: true }
 
@@ -9,7 +9,7 @@ const TEXT_INITIAL: TextState = { phase: "idle" }
 export const textTool: Tool<TextState, ToolEvent> = {
   name: "text",
   initial: TEXT_INITIAL,
-  reduce(state, event, ctx: ToolContext): [TextState, readonly ToolEffect[]] {
+  reduce(state, event, ctx): [TextState, readonly ToolEffect[]] {
     if (state.phase === "idle") {
       if (event.type === "pointerDown") {
         // Clicking existing text edits it rather than stacking a new text on top.

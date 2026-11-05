@@ -2,7 +2,7 @@ import type { Arrowhead } from "@excalidraw-clone/scene"
 import { newArrow, newLine } from "@excalidraw-clone/scene"
 import { RoughGenerator } from "roughjs/bin/generator"
 import { describe, expect, it, vi } from "vitest"
-import { arrowShape, lineShape } from "../src/shapes"
+import { linearShape } from "../src/shapes/linear"
 import { arrowheadDrawables } from "../src/shapes/arrowheads"
 
 const TIP: [number, number] = [100, 50]
@@ -149,7 +149,7 @@ describe("arrowShape arrowhead kinds", () => {
     const gen = new RoughGenerator()
     const spy = vi.spyOn(gen, "polygon")
     const e = { ...newArrow({ x: 0, y: 0 }), points: twoPoints, endArrowhead: "triangle" as const }
-    arrowShape(e, gen)
+    linearShape(e, gen)
     expect(spy).toHaveBeenCalledOnce()
     expect(spy.mock.calls[0]?.[0]?.[0]).toEqual([100, 0])
   })
@@ -163,7 +163,7 @@ describe("arrowShape arrowhead kinds", () => {
       startArrowhead: "dot" as const,
       endArrowhead: null,
     }
-    arrowShape(e, gen)
+    linearShape(e, gen)
     expect(spy).toHaveBeenCalledOnce()
     const [cx, cy] = spy.mock.calls[0]!
     expect([cx, cy]).toEqual([0, 0])
@@ -173,7 +173,7 @@ describe("arrowShape arrowhead kinds", () => {
     const gen = new RoughGenerator()
     const spy = vi.spyOn(gen, "linearPath")
     const e = { ...newArrow({ x: 0, y: 0 }), points: twoPoints }
-    arrowShape(e, gen)
+    linearShape(e, gen)
     expect(spy).toHaveBeenCalledTimes(2) // shaft + chevron
   })
 })
@@ -183,7 +183,7 @@ describe("lineShape arrowheads", () => {
     const gen = new RoughGenerator()
     const lp = vi.spyOn(gen, "linearPath")
     const l = { ...newLine({ x: 0, y: 0 }), points: twoPoints }
-    lineShape(l, gen)
+    linearShape(l, gen)
     expect(lp).toHaveBeenCalledOnce()
   })
 
@@ -191,7 +191,7 @@ describe("lineShape arrowheads", () => {
     const gen = new RoughGenerator()
     const spy = vi.spyOn(gen, "line")
     const l = { ...newLine({ x: 0, y: 0 }), points: twoPoints, endArrowhead: "bar" as const }
-    lineShape(l, gen)
+    linearShape(l, gen)
     expect(spy).toHaveBeenCalledOnce()
     const [x1, , x2] = spy.mock.calls[0]!
     expect(x1).toBeCloseTo(100)
@@ -206,7 +206,7 @@ describe("lineShape arrowheads", () => {
       points: twoPoints,
       startArrowhead: "circle_outline" as const,
     }
-    lineShape(l, gen)
+    linearShape(l, gen)
     expect(spy).toHaveBeenCalledOnce()
     expect(spy.mock.calls[0]?.[3]?.fill).toBeUndefined()
   })

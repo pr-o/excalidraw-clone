@@ -1457,8 +1457,7 @@ type ImageEvent =
   | ToolEvent
 
 type ImageState =
-  | { phase: "idle" }
-  | { phase: "placing"; fileId: string; mimeType: string; aspect: number }
+  { phase: "idle" } | { phase: "placing"; fileId: string; mimeType: string; aspect: number }
 ```
 
 Idle → on `imageReady` → placing. While placing, `pointerDown` commits an image element at that scene position with default size (preserving aspect). `escape` returns to idle.
@@ -1552,8 +1551,7 @@ export type ImageEvent =
   | ToolEvent
 
 export type ImageState =
-  | { phase: "idle" }
-  | { phase: "placing"; fileId: string; mimeType: string; aspect: number }
+  { phase: "idle" } | { phase: "placing"; fileId: string; mimeType: string; aspect: number }
 
 const DEFAULT_PLACED_WIDTH = 200
 
@@ -1626,8 +1624,7 @@ export type ImageEvent =
   | ToolEvent
 
 export type ImageState =
-  | { phase: "idle" }
-  | { phase: "placing"; fileId: string; mimeType: string; aspect: number }
+  { phase: "idle" } | { phase: "placing"; fileId: string; mimeType: string; aspect: number }
 
 const DEFAULT_PLACED_WIDTH = 200
 

@@ -84,10 +84,8 @@ export { expandIdsToGroups, groupElements, ungroupElements } from "./groups"
 export { expandIdsToFrameMembers, reconcileFrameMembership } from "./frames"
 export { lockElements, unlockAll, unlockElements } from "./locking"
 export { flipElements, mirrorOf } from "./flip"
-export type { FlipAxis } from "./flip"
 export { resetCrop } from "./reset-crop"
 export { resizeElements } from "./resize-group"
-export type { ResizeBounds } from "./resize-group"
 export { bringForward, bringToFront, sendBackward, sendToBack } from "./z-order"
 export {
   GRADIENT_TYPES,
@@ -107,6 +105,7 @@ export {
 } from "./bindings"
 export { SCENE_FORMAT_SOURCE, SCENE_FORMAT_VERSION, buildExcalidrawData } from "./json"
 
+export { ELEMENT_TYPES, isLinearElement } from "./types"
 export type {
   Arrowhead,
   BoundElement,
@@ -125,6 +124,7 @@ export type {
   ExcalidrawHexagonElement,
   ExcalidrawImageElement,
   ExcalidrawLineElement,
+  ExcalidrawLinearElement,
   ExcalidrawLinearBase,
   ExcalidrawOctagonElement,
   ExcalidrawPage,
@@ -141,13 +141,21 @@ export type {
   PointBinding,
   Roughness,
   Roundness,
-  SceneSnapshot,
   StrokeStyle,
   StrokeWidth,
   TextAlign,
   VerticalAlign,
 } from "./types"
-export { sanitizeElement, sanitizeElements } from "./validate"
+export {
+  finiteOr,
+  isFiniteNumber,
+  sanitizeBinaryFile,
+  sanitizeElement,
+  sanitizeElements,
+  sanitizeFiles,
+} from "./validate"
+export { imageFileIds } from "./image-files"
+export { deleteElements, patchElement, replaceElements, updateElement } from "./draft"
 export { isBoundLabel } from "./bound-label"
 export type { BoundLabel } from "./bound-label"
 export { elementShadow, shadowMargin } from "./shadow"
@@ -210,6 +218,7 @@ export {
   TABLE_PAD_X,
   TABLE_PAD_Y,
 } from "./table"
+export type { ResizeAnchor } from "./table"
 export type { CellRect, CellSpans, CountLines } from "./table"
 export {
   addComment,

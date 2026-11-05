@@ -40,6 +40,12 @@ export function hydrateUI(): void {
   if (typeof ui.rulersVisible === "boolean" && ui.rulersVisible !== store.rulersVisible) {
     store.toggleRulers()
   }
+  if (
+    typeof ui.measurementsVisible === "boolean" &&
+    ui.measurementsVisible !== store.measurementsVisible
+  ) {
+    store.toggleMeasurements()
+  }
   if (typeof ui.minimapVisible === "boolean" && ui.minimapVisible !== store.minimapVisible) {
     store.toggleMinimap()
   }

@@ -147,6 +147,7 @@
     "language": "언어",
     "canvasBg": "캔버스 배경",
     "rulers": "눈금자",
+    "measurements": "측정값",
     "viewMode": "보기 모드",
     "minimap": "미니맵",
     "toolKeys": "키보드 단축키…",

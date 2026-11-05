@@ -1,20 +1,21 @@
-import type { ExcalidrawElement, Scene } from "@excalidraw-clone/scene"
+import {
+  deleteElements,
+  replaceElements,
+  type ExcalidrawElement,
+  type Scene,
+} from "@excalidraw-clone/scene"
+
+/* Scene-level edits, each one `mutate` (so one undo step). */
 
 /** Apply patch-array results (groupElements, lockElements, …): replace each
  *  matching element in the scene with its patched copy. No-op on empty input. */
 export function patchScene(scene: Scene, patches: readonly ExcalidrawElement[]): void {
   if (patches.length === 0) return
-  const byId = new Map(patches.map((p) => [p.id, p]))
-  scene.mutate((draft) => {
-    for (let i = 0; i < draft.length; i += 1) {
-      const p = byId.get(draft[i]!.id)
-      if (p) draft[i] = p
-    }
-  })
+  scene.mutate((draft) => replaceElements(draft, patches))
 }
 
-/** Replace elements in place: `fn` returns the new element, or undefined to leave it as is. */
-export function replaceElements(
+/** Map every element: `fn` returns its replacement, or undefined to leave it as is. */
+export function mapElements(
   scene: Scene,
   fn: (el: ExcalidrawElement) => ExcalidrawElement | undefined,
 ): void {
@@ -26,9 +27,9 @@ export function replaceElements(
   })
 }
 
-/** Soft-delete every element whose id is in `ids`. */
-export function deleteElements(scene: Scene, ids: readonly string[]): void {
-  replaceElements(scene, (el) => (ids.includes(el.id) ? { ...el, isDeleted: true } : undefined))
+/** Soft-delete the elements `ids` (they stay as tombstones for undo). */
+export function deleteFromScene(scene: Scene, ids: readonly string[]): void {
+  scene.mutate((draft) => deleteElements(draft, ids))
 }
 
 /** Z-order change (bringToFront, sendBackward, …) applied to `ids`. */

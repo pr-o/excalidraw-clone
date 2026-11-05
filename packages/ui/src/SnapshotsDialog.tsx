@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { useFormStatus } from "react-dom"
 import { Dialog } from "./shared/Dialog"
+import { Button } from "./shared/Button"
 
 export interface SnapshotListItem {
   id: string
@@ -124,14 +125,14 @@ function SnapshotsDialogBody({
 function SaveButton({ label }: { label: string }): React.ReactElement {
   const { pending } = useFormStatus()
   return (
-    <button
+    <Button
+      variant="primary"
       type="submit"
       data-testid="snapshots-save"
       disabled={pending}
       aria-busy={pending}
-      className="rounded bg-accent px-3 py-1 text-sm text-white disabled:opacity-50"
     >
       {label}
-    </button>
+    </Button>
   )
 }

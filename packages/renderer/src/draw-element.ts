@@ -1,4 +1,9 @@
-import { elementShadow, mirrorOf } from "@excalidraw-clone/scene"
+import {
+  elementShadow,
+  LABELABLE_TYPES,
+  LINEAR_LABELABLE_TYPES,
+  mirrorOf,
+} from "@excalidraw-clone/scene"
 import type { ExcalidrawElement, ExcalidrawTableElement } from "@excalidraw-clone/scene"
 import type { RoughCanvas } from "roughjs/bin/canvas"
 import type { ShapeCache } from "./shape-cache"
@@ -16,6 +21,18 @@ export interface LabelDrawOptions {
   fit?: boolean
   /** Table cell being edited in the DOM overlay: its text is not drawn. */
   hiddenCell?: { row: number; col: number }
+}
+
+/** How a bound label draws, for both the canvas and the SVG export: an arrow's label
+ *  masks the line behind it with `occlusionBg`, a shape's label shrinks to fit. */
+export const labelOptions = (
+  container: ExcalidrawElement | undefined,
+  occlusionBg: string,
+): LabelDrawOptions | undefined => {
+  if (!container) return undefined
+  if (LINEAR_LABELABLE_TYPES.has(container.type)) return { occlusionBg }
+  if (LABELABLE_TYPES.has(container.type)) return { fit: true }
+  return undefined
 }
 
 /** Canvas shadow offsets/blur ignore the transform, so they are scaled by the view zoom. */
@@ -37,6 +54,33 @@ const clearShadow = (ctx: CanvasRenderingContext2D): void => {
   ctx.shadowOffsetY = 0
 }
 
+/** Images and text are mirrored by the transform; every other shape bakes its mirroring
+ *  into its geometry, so it is never flipped here. */
+export const transformMirror = (el: ExcalidrawElement): readonly [number, number] =>
+  el.type === "image" || el.type === "text" ? mirrorOf(el) : [1, 1]
+
+/** Moves the context into `el`'s own frame: top-left at the origin, turned about its
+ *  centre, and flipped when the element mirrors by transform. */
+export const applyElementTransform = (
+  ctx: CanvasRenderingContext2D,
+  el: ExcalidrawElement,
+): void => {
+  const cx = el.width / 2
+  const cy = el.height / 2
+  ctx.translate(el.x, el.y)
+  if (el.angle !== 0) {
+    ctx.translate(cx, cy)
+    ctx.rotate(el.angle)
+    ctx.translate(-cx, -cy)
+  }
+  const [mx, my] = transformMirror(el)
+  if (mx !== 1 || my !== 1) {
+    ctx.translate(cx, cy)
+    ctx.scale(mx, my)
+    ctx.translate(-cx, -cy)
+  }
+}
+
 export const drawElement = (
   ctx: CanvasRenderingContext2D,
   element: ExcalidrawElement,
@@ -53,20 +97,7 @@ export const drawElement = (
   // or malformed value from an imported file paints fully opaque.
   const alpha = element.opacity / 100
   if (Number.isFinite(alpha) && alpha < 1) ctx.globalAlpha = Math.max(0, alpha)
-  ctx.translate(element.x, element.y)
-  if (element.angle !== 0) {
-    ctx.translate(element.width / 2, element.height / 2)
-    ctx.rotate(element.angle)
-    ctx.translate(-element.width / 2, -element.height / 2)
-  }
-  if (element.type === "image" || element.type === "text") {
-    const [mx, my] = mirrorOf(element)
-    if (mx !== 1 || my !== 1) {
-      ctx.translate(element.width / 2, element.height / 2)
-      ctx.scale(mx, my)
-      ctx.translate(-element.width / 2, -element.height / 2)
-    }
-  }
+  applyElementTransform(ctx, element)
   if (element.type === "image") {
     const img = element.fileId === null ? undefined : getImage(element.fileId)
     if (img && img.complete && img.naturalWidth > 0) {

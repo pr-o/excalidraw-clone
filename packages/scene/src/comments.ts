@@ -1,6 +1,7 @@
 import type { Point } from "@excalidraw-clone/geometry"
 import { nanoid } from "nanoid"
 import type { ExcalidrawElement } from "./types"
+import { isFiniteNumber } from "./validate"
 
 /** Where a comment pin sits: a fixed scene point, or an offset from an
  *  element's top-left so the pin follows the element when it moves. */
@@ -86,14 +87,14 @@ export function deleteComment(comments: readonly Comment[], commentId: string): 
   return comments.filter((c) => c.id !== commentId)
 }
 
-const isNum = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v)
 const isStr = (v: unknown): v is string => typeof v === "string"
 
 function sanitizeAnchor(raw: unknown): CommentAnchor | null {
   if (typeof raw !== "object" || raw === null) return null
   const a = raw as Record<string, unknown>
-  if (a.kind === "point" && isNum(a.x) && isNum(a.y)) return { kind: "point", x: a.x, y: a.y }
-  if (a.kind === "element" && isStr(a.elementId) && isNum(a.dx) && isNum(a.dy)) {
+  if (a.kind === "point" && isFiniteNumber(a.x) && isFiniteNumber(a.y))
+    return { kind: "point", x: a.x, y: a.y }
+  if (a.kind === "element" && isStr(a.elementId) && isFiniteNumber(a.dx) && isFiniteNumber(a.dy)) {
     return { kind: "element", elementId: a.elementId, dx: a.dx, dy: a.dy }
   }
   return null
@@ -107,7 +108,7 @@ export function sanitizeComments(raw: unknown): Comment[] {
     if (typeof item !== "object" || item === null) continue
     const c = item as Record<string, unknown>
     const anchor = sanitizeAnchor(c.anchor)
-    if (!anchor || !isStr(c.id) || !isStr(c.text) || !isNum(c.createdAt)) continue
+    if (!anchor || !isStr(c.id) || !isStr(c.text) || !isFiniteNumber(c.createdAt)) continue
     const replies = Array.isArray(c.replies)
       ? c.replies.filter(
           (r): r is CommentReply =>
@@ -115,7 +116,7 @@ export function sanitizeComments(raw: unknown): Comment[] {
             r !== null &&
             isStr((r as CommentReply).id) &&
             isStr((r as CommentReply).text) &&
-            isNum((r as CommentReply).createdAt),
+            isFiniteNumber((r as CommentReply).createdAt),
         )
       : []
     out.push({

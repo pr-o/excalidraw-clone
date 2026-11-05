@@ -11,7 +11,7 @@ import {
   type ExcalidrawTableElement,
   type Scene,
 } from "@excalidraw-clone/scene"
-import React, { useEffect, useEffectEvent, useRef } from "react"
+import { useEffect, useEffectEvent, useRef } from "react"
 import { commitTableCell, tableLineCounter } from "../driver/tableOps"
 import { useAppStore } from "../store"
 import { RichMirror, useRichText } from "./richText"

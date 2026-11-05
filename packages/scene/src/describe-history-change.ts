@@ -1,14 +1,7 @@
 import type { ExcalidrawElement, ExcalidrawElementBase } from "./types"
 
 export type HistoryChangeCategory =
-  | "initial"
-  | "added"
-  | "removed"
-  | "moved"
-  | "resized"
-  | "restyled"
-  | "reordered"
-  | "modified"
+  "initial" | "added" | "removed" | "moved" | "resized" | "restyled" | "reordered" | "modified"
 
 export interface HistoryChangeDescription {
   category: HistoryChangeCategory
@@ -30,13 +23,7 @@ const STYLE_FIELDS: readonly (keyof ExcalidrawElementBase)[] = [
 const VOLATILE_FIELDS = ["versionNonce", "updated"] as const
 
 type ElementCategory =
-  | "added"
-  | "removed"
-  | "moved"
-  | "resized"
-  | "restyled"
-  | "modified"
-  | "unchanged"
+  "added" | "removed" | "moved" | "resized" | "restyled" | "modified" | "unchanged"
 
 /** The subset of `ElementCategory` that represents an actual change. */
 type ChangedElementCategory = Exclude<ElementCategory, "unchanged">
@@ -51,6 +38,13 @@ function stripFields(el: ExcalidrawElement, fields: readonly string[]): Record<s
   return clone
 }
 
+/** Value equality of two elements, ignoring `fields`. */
+const sameExcept = (
+  a: ExcalidrawElement,
+  b: ExcalidrawElement,
+  fields: readonly string[],
+): boolean => JSON.stringify(stripFields(a, fields)) === JSON.stringify(stripFields(b, fields))
+
 function isPureTranslation(
   prevPoints: readonly { x: number; y: number }[],
   nextPoints: readonly { x: number; y: number }[],
@@ -61,10 +55,15 @@ function isPureTranslation(
   return prevPoints.every((p, i) => nextPoints[i]!.x - p.x === dx && nextPoints[i]!.y - p.y === dy)
 }
 
-function otherFieldsChanged(prev: ExcalidrawElement, next: ExcalidrawElement): boolean {
-  const ignored = ["x", "y", "width", "height", "points", ...STYLE_FIELDS, ...VOLATILE_FIELDS]
-  return JSON.stringify(stripFields(prev, ignored)) !== JSON.stringify(stripFields(next, ignored))
-}
+const GEOMETRY_AND_STYLE = [
+  "x",
+  "y",
+  "width",
+  "height",
+  "points",
+  ...STYLE_FIELDS,
+  ...VOLATILE_FIELDS,
+]
 
 function classifyElementDiff(
   prev: ExcalidrawElement | undefined,
@@ -72,26 +71,20 @@ function classifyElementDiff(
 ): ElementCategory {
   // Same object ⟹ nothing changed (snapshots share untouched elements).
   if (prev === next) return "unchanged"
-  const prevLive = isLive(prev)
-  const nextLive = isLive(next)
-  if (!prevLive && nextLive) return "added"
-  if (prevLive && !nextLive) return "removed"
-  if (!prevLive && !nextLive) return "unchanged"
+  if (!isLive(prev)) return isLive(next) ? "added" : "unchanged"
+  if (!isLive(next)) return "removed"
 
-  const p = prev as ExcalidrawElement
-  const n = next as ExcalidrawElement
+  if (!sameExcept(prev, next, GEOMETRY_AND_STYLE)) return "modified"
 
-  if (otherFieldsChanged(p, n)) return "modified"
-
-  const positionChanged = p.x !== n.x || p.y !== n.y
-  const sizeChanged = p.width !== n.width || p.height !== n.height
+  const positionChanged = prev.x !== next.x || prev.y !== next.y
+  const sizeChanged = prev.width !== next.width || prev.height !== next.height
   let pointsChanged = false
   let pointsTranslated = true
-  if ("points" in p && "points" in n) {
-    pointsChanged = JSON.stringify(p.points) !== JSON.stringify(n.points)
-    if (pointsChanged) pointsTranslated = isPureTranslation(p.points, n.points)
+  if ("points" in prev && "points" in next) {
+    pointsChanged = JSON.stringify(prev.points) !== JSON.stringify(next.points)
+    if (pointsChanged) pointsTranslated = isPureTranslation(prev.points, next.points)
   }
-  const styleChanged = STYLE_FIELDS.some((f) => p[f] !== n[f])
+  const styleChanged = STYLE_FIELDS.some((f) => prev[f] !== next[f])
   const geometryChanged = positionChanged || sizeChanged || pointsChanged
 
   if (geometryChanged && styleChanged) return "modified"
@@ -129,30 +122,23 @@ function describeUncached(
     return { category: "initial", count: next.filter((e) => !e.isDeleted).length }
   }
 
-  const prevIds = prev.map((e) => e.id)
-  const nextIds = next.map((e) => e.id)
-  const nextIdSet = new Set(nextIds)
-  const sameIdSet = prevIds.length === nextIds.length && prevIds.every((id) => nextIdSet.has(id))
+  const prevMap = new Map(prev.map((e) => [e.id, e]))
+  const nextMap = new Map(next.map((e) => [e.id, e]))
+  const sameIdSet = prev.length === next.length && prev.every((e) => nextMap.has(e.id))
 
   if (sameIdSet) {
-    const prevMap = new Map(prev.map((e) => [e.id, e]))
     const allFieldsEqual = next.every((e) => {
       const before = prevMap.get(e.id)!
-      return (
-        before === e ||
-        JSON.stringify(stripFields(before, VOLATILE_FIELDS)) ===
-          JSON.stringify(stripFields(e, VOLATILE_FIELDS))
-      )
+      return before === e || sameExcept(before, e, VOLATILE_FIELDS)
     })
     if (allFieldsEqual) {
-      const orderChanged = prevIds.join("|") !== nextIds.join("|")
-      if (orderChanged) return { category: "reordered", count: next.length }
-      return { category: "modified", count: 0 }
+      const orderChanged = prev.some((e, i) => e.id !== next[i]!.id)
+      return orderChanged
+        ? { category: "reordered", count: next.length }
+        : { category: "modified", count: 0 }
     }
   }
 
-  const prevMap = new Map(prev.map((e) => [e.id, e]))
-  const nextMap = new Map(next.map((e) => [e.id, e]))
   const allIds = new Set([...prevMap.keys(), ...nextMap.keys()])
 
   const categories: ChangedElementCategory[] = []

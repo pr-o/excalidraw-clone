@@ -1,15 +1,18 @@
-import { type ExcalidrawTableElement, setTrackSize, toTableLocal } from "@excalidraw-clone/scene"
+import {
+  replaceElements,
+  type ExcalidrawTableElement,
+  setTrackSize,
+  toTableLocal,
+} from "@excalidraw-clone/scene"
 import type { ToolEffect, ToolEvent } from "../../types"
+import { buildRecommitEffect } from "./recommit"
 import type { SelectionState, Transition } from "./types"
 
-/** Replace the table with `next` (or its original on revert) in the draft. */
-const putTable = (id: string, next: ExcalidrawTableElement, skipHistory: boolean): ToolEffect => ({
+/** Live (history-free) replacement of the table: a resized copy, or its original on revert. */
+const putTable = (next: ExcalidrawTableElement): ToolEffect => ({
   kind: "mutation",
-  apply: (draft) => {
-    const i = draft.findIndex((e) => e.id === id)
-    if (i >= 0) draft[i] = { ...next }
-  },
-  skipHistory,
+  apply: (draft) => replaceElements(draft, [{ ...next }]),
+  skipHistory: true,
 })
 
 export const reduceTableResizing = (
@@ -24,26 +27,12 @@ export const reduceTableResizing = (
       const b = toTableLocal(original, event.at)
       const delta = axis === "col" ? b.x - a.x : b.y - a.y
       const track = axis === "col" ? original.colWidths[index]! : original.rowHeights[index]!
-      return [
-        state,
-        [putTable(elementId, setTrackSize(original, axis, index, track + delta), true)],
-      ]
+      return [state, [putTable(setTrackSize(original, axis, index, track + delta))]]
     }
     case "pointerUp":
-      return [
-        { phase: "idle" },
-        [
-          {
-            kind: "mutation",
-            apply: (draft) => {
-              const i = draft.findIndex((e) => e.id === elementId)
-              if (i >= 0) draft[i] = { ...draft[i]! }
-            },
-          },
-        ],
-      ]
+      return [{ phase: "idle" }, [buildRecommitEffect([elementId])]]
     case "escape":
-      return [{ phase: "idle" }, [putTable(elementId, original, true)]]
+      return [{ phase: "idle" }, [putTable(original)]]
     default:
       return [state, []]
   }

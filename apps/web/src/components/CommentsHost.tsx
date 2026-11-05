@@ -15,7 +15,7 @@ import {
   CommentThread,
   type PanelSibling,
 } from "@excalidraw-clone/ui"
-import React, { useEffect, useRef } from "react"
+import { useEffect, useRef } from "react"
 import { useTranslation } from "react-i18next"
 import { useSceneSnapshot } from "../hooks/useScene"
 import { useAppStore } from "../store"

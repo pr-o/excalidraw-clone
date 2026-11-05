@@ -206,8 +206,7 @@ We build one generic reducer parameterized by element type, plus three thin wrap
 
 ```ts
 type ShapeState =
-  | { phase: "idle" }
-  | { phase: "drawing"; start: Point; current: Point; elementId: string }
+  { phase: "idle" } | { phase: "drawing"; start: Point; current: Point; elementId: string }
 ```
 
 **Reducer rules:**
@@ -265,8 +264,7 @@ Linear tools draw a 2-point polyline by default: `pointerDown` plants the start,
 
 ```ts
 type LinearState =
-  | { phase: "idle" }
-  | { phase: "drawing"; start: Point; current: Point; elementId: string }
+  { phase: "idle" } | { phase: "drawing"; start: Point; current: Point; elementId: string }
 ```
 
 **Constraint helper:**

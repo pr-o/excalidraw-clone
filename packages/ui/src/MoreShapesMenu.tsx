@@ -1,4 +1,5 @@
-import { useCloseOnEscape } from "./shared/useCloseOnEscape"
+import { useRef } from "react"
+import { useDismiss } from "./shared/useDismiss"
 import { IconButton } from "./shared/IconButton"
 import { Icon } from "./shared/Icon"
 import { DEFAULT_TOOL_KEYS } from "./toolKeys"
@@ -18,7 +19,8 @@ export interface MoreShapesMenuProps {
 export function MoreShapesMenu(props: MoreShapesMenuProps): React.ReactElement {
   const { open, onOpenChange } = props
 
-  useCloseOnEscape(open, onOpenChange)
+  const containerRef = useRef<HTMLDivElement>(null)
+  useDismiss(open, onOpenChange, containerRef)
 
   const select = (tool: MoreTool) => (): void => {
     props.onSelectTool(tool)
@@ -28,7 +30,7 @@ export function MoreShapesMenu(props: MoreShapesMenuProps): React.ReactElement {
   const isActive = ["pentagon", "octagon", "table"].includes(props.activeTool)
 
   return (
-    <div className={`relative ${props.className ?? ""}`}>
+    <div ref={containerRef} className={`relative ${props.className ?? ""}`}>
       <IconButton
         label={props.t("toolbar.moreShapes")}
         active={isActive}

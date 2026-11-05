@@ -2,22 +2,26 @@ import type { Point, UserGuides } from "@excalidraw-clone/geometry"
 import type { Comment } from "./comments"
 import type { TextSpan } from "./spans"
 
-export type ElementType =
-  | "rectangle"
-  | "diamond"
-  | "ellipse"
-  | "triangle"
-  | "parallelogram"
-  | "hexagon"
-  | "pentagon"
-  | "octagon"
-  | "arrow"
-  | "line"
-  | "freedraw"
-  | "text"
-  | "image"
-  | "frame"
-  | "table"
+/** Every element type. `ElementType` and the trust-boundary check both derive from it. */
+export const ELEMENT_TYPES = [
+  "rectangle",
+  "diamond",
+  "ellipse",
+  "triangle",
+  "parallelogram",
+  "hexagon",
+  "pentagon",
+  "octagon",
+  "arrow",
+  "line",
+  "freedraw",
+  "text",
+  "image",
+  "frame",
+  "table",
+] as const
+
+export type ElementType = (typeof ELEMENT_TYPES)[number]
 
 export type FillStyle = "hachure" | "cross-hatch" | "solid"
 export type StrokeStyle = "solid" | "dashed" | "dotted"
@@ -238,6 +242,12 @@ export type ExcalidrawElement =
   | ExcalidrawFrameElement
   | ExcalidrawTableElement
 
+/** Arrows and lines: drawn through `points`, bindable at both ends, labelled at the midpoint. */
+export type ExcalidrawLinearElement = ExcalidrawArrowElement | ExcalidrawLineElement
+
+export const isLinearElement = (e: ExcalidrawElement): e is ExcalidrawLinearElement =>
+  e.type === "arrow" || e.type === "line"
+
 export type ExcalidrawAppStateSnapshot = Record<string, unknown>
 
 export interface ExcalidrawBinaryFile {
@@ -257,12 +267,6 @@ export interface ExcalidrawPage {
   guides?: UserGuides
   /** Comment threads; optional so pre-comments documents load with none. */
   comments?: readonly Comment[]
-}
-
-export interface SceneSnapshot {
-  elements: readonly ExcalidrawElement[]
-  appState?: ExcalidrawAppStateSnapshot
-  files?: ExcalidrawFiles
 }
 
 export interface ExcalidrawData {

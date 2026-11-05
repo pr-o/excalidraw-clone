@@ -1,10 +1,15 @@
-import type { AlignmentGuide, Bounds, Point, ViewTransform } from "@excalidraw-clone/geometry"
-import { LABELABLE_TYPES, LINEAR_LABELABLE_TYPES, isBoundLabel } from "@excalidraw-clone/scene"
+import {
+  viewportSceneRect,
+  type AlignmentGuide,
+  type Point,
+  type ViewTransform,
+} from "@excalidraw-clone/geometry"
+import { isBoundLabel } from "@excalidraw-clone/scene"
 import type { ExcalidrawElement, Scene } from "@excalidraw-clone/scene"
 import { RoughCanvas } from "roughjs/bin/canvas"
 import { drawCropDim } from "./crop-overlay"
 import { isElementVisible } from "./culling"
-import { drawElement } from "./draw-element"
+import { drawElement, labelOptions } from "./draw-element"
 import { drawGrid } from "./grid"
 import {
   type MarqueeBox,
@@ -13,6 +18,7 @@ import {
   drawSelectionChrome,
   drawUserGuides,
 } from "./overlay"
+import { drawMeasurements, selectionMeasurements } from "./measurements"
 import { ShapeCache } from "./shape-cache"
 import { resolveColor } from "./theme-colors"
 import type { CanvasRendererOptions, GridOptions, Theme } from "./types"
@@ -77,6 +83,7 @@ export class CanvasRenderer {
   private guides: readonly AlignmentGuide[] = []
   private lasso: readonly Point[] = []
   private showUserGuides = false
+  private showMeasurements = false
 
   private dirty = false
   private rafId: number | null = null
@@ -189,6 +196,12 @@ export class CanvasRenderer {
     this.requestRedraw()
   }
 
+  /** Measurement mode: the selection's size and its distances to neighbours. */
+  setShowMeasurements(show: boolean): void {
+    this.showMeasurements = show
+    this.requestRedraw()
+  }
+
   preloadImage(fileId: string, dataURL: string): Promise<void> {
     return preloadSharedImage(fileId, dataURL)
   }
@@ -224,12 +237,7 @@ export class CanvasRenderer {
     drawGrid(ctx, canvas, this.viewTransform, this.grid, this.theme)
     const elements = this.scene.getElements()
     const getImage = (id: string): HTMLImageElement | undefined => this.imageMap.get(id)
-    const view: Bounds = {
-      x: -scrollX,
-      y: -scrollY,
-      width: canvas.width / zoom,
-      height: canvas.height / zoom,
-    }
+    const view = viewportSceneRect(this.viewTransform, canvas.width, canvas.height)
     const byId = new Map(elements.map((e) => [e.id, e] as const))
     const occludeBg = resolveColor(
       this.canvasBg === "transparent" ? "#ffffff" : this.canvasBg,
@@ -240,16 +248,11 @@ export class CanvasRenderer {
         element.id === this.hiddenId && element.type === "table" ? this.hiddenCell : null
       if ((element.id === this.hiddenId && !hiddenCell) || !isElementVisible(element, view))
         continue
-      const container = isBoundLabel(element) ? byId.get(element.containerId) : undefined
       const labelOpts = hiddenCell
         ? { hiddenCell }
-        : container === undefined
-          ? undefined
-          : LINEAR_LABELABLE_TYPES.has(container.type)
-            ? { occlusionBg: occludeBg }
-            : LABELABLE_TYPES.has(container.type)
-              ? { fit: true }
-              : undefined
+        : isBoundLabel(element)
+          ? labelOptions(byId.get(element.containerId), occludeBg)
+          : undefined
       drawElement(ctx, element, this.rough, this.shapeCache, getImage, this.theme, labelOpts, zoom)
     }
     // Main canvas, after elements: above the drawing, below the selection overlay.
@@ -285,6 +288,10 @@ export class CanvasRenderer {
       { clearBackground: onOverlay },
     )
     drawAlignmentGuides(ctx, this.guides, this.viewTransform, this.theme)
+    if (this.showMeasurements) {
+      const m = selectionMeasurements(elements, this.selection)
+      if (m) drawMeasurements(ctx, m, this.viewTransform, this.theme)
+    }
     drawLasso(ctx, this.lasso, this.viewTransform, this.theme)
     const cropEl = this.cropId === null ? undefined : elements.find((e) => e.id === this.cropId)
     if (cropEl?.type === "image" && cropEl.fileId !== null) {

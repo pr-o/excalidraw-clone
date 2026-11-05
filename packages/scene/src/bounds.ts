@@ -1,6 +1,7 @@
 import {
   type Bounds,
   type Point,
+  boundsCenter,
   boundsFromPoints,
   pointAdd,
   rotatePoint,
@@ -19,7 +20,7 @@ export const rotatedCorners = (e: ExcalidrawElement): Corners => {
     { x: e.x, y: e.y + e.height },
   ]
   if (e.angle === 0) return corners
-  const center: Point = { x: e.x + e.width / 2, y: e.y + e.height / 2 }
+  const center = boundsCenter(e)
   const turn = (c: Point): Point => rotatePoint(c, center, e.angle)
   return [turn(corners[0]), turn(corners[1]), turn(corners[2]), turn(corners[3])]
 }
@@ -43,16 +44,10 @@ const computeElementBounds = (element: ExcalidrawElement): Bounds => {
     case "line":
     case "arrow":
     case "freedraw": {
-      const origin: Point = { x: element.x, y: element.y }
-      if (element.points.length === 0) {
-        return { x: origin.x, y: origin.y, width: 0, height: 0 }
-      }
-      const absolute = element.points.map((p) => pointAdd(origin, p))
+      if (element.points.length === 0) return { x: element.x, y: element.y, width: 0, height: 0 }
+      const absolute = element.points.map((p) => pointAdd(element, p))
       if (element.angle === 0) return boundsFromPoints(absolute)
-      const center: Point = pointAdd(origin, {
-        x: element.width / 2,
-        y: element.height / 2,
-      })
+      const center = boundsCenter(element)
       return boundsFromPoints(absolute.map((p) => rotatePoint(p, center, element.angle)))
     }
     default:

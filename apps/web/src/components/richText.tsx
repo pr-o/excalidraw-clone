@@ -12,7 +12,7 @@ import {
   type SpanStyle,
   type TextSpan,
 } from "@excalidraw-clone/scene"
-import React, { useLayoutEffect, useRef, useState } from "react"
+import { useLayoutEffect, useRef, useState } from "react"
 
 type Field = HTMLTextAreaElement | HTMLInputElement
 

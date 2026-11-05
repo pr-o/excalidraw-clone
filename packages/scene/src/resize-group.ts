@@ -1,30 +1,11 @@
-import { boundsFromPoints, type Point } from "@excalidraw-clone/geometry"
-import { fitTableBox } from "./table"
+import { boundsFromPoints, type Bounds, type Point } from "@excalidraw-clone/geometry"
+import { fitTableBox, type ResizeAnchor } from "./table"
 import type { ExcalidrawElement } from "./types"
-import { isBoundLabel } from "./bound-label"
+import { isPassengerLabel } from "./bound-label"
 import { editableElements } from "./editable"
-
-/** Plain x/y/width/height box — the shape both the pre-drag combined
- *  selection bounds and the post-drag target bounds take. No `angle`: a
- *  group-resize box is always axis-aligned (no rotate handle for the group
- *  box, no affine shear for rotated members). */
-export interface ResizeBounds {
-  x: number
-  y: number
-  width: number
-  height: number
-}
 
 /** A font under this size is unreadable rather than merely small. */
 const MIN_FONT_SIZE = 4
-
-/** A bound-text label pulled into the set only because its container is
- *  also selected — excluded from direct transform; `reconcileBoundText`
- *  (already invoked unconditionally inside `Scene.mutate`) re-lays it out
- *  against its container's new box afterward. Mirrors `isPassengerLabel`
- *  in `flip.ts`. */
-const isPassengerLabel = (el: ExcalidrawElement, inSet: ReadonlySet<string>): boolean =>
-  isBoundLabel(el) && inSet.has(el.containerId)
 
 const scalePoint = (p: Point, sx: number, sy: number): Point => ({ x: p.x * sx, y: p.y * sy })
 
@@ -35,7 +16,8 @@ const scalePoint = (p: Point, sx: number, sy: number): Point => ({ x: p.x * sx, 
  *  line/arrow/freedraw: points scaled componentwise, width/height
  *  recomputed from the scaled points' bbox rather than multiplied; text:
  *  fontSize scales by the y-axis factor, clamped to a minimum of 4).
- *  `angle` is untouched for every type. A table clamped bigger than its
+ *  `angle` is untouched for every type, and both boxes are axis-aligned (the
+ *  group box has no rotate handle; rotated members are not sheared). A table clamped bigger than its
  *  scaled box (minimum track sizes, auto-grown rows) grows away from the
  *  `anchor` sides — the group's fixed edges. Locked, deleted, unknown ids, and
  *  passenger bound-text labels are dropped from the result, mirroring
@@ -43,9 +25,9 @@ const scalePoint = (p: Point, sx: number, sy: number): Point => ({ x: p.x * sx, 
 export function resizeElements(
   elements: readonly ExcalidrawElement[],
   ids: readonly string[],
-  originBounds: ResizeBounds,
-  newBounds: ResizeBounds,
-  anchor: { x: "start" | "end"; y: "start" | "end" } = { x: "start", y: "start" },
+  originBounds: Bounds,
+  newBounds: Bounds,
+  anchor: ResizeAnchor = { x: "start", y: "start" },
 ): ExcalidrawElement[] {
   const idSet = new Set(ids)
   const direct = editableElements(elements, ids)

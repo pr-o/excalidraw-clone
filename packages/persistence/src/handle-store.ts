@@ -22,8 +22,7 @@ export async function storeCurrentFileHandle(handle: FileSystemFileHandle | null
 export async function loadCurrentFileHandle(): Promise<FileSystemFileHandle | null> {
   try {
     const db = await getDB()
-    const handle = (await db.get(HANDLES_STORE, CURRENT_FILE)) as FileSystemFileHandle | undefined
-    return handle ?? null
+    return (await db.get(HANDLES_STORE, CURRENT_FILE)) ?? null
   } catch {
     return null
   }

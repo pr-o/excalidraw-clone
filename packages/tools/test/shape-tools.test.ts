@@ -55,7 +55,6 @@ describe.each(TOOLS)("$name tool: creation flow", ({ tool, type }) => {
     state = r[0]
     applyMutation(r[1], draft)
     r = tool.reduce(state, { type: "pointerMove", at: point(20, 30) }, ctx)
-    state = r[0]
     applyMutation(r[1], draft)
     expect(draft.length).toBe(1)
     expect(draft[0]?.width).toBe(20)

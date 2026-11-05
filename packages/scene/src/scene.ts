@@ -4,12 +4,7 @@ import type { Comment } from "./comments"
 import { reconcileFrameMembership } from "./frames"
 import { reconcileBoundText } from "./reconcile-bound-text"
 import { reconcileTables } from "./table"
-import type {
-  ExcalidrawAppStateSnapshot,
-  ExcalidrawElement,
-  ExcalidrawFiles,
-  SceneSnapshot,
-} from "./types"
+import type { ExcalidrawElement } from "./types"
 
 export interface MutateOptions {
   skipHistory?: boolean
@@ -63,6 +58,7 @@ export class Scene {
     }
     return this.live
   }
+
   getGuides(): UserGuides {
     return this.guides
   }
@@ -135,7 +131,7 @@ export class Scene {
     return true
   }
 
-  protected pushHistory(snapshot: readonly ExcalidrawElement[]): void {
+  private pushHistory(snapshot: readonly ExcalidrawElement[]): void {
     const truncated = this.history.slice(0, this.historyIndex + 1)
     const next = [...truncated, snapshot]
     const capped =
@@ -206,34 +202,9 @@ export class Scene {
     this.setElements(elements)
   }
 
-  protected resetHistory(snapshot: readonly ExcalidrawElement[]): void {
-    this.history = [snapshot]
-    this.historyIndex = 0
-  }
-
-  toJSON(appState?: ExcalidrawAppStateSnapshot, files?: ExcalidrawFiles): SceneSnapshot {
-    return {
-      elements: this.elements,
-      ...(appState ? { appState } : {}),
-      ...(files ? { files } : {}),
-    }
-  }
-
-  loadFromJSON(data: SceneSnapshot): {
-    appState?: ExcalidrawAppStateSnapshot
-    files?: ExcalidrawFiles
-  } {
-    this.setElements(data.elements)
-    this.resetHistory(data.elements)
-    return {
-      ...(data.appState ? { appState: data.appState } : {}),
-      ...(data.files ? { files: data.files } : {}),
-    }
-  }
-
   /** Calls every listener even if one throws (so a faulty subscriber cannot
    *  starve the renderer or auto-save); the first error is rethrown afterwards. */
-  protected notify(): void {
+  private notify(): void {
     let failure: { error: unknown } | null = null
     for (const fn of [...this.listeners]) {
       try {
@@ -245,7 +216,7 @@ export class Scene {
     if (failure) throw failure.error
   }
 
-  protected setElements(next: readonly ExcalidrawElement[]): void {
+  private setElements(next: readonly ExcalidrawElement[]): void {
     this.elements = next
     this.notify()
   }

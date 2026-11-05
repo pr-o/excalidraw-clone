@@ -9,14 +9,14 @@ import {
 } from "@excalidraw-clone/geometry"
 import { resolveColor } from "@excalidraw-clone/renderer"
 import { getElementBounds, getElementsBounds, type Scene } from "@excalidraw-clone/scene"
-import React, { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useSceneElements } from "../hooks/useScene"
 import { useAppStore } from "../store"
 import { viewOf } from "../store/slices/view"
 
-export const MINIMAP_W = 200
-export const MINIMAP_H = 140
+const MINIMAP_W = 200
+const MINIMAP_H = 140
 const PADDING = 8
 
 const COLORS = {

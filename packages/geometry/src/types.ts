@@ -12,7 +12,8 @@ export interface Bounds {
   readonly height: number
 }
 
-export type LineSegment = readonly [Point, Point]
+/** A screen/scene axis: "x" is horizontal, "y" vertical. */
+export type Axis = "x" | "y"
 
 export interface ViewTransform {
   readonly scrollX: number

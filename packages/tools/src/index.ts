@@ -5,14 +5,17 @@ export const DEPENDS_ON: readonly string[] = [GEOMETRY_NAME, SCENE_NAME]
 
 export { NO_EFFECTS } from "./types"
 export { TOOLS } from "./registry"
-export { rectangleTool } from "./tools/rectangle"
-export { ellipseTool } from "./tools/ellipse"
-export { diamondTool } from "./tools/diamond"
-export { triangleTool } from "./tools/triangle"
-export { parallelogramTool } from "./tools/parallelogram"
-export { hexagonTool } from "./tools/hexagon"
-export { pentagonTool } from "./tools/pentagon"
-export { octagonTool } from "./tools/octagon"
+export {
+  rectangleTool,
+  ellipseTool,
+  diamondTool,
+  triangleTool,
+  parallelogramTool,
+  hexagonTool,
+  pentagonTool,
+  octagonTool,
+  frameTool,
+} from "./tools/shape"
 export type { ShapeState } from "./tools/shape"
 export { lineTool } from "./tools/line"
 export { arrowTool } from "./tools/arrow"
@@ -23,7 +26,6 @@ export { textTool } from "./tools/text"
 export type { TextState } from "./tools/text"
 export { eraserTool } from "./tools/eraser"
 export type { EraserState } from "./tools/eraser"
-export { frameTool } from "./tools/frame"
 export { imageTool } from "./tools/image"
 export type { ImageEvent, ImageState } from "./tools/image"
 export { tableTool } from "./tools/table"

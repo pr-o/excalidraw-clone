@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react"
 import { colorName } from "./properties/controls"
 import { Icon } from "./shared/Icon"
-import { useCloseOnEscape } from "./shared/useCloseOnEscape"
+import { useDismiss } from "./shared/useDismiss"
 
 export type Theme = "light" | "dark" | "system"
 export type Locale = "en" | "ko"
@@ -24,6 +24,8 @@ export interface HamburgerMenuProps {
   onViewModeToggle?: () => void
   rulersVisible?: boolean
   onRulersToggle?: () => void
+  measurementsVisible?: boolean
+  onMeasurementsToggle?: () => void
   minimapVisible?: boolean
   onMinimapToggle?: () => void
   commentsOpen?: boolean
@@ -53,7 +55,42 @@ export function HamburgerMenu(props: HamburgerMenuProps): React.ReactElement {
   }
 
   const { open, onOpenChange } = props
-  useCloseOnEscape(open, onOpenChange)
+  // View toggles; rulers and measurements are editing aids, so view mode hides them.
+  const editing = !props.viewMode
+  const toggles = [
+    {
+      onToggle: props.onViewModeToggle,
+      checked: props.viewMode,
+      testId: "menu-view-mode",
+      label: "menu.viewMode",
+    },
+    {
+      onToggle: editing ? props.onRulersToggle : undefined,
+      checked: props.rulersVisible,
+      testId: "menu-rulers",
+      label: "menu.rulers",
+    },
+    {
+      onToggle: editing ? props.onMeasurementsToggle : undefined,
+      checked: props.measurementsVisible,
+      testId: "menu-measurements",
+      label: "menu.measurements",
+    },
+    {
+      onToggle: props.onMinimapToggle,
+      checked: props.minimapVisible,
+      testId: "menu-minimap",
+      label: "menu.minimap",
+    },
+    {
+      onToggle: props.onCommentsToggle,
+      checked: props.commentsOpen,
+      testId: "menu-comments",
+      label: "menu.comments",
+    },
+  ]
+  const containerRef = useRef<HTMLDivElement>(null)
+  useDismiss(open, onOpenChange, containerRef)
   // Closing unmounts the focused item; hand focus back to the menu button so
   // keyboard users keep their place (a dialog opened from the menu then
   // returns focus here too).
@@ -68,7 +105,7 @@ export function HamburgerMenu(props: HamburgerMenuProps): React.ReactElement {
   }, [open])
 
   return (
-    <div className={`relative ${props.className ?? ""}`}>
+    <div ref={containerRef} className={`relative ${props.className ?? ""}`}>
       <button
         ref={triggerRef}
         type="button"
@@ -112,84 +149,29 @@ export function HamburgerMenu(props: HamburgerMenuProps): React.ReactElement {
               {props.t("menu.importMermaid")}
             </MenuItem>
           )}
-          {props.canPresent ? (
-            <button
-              type="button"
-              role="menuitem"
-              data-testid="menu-presentation"
-              onClick={wrap(props.onStartPresentation)}
-              className="block w-full rounded px-3 py-2 text-left text-sm hover:bg-panel-hover"
-            >
-              {props.t("menu.presentation")}
-            </button>
-          ) : (
-            <button
-              type="button"
-              role="menuitem"
-              data-testid="menu-presentation"
-              disabled
-              aria-disabled="true"
-              title={props.t("menu.presentationHint")}
-              className="block w-full cursor-not-allowed rounded px-3 py-2 text-left text-sm opacity-50"
-            >
-              {props.t("menu.presentation")}
-            </button>
-          )}
+          <MenuItem
+            onClick={wrap(props.onStartPresentation)}
+            testId="menu-presentation"
+            disabledHint={props.canPresent ? undefined : props.t("menu.presentationHint")}
+          >
+            {props.t("menu.presentation")}
+          </MenuItem>
           <Separator />
           <MenuItem onClick={wrap(props.onZenModeToggle)}>
             {props.zenMode ? props.t("menu.exitZen") : props.t("menu.enterZen")}
           </MenuItem>
-          {props.onViewModeToggle && (
-            <button
-              type="button"
-              role="menuitemcheckbox"
-              aria-checked={props.viewMode ?? false}
-              data-testid="menu-view-mode"
-              onClick={wrap(props.onViewModeToggle)}
-              className="flex w-full items-center justify-between rounded px-3 py-2 text-left text-sm hover:bg-panel-hover"
-            >
-              {props.t("menu.viewMode")}
-              <span className="text-xs text-muted">{props.viewMode ? "✓" : ""}</span>
-            </button>
-          )}
-          {props.onRulersToggle && !props.viewMode && (
-            <button
-              type="button"
-              role="menuitemcheckbox"
-              aria-checked={props.rulersVisible ?? false}
-              data-testid="menu-rulers"
-              onClick={wrap(props.onRulersToggle)}
-              className="flex w-full items-center justify-between rounded px-3 py-2 text-left text-sm hover:bg-panel-hover"
-            >
-              {props.t("menu.rulers")}
-              <span className="text-xs text-muted">{props.rulersVisible ? "✓" : ""}</span>
-            </button>
-          )}
-          {props.onMinimapToggle && (
-            <button
-              type="button"
-              role="menuitemcheckbox"
-              aria-checked={props.minimapVisible ?? false}
-              data-testid="menu-minimap"
-              onClick={wrap(props.onMinimapToggle)}
-              className="flex w-full items-center justify-between rounded px-3 py-2 text-left text-sm hover:bg-panel-hover"
-            >
-              {props.t("menu.minimap")}
-              <span className="text-xs text-muted">{props.minimapVisible ? "✓" : ""}</span>
-            </button>
-          )}
-          {props.onCommentsToggle && (
-            <button
-              type="button"
-              role="menuitemcheckbox"
-              aria-checked={props.commentsOpen ?? false}
-              data-testid="menu-comments"
-              onClick={wrap(props.onCommentsToggle)}
-              className="flex w-full items-center justify-between rounded px-3 py-2 text-left text-sm hover:bg-panel-hover"
-            >
-              {props.t("menu.comments")}
-              <span className="text-xs text-muted">{props.commentsOpen ? "✓" : ""}</span>
-            </button>
+          {toggles.map(
+            (t) =>
+              t.onToggle && (
+                <MenuCheckItem
+                  key={t.testId}
+                  checked={t.checked ?? false}
+                  onClick={wrap(t.onToggle)}
+                  testId={t.testId}
+                >
+                  {props.t(t.label)}
+                </MenuCheckItem>
+              ),
           )}
           <Separator />
           <ChoiceRow
@@ -259,26 +241,67 @@ export function HamburgerMenu(props: HamburgerMenuProps): React.ReactElement {
   )
 }
 
+const ITEM_CLASS = "w-full rounded-md px-3 py-1.5 text-left text-sm"
+
 function MenuItem({
   onClick,
   variant,
   testId,
+  disabledHint,
   children,
 }: {
   onClick: () => void
   variant?: "danger"
   testId?: string
+  /** Set when the item is unavailable: shown as its tooltip, explaining why. */
+  disabledHint?: string | undefined
   children: React.ReactNode
 }): React.ReactElement {
+  const disabled = disabledHint !== undefined
+  const tone = disabled
+    ? "cursor-not-allowed opacity-50"
+    : variant === "danger"
+      ? "text-danger hover:bg-danger-soft"
+      : "hover:bg-panel-hover"
   return (
     <button
       type="button"
       role="menuitem"
       data-testid={testId}
       onClick={onClick}
-      className={`block w-full rounded-md px-3 py-1.5 text-left text-sm ${variant === "danger" ? "text-danger hover:bg-danger-soft" : "hover:bg-panel-hover"}`}
+      disabled={disabled}
+      aria-disabled={disabled || undefined}
+      title={disabledHint}
+      className={`block ${ITEM_CLASS} ${tone}`}
     >
       {children}
+    </button>
+  )
+}
+
+/** A menu toggle: its state is announced as checked and shown with a tick. */
+function MenuCheckItem({
+  checked,
+  onClick,
+  testId,
+  children,
+}: {
+  checked: boolean
+  onClick: () => void
+  testId: string
+  children: React.ReactNode
+}): React.ReactElement {
+  return (
+    <button
+      type="button"
+      role="menuitemcheckbox"
+      aria-checked={checked}
+      data-testid={testId}
+      onClick={onClick}
+      className={`flex items-center justify-between ${ITEM_CLASS} hover:bg-panel-hover`}
+    >
+      {children}
+      <span className="text-xs text-muted">{checked ? "✓" : ""}</span>
     </button>
   )
 }

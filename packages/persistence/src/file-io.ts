@@ -54,7 +54,7 @@ export async function parseExcalidrawFile(file: File): Promise<ExcalidrawData> {
   try {
     text = await file.text()
   } catch (err) {
-    throw new Error(`parseExcalidrawFile: failed to read file: ${String(err)}`)
+    throw new Error(`parseExcalidrawFile: failed to read file: ${String(err)}`, { cause: err })
   }
   let parsed: unknown
   try {

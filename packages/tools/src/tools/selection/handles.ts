@@ -1,15 +1,26 @@
-import { type Point, type ViewTransform, sceneToViewport } from "@excalidraw-clone/geometry"
+import {
+  boundsCorners,
+  midpoint,
+  pointAdd,
+  pointDistance,
+  resizeHandles,
+  rotationHandlePoint,
+  sceneToViewport,
+  type Point,
+  type ResizeHandle,
+  type ViewTransform,
+} from "@excalidraw-clone/geometry"
 import {
   type ExcalidrawElement,
   borderAtLocal,
   getElementsBounds,
+  isLinearElement,
   rotatedCorners,
   toTableLocal,
 } from "@excalidraw-clone/scene"
-import type { ResizeHandle } from "./types"
+import type { LinearEnd } from "./types"
 
 const HANDLE_HIT_HALF = 6
-const ROTATION_HANDLE_OFFSET = 20
 const ROTATION_HANDLE_HIT_RADIUS = 8
 /** Screen px within which a table column/row border is grabbable. */
 const TABLE_BORDER_HIT = 4
@@ -17,38 +28,16 @@ const TABLE_BORDER_HIT = 4
 export type HandleHit =
   | { kind: "resize"; elementId: string; handle: ResizeHandle }
   | { kind: "rotate"; elementId: string }
-  | { kind: "endpoint"; elementId: string; end: "start" | "end" }
+  | { kind: "endpoint"; elementId: string; end: LinearEnd }
   | { kind: "bend"; elementId: string; index: number }
   | { kind: "bendAdd"; elementId: string; segmentIndex: number; at: Point }
   | { kind: "groupResize"; handle: ResizeHandle; ids: readonly string[] }
   | { kind: "tableBorder"; elementId: string; axis: "col" | "row"; index: number }
 
-const midPoint = (a: Point, b: Point): Point => ({
-  x: (a.x + b.x) / 2,
-  y: (a.y + b.y) / 2,
-})
-
 const within = (p: Point, target: Point, half = HANDLE_HIT_HALF): boolean =>
   Math.abs(p.x - target.x) <= half && Math.abs(p.y - target.y) <= half
 
-const isLinear = (e: ExcalidrawElement): boolean => e.type === "arrow" || e.type === "line"
-
-/** The eight resize handles of a quad given its corners in nw, ne, se, sw order. */
-const resizeHandlePoints = (
-  nw: Point,
-  ne: Point,
-  se: Point,
-  sw: Point,
-): { name: ResizeHandle; p: Point }[] => [
-  { name: "nw", p: nw },
-  { name: "ne", p: ne },
-  { name: "se", p: se },
-  { name: "sw", p: sw },
-  { name: "n", p: midPoint(nw, ne) },
-  { name: "e", p: midPoint(ne, se) },
-  { name: "s", p: midPoint(se, sw) },
-  { name: "w", p: midPoint(sw, nw) },
-]
+type Quad = [Point, Point, Point, Point]
 
 export const findHandleAt = (
   at: Point,
@@ -64,24 +53,18 @@ export const findHandleAt = (
     const bounds = getElementsBounds(selected)
     if (!bounds) return null
     const atV = sceneToViewport(at, view)
-    const nw = sceneToViewport({ x: bounds.x, y: bounds.y }, view)
-    const ne = sceneToViewport({ x: bounds.x + bounds.width, y: bounds.y }, view)
-    const se = sceneToViewport({ x: bounds.x + bounds.width, y: bounds.y + bounds.height }, view)
-    const sw = sceneToViewport({ x: bounds.x, y: bounds.y + bounds.height }, view)
-    for (const { name, p } of resizeHandlePoints(nw, ne, se, sw)) {
-      if (within(atV, p)) return { kind: "groupResize", handle: name, ids: selectedIds }
-    }
-    return null
+    const corners = boundsCorners(bounds).map((c) => sceneToViewport(c, view)) as Quad
+    const hit = resizeHandles(corners).find((h) => within(atV, h.at))
+    return hit ? { kind: "groupResize", handle: hit.name, ids: selectedIds } : null
   }
   if (selectedIds.length !== 1) return null
   const id = selectedIds[0]!
   const e = elements.find((el) => el.id === id)
   if (!e) return null
 
-  if (isLinear(e)) {
-    const atV = sceneToViewport(at, view)
-    const pts = (e as { points: readonly Point[] }).points
-    const abs = pts.map((p) => ({ x: e.x + p.x, y: e.y + p.y }))
+  const atV = sceneToViewport(at, view)
+  if (isLinearElement(e)) {
+    const abs = e.points.map((p) => pointAdd(e, p))
     // Endpoints first.
     if (within(atV, sceneToViewport(abs[0]!, view))) {
       return { kind: "endpoint", elementId: id, end: "start" }
@@ -99,7 +82,7 @@ export const findHandleAt = (
       }
       // Segment midpoints (add a bend).
       for (let k = 0; k < abs.length - 1; k += 1) {
-        const mid = midPoint(abs[k]!, abs[k + 1]!)
+        const mid = midpoint(abs[k]!, abs[k + 1]!)
         if (within(atV, sceneToViewport(mid, view))) {
           return { kind: "bendAdd", elementId: id, segmentIndex: k, at: mid }
         }
@@ -108,29 +91,15 @@ export const findHandleAt = (
     return null
   }
 
-  const atV = sceneToViewport(at, view)
-  const cornersScene = rotatedCorners(e)
-  const corners = cornersScene.map((c) => sceneToViewport(c, view))
-  const [nw, ne, se, sw] = corners as [Point, Point, Point, Point]
-
-  // Rotation handle first (above top-edge midpoint).
-  const topMid = midPoint(nw, ne)
-  const dx = ne.x - nw.x
-  const dy = ne.y - nw.y
-  const len = Math.hypot(dx, dy) || 1
-  const nx = -dy / len
-  const ny = dx / len
-  const rotPoint: Point = {
-    x: topMid.x + nx * -ROTATION_HANDLE_OFFSET,
-    y: topMid.y + ny * -ROTATION_HANDLE_OFFSET,
-  }
-  if (Math.hypot(atV.x - rotPoint.x, atV.y - rotPoint.y) <= ROTATION_HANDLE_HIT_RADIUS) {
+  const corners = rotatedCorners(e).map((c) => sceneToViewport(c, view)) as Quad
+  // The rotation handle first: it sits just outside the box.
+  if (
+    pointDistance(atV, rotationHandlePoint(corners[0], corners[1])) <= ROTATION_HANDLE_HIT_RADIUS
+  ) {
     return { kind: "rotate", elementId: id }
   }
-
-  for (const { name, p } of resizeHandlePoints(nw, ne, se, sw)) {
-    if (within(atV, p)) return { kind: "resize", elementId: id, handle: name }
-  }
+  const resize = resizeHandles(corners).find((h) => within(atV, h.at))
+  if (resize) return { kind: "resize", elementId: id, handle: resize.name }
   if (e.type === "table") {
     const border = borderAtLocal(e, toTableLocal(e, at), TABLE_BORDER_HIT / view.zoom)
     if (border) return { kind: "tableBorder", elementId: id, ...border }

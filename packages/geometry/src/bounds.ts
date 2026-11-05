@@ -1,4 +1,4 @@
-import type { Bounds, Point } from "./types"
+import type { Axis, Bounds, Point } from "./types"
 
 export const boundsContainsPoint = (b: Bounds, p: Point): boolean =>
   p.x >= b.x && p.x <= b.x + b.width && p.y >= b.y && p.y <= b.y + b.height
@@ -38,3 +38,15 @@ export const boundsExpand = (b: Bounds, padding: number): Bounds => ({
   width: b.width + padding * 2,
   height: b.height + padding * 2,
 })
+
+/** The four corners, clockwise from the top-left. */
+export const boundsCorners = (b: Bounds): Point[] => [
+  { x: b.x, y: b.y },
+  { x: b.x + b.width, y: b.y },
+  { x: b.x + b.width, y: b.y + b.height },
+  { x: b.x, y: b.y + b.height },
+]
+
+/** The box's extent along one axis, as `[start, end]`. */
+export const boundsSpan = (b: Bounds, axis: Axis): readonly [number, number] =>
+  axis === "x" ? [b.x, b.x + b.width] : [b.y, b.y + b.height]

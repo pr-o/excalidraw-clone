@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { pointsPatch } from "@excalidraw-clone/scene"
-import { linearPatch } from "../src/tools/linear"
+import { pointsPatch } from "../src/points-patch"
 
 describe("pointsPatch", () => {
   it("re-bases a 3-point path to a fresh bounding box", () => {
@@ -28,11 +27,5 @@ describe("pointsPatch", () => {
     const patch = pointsPatch(abs)
     const back = patch.points.map((p) => ({ x: patch.x + p.x, y: patch.y + p.y }))
     expect(back).toEqual(abs)
-  })
-
-  it("linearPatch matches pointsPatch of two points", () => {
-    const a = { x: 30, y: 70 }
-    const b = { x: 10, y: 10 }
-    expect(linearPatch(a, b)).toEqual(pointsPatch([a, b]))
   })
 })

@@ -1,7 +1,7 @@
 "use client"
 import { rulerTickStep, rulerTicks } from "@excalidraw-clone/geometry"
 import type { Scene } from "@excalidraw-clone/scene"
-import React, { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useAppStore } from "../store"
 import { viewOf } from "../store/slices/view"
 import { applyGuideDrag, guideValueAt, RULER_SIZE, type GuideDrag } from "../driver/userGuides"

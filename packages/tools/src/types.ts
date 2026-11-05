@@ -89,3 +89,6 @@ export interface Tool<S, E = ToolEvent> {
 }
 
 export const NO_EFFECTS: readonly ToolEffect[] = []
+
+/** Effect: hide the alignment guides a drag or resize was showing. */
+export const CLEAR_GUIDES: ToolEffect = { kind: "setGuides", guides: [] }

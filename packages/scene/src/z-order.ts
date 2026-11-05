@@ -3,10 +3,13 @@ import type { ExcalidrawElement } from "./types"
 const partition = (
   elements: readonly ExcalidrawElement[],
   selectedIds: readonly string[],
-): { moved: ExcalidrawElement[]; remaining: ExcalidrawElement[] } => ({
-  moved: elements.filter((e) => selectedIds.includes(e.id)),
-  remaining: elements.filter((e) => !selectedIds.includes(e.id)),
-})
+): { moved: ExcalidrawElement[]; remaining: ExcalidrawElement[] } => {
+  const ids = new Set(selectedIds)
+  return {
+    moved: elements.filter((e) => ids.has(e.id)),
+    remaining: elements.filter((e) => !ids.has(e.id)),
+  }
+}
 
 /** Moves matched elements to the front of the array (rendered first = visual back). */
 export function sendToBack(
@@ -31,9 +34,10 @@ export function sendBackward(
   elements: readonly ExcalidrawElement[],
   selectedIds: readonly string[],
 ): ExcalidrawElement[] {
+  const ids = new Set(selectedIds)
   const result = [...elements]
   for (let i = 1; i < result.length; i += 1) {
-    if (selectedIds.includes(result[i]!.id) && !selectedIds.includes(result[i - 1]!.id)) {
+    if (ids.has(result[i]!.id) && !ids.has(result[i - 1]!.id)) {
       ;[result[i - 1], result[i]] = [result[i]!, result[i - 1]!]
     }
   }
@@ -45,9 +49,10 @@ export function bringForward(
   elements: readonly ExcalidrawElement[],
   selectedIds: readonly string[],
 ): ExcalidrawElement[] {
+  const ids = new Set(selectedIds)
   const result = [...elements]
   for (let i = result.length - 2; i >= 0; i -= 1) {
-    if (selectedIds.includes(result[i]!.id) && !selectedIds.includes(result[i + 1]!.id)) {
+    if (ids.has(result[i]!.id) && !ids.has(result[i + 1]!.id)) {
       ;[result[i + 1], result[i]] = [result[i]!, result[i + 1]!]
     }
   }

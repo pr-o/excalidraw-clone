@@ -1,6 +1,7 @@
 import type { LibraryItem } from "@excalidraw-clone/scene"
 import { useState } from "react"
 import { PanelHeader, type PanelSibling, PanelToggle } from "./shared/PanelToggle"
+import { RenameInput } from "./shared/RenameInput"
 
 export interface LibraryPanelProps {
   t: (key: string) => string
@@ -27,17 +28,18 @@ interface ItemTileProps {
   readOnly: boolean
   renderThumbnail: (item: LibraryItem) => string
   onItemClick: (item: LibraryItem) => void
-  renamingId: string | null
-  draftName: string
-  setDraftName: (v: string) => void
+  renaming: boolean
   startRename: (item: LibraryItem) => void
-  commitRename: (id: string) => void
-  cancelRename: () => void
+  onRename: (id: string, name: string) => void
+  endRename: () => void
   menuOpenId: string | null
   setMenuOpenId: (id: string | null) => void
   onDelete: (id: string) => void
   t: (key: string) => string
 }
+
+const svgDataUrl = (svg: string): string =>
+  `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
 
 function ItemTile(props: ItemTileProps): React.ReactElement {
   const { item } = props
@@ -47,20 +49,24 @@ function ItemTile(props: ItemTileProps): React.ReactElement {
         type="button"
         onClick={() => props.onItemClick(item)}
         aria-label={item.name}
-        className="flex h-20 w-full items-center justify-center overflow-hidden rounded border bg-panel-subtle p-1 hover:border-accent [&>svg]:h-full [&>svg]:w-full"
-        // biome-ignore lint/security/noDangerouslySetInnerHtml: renderer-controlled SVG
-        dangerouslySetInnerHTML={{ __html: props.renderThumbnail(item) }}
-      />
-      {!props.readOnly && props.renamingId === item.id ? (
-        <input
-          autoFocus
-          value={props.draftName}
-          onChange={(e) => props.setDraftName(e.target.value)}
-          onBlur={() => props.commitRename(item.id)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") props.commitRename(item.id)
-            if (e.key === "Escape") props.cancelRename()
-          }}
+        className="flex h-20 w-full items-center justify-center overflow-hidden rounded border bg-panel-subtle p-1 hover:border-accent"
+      >
+        {/* An image, not inline SVG: the thumbnail is decoration, and its text (a
+            template's labels) must not become part of the tile's accessible name
+            (WCAG 2.5.3). It also keeps rendered markup out of the page DOM. */}
+        <img
+          alt=""
+          draggable={false}
+          src={svgDataUrl(props.renderThumbnail(item))}
+          className="h-full w-full object-contain"
+        />
+      </button>
+      {!props.readOnly && props.renaming ? (
+        <RenameInput
+          initial={item.name}
+          label={props.t("library.rename")}
+          onRename={(name) => props.onRename(item.id, name)}
+          onDone={props.endRename}
           className="mt-1 w-full rounded border px-1 text-xs"
         />
       ) : (
@@ -116,30 +122,19 @@ function ItemTile(props: ItemTileProps): React.ReactElement {
 
 export function LibraryPanel(props: LibraryPanelProps): React.ReactElement {
   const [renamingId, setRenamingId] = useState<string | null>(null)
-  const [draftName, setDraftName] = useState("")
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null)
 
   const startRename = (item: LibraryItem): void => {
     setRenamingId(item.id)
-    setDraftName(item.name)
     setMenuOpenId(null)
   }
-  const commitRename = (id: string): void => {
-    const trimmed = draftName.trim()
-    if (trimmed !== "") props.onRename(id, trimmed)
-    setRenamingId(null)
-  }
-  const cancelRename = (): void => setRenamingId(null)
 
   const tileCommon = {
     renderThumbnail: props.renderThumbnail,
     onItemClick: props.onItemClick,
-    renamingId,
-    draftName,
-    setDraftName,
     startRename,
-    commitRename,
-    cancelRename,
+    onRename: props.onRename,
+    endRename: () => setRenamingId(null),
     menuOpenId,
     setMenuOpenId,
     onDelete: props.onDelete,
@@ -215,6 +210,7 @@ export function LibraryPanel(props: LibraryPanelProps): React.ReactElement {
                     item={item}
                     testId={`template-item-${item.id}`}
                     readOnly
+                    renaming={false}
                     {...tileCommon}
                   />
                 ))}
@@ -240,6 +236,7 @@ export function LibraryPanel(props: LibraryPanelProps): React.ReactElement {
                   item={item}
                   testId={`library-item-${item.id}`}
                   readOnly={false}
+                  renaming={renamingId === item.id}
                   {...tileCommon}
                 />
               ))}

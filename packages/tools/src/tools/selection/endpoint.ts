@@ -1,18 +1,18 @@
-import type { Point } from "@excalidraw-clone/geometry"
 import {
+  updateElement,
   addBackRef,
   BINDING_GAP,
   bindingTargetAt,
   computeFocus,
+  pointsPatch,
   removeBackRef,
   type ExcalidrawArrowElement,
-  type ExcalidrawElement,
+  type ExcalidrawLinearElement,
   type PointBinding,
 } from "@excalidraw-clone/scene"
-import { updateElement } from "../../draft"
+import { pointAdd, type Point } from "@excalidraw-clone/geometry"
 import type { ToolEffect, ToolContext, ToolEvent } from "../../types"
-import { linearPatch } from "../linear"
-import type { SelectionState, Transition } from "./types"
+import type { LinearEnd, SelectionState, Transition } from "./types"
 
 export interface LinearSnapshot {
   x: number
@@ -24,31 +24,27 @@ export interface LinearSnapshot {
   endBinding: PointBinding | null
 }
 
-export const snapshotLinear = (e: ExcalidrawElement): LinearSnapshot => {
-  const a = e as ExcalidrawArrowElement
-  return {
-    x: a.x,
-    y: a.y,
-    width: a.width,
-    height: a.height,
-    points: a.points,
-    startBinding: a.startBinding ?? null,
-    endBinding: a.endBinding ?? null,
-  }
-}
+/** What an endpoint or bend drag changes, kept so Escape can put it back. */
+export const snapshotLinear = (e: ExcalidrawLinearElement): LinearSnapshot => ({
+  x: e.x,
+  y: e.y,
+  width: e.width,
+  height: e.height,
+  points: e.points,
+  // Older files may omit the fields entirely.
+  startBinding: e.startBinding ?? null,
+  endBinding: e.endBinding ?? null,
+})
 
-const endpointAbs = (a: ExcalidrawArrowElement, end: "start" | "end"): Point => {
-  const idx = end === "start" ? 0 : a.points.length - 1
-  const p = a.points[idx]!
-  return { x: a.x + p.x, y: a.y + p.y }
-}
+const endpointAbs = (a: ExcalidrawArrowElement, end: LinearEnd): Point =>
+  pointAdd(a, a.points[end === "start" ? 0 : a.points.length - 1]!)
 
-const bindingKey = (end: "start" | "end"): "startBinding" | "endBinding" =>
+const bindingKey = (end: LinearEnd): "startBinding" | "endBinding" =>
   end === "start" ? "startBinding" : "endBinding"
 
 export const buildEndpointMoveEffect = (
   elementId: string,
-  end: "start" | "end",
+  end: LinearEnd,
   to: Point,
 ): ToolEffect => ({
   kind: "mutation",
@@ -59,11 +55,11 @@ export const buildEndpointMoveEffect = (
       const endAbs = end === "end" ? to : endpointAbs(a, "end")
       const dragged = a[bindingKey(end)]
       if (dragged) removeBackRef(draft, dragged.elementId, a.id)
-      return { ...a, ...linearPatch(startAbs, endAbs), [bindingKey(end)]: null }
+      return { ...a, ...pointsPatch([startAbs, endAbs]), [bindingKey(end)]: null }
     }),
 })
 
-export const buildEndpointCommitEffect = (elementId: string, end: "start" | "end"): ToolEffect => ({
+export const buildEndpointCommitEffect = (elementId: string, end: LinearEnd): ToolEffect => ({
   kind: "mutation",
   apply: (draft) =>
     updateElement<ExcalidrawArrowElement>(draft, elementId, (a) => {

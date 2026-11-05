@@ -1,3 +1,4 @@
+import { boundsCenter } from "./bounds"
 import { clamp } from "./scalar"
 import type { Bounds, Point, ViewTransform } from "./types"
 
@@ -11,15 +12,36 @@ export const viewportToScene = (p: Point, t: ViewTransform): Point => ({
   y: p.y / t.zoom - t.scrollY,
 })
 
+/** The scene-space rectangle a `vw` x `vh` viewport currently shows. */
+export const viewportSceneRect = (v: ViewTransform, vw: number, vh: number): Bounds => ({
+  x: -v.scrollX,
+  y: -v.scrollY,
+  width: vw / v.zoom,
+  height: vh / v.zoom,
+})
+
+/** Same zoom, scrolled so `scenePoint` sits at the viewport centre. */
+export const centerViewOn = (
+  scenePoint: Point,
+  v: ViewTransform,
+  vw: number,
+  vh: number,
+): ViewTransform => ({
+  zoom: v.zoom,
+  scrollX: vw / 2 / v.zoom - scenePoint.x,
+  scrollY: vh / 2 / v.zoom - scenePoint.y,
+})
+
 export const ZOOM_MIN = 0.1
 export const ZOOM_MAX = 5
 
+/** Zooms to `targetZoom` (clamped) keeping the scene point under `anchor` in place. */
 export const zoomToPoint = (
   view: ViewTransform,
   anchor: Point,
   targetZoom: number,
 ): ViewTransform => {
-  const zoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, targetZoom))
+  const zoom = clamp(targetZoom, ZOOM_MIN, ZOOM_MAX)
   const scenePoint = viewportToScene(anchor, view)
   return {
     zoom,
@@ -30,6 +52,7 @@ export const zoomToPoint = (
 
 const FIT_PADDING = 1.1
 
+/** The view that shows `bounds` whole and centred, with a 10% margin. */
 export const fitToContent = (
   bounds: Bounds,
   viewportWidth: number,
@@ -43,11 +66,10 @@ export const fitToContent = (
     ZOOM_MIN,
     maxZoom,
   )
-  const centerX = bounds.x + bounds.width / 2
-  const centerY = bounds.y + bounds.height / 2
-  return {
-    zoom,
-    scrollX: viewportWidth / 2 / zoom - centerX,
-    scrollY: viewportHeight / 2 / zoom - centerY,
-  }
+  return centerViewOn(
+    boundsCenter(bounds),
+    { zoom, scrollX: 0, scrollY: 0 },
+    viewportWidth,
+    viewportHeight,
+  )
 }

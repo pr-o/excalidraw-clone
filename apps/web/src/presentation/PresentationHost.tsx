@@ -1,7 +1,7 @@
 "use client"
 import { fitToContent, type Bounds, type ViewTransform } from "@excalidraw-clone/geometry"
 import type { ExcalidrawElement, ExcalidrawFrameElement, Scene } from "@excalidraw-clone/scene"
-import React, { useEffect, useEffectEvent, useMemo, useRef } from "react"
+import { useEffect, useEffectEvent, useMemo, useRef } from "react"
 import { useTranslation } from "react-i18next"
 import { useSceneElements } from "../hooks/useScene"
 import { useAppStore } from "../store"

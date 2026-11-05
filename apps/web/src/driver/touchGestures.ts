@@ -6,7 +6,7 @@ import { pinchView } from "./pinch"
 import { NO_MODIFIERS, type ToolDispatch } from "./toolDispatch"
 
 /** Hold still this long (ms) with one finger under the selection tool for the context menu. */
-export const LONG_PRESS_MS = 500
+const LONG_PRESS_MS = 500
 /** Finger drift (px) that turns a would-be long-press into a drag. */
 const LONG_PRESS_SLOP = 10
 

@@ -1,10 +1,14 @@
-import type { Point } from "@excalidraw-clone/geometry"
+import type { Point, ResizeHandle } from "@excalidraw-clone/geometry"
 import type { ExcalidrawElement, ExcalidrawTableElement } from "@excalidraw-clone/scene"
 import type { CropOrigin } from "./crop"
 import type { LinearSnapshot } from "./endpoint"
+import type { ResizeOrigin } from "./resize"
 import type { ToolEffect } from "../../types"
 
-export type ResizeHandle = "nw" | "n" | "ne" | "e" | "se" | "s" | "sw" | "w"
+export type { ResizeHandle } from "@excalidraw-clone/geometry"
+
+/** Which end of an arrow or line. */
+export type LinearEnd = "start" | "end"
 
 export type SelectionState =
   | { phase: "idle" }
@@ -35,14 +39,14 @@ export type SelectionState =
       phase: "resizing"
       handle: ResizeHandle
       elementId: string
-      origin: { x: number; y: number; width: number; height: number; angle: number }
+      origin: ResizeOrigin
       start: Point
     }
   | {
       phase: "groupResizing"
       handle: ResizeHandle
       ids: readonly string[]
-      origin: { x: number; y: number; width: number; height: number; angle: number }
+      origin: ResizeOrigin
       originalElements: readonly ExcalidrawElement[]
       start: Point
     }
@@ -56,7 +60,7 @@ export type SelectionState =
   | {
       phase: "endpointDragging"
       elementId: string
-      end: "start" | "end"
+      end: LinearEnd
       origin: LinearSnapshot
       candidateBindId: string | null
     }

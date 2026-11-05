@@ -1,25 +1,17 @@
 import { newImage } from "@excalidraw-clone/scene"
-import {
-  NO_EFFECTS,
-  type AnyToolEvent,
-  type Tool,
-  type ToolContext,
-  type ToolEffect,
-} from "../types"
+import { NO_EFFECTS, type AnyToolEvent, type Tool, type ToolEffect } from "../types"
 
 export type ImageEvent = AnyToolEvent
 
 export type ImageState =
-  | { phase: "idle" }
-  | { phase: "placing"; fileId: string; mimeType: string; aspect: number }
+  { phase: "idle" } | { phase: "placing"; fileId: string; mimeType: string; aspect: number }
 
 const DEFAULT_PLACED_WIDTH = 200
 
 export const imageTool: Tool<ImageState, ImageEvent> = {
   name: "image",
   initial: { phase: "idle" },
-  reduce(state, event, _ctx: ToolContext): [ImageState, readonly ToolEffect[]] {
-    void _ctx
+  reduce(state, event): [ImageState, readonly ToolEffect[]] {
     switch (event.type) {
       case "imageReady": {
         const aspect = event.height === 0 ? 1 : event.width / event.height

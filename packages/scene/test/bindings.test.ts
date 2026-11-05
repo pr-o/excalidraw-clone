@@ -181,6 +181,18 @@ const absEnd = (a: ExcalidrawArrowElement): Point => ({
 })
 
 describe("reconcileBindings", () => {
+  it("drops a binding to a deleted target on a point-less arrow without moving it", () => {
+    const target = { ...rect({ id: "t" }), isDeleted: true }
+    const arrow: ExcalidrawArrowElement = {
+      ...newArrow({ x: 40, y: 60 }),
+      id: "ar",
+      endBinding: { elementId: "t", focus: 0, gap: BINDING_GAP },
+    }
+    const draft: ExcalidrawElement[] = [target, arrow]
+    reconcileBindings(draft)
+    expect(draft[1]).toMatchObject({ x: 40, y: 60, endBinding: null })
+  })
+
   it("follows a moved target (end bound to a rect)", () => {
     const target = rect({ id: "t", x: 200, y: 0, width: 100, height: 100 })
     const arrow = boundArrow({

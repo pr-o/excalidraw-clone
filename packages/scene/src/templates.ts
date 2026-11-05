@@ -1,117 +1,69 @@
 import { BINDING_GAP } from "./bindings"
-import { newArrow, newDiamond, newNote, newRectangle, newText } from "./factories"
+import { addArrowBackRefs } from "./binding-refs"
+import { newArrow, newDiamond, newNote, newRectangle, withLabel } from "./factories"
 import type { LibraryItem } from "./library-item"
 import type {
-  BoundElement,
   ExcalidrawArrowElement,
   ExcalidrawDiamondElement,
   ExcalidrawElement,
   ExcalidrawRectangleElement,
-  ExcalidrawTextElement,
 } from "./types"
 
 const HEADER_BG = "#e9ecef"
+const ROUNDED = { type: 1 } as const
 
-type NodeEl = ExcalidrawRectangleElement | ExcalidrawDiamondElement
+type Node = ExcalidrawRectangleElement | ExcalidrawDiamondElement
 
-/** Builds a labeled node (container + bound text) and registers the back-ref. */
-function makeNode(
-  kind: "rectangle" | "diamond",
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  label: string,
-  rounded: boolean,
-  addRef: (nodeId: string, ref: BoundElement) => void,
-  labels: ExcalidrawTextElement[],
-): NodeEl {
-  const node: NodeEl =
-    kind === "diamond"
-      ? newDiamond({ x, y, width: w, height: h })
-      : { ...newRectangle({ x, y, width: w, height: h }), roundness: rounded ? { type: 1 } : null }
-  const text = newText({
-    x,
-    y: y + h / 2 - 10,
-    width: w,
-    height: 20,
-    text: label,
-    textAlign: "center",
-    verticalAlign: "middle",
-    containerId: node.id,
-  })
-  labels.push(text)
-  addRef(node.id, { id: text.id, type: "text" })
-  return node
+/** A straight arrow from the bottom middle of `from` to the top middle of `to`, bound to both. */
+const arrowDown = (from: Node, to: Node): ExcalidrawArrowElement => {
+  const sx = from.x + from.width / 2
+  const sy = from.y + from.height
+  const dx = to.x + to.width / 2 - sx
+  const dy = to.y - sy
+  return {
+    ...newArrow({ x: sx, y: sy, width: Math.abs(dx), height: Math.abs(dy) }),
+    points: [
+      { x: 0, y: 0 },
+      { x: dx, y: dy },
+    ],
+    startBinding: { elementId: from.id, focus: 0, gap: BINDING_GAP },
+    endBinding: { elementId: to.id, focus: 0, gap: BINDING_GAP },
+  }
 }
 
 function buildFlowchart(): ExcalidrawElement[] {
-  const refs = new Map<string, BoundElement[]>()
-  const addRef = (nodeId: string, ref: BoundElement): void => {
-    const arr = refs.get(nodeId) ?? []
-    arr.push(ref)
-    refs.set(nodeId, arr)
-  }
-  const labels: ExcalidrawTextElement[] = []
-  const arrows: ExcalidrawArrowElement[] = []
-
-  const start = makeNode("rectangle", 0, 0, 160, 60, "Start", true, addRef, labels)
-  const process = makeNode("rectangle", 0, 120, 160, 60, "Process", false, addRef, labels)
-  const decision = makeNode("diamond", 0, 240, 160, 80, "Decision?", false, addRef, labels)
-  const end = makeNode("rectangle", 0, 400, 160, 60, "End", true, addRef, labels)
-  const nodes: NodeEl[] = [start, process, decision, end]
-
-  const connect = (from: NodeEl, to: NodeEl): void => {
-    const sx = from.x + from.width / 2
-    const sy = from.y + from.height
-    const ex = to.x + to.width / 2
-    const ey = to.y
-    const arrow: ExcalidrawArrowElement = {
-      ...newArrow({ x: sx, y: sy }),
-      x: sx,
-      y: sy,
-      width: Math.abs(ex - sx),
-      height: Math.abs(ey - sy),
-      points: [
-        { x: 0, y: 0 },
-        { x: ex - sx, y: ey - sy },
-      ],
-      startBinding: { elementId: from.id, focus: 0, gap: BINDING_GAP },
-      endBinding: { elementId: to.id, focus: 0, gap: BINDING_GAP },
-    }
-    arrows.push(arrow)
-    addRef(from.id, { id: arrow.id, type: "arrow" })
-    addRef(to.id, { id: arrow.id, type: "arrow" })
-  }
-  connect(start, process)
-  connect(process, decision)
-  connect(decision, end)
-
-  const boundNodes = nodes.map((n) => ({ ...n, boundElements: refs.get(n.id) ?? null }))
-  return [...boundNodes, ...labels, ...arrows]
+  const steps = [
+    withLabel(
+      { ...newRectangle({ x: 0, y: 0, width: 160, height: 60 }), roundness: ROUNDED },
+      "Start",
+    ),
+    withLabel(newRectangle({ x: 0, y: 120, width: 160, height: 60 }), "Process"),
+    withLabel(newDiamond({ x: 0, y: 240, width: 160, height: 80 }), "Decision?"),
+    withLabel(
+      { ...newRectangle({ x: 0, y: 400, width: 160, height: 60 }), roundness: ROUNDED },
+      "End",
+    ),
+  ]
+  const arrows = steps.slice(1).map((step, i) => arrowDown(steps[i]!.container, step.container))
+  const out: ExcalidrawElement[] = [
+    ...steps.map((s) => s.container),
+    ...steps.map((s) => s.text),
+    ...arrows,
+  ]
+  for (const arrow of arrows) addArrowBackRefs(out, arrow)
+  return out
 }
 
 function buildKanban(): ExcalidrawElement[] {
-  const els: ExcalidrawElement[] = []
-  const columns = ["To do", "Doing", "Done"]
-  columns.forEach((title, i) => {
+  return ["To do", "Doing", "Done"].flatMap((title, i) => {
     const x = i * 180
-    const header = newRectangle({ x, y: 0, width: 140, height: 40, backgroundColor: HEADER_BG })
-    const label = newText({
-      x,
-      y: 10,
-      width: 140,
-      height: 20,
-      text: title,
-      textAlign: "center",
-      verticalAlign: "middle",
-      containerId: header.id,
-    })
-    els.push({ ...header, boundElements: [{ id: label.id, type: "text" }] }, label)
+    const header = withLabel(
+      newRectangle({ x, y: 0, width: 140, height: 40, backgroundColor: HEADER_BG }),
+      title,
+    )
     const note = newNote({ x, y: 60, width: 140, height: 80 })
-    els.push(note.container, note.text)
+    return [header.container, header.text, note.container, note.text]
   })
-  return els
 }
 
 export const BUILTIN_TEMPLATES: LibraryItem[] = [

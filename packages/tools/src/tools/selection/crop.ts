@@ -1,17 +1,22 @@
-import type { Point } from "@excalidraw-clone/geometry"
+import { updateElement, mirrorOf, type ExcalidrawImageElement } from "@excalidraw-clone/scene"
 import {
-  mirrorOf,
-  type ExcalidrawElement,
-  type ExcalidrawImageElement,
-} from "@excalidraw-clone/scene"
+  boundsCenter,
+  pointAdd,
+  rotatePoint,
+  type Bounds,
+  type Point,
+} from "@excalidraw-clone/geometry"
 import type { ToolEffect, ToolContext, ToolEvent } from "../../types"
 import type { ResizeHandle, SelectionState, Transition } from "./types"
 import { findHandleAt } from "./handles"
 import { reduceIdle } from "./idle"
+import { buildRecommitEffect } from "./recommit"
 
 export type Crop = NonNullable<ExcalidrawImageElement["crop"]>
-export const FULL_CROP: Crop = { x: 0, y: 0, width: 1, height: 1 }
-export const MIN_CROP_SIZE = 10
+const FULL_CROP: Crop = { x: 0, y: 0, width: 1, height: 1 }
+/** The smallest visible box (screen-local px) a crop drag can leave. */
+const MIN_CROP_SIZE = 10
+const ORIGIN: Point = { x: 0, y: 0 }
 
 export interface CropOrigin {
   x: number
@@ -96,15 +101,11 @@ export const computeCrop = (
   start: Point,
   at: Point,
   lockAspect = false,
-): { x: number; y: number; width: number; height: number; crop: Crop } => {
+): Bounds & { crop: Crop } => {
   const c0 = origin.crop ?? FULL_CROP
-  const cos = Math.cos(origin.angle)
-  const sin = Math.sin(origin.angle)
   // Pointer travel in the image's local (unrotated) axes.
-  const wx = at.x - start.x
-  const wy = at.y - start.y
-  let dx = wx * cos + wy * sin
-  let dy = -wx * sin + wy * cos
+  const travel = { x: at.x - start.x, y: at.y - start.y }
+  let { x: dx, y: dy } = rotatePoint(travel, ORIGIN, -origin.angle)
   // Edge handles move one axis only, so a locked ratio is ambiguous: ignore Shift.
   if (lockAspect && handle.length === 2) [dx, dy] = lockedDeltas(origin, handle, c0, dx, dy)
   const xa = cropAxis(
@@ -129,57 +130,41 @@ export const computeCrop = (
   const height = ya.hi - ya.lo
   // The box rotates about its own centre, so re-seat it from the new centre to
   // keep the surviving pixels fixed in world space.
-  const ox = xa.lo + width / 2 - origin.width / 2
-  const oy = ya.lo + height / 2 - origin.height / 2
-  const cx = origin.x + origin.width / 2 + ox * cos - oy * sin
-  const cy = origin.y + origin.height / 2 + ox * sin + oy * cos
+  const shift = {
+    x: xa.lo + width / 2 - origin.width / 2,
+    y: ya.lo + height / 2 - origin.height / 2,
+  }
+  const center = pointAdd(boundsCenter(origin), rotatePoint(shift, ORIGIN, origin.angle))
   return {
-    x: cx - width / 2,
-    y: cy - height / 2,
+    x: center.x - width / 2,
+    y: center.y - height / 2,
     width,
     height,
     crop: { x: xa.start, y: ya.start, width: xa.span, height: ya.span },
   }
 }
 
-const patchImage =
-  (id: string, patch: Partial<ExcalidrawImageElement>) =>
-  (draft: ExcalidrawElement[]): void => {
-    const i = draft.findIndex((e) => e.id === id)
-    const e = draft[i]
-    if (i < 0 || !e || e.type !== "image") return
-    draft[i] = { ...e, ...patch }
-  }
+/** Effect: merge `patch` into image `id` without recording history. */
+const patchImageEffect = (id: string, patch: Partial<ExcalidrawImageElement>): ToolEffect => ({
+  kind: "mutation",
+  apply: (draft) =>
+    updateElement(draft, id, (e) => (e.type === "image" ? { ...e, ...patch } : undefined)),
+  skipHistory: true,
+})
 
-export const buildCropMoveEffect = (
+const buildCropMoveEffect = (
   id: string,
   origin: CropOrigin,
   handle: ResizeHandle,
   start: Point,
   at: Point,
   lockAspect = false,
-): ToolEffect => ({
-  kind: "mutation",
-  apply: patchImage(id, computeCrop(origin, handle, start, at, lockAspect)),
-  skipHistory: true,
-})
+): ToolEffect => patchImageEffect(id, computeCrop(origin, handle, start, at, lockAspect))
 
-export const buildCropCommitEffect = (id: string): ToolEffect => ({
-  kind: "mutation",
-  apply: patchImage(id, {}),
-})
-
-export const buildCropRevertEffect = (id: string, origin: CropOrigin): ToolEffect => ({
-  kind: "mutation",
-  apply: patchImage(id, {
-    x: origin.x,
-    y: origin.y,
-    width: origin.width,
-    height: origin.height,
-    crop: origin.crop,
-  }),
-  skipHistory: true,
-})
+const buildCropRevertEffect = (id: string, origin: CropOrigin): ToolEffect => {
+  const { x, y, width, height, crop } = origin
+  return patchImageEffect(id, { x, y, width, height, crop })
+}
 
 const EXIT_CROP: ToolEffect = { kind: "setCrop", elementId: null }
 
@@ -235,7 +220,7 @@ export const reduceCropDragging = (
         ],
       ]
     case "pointerUp":
-      return [back, [buildCropCommitEffect(state.elementId)]]
+      return [back, [buildRecommitEffect([state.elementId])]]
     case "escape":
       return [back, [buildCropRevertEffect(state.elementId, state.origin)]]
     default:

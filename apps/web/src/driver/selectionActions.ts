@@ -8,7 +8,7 @@ import {
 } from "@excalidraw-clone/scene"
 import { useAppStore } from "../store"
 import { selectableIds } from "./clipboard"
-import { deleteElements, patchScene } from "./patchScene"
+import { deleteFromScene, patchScene } from "./patchScene"
 
 /**
  * Selection-level scene edits shared by the keyboard shortcuts, the properties
@@ -27,7 +27,7 @@ export function duplicateSelection(scene: Scene, ids: readonly string[]): void {
 
 export function deleteSelection(scene: Scene, ids: readonly string[]): void {
   if (ids.length === 0) return
-  deleteElements(scene, ids)
+  deleteFromScene(scene, ids)
   useAppStore.getState().setSelection([])
 }
 

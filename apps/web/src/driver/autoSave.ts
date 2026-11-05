@@ -61,6 +61,7 @@ export function startAutoSave(
         gridEnabled: s.gridEnabled,
         gridSize: s.gridSize,
         rulersVisible: s.rulersVisible,
+        measurementsVisible: s.measurementsVisible,
         minimapVisible: s.minimapVisible,
         canvasBg: s.canvasBg,
         zenMode: s.zenMode,

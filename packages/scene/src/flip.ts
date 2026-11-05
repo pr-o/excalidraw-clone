@@ -1,12 +1,10 @@
-import type { Point } from "@excalidraw-clone/geometry"
+import type { Axis, Point } from "@excalidraw-clone/geometry"
 import { getElementsBounds } from "./bounds"
 import { expandIdsToFrameMembers } from "./frames"
 import { flipTable } from "./table"
 import type { ExcalidrawElement, PointBinding } from "./types"
-import { isBoundLabel } from "./bound-label"
+import { isPassengerLabel } from "./bound-label"
 import { editableElements } from "./editable"
-
-export type FlipAxis = "x" | "y"
 
 /** Per-axis mirror sign for an element; `[1, 1]` when unflipped. */
 export const mirrorOf = (el: Pick<ExcalidrawElement, "mirror">): readonly [number, number] =>
@@ -21,7 +19,7 @@ const negateFocus = (b: PointBinding | null): PointBinding | null =>
 /** Reflect local-space points across the element's own bbox centre on `axis`. */
 const mirrorPoints = (
   points: readonly Point[],
-  axis: FlipAxis,
+  axis: Axis,
   width: number,
   height: number,
 ): Point[] =>
@@ -34,7 +32,7 @@ const flipped = (n: number): 1 | -1 => (n === -1 ? 1 : -1)
  *  x/y/width/height are preserved (a centred reflection keeps the AABB).
  *  Linear/freedraw bake the flip into `points` and never carry `mirror`;
  *  every other type toggles the `mirror` sign, omitting the key at `[1, 1]`. */
-const flipOne = (el: ExcalidrawElement, axis: FlipAxis): ExcalidrawElement => {
+const flipOne = (el: ExcalidrawElement, axis: Axis): ExcalidrawElement => {
   const angle = negate(el.angle)
   switch (el.type) {
     case "line":
@@ -68,16 +66,6 @@ const flipOne = (el: ExcalidrawElement, axis: FlipAxis): ExcalidrawElement => {
   }
 }
 
-/** A bound-text label pulled into the set only because its container is there.
- *  Spec §2: a label is never flipped as a side-effect of its container being
- *  flipped — it stays readable, and `reconcileBoundText` re-lays it against the
- *  flipped container. It still flips when selected on its own (then its
- *  container is not in the set, so this is false). Marquee selection
- *  necessarily encloses a label along with its container, which is why this
- *  guard lives here rather than in the selection layer. */
-const isPassengerLabel = (el: ExcalidrawElement, inSet: ReadonlySet<string>): boolean =>
-  isBoundLabel(el) && inSet.has(el.containerId)
-
 /** Full replacement elements for a flip of `ids` across `axis`. Single vs.
  *  group behaviour is chosen by `ids.length`. Locked / deleted / unknown ids
  *  and passenger labels (see `isPassengerLabel`) are dropped from the result.
@@ -85,7 +73,7 @@ const isPassengerLabel = (el: ExcalidrawElement, inSet: ReadonlySet<string>): bo
 export function flipElements(
   elements: readonly ExcalidrawElement[],
   ids: readonly string[],
-  axis: FlipAxis,
+  axis: Axis,
 ): ExcalidrawElement[] {
   const direct = editableElements(elements, ids)
   if (direct.length === 0) return []
@@ -105,16 +93,18 @@ export function flipElements(
   if (closure.length === 0) return []
   const bounds = getElementsBounds(closure)
   if (!bounds) return []
-  const boundsCenter = axis === "x" ? bounds.x + bounds.width / 2 : bounds.y + bounds.height / 2
+  const mid = axis === "x" ? bounds.x + bounds.width / 2 : bounds.y + bounds.height / 2
 
   // Passenger labels count toward the combined bounds above (they are part of
-  // the selection's visual extent) but are not transformed here.
+  // the selection's visual extent) but are not transformed: a label stays readable.
+  // Marquee selection always encloses a label with its container, which is why
+  // this guard lives here rather than in the selection layer.
   return closure
     .filter((el) => !isPassengerLabel(el, closureIds))
     .map((el) => {
       const extent = axis === "x" ? el.width : el.height
       const oldCenter = (axis === "x" ? el.x : el.y) + extent / 2
-      const coord = 2 * boundsCenter - oldCenter - extent / 2
+      const coord = 2 * mid - oldCenter - extent / 2
       const next = flipOne(el, axis)
       return axis === "x" ? { ...next, x: coord } : { ...next, y: coord }
     })

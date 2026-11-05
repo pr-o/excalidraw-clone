@@ -1,7 +1,9 @@
 import {
+  boundsCenter,
   labelInnerBox,
   polylineMidpoint,
   rotatePoint,
+  type Bounds,
   type LabelShapeKind,
 } from "@excalidraw-clone/geometry"
 import { mirrorOf } from "./flip"
@@ -35,9 +37,7 @@ export const LINEAR_LABELABLE_TYPES: ReadonlySet<ElementType> = new Set<ElementT
   "line",
 ])
 
-const innerBoxFor = (
-  container: ExcalidrawElement,
-): { x: number; y: number; width: number; height: number } => {
+const innerBoxFor = (container: ExcalidrawElement): Bounds => {
   if (LABELABLE_TYPES.has(container.type)) {
     // mirror-aware: a flipped triangle/pentagon's inscribed box moves with the
     // outline, so the label stays inside the shape the user actually sees.
@@ -58,13 +58,12 @@ const innerBoxFor = (
 
 /**
  * Enforce the container↔bound-text invariant in place on a mutation draft:
- * each non-deleted shape container keeps its bound text sized to the
- * shape-aware inner label box (turned with the container's angle) and vertically centered (its textAlign is
- * left to the user); a linear
- * (arrow/line) container keeps its bound text recentered on the path
- * midpoint without resizing. A deleted container cascades isDeleted to its
- * text. Text content is never modified. Idempotent and O(n). Safe to run
- * after every mutation.
+ * - a shape container keeps its label sized to the shape-aware inner box, turned
+ *   with the container's angle and vertically centred (textAlign is the user's);
+ * - a linear (arrow/line) container keeps its label centred on the path midpoint,
+ *   without resizing it;
+ * - a deleted container deletes its label too.
+ * Text content is never modified. Idempotent and O(n): safe after every mutation.
  */
 export function reconcileBoundText(draft: ExcalidrawElement[]): void {
   // id → first index, built on first use (the loop only replaces slots, never moves them).
@@ -112,11 +111,7 @@ export function reconcileBoundText(draft: ExcalidrawElement[]): void {
     // takes the container's angle, so every renderer rotates it in place.
     const angle = container.angle
     if (angle !== 0) {
-      const c = rotatePoint(
-        { x: x + width / 2, y: y + height / 2 },
-        { x: container.x + container.width / 2, y: container.y + container.height / 2 },
-        angle,
-      )
+      const c = rotatePoint(boundsCenter(box), boundsCenter(container), angle)
       x = c.x - width / 2
       y = c.y - height / 2
     }

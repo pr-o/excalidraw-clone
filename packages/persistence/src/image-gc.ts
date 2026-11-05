@@ -1,4 +1,4 @@
-import type { ExcalidrawElement } from "@excalidraw-clone/scene"
+import { imageFileIds, type ExcalidrawElement } from "@excalidraw-clone/scene"
 import { deleteFile, getAllFiles } from "./image-store"
 import { getAllLibraryItems } from "./library-store"
 import { listSnapshots, loadSnapshot } from "./snapshot-store"
@@ -8,7 +8,7 @@ import { listSnapshots, loadSnapshot } from "./snapshot-store"
 export const GC_MIN_AGE_MS = 60 * 60 * 1000
 
 const addFileIds = (into: Set<string>, elements: readonly ExcalidrawElement[]): void => {
-  for (const el of elements) if (el.type === "image" && el.fileId !== null) into.add(el.fileId)
+  for (const id of imageFileIds(elements)) into.add(id)
 }
 
 /**

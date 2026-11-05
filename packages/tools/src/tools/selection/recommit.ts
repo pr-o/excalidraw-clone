@@ -5,10 +5,10 @@ import type { ToolEffect } from "../../types"
 export const buildRecommitEffect = (ids: readonly string[]): ToolEffect => ({
   kind: "mutation",
   apply: (draft) => {
+    const set = new Set(ids)
     for (let i = 0; i < draft.length; i += 1) {
       const e = draft[i]!
-      if (!ids.includes(e.id)) continue
-      draft[i] = { ...e }
+      if (set.has(e.id)) draft[i] = { ...e }
     }
   },
 })

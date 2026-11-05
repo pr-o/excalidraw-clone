@@ -1,11 +1,15 @@
-import type { ExcalidrawLineElement } from "@excalidraw-clone/scene"
+import type { ExcalidrawLinearElement } from "@excalidraw-clone/scene"
 import type { Drawable } from "roughjs/bin/core"
 import type { RoughGenerator } from "roughjs/bin/generator"
 import type { Point as RoughPoint } from "roughjs/bin/geometry"
 import { arrowheadDrawables } from "./arrowheads"
 import { strokeOptions } from "./options"
 
-export const lineShape = (e: ExcalidrawLineElement, gen: RoughGenerator): readonly Drawable[] => {
+/** An arrow or line: its path, then an arrowhead at each end that has one. */
+export const linearShape = (
+  e: ExcalidrawLinearElement,
+  gen: RoughGenerator,
+): readonly Drawable[] => {
   if (e.points.length < 2) return []
   const opts = strokeOptions(e)
   const pts: RoughPoint[] = e.points.map((p) => [p.x, p.y])

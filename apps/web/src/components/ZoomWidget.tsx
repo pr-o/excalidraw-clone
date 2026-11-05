@@ -23,7 +23,9 @@ export function ZoomWidget(): React.ReactElement {
       <button
         type="button"
         data-testid="zoom-reset"
-        aria-label={t("shortcuts:zoomReset")}
+        // The accessible name starts with the visible "100%" (WCAG 2.5.3 label in name),
+        // so a voice-control user can say what they see.
+        aria-label={`${Math.round(zoom * 100)}%, ${t("shortcuts:zoomReset")}`}
         onClick={() => zoomAboutCentre(() => 1)}
         title={t("shortcuts:zoomReset")}
         className="h-7 min-w-[3.5rem] rounded-lg px-1.5 text-center tabular-nums hover:bg-panel-hover"

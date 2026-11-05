@@ -1,4 +1,4 @@
-import { boundsCenter } from "./bounds"
+import { boundsCenter, boundsContainsPoint, boundsCorners } from "./bounds"
 import { rotatePoint } from "./rotation"
 import type { Bounds, Point } from "./types"
 
@@ -149,18 +149,9 @@ const segmentsCross = (a: Point, b: Point, c: Point, d: Point): boolean =>
 /** True when the closed `polygon` overlaps `bounds` (crossing, containing or contained). */
 export const polygonIntersectsBounds = (polygon: readonly Point[], b: Bounds): boolean => {
   if (polygon.length < 3) return false
-  const box: Point[] = [
-    { x: b.x, y: b.y },
-    { x: b.x + b.width, y: b.y },
-    { x: b.x + b.width, y: b.y + b.height },
-    { x: b.x, y: b.y + b.height },
-  ]
+  const box = boundsCorners(b)
   if (box.some((c) => pointInPolygon(c, polygon))) return true
-  if (
-    polygon.some((p) => p.x >= b.x && p.x <= b.x + b.width && p.y >= b.y && p.y <= b.y + b.height)
-  ) {
-    return true
-  }
+  if (polygon.some((p) => boundsContainsPoint(b, p))) return true
   return polygon.some((p, i) => {
     const q = polygon[(i + 1) % polygon.length]!
     return box.some((c, k) => segmentsCross(p, q, c, box[(k + 1) % 4]!))

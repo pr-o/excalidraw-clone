@@ -1,5 +1,6 @@
 import { useState, useTransition } from "react"
 import { Dialog } from "./shared/Dialog"
+import { Button } from "./shared/Button"
 
 export interface ExportOptions {
   format: "png" | "svg" | "pdf"
@@ -98,12 +99,14 @@ function ExportDialogBody({
     // The transition callback runs synchronously, so onCopy issues its clipboard
     // write inside the click's user activation (Safari requires that).
     startCopy(async () => {
+      // Updates after an `await` are not part of the transition unless wrapped again:
+      // wrapping them makes the result and the end of `isCopying` commit together.
       try {
         // Clipboard images are PNG-only, whatever the format toggle says.
         await onCopy({ ...currentOptions(), format: "png" })
-        setCopyResult("copied")
+        startCopy(() => setCopyResult("copied"))
       } catch {
-        setCopyResult("error")
+        startCopy(() => setCopyResult("error"))
       }
     })
   }
@@ -206,31 +209,15 @@ function ExportDialogBody({
           </p>
         )}
         <div className="flex justify-end gap-2 pt-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded border border-panel px-3 py-1 text-sm"
-          >
-            {t("export.cancel")}
-          </button>
+          <Button onClick={onClose}>{t("export.cancel")}</Button>
           {onCopy && !exportAllPages && (
-            <button
-              type="button"
-              data-testid="export-copy"
-              onClick={handleCopy}
-              disabled={isCopying}
-              className="rounded border border-panel px-3 py-1 text-sm disabled:opacity-50"
-            >
+            <Button data-testid="export-copy" onClick={handleCopy} disabled={isCopying}>
               {t("export.copy")}
-            </button>
+            </Button>
           )}
-          <button
-            type="button"
-            onClick={() => onExport(currentOptions())}
-            className="rounded bg-accent px-3 py-1 text-sm text-white"
-          >
+          <Button variant="primary" onClick={() => onExport(currentOptions())}>
             {t("export.confirm")}
-          </button>
+          </Button>
         </div>
       </div>
     </Dialog>

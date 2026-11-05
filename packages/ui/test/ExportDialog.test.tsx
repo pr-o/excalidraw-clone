@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react"
+import { render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { describe, expect, it, vi } from "vitest"
 import { ExportDialog, type ExportOptions } from "../src/ExportDialog"
@@ -413,7 +413,8 @@ describe("ExportDialog — copy to clipboard", () => {
     await userEvent.click(copy)
     await screen.findByTestId("export-copy-error")
     await userEvent.click(copy)
-    expect(copy).toBeDisabled()
+    // The transition's pending state commits asynchronously: wait for it, don't race it.
+    await waitFor(() => expect(copy).toBeDisabled())
     expect(screen.queryByTestId("export-copy-error")).toBeNull()
     finish()
     expect(await screen.findByTestId("export-copy-success")).toBeInTheDocument()

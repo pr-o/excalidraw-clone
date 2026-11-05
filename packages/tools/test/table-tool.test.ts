@@ -125,11 +125,13 @@ describe("selection — table", () => {
       hitTest: () => table,
       selectedIds: ["T"],
     })
-    let [state, fx] = selectionTool.reduce(
+    // The pointer-down effects are not needed here: only the resize that follows.
+    let [state] = selectionTool.reduce(
       selectionTool.initial,
       { type: "pointerDown", at: point(221, 160) },
       c,
     )
+    let fx: readonly ToolEffect[]
     expect(state.phase).toBe("tableResizing")
     ;[state, fx] = selectionTool.reduce(state, { type: "pointerMove", at: point(261, 160) }, c)
     run(scene, fx)
@@ -151,16 +153,18 @@ describe("selection — table", () => {
       hitTest: () => table,
       selectedIds: ["T"],
     })
-    let [state, fx] = selectionTool.reduce(
+    // The pointer-down effects are not needed here: only the resize that follows.
+    let [state] = selectionTool.reduce(
       selectionTool.initial,
       { type: "pointerDown", at: point(150, 141) },
       c,
     )
+    let fx: readonly ToolEffect[]
     expect(state).toMatchObject({ phase: "tableResizing", axis: "row", index: 0 })
     ;[state, fx] = selectionTool.reduce(state, { type: "pointerMove", at: point(150, 171) }, c)
     run(scene, fx)
     expect((scene.getElements()[0] as ExcalidrawTableElement).rowHeights).toEqual([70, 40, 40])
-    ;[state, fx] = selectionTool.reduce(state, { type: "escape" }, c)
+    ;[, fx] = selectionTool.reduce(state, { type: "escape" }, c)
     run(scene, fx)
     expect((scene.getElements()[0] as ExcalidrawTableElement).rowHeights).toEqual([40, 40, 40])
   })

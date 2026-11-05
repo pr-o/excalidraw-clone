@@ -7,31 +7,33 @@ import {
   serializeDocument,
   toExcalidrawBlob,
 } from "@excalidraw-clone/persistence"
-import type { ExcalidrawFiles } from "@excalidraw-clone/scene"
+import { imageFileIds, type ExcalidrawFiles } from "@excalidraw-clone/scene"
 import i18next from "i18next"
 import { notify } from "../components/LiveAnnouncer"
 import type { PageRecord } from "./pages"
-import { referencedFileIds } from "./saveFile"
 
 /**
  * "Save" writes back to the file the drawing came from, as a desktop app does, using the
  * File System Access API (Chromium browsers). Elsewhere it falls back to a download.
  *
- * Only the members this module uses are typed: the pickers are not in TypeScript's DOM lib.
+ * The pickers are not in TypeScript's DOM lib, so the members used here are declared below.
  */
 interface PickerType {
   description: string
   accept: Record<string, string[]>
 }
-interface FileSystemAccess {
-  showSaveFilePicker(options: {
-    suggestedName?: string
-    types?: PickerType[]
-  }): Promise<FileSystemFileHandle>
-  showOpenFilePicker(options: {
-    types?: PickerType[]
-    multiple?: false
-  }): Promise<FileSystemFileHandle[]>
+
+declare global {
+  interface Window {
+    showSaveFilePicker?: (options: {
+      suggestedName?: string
+      types?: PickerType[]
+    }) => Promise<FileSystemFileHandle>
+    showOpenFilePicker?: (options: {
+      types?: PickerType[]
+      multiple?: false
+    }) => Promise<FileSystemFileHandle[]>
+  }
 }
 
 const DEFAULT_NAME = "drawing.excalidraw"
@@ -44,11 +46,11 @@ const OPEN_TYPES: PickerType[] = [
   { description: "PNG with an embedded drawing", accept: { "image/png": [".png"] } },
 ]
 
-const fsa = (): Partial<FileSystemAccess> =>
-  typeof window === "undefined" ? {} : (window as unknown as Partial<FileSystemAccess>)
+const hasPicker = (name: "showSaveFilePicker" | "showOpenFilePicker"): boolean =>
+  typeof window !== "undefined" && typeof window[name] === "function"
 
-export const canSaveToFile = (): boolean => typeof fsa().showSaveFilePicker === "function"
-export const canPickFileHandle = (): boolean => typeof fsa().showOpenFilePicker === "function"
+const canSaveToFile = (): boolean => hasPicker("showSaveFilePicker")
+export const canPickFileHandle = (): boolean => hasPicker("showOpenFilePicker")
 
 /** The file "Save" writes to; null until the drawing was opened from or saved to one. */
 let current: FileSystemFileHandle | null = null
@@ -91,7 +93,8 @@ const isAbort = (err: unknown): boolean => err instanceof DOMException && err.na
  *  Null when the picker was dismissed. Only call when `canPickFileHandle()`. */
 export async function pickDrawingFile(): Promise<File | null> {
   try {
-    const [handle] = await fsa().showOpenFilePicker!({ types: OPEN_TYPES })
+    // Called on window: a detached picker throws "Illegal invocation".
+    const [handle] = (await window.showOpenFilePicker?.({ types: OPEN_TYPES })) ?? []
     if (!handle) return null
     setCurrentFile(handle)
     return await handle.getFile()
@@ -103,8 +106,9 @@ export async function pickDrawingFile(): Promise<File | null> {
 
 async function documentBlob(pages: readonly PageRecord[], activePageId: string): Promise<Blob> {
   // Only the images this document uses: the browser store also holds pictures from
-  // deleted elements and other drawings, which must not leak into a shared file.
-  const used = referencedFileIds(pages)
+  // other drawings, which must not leak into a shared file. Deleted elements count,
+  // since they stay in the file for undo.
+  const used = imageFileIds(pages.flatMap((p) => p.scene.getElementsIncludingDeleted()))
   const files = (await getAllFiles()).filter((f) => used.has(f.id))
   const record = Object.fromEntries(files.map((f) => [f.id, f])) as ExcalidrawFiles
   return toExcalidrawBlob(serializeDocument(pages, activePageId, undefined, record))
@@ -146,10 +150,12 @@ export async function saveDrawing(
       }
     }
     if (!target) {
-      target = await fsa().showSaveFilePicker!({
-        suggestedName: current?.name ?? DEFAULT_NAME,
-        types: [SCENE_TYPE],
-      })
+      target =
+        (await window.showSaveFilePicker?.({
+          suggestedName: current?.name ?? DEFAULT_NAME,
+          types: [SCENE_TYPE],
+        })) ?? null
+      if (!target) return false
       await write(target, blob)
       setCurrentFile(target)
     }

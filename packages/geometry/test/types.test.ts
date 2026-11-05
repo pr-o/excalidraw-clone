@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest"
-import type { Bounds, LineSegment, Point, Vector, ViewTransform } from "../src"
+import type { Bounds, Point, Vector, ViewTransform } from "../src"
 
 describe("geometry types", () => {
   it("Point literal is assignable", () => {
@@ -16,14 +16,6 @@ describe("geometry types", () => {
   it("Bounds literal is assignable", () => {
     const b: Bounds = { x: 0, y: 0, width: 10, height: 5 }
     expect(b.width * b.height).toBe(50)
-  })
-
-  it("LineSegment is a readonly tuple of two points", () => {
-    const seg: LineSegment = [
-      { x: 0, y: 0 },
-      { x: 1, y: 1 },
-    ]
-    expect(seg).toHaveLength(2)
   })
 
   it("ViewTransform literal is assignable", () => {

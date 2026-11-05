@@ -4,19 +4,25 @@ import {
   type Point,
   type ViewTransform,
   type UserGuides,
+  boundsCorners,
   boundsFromPoints,
+  midpoint,
+  pointAdd,
+  resizeHandles,
+  rotationHandlePoint,
   sceneToViewport,
 } from "@excalidraw-clone/geometry"
 import {
   type ExcalidrawElement,
+  type ExcalidrawLinearElement,
   getElementBounds,
   getElementsBounds,
+  isLinearElement,
   rotatedCorners,
 } from "@excalidraw-clone/scene"
 import type { Theme } from "./types"
 
 const HANDLE_SIZE = 8
-const ROTATION_HANDLE_OFFSET = 20
 const ROTATION_HANDLE_RADIUS = 5
 
 const SELECTION_STROKE: Record<Theme, string> = {
@@ -39,24 +45,10 @@ export interface MarqueeBox {
   end: Point
 }
 
-const cornersOf = (b: Bounds): Point[] => [
-  { x: b.x, y: b.y },
-  { x: b.x + b.width, y: b.y },
-  { x: b.x + b.width, y: b.y + b.height },
-  { x: b.x, y: b.y + b.height },
-]
+type Quad = [Point, Point, Point, Point]
 
-const midPoint = (a: Point, b: Point): Point => ({
-  x: (a.x + b.x) / 2,
-  y: (a.y + b.y) / 2,
-})
-
-const isLinear = (e: ExcalidrawElement): boolean => e.type === "arrow" || e.type === "line"
-
-const linearViewportPoints = (e: ExcalidrawElement, view: ViewTransform): Point[] =>
-  (e as { points: readonly Point[] }).points.map((p) =>
-    sceneToViewport({ x: e.x + p.x, y: e.y + p.y }, view),
-  )
+const linearViewportPoints = (e: ExcalidrawLinearElement, view: ViewTransform): Point[] =>
+  e.points.map((p) => sceneToViewport(pointAdd(e, p), view))
 
 /** Stroke the closed polygon through `pts` (viewport space). */
 const strokePolygon = (
@@ -71,18 +63,6 @@ const strokePolygon = (
   ctx.closePath()
   ctx.stroke()
 }
-
-/** Four corners (clockwise from top-left) plus the four edge midpoints. */
-const cornerAndEdgeHandles = ([c0, c1, c2, c3]: readonly Point[]): Point[] => [
-  c0!,
-  c1!,
-  c2!,
-  c3!,
-  midPoint(c0!, c1!),
-  midPoint(c1!, c2!),
-  midPoint(c2!, c3!),
-  midPoint(c3!, c0!),
-]
 
 const drawHandle = (ctx: CanvasRenderingContext2D, p: Point, theme: Theme): void => {
   ctx.fillStyle = SELECTION_FILL[theme]
@@ -104,7 +84,7 @@ const drawElementOutline = (
   view: ViewTransform,
   theme: Theme,
 ): void => {
-  if (isLinear(e)) {
+  if (isLinearElement(e)) {
     // An open polyline, not a closed polygon.
     const pts = linearViewportPoints(e, view)
     ctx.strokeStyle = SELECTION_STROKE[theme]
@@ -127,29 +107,19 @@ const drawElementChrome = (
   view: ViewTransform,
   theme: Theme,
 ): void => {
-  if (isLinear(e)) {
+  if (isLinearElement(e)) {
     const absV = linearViewportPoints(e, view)
     // Ghost midpoints first so solid handles paint on top.
     for (let k = 0; k < absV.length - 1; k += 1) {
-      drawGhostHandle(ctx, midPoint(absV[k]!, absV[k + 1]!), theme)
+      drawGhostHandle(ctx, midpoint(absV[k]!, absV[k + 1]!), theme)
     }
     for (const p of absV) drawHandle(ctx, p, theme)
     return
   }
   drawElementOutline(ctx, e, view, theme)
-  const corners = rotatedCorners(e).map((p) => sceneToViewport(p, view))
-  for (const h of cornerAndEdgeHandles(corners)) drawHandle(ctx, h, theme)
-
-  const [c0, c1] = corners as [Point, Point]
-  const topMid = midPoint(c0, c1)
-  const dx = c1.x - c0.x
-  const dy = c1.y - c0.y
-  const len = Math.hypot(dx, dy) || 1
-  // Unit normal pointing out of the top edge.
-  const rotPoint: Point = {
-    x: topMid.x + (dy / len) * ROTATION_HANDLE_OFFSET,
-    y: topMid.y - (dx / len) * ROTATION_HANDLE_OFFSET,
-  }
+  const corners = rotatedCorners(e).map((p) => sceneToViewport(p, view)) as Quad
+  for (const h of resizeHandles(corners)) drawHandle(ctx, h.at, theme)
+  const rotPoint = rotationHandlePoint(corners[0], corners[1])
   ctx.fillStyle = SELECTION_FILL[theme]
   ctx.strokeStyle = SELECTION_STROKE[theme]
   ctx.beginPath()
@@ -166,9 +136,9 @@ const drawGroupResizeChrome = (
 ): void => {
   const bounds = getElementsBounds(elements)
   if (!bounds) return
-  const corners = cornersOf(bounds).map((p) => sceneToViewport(p, view))
+  const corners = boundsCorners(bounds).map((p) => sceneToViewport(p, view)) as Quad
   strokePolygon(ctx, corners, theme)
-  for (const h of cornerAndEdgeHandles(corners)) drawHandle(ctx, h, theme)
+  for (const h of resizeHandles(corners)) drawHandle(ctx, h.at, theme)
 }
 
 export interface DrawSelectionChromeOptions {

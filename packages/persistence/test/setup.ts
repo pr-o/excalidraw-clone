@@ -1,7 +1,7 @@
 import "fake-indexeddb/auto"
 import { Blob as NodeBlob, File as NodeFile } from "node:buffer"
 import { afterEach, beforeEach } from "vitest"
-import { _resetDBForTesting } from "../src/image-store"
+import { _resetDBForTesting } from "../src/db"
 
 // jsdom's Blob/File lack arrayBuffer(); Node's native Blob/File have the full
 // spec-compliant API. They're safe to swap into globalThis for tests.

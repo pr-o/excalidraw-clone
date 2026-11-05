@@ -1,8 +1,9 @@
-import type {
-  ExcalidrawElement,
-  ExcalidrawElementBase,
-  ExcalidrawLinearBase,
-  ExcalidrawTextElement,
+import {
+  isLinearElement,
+  type ExcalidrawElement,
+  type ExcalidrawElementBase,
+  type ExcalidrawLinearBase,
+  type ExcalidrawTextElement,
 } from "@excalidraw-clone/scene"
 
 /** Style fields every element type carries. */
@@ -62,7 +63,7 @@ export function extractStyle(element: ExcalidrawElement): StyleClipboard {
       verticalAlign: element.verticalAlign,
     }
   }
-  if (element.type === "arrow" || element.type === "line") {
+  if (isLinearElement(element)) {
     clip.linear = {
       startArrowhead: element.startArrowhead,
       endArrowhead: element.endArrowhead,
@@ -81,8 +82,6 @@ export function applyStyle(element: ExcalidrawElement, clip: StyleClipboard): Ex
   const { gradient: _gradient, shadow: _shadow, ...rest } = element
   const next = { ...rest, ...clip.base }
   if (clip.text && next.type === "text") return { ...next, ...clip.text }
-  if (clip.linear && (next.type === "arrow" || next.type === "line")) {
-    return { ...next, ...clip.linear }
-  }
+  if (clip.linear && isLinearElement(next)) return { ...next, ...clip.linear }
   return next
 }

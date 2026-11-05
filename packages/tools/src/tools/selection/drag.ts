@@ -7,6 +7,8 @@ import {
   isBoundLabel,
 } from "@excalidraw-clone/scene"
 import type { ToolEffect, ToolContext, ToolEvent } from "../../types"
+import { CLEAR_GUIDES } from "../../types"
+import { addDraftEffect, discardDraftEffect } from "../../draft"
 import { buildRecommitEffect } from "./recommit"
 import { computeDragAlignment } from "./alignment"
 import type { SelectionState, Transition } from "./types"
@@ -49,23 +51,16 @@ export const translateElements = (
   }
 }
 
-export const buildDragMoveEffect = (
-  ids: readonly string[],
-  dx: number,
-  dy: number,
-): ToolEffect => ({
+const buildDragMoveEffect = (ids: readonly string[], dx: number, dy: number): ToolEffect => ({
   kind: "mutation",
   apply: (draft) => translateElements(draft, ids, dx, dy),
   skipHistory: true,
 })
 
-export const buildDragCommitEffect = (ids: readonly string[]): ToolEffect =>
-  buildRecommitEffect(ids)
-
 /** Undoes a drag by translating by the negation of the total translation
  *  applied over the drag (raw pointer travel plus any baked-in alignment
  *  correction). */
-export const buildDragRevertEffect = (
+const buildDragRevertEffect = (
   ids: readonly string[],
   appliedDx: number,
   appliedDy: number,
@@ -90,16 +85,7 @@ export const reduceDragging = (
         const selectable = copies.filter((c) => !isBoundLabel(c))
         return [
           { ...state, dupPending: false, dupIds, movedIds: dupIds },
-          [
-            {
-              kind: "mutation",
-              apply: (draft) => {
-                draft.push(...copies)
-              },
-              skipHistory: true,
-            },
-            { kind: "select", ids: selectable.map((c) => c.id) },
-          ],
+          [addDraftEffect(...copies), { kind: "select", ids: selectable.map((c) => c.id) }],
         ]
       }
       if (state.firstMove && ctx.grid.enabled) {
@@ -124,7 +110,7 @@ export const reduceDragging = (
               gridSnapDx,
               gridSnapDy,
             },
-            [buildDragMoveEffect(state.movedIds, dx, dy), { kind: "setGuides", guides: [] }],
+            [buildDragMoveEffect(state.movedIds, dx, dy), CLEAR_GUIDES],
           ]
         }
       }
@@ -138,7 +124,7 @@ export const reduceDragging = (
           { ...state, last: event.at, firstMove: false, alignDx: 0, alignDy: 0 },
           [
             buildDragMoveEffect(state.movedIds, rawDx - state.alignDx, rawDy - state.alignDy),
-            { kind: "setGuides", guides: [] },
+            CLEAR_GUIDES,
           ],
         ]
       }
@@ -156,28 +142,16 @@ export const reduceDragging = (
       ]
     }
     case "pointerUp": {
-      return [
-        { phase: "idle" },
-        [buildDragCommitEffect(state.movedIds), { kind: "setGuides", guides: [] }],
-      ]
+      return [{ phase: "idle" }, [buildRecommitEffect(state.movedIds), CLEAR_GUIDES]]
     }
     case "escape": {
       if (state.dupIds) {
-        const dupIds = state.dupIds
         return [
           { phase: "idle" },
           [
-            {
-              kind: "mutation",
-              apply: (draft) => {
-                for (let i = draft.length - 1; i >= 0; i -= 1) {
-                  if (dupIds.includes(draft[i]!.id)) draft.splice(i, 1)
-                }
-              },
-              skipHistory: true,
-            },
+            discardDraftEffect(...state.dupIds),
             { kind: "select", ids: state.dupRestore ?? [] },
-            { kind: "setGuides", guides: [] },
+            CLEAR_GUIDES,
           ],
         ]
       }
@@ -189,7 +163,7 @@ export const reduceDragging = (
             state.last.x - state.start.x + state.alignDx + state.gridSnapDx,
             state.last.y - state.start.y + state.alignDy + state.gridSnapDy,
           ),
-          { kind: "setGuides", guides: [] },
+          CLEAR_GUIDES,
         ],
       ]
     }

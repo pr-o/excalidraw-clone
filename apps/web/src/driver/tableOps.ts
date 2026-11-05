@@ -1,3 +1,4 @@
+import { clamp } from "@excalidraw-clone/geometry"
 import { fontSpec, wrapCellText } from "@excalidraw-clone/renderer"
 import {
   autoGrowRows,
@@ -6,6 +7,7 @@ import {
   insertCol,
   insertRow,
   setCellText,
+  updateElement,
   type CountLines,
   type ExcalidrawElement,
   type ExcalidrawTableElement,
@@ -50,30 +52,32 @@ export function applyTableOp(
   op: TableOp,
   cell?: { row: number; col: number } | null,
 ): void {
-  const i = draft.findIndex((e) => e.id === id)
-  const t = draft[i]
-  if (!t || t.type !== "table") return
-  const row = Math.min(t.rows - 1, Math.max(0, cell?.row ?? t.rows - 1))
-  const col = Math.min(t.cols - 1, Math.max(0, cell?.col ?? t.cols - 1))
-  const next = (() => {
-    switch (op) {
-      case "addRow":
-      case "insertRowBelow":
-        return insertRow(t, row + 1)
-      case "insertRowAbove":
-        return insertRow(t, row)
-      case "addCol":
-      case "insertColRight":
-        return insertCol(t, col + 1)
-      case "insertColLeft":
-        return insertCol(t, col)
-      case "delRow":
-        return deleteRow(t, row)
-      case "delCol":
-        return deleteCol(t, col)
-    }
-  })()
-  if (next !== t) draft[i] = next
+  updateElement(draft, id, (t) => (t.type === "table" ? tableAfter(t, op, cell) : undefined))
+}
+
+const tableAfter = (
+  t: ExcalidrawTableElement,
+  op: TableOp,
+  cell: { row: number; col: number } | null | undefined,
+): ExcalidrawTableElement => {
+  const row = clamp(cell?.row ?? t.rows - 1, 0, t.rows - 1)
+  const col = clamp(cell?.col ?? t.cols - 1, 0, t.cols - 1)
+  switch (op) {
+    case "addRow":
+    case "insertRowBelow":
+      return insertRow(t, row + 1)
+    case "insertRowAbove":
+      return insertRow(t, row)
+    case "addCol":
+    case "insertColRight":
+      return insertCol(t, col + 1)
+    case "insertColLeft":
+      return insertCol(t, col)
+    case "delRow":
+      return deleteRow(t, row)
+    case "delCol":
+      return deleteCol(t, col)
+  }
 }
 
 /** Commit one cell's text (and its spans, when given), growing rows to fit;
@@ -87,10 +91,10 @@ export function commitTableCell(
   appendRow = false,
   spans?: readonly TextSpan[],
 ): void {
-  const i = draft.findIndex((e) => e.id === id)
-  const t = draft[i]
-  if (!t || t.type !== "table") return
-  let next = setCellText(t, row, col, text, spans)
-  if (appendRow) next = insertRow(next, next.rows)
-  if (next !== t) draft[i] = growTableRows(next)
+  updateElement(draft, id, (t) => {
+    if (t.type !== "table") return undefined
+    let next = setCellText(t, row, col, text, spans)
+    if (appendRow) next = insertRow(next, next.rows)
+    return next === t ? undefined : growTableRows(next)
+  })
 }

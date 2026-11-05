@@ -1,11 +1,5 @@
 import { describe, expect, it } from "vitest"
-import {
-  centerViewOn,
-  minimapFit,
-  minimapToScene,
-  sceneToMinimap,
-  viewportSceneRect,
-} from "../src/minimap"
+import { centerViewOn, minimapFit, minimapToScene, sceneToMinimap, viewportSceneRect } from "../src"
 
 const view = { scrollX: -100, scrollY: -50, zoom: 2 }
 

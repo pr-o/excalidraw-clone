@@ -1,4 +1,10 @@
-import type { Bounds, Point } from "@excalidraw-clone/geometry"
+import {
+  boundsCenter,
+  pointAdd,
+  pointScale,
+  type Bounds,
+  type Point,
+} from "@excalidraw-clone/geometry"
 
 export type Side = "top" | "right" | "bottom" | "left"
 
@@ -24,18 +30,15 @@ export const sideOf = (center: Point, toward: Point): Side => {
 /** Midpoint of a bounds side, pushed outward by gap. */
 export const sideCenter = (bounds: Bounds, side: Side, gap: number): Point => {
   const n = NORMALS[side]
-  const cx = bounds.x + bounds.width / 2
-  const cy = bounds.y + bounds.height / 2
+  const c = boundsCenter(bounds)
   return {
-    x: cx + n.x * (bounds.width / 2 + gap),
-    y: cy + n.y * (bounds.height / 2 + gap),
+    x: c.x + n.x * (bounds.width / 2 + gap),
+    y: c.y + n.y * (bounds.height / 2 + gap),
   }
 }
 
 const stubOut = (p: Point, side: Side | null): Point =>
-  side === null
-    ? p
-    : { x: p.x + NORMALS[side].x * ELBOW_STUB, y: p.y + NORMALS[side].y * ELBOW_STUB }
+  side === null ? p : pointAdd(p, pointScale(NORMALS[side], ELBOW_STUB))
 
 /** Single-corner connection (straight when already aligned). */
 const connect = (a: Point, b: Point, horizontalFirst: boolean): Point[] => {

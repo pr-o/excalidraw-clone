@@ -1,12 +1,10 @@
-import type { Point } from "@excalidraw-clone/geometry"
-import { type ExcalidrawArrowElement, pointsPatch } from "@excalidraw-clone/scene"
-import { updateElement } from "../../draft"
+import { updateElement, type ExcalidrawArrowElement, pointsPatch } from "@excalidraw-clone/scene"
+import { pointAdd, type Point } from "@excalidraw-clone/geometry"
 import type { ToolEffect, ToolEvent } from "../../types"
 import type { LinearSnapshot } from "./endpoint"
 import type { SelectionState, Transition } from "./types"
 
-const absPoints = (a: ExcalidrawArrowElement): Point[] =>
-  a.points.map((p) => ({ x: a.x + p.x, y: a.y + p.y }))
+const absPoints = (a: ExcalidrawArrowElement): Point[] => a.points.map((p) => pointAdd(a, p))
 
 /** A bend edit: `edit` receives the arrow's absolute points and mutates them in place. */
 const editPoints = (
@@ -48,7 +46,7 @@ export const buildBendMoveEffect = (elementId: string, index: number, to: Point)
   )
 
 /** Re-anchors the arrow to the bounds of its (already moved) points. */
-export const buildBendCommitEffect = (elementId: string): ToolEffect =>
+const buildBendCommitEffect = (elementId: string): ToolEffect =>
   editPoints(elementId, () => undefined, false)
 
 export const buildBendRemoveEffect = (elementId: string, index: number): ToolEffect =>

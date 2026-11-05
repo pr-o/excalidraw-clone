@@ -1,4 +1,5 @@
 import {
+  isLinearElement,
   type ExcalidrawElement,
   type ExcalidrawTextElement,
   type FontFamily,
@@ -49,12 +50,12 @@ export function TextSection({
   ]
   // Tables share fontFamily/fontSize/textAlign with text; bold/italic don't apply (header is bold).
   const hasTables = selectedElements.some((e) => e.type === "table")
-  const fontTargets: readonly object[] = [
+  const fontTargets: readonly ExcalidrawElement[] = [
     ...textElements,
     ...selectedElements.filter((e) => e.type === "table"),
   ]
   // Arrow/line labels are zero-width and always centered.
-  const canAlignText = !selectedElements.some((e) => e.type === "arrow" || e.type === "line")
+  const canAlignText = !selectedElements.some(isLinearElement)
   // Legacy elements may lack fontWeight/fontStyle; absent ⟺ "normal".
   const isBold =
     commonValue(

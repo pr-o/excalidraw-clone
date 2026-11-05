@@ -10,7 +10,10 @@ import {
 } from "@excalidraw-clone/scene"
 import { RoughGenerator } from "roughjs/bin/generator"
 import { describe, expect, it, vi } from "vitest"
-import { arrowShape, diamondShape, ellipseShape, lineShape, polygonShape } from "../src/shapes"
+import { diamondShape } from "../src/shapes/diamond"
+import { ellipseShape } from "../src/shapes/ellipse"
+import { linearShape } from "../src/shapes/linear"
+import { polygonShape } from "../src/shapes/polygon"
 
 describe("ellipseShape", () => {
   it("calls gen.ellipse with center + size + seed", () => {
@@ -63,7 +66,7 @@ describe("lineShape", () => {
         { x: 10, y: 5 },
       ],
     }
-    lineShape(l, gen)
+    linearShape(l, gen)
     expect(spy).toHaveBeenCalledOnce()
     const [pts] = spy.mock.calls[0]!
     expect(pts).toEqual([
@@ -76,7 +79,7 @@ describe("lineShape", () => {
     const gen = new RoughGenerator()
     const spy = vi.spyOn(gen, "linearPath")
     const l = { ...newLine({ x: 0, y: 0 }), points: [{ x: 0, y: 0 }] }
-    expect(lineShape(l, gen)).toEqual([])
+    expect(linearShape(l, gen)).toEqual([])
     expect(spy).not.toHaveBeenCalled()
   })
 })
@@ -92,7 +95,7 @@ describe("arrowShape", () => {
         { x: 50, y: 0 },
       ],
     }
-    arrowShape(a, gen)
+    linearShape(a, gen)
     expect(spy).toHaveBeenCalledTimes(2)
   })
 
@@ -108,7 +111,7 @@ describe("arrowShape", () => {
       startArrowhead: null,
       endArrowhead: null,
     }
-    arrowShape(a, gen)
+    linearShape(a, gen)
     expect(spy).toHaveBeenCalledTimes(1)
   })
 
@@ -124,14 +127,14 @@ describe("arrowShape", () => {
       startArrowhead: "arrow" as const,
       endArrowhead: "arrow" as const,
     }
-    arrowShape(a, gen)
+    linearShape(a, gen)
     expect(spy).toHaveBeenCalledTimes(3)
   })
 
   it("returns no drawables for fewer than 2 points", () => {
     const gen = new RoughGenerator()
     const a = { ...newArrow({ x: 0, y: 0 }) }
-    expect(arrowShape(a, gen)).toEqual([])
+    expect(linearShape(a, gen)).toEqual([])
   })
 })
 

@@ -42,14 +42,7 @@
 ```ts
 // packages/scene/src/describe-history-change.ts
 export type HistoryChangeCategory =
-  | "initial"
-  | "added"
-  | "removed"
-  | "moved"
-  | "resized"
-  | "restyled"
-  | "reordered"
-  | "modified"
+  "initial" | "added" | "removed" | "moved" | "resized" | "restyled" | "reordered" | "modified"
 
 export interface HistoryChangeDescription {
   category: HistoryChangeCategory
@@ -231,14 +224,7 @@ export function describeHistoryChange(
   import type { ExcalidrawElement, ExcalidrawElementBase } from "./types"
 
   export type HistoryChangeCategory =
-    | "initial"
-    | "added"
-    | "removed"
-    | "moved"
-    | "resized"
-    | "restyled"
-    | "reordered"
-    | "modified"
+    "initial" | "added" | "removed" | "moved" | "resized" | "restyled" | "reordered" | "modified"
 
   export interface HistoryChangeDescription {
     category: HistoryChangeCategory
@@ -258,13 +244,7 @@ export function describeHistoryChange(
   const VOLATILE_FIELDS = ["versionNonce", "updated"] as const
 
   type ElementCategory =
-    | "added"
-    | "removed"
-    | "moved"
-    | "resized"
-    | "restyled"
-    | "modified"
-    | "unchanged"
+    "added" | "removed" | "moved" | "resized" | "restyled" | "modified" | "unchanged"
 
   function isLive(el: ExcalidrawElement | undefined): el is ExcalidrawElement {
     return el !== undefined && !el.isDeleted

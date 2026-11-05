@@ -1,4 +1,4 @@
-import type { ExcalidrawElement } from "@excalidraw-clone/scene"
+import { patchElement, type ExcalidrawElement } from "@excalidraw-clone/scene"
 import { pickElementAtPoint } from "./hitTest"
 
 const SCHEME_RE = /^[a-z][a-z0-9+.-]*:/i
@@ -35,9 +35,7 @@ export function commitElementLink(
   id: string,
   link: string | null,
 ): void {
-  const i = draft.findIndex((e) => e.id === id)
-  if (i < 0) return
-  draft[i] = { ...draft[i]!, link }
+  patchElement(draft, id, { link })
 }
 
 /** Open a link in a new tab if — and only if — it sanitizes to a safe href. */

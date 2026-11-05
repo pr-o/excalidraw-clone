@@ -1,6 +1,7 @@
 import { parseMermaidFlowchart, type MermaidFlowchart } from "@excalidraw-clone/scene"
 import { useState } from "react"
 import { Dialog } from "./shared/Dialog"
+import { Button } from "./shared/Button"
 
 export interface MermaidImportDialogProps {
   t: (key: string) => string
@@ -55,22 +56,15 @@ function MermaidImportBody({
         </p>
       )}
       <div className="flex justify-end gap-2">
-        <button
-          type="button"
-          onClick={onClose}
-          className="rounded border border-panel px-3 py-1 text-sm"
-        >
-          {t("mermaid.cancel")}
-        </button>
-        <button
-          type="button"
+        <Button onClick={onClose}>{t("mermaid.cancel")}</Button>
+        <Button
+          variant="primary"
           data-testid="mermaid-insert"
           disabled={chart === null || chart.nodes.length === 0}
           onClick={() => chart && onInsert(chart)}
-          className="rounded bg-accent px-3 py-1 text-sm text-white disabled:opacity-50"
         >
           {t("mermaid.insert")}
-        </button>
+        </Button>
       </div>
     </Dialog>
   )

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { newArrow, newRectangle, newText } from "../src/factories"
-import { sanitizeElement, sanitizeElements } from "../src/validate"
+import { sanitizeElement, sanitizeElements, sanitizeFiles } from "../src/validate"
 
 describe("sanitizeElement", () => {
   it("keeps a well-formed element as-is", () => {
@@ -62,5 +62,31 @@ describe("sanitizeElements", () => {
     expect(sanitizeElements([a, null, { nope: true }, b]).map((e) => e.id)).toEqual([a.id, b.id])
     expect(sanitizeElements(undefined)).toEqual([])
     expect(sanitizeElements("x")).toEqual([])
+  })
+})
+
+describe("sanitizeFiles", () => {
+  const png = { id: "f1", mimeType: "image/png", dataURL: "data:image/png;base64,AAAA", created: 5 }
+
+  it("keeps well-formed records, keyed by their own id", () => {
+    expect(sanitizeFiles({ whatever: png })).toEqual({ f1: png })
+  })
+
+  it("drops entries without an id or a data: URL, and non-objects", () => {
+    expect(
+      sanitizeFiles({
+        a: 5,
+        b: { ...png, id: "" },
+        c: { ...png, id: "c", dataURL: "https://example.com/x.png" },
+        d: null,
+      }),
+    ).toEqual({})
+    expect(sanitizeFiles("nope")).toEqual({})
+  })
+
+  it("repairs a missing mime type and timestamp", () => {
+    expect(sanitizeFiles({ f1: { id: "f1", dataURL: png.dataURL } })).toEqual({
+      f1: { id: "f1", mimeType: "application/octet-stream", dataURL: png.dataURL, created: 0 },
+    })
   })
 })

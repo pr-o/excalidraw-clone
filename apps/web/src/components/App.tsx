@@ -1,23 +1,23 @@
 "use client"
-import type { CanvasRenderer } from "@excalidraw-clone/renderer"
-import { unlockAll } from "@excalidraw-clone/scene"
-import { HistoryPanel, Icon, PagesTabBar, StatsPanel, Toolbar } from "@excalidraw-clone/ui"
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { I18nextProvider, useTranslation } from "react-i18next"
-import { preloadFiles } from "../driver/hydration"
 import { serializeDocument } from "@excalidraw-clone/persistence"
+import type { CanvasRenderer } from "@excalidraw-clone/renderer"
+import { patchElement, unlockAll } from "@excalidraw-clone/scene"
+import { HistoryPanel, Icon, PagesTabBar, StatsPanel, Toolbar } from "@excalidraw-clone/ui"
+import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from "react"
+import { I18nextProvider, useTranslation } from "react-i18next"
+import { saveDrawing } from "../driver/fileHandle"
+import { preloadFiles } from "../driver/hydration"
 import { createPageRecord, cyclePageId } from "../driver/pages"
 import { patchScene } from "../driver/patchScene"
 import { toggleViewMode } from "../driver/viewMode"
-import { useKeyboardAvoidance } from "../hooks/useKeyboardAvoidance"
-import { useFileDrop } from "../hooks/useFileDrop"
 import { useEditorEnvironment, useImageToolUpload } from "../hooks/useEditorEnvironment"
+import { useFileDrop } from "../hooks/useFileDrop"
+import { useKeyboardAvoidance } from "../hooks/useKeyboardAvoidance"
 import { usePages } from "../hooks/usePages"
 import { useSceneViews } from "../hooks/useSceneViews"
 import { ensureI18n } from "../i18n"
 import { attachClipboard } from "../keyboard/clipboard"
 import { attachShortcuts } from "../keyboard/shortcuts"
-import { saveDrawing } from "../driver/fileHandle"
 import { PresentationHost } from "../presentation/PresentationHost"
 import { useAppStore } from "../store"
 import { CanvasShell } from "./CanvasShell"
@@ -78,15 +78,23 @@ function Inner(): React.ReactElement {
   }, [])
   const onRendererTeardown = useCallback((): void => setRenderer(null), [])
 
+  // Effect events read the current pages, so the listeners attach once per scene
+  // instead of being torn down and re-added on every page change.
+  const cyclePage = useEffectEvent((dir: "next" | "prev") =>
+    switchToPage(cyclePageId(pages, activePageId, dir)),
+  )
+  const save = useEffectEvent(
+    (saveAs: boolean) => void saveDrawing(pages, activePageId, { saveAs }),
+  )
   useEffect(() => {
     return attachShortcuts({
       scene,
-      onNextPage: () => switchToPage(cyclePageId(pages, activePageId, "next")),
-      onPrevPage: () => switchToPage(cyclePageId(pages, activePageId, "prev")),
+      onNextPage: () => cyclePage("next"),
+      onPrevPage: () => cyclePage("prev"),
       onToggleStats: () => setStatsOpen((v) => !v),
-      onSave: (saveAs) => void saveDrawing(pages, activePageId, { saveAs }),
+      onSave: (saveAs) => save(saveAs),
     })
-  }, [scene, pages, activePageId, switchToPage])
+  }, [scene])
   useEffect(() => {
     return attachClipboard({ scene })
   }, [scene])
@@ -261,11 +269,8 @@ function Inner(): React.ReactElement {
                 stats={stats}
                 onChange={(patch) => {
                   if (stats.kind !== "single") return
-                  const id = stats.id
-                  scene.mutate((draft) => {
-                    const i = draft.findIndex((e) => e.id === id)
-                    if (i >= 0) draft[i] = { ...draft[i]!, ...patch }
-                  })
+                  const { id } = stats
+                  scene.mutate((draft) => patchElement(draft, id, patch))
                 }}
               />
 

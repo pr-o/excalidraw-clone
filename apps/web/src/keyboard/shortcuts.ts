@@ -3,7 +3,7 @@ import { expandIdsToFrameMembers, type Scene, isBoundLabel } from "@excalidraw-c
 import i18next from "i18next"
 import { announce } from "../components/LiveAnnouncer"
 import { applyPropertiesPatch } from "../driver/applyPropertiesPatch"
-import { replaceElements } from "../driver/patchScene"
+import { mapElements } from "../driver/patchScene"
 import { zoomAboutCentre } from "../driver/zoom"
 import { toggleViewMode } from "../driver/viewMode"
 import {
@@ -36,9 +36,9 @@ interface Bindings {
 }
 
 /** Ephemeral, app-lifetime style clipboard for Cmd/Ctrl+Alt+C / +V. Module-level
- *  rather than closure-level on purpose: `attachShortcuts` is re-invoked on every
- *  page switch and page CRUD, and a copied style must survive those so it can be
- *  pasted onto an element on another page. Never persisted, never cross-tab. */
+ *  rather than closure-level on purpose: `attachShortcuts` is re-invoked for each
+ *  page's scene, and a copied style must survive a page switch so it can be pasted
+ *  onto an element on another page. Never persisted, never cross-tab. */
 let styleClipboard: StyleClipboard | null = null
 
 interface KeyContext {
@@ -48,12 +48,7 @@ interface KeyContext {
   /** Ctrl or Cmd. */
   isMeta: boolean
   scene: Scene
-  nav: {
-    onNextPage?: (() => void) | undefined
-    onPrevPage?: (() => void) | undefined
-    onToggleStats?: (() => void) | undefined
-    onSave?: ((saveAs: boolean) => void) | undefined
-  }
+  nav: Omit<Bindings, "scene">
 }
 
 /** A shortcut. Returns true when it consumed the key press (even if it then had nothing to do),
@@ -159,7 +154,7 @@ const RULES: readonly Rule[] = [
     if (clip === null || ids.length === 0) return true
     c.e.preventDefault()
     const targets = new Set(ids)
-    replaceElements(c.scene, (el) =>
+    mapElements(c.scene, (el) =>
       targets.has(el.id) ? applyPropertiesPatch(el, applyStyle(el, clip)) : undefined,
     )
     return true
@@ -272,7 +267,7 @@ const RULES: readonly Rule[] = [
     const dx = c.key === "arrowleft" ? -step : c.key === "arrowright" ? step : 0
     const dy = c.key === "arrowup" ? -step : c.key === "arrowdown" ? step : 0
     const moved = new Set(expandIdsToFrameMembers(ids, c.scene.getElements()))
-    replaceElements(c.scene, (el) =>
+    mapElements(c.scene, (el) =>
       moved.has(el.id) ? { ...el, x: el.x + dx, y: el.y + dy } : undefined,
     )
     return true
@@ -291,6 +286,10 @@ const RULES: readonly Rule[] = [
   command(
     (c) => !c.isMeta && !c.e.altKey && c.e.shiftKey && c.key === "r",
     () => store().toggleRulers(),
+  ),
+  command(
+    (c) => !c.isMeta && !c.e.altKey && c.e.shiftKey && c.key === "m",
+    () => store().toggleMeasurements(),
   ),
 ]
 
@@ -311,14 +310,7 @@ const isTypingTarget = (target: HTMLElement | null): boolean =>
   target !== null &&
   (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)
 
-export function attachShortcuts({
-  scene,
-  onNextPage,
-  onPrevPage,
-  onToggleStats,
-  onSave,
-}: Bindings): () => void {
-  const nav: KeyContext["nav"] = { onNextPage, onPrevPage, onToggleStats, onSave }
+export function attachShortcuts({ scene, ...nav }: Bindings): () => void {
   const handler = (e: KeyboardEvent): void => {
     if (isTypingTarget(e.target as HTMLElement | null)) return
     // Presentation mode is read-only: every editor shortcut below is inert.

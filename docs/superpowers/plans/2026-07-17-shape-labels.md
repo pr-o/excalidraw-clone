@@ -151,12 +151,7 @@ Create `packages/geometry/src/label-box.ts`:
 import type { Bounds } from "./types"
 
 export type LabelShapeKind =
-  | "rectangle"
-  | "ellipse"
-  | "diamond"
-  | "triangle"
-  | "parallelogram"
-  | "hexagon"
+  "rectangle" | "ellipse" | "diamond" | "triangle" | "parallelogram" | "hexagon"
 
 const centered = (b: Bounds, width: number, height: number): Bounds => ({
   x: b.x + (b.width - width) / 2,

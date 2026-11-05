@@ -3,8 +3,8 @@ import type { Drawable, Options } from "roughjs/bin/core"
 import type { RoughGenerator } from "roughjs/bin/generator"
 import type { Point as RoughPoint } from "roughjs/bin/geometry"
 
-export const ARROWHEAD_LENGTH = 20
-export const ARROWHEAD_ANGLE = Math.PI / 6
+const ARROWHEAD_LENGTH = 20
+const ARROWHEAD_ANGLE = Math.PI / 6
 
 const filled = (opts: Options): Options => {
   const o: Options = { ...opts, fillStyle: "solid" }

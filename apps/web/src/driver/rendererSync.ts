@@ -49,6 +49,13 @@ export function syncRendererWithStore(
     ) {
       renderer.setShowUserGuides(s.rulersVisible && !isReadOnly(s))
     }
+    if (
+      s.measurementsVisible !== prev.measurementsVisible ||
+      s.presenting !== prev.presenting ||
+      s.viewMode !== prev.viewMode
+    ) {
+      renderer.setShowMeasurements(s.measurementsVisible && !isReadOnly(s))
+    }
     if (s.activeTool !== prev.activeTool && prev.activeTool === "laser") laser.clear()
     if (
       s.activeTool !== prev.activeTool &&
