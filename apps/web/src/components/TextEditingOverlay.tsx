@@ -1,7 +1,7 @@
 "use client"
 import { fontFamilyName } from "@excalidraw-clone/renderer"
 import { enterOnBullet, normalizeSpans, type Scene } from "@excalidraw-clone/scene"
-import React, { useEffect, useEffectEvent, useRef } from "react"
+import { useEffect, useEffectEvent, useRef } from "react"
 import { commitTextEdit } from "../driver/commitTextEdit"
 import { measureStandaloneText } from "../driver/measureStandaloneText"
 import { renameFrame } from "../driver/renameFrame"

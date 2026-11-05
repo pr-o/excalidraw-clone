@@ -1,11 +1,12 @@
-import { type Point, pointInRectangle } from "@excalidraw-clone/geometry"
 import {
+  deleteElements,
+  replaceElements,
   type ExcalidrawElement,
   expandIdsToGroups,
   hitTestElement,
   isBoundLabel,
 } from "@excalidraw-clone/scene"
-import { deleteElements, replaceElements } from "../draft"
+import { type Point, pointInRectangle } from "@excalidraw-clone/geometry"
 import type { Tool, ToolContext, ToolEffect, ToolEvent } from "../types"
 import { NO_EFFECTS } from "../types"
 

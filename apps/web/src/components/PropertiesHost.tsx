@@ -16,7 +16,7 @@ import {
 import { PropertiesPanel } from "@excalidraw-clone/ui"
 import { useTranslation } from "react-i18next"
 import { applySelectionPatch, setWholeTextStyle } from "../driver/applyPropertiesPatch"
-import { patchScene, replaceElements } from "../driver/patchScene"
+import { patchScene, mapElements } from "../driver/patchScene"
 import { applyTableOp } from "../driver/tableOps"
 import {
   deleteSelection,
@@ -47,7 +47,7 @@ export function PropertiesHost({
   const { t } = useTranslation()
   const moveTo = (moved: readonly { id: string; x: number; y: number }[]): void => {
     const byId = new Map(moved.map((p) => [p.id, p]))
-    replaceElements(scene, (el) => {
+    mapElements(scene, (el) => {
       const p = byId.get(el.id)
       return p && { ...el, x: p.x, y: p.y }
     })
@@ -60,7 +60,7 @@ export function PropertiesHost({
     // One history entry: move the nodes and drop stale bends on their connectors.
     const byId = new Map(moved.map((p) => [p.id, p]))
     const straight = new Map(straightenConnectors(all, new Set(byId.keys())).map((a) => [a.id, a]))
-    replaceElements(scene, (el) => {
+    mapElements(scene, (el) => {
       const p = byId.get(el.id)
       return p ? { ...el, x: p.x, y: p.y } : straight.get(el.id)
     })
@@ -70,11 +70,9 @@ export function PropertiesHost({
       t={t}
       selectedElements={selectedElements}
       labelElements={selectedLabels}
-      onChange={(patch) =>
-        replaceElements(scene, (el) => applySelectionPatch(el, patch, selectedIds))
-      }
+      onChange={(patch) => mapElements(scene, (el) => applySelectionPatch(el, patch, selectedIds))}
       onSetTextStyle={(style, on) =>
-        replaceElements(scene, (el) =>
+        mapElements(scene, (el) =>
           selectedIds.includes(el.id) || (isBoundLabel(el) && selectedIds.includes(el.containerId))
             ? setWholeTextStyle(el, style, on)
             : undefined,

@@ -1,12 +1,12 @@
-import { boundsCenter, type Point } from "@excalidraw-clone/geometry"
 import {
+  deleteElements,
   type ExcalidrawElement,
   expandIdsToFrameMembers,
   expandIdsToGroups,
   getElementsBounds,
   isLinearElement,
 } from "@excalidraw-clone/scene"
-import { deleteElements } from "../../draft"
+import { boundsCenter, type Point } from "@excalidraw-clone/geometry"
 import type { ToolContext, ToolEffect, ToolEvent } from "../../types"
 import { buildBendInsertEffect } from "./bend"
 import { reduceDoubleClick } from "./double-click"

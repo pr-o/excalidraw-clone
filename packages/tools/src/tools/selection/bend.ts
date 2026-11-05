@@ -1,6 +1,5 @@
+import { updateElement, type ExcalidrawArrowElement, pointsPatch } from "@excalidraw-clone/scene"
 import { pointAdd, type Point } from "@excalidraw-clone/geometry"
-import { type ExcalidrawArrowElement, pointsPatch } from "@excalidraw-clone/scene"
-import { updateElement } from "../../draft"
 import type { ToolEffect, ToolEvent } from "../../types"
 import type { LinearSnapshot } from "./endpoint"
 import type { SelectionState, Transition } from "./types"

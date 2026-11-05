@@ -25,7 +25,7 @@ const IMAGE_TYPES: ReadonlySet<string> = new Set([
 ])
 
 /** A pasted or dropped picture is inserted at its natural size, but no larger than this. */
-export const MAX_INSERTED_SIZE = 600
+const MAX_INSERTED_SIZE = 600
 
 export const isInsertableImage = (blob: Blob): boolean => IMAGE_TYPES.has(blob.type)
 

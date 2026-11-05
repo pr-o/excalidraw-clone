@@ -1,4 +1,4 @@
-import { fitToContent } from "@excalidraw-clone/geometry"
+import { fitToContent, type Point } from "@excalidraw-clone/geometry"
 import {
   bringForward,
   bringToFront,
@@ -18,7 +18,7 @@ import type { ContextMenuItem } from "@excalidraw-clone/ui"
 import { buildPaste, copyPayload, selectableIds } from "../driver/clipboard"
 import { commitElementLink } from "../driver/link"
 import { canMoveElementToPage } from "../driver/moveToPage"
-import { deleteElements, patchScene, reorderElements } from "../driver/patchScene"
+import { deleteFromScene, patchScene, reorderElements } from "../driver/patchScene"
 import {
   deleteSelection,
   duplicateSelection,
@@ -39,8 +39,6 @@ export interface MenuEnv {
   /** Opens the "move to page" picker for an element at the menu's position. */
   openMovePicker: (elementId: string) => void
 }
-
-type Point = { x: number; y: number }
 
 const item = (id: string, label: string, perform: () => void): ContextMenuItem => ({
   id,
@@ -160,7 +158,7 @@ export function elementMenuItems(
       const payload = copyPayload(scene.getElements(), elementIds)
       if (!payload) return
       writeClipboard(payload.text)
-      deleteElements(scene, payload.ids)
+      deleteFromScene(scene, payload.ids)
       useAppStore.getState().setSelection([])
     }),
     pasteItem(env, scenePoint),

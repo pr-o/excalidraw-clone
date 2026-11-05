@@ -1,5 +1,5 @@
-import { pointAdd, type Point } from "@excalidraw-clone/geometry"
 import {
+  updateElement,
   addBackRef,
   BINDING_GAP,
   bindingTargetAt,
@@ -10,7 +10,7 @@ import {
   type ExcalidrawLinearElement,
   type PointBinding,
 } from "@excalidraw-clone/scene"
-import { updateElement } from "../../draft"
+import { pointAdd, type Point } from "@excalidraw-clone/geometry"
 import type { ToolEffect, ToolContext, ToolEvent } from "../../types"
 import type { LinearEnd, SelectionState, Transition } from "./types"
 

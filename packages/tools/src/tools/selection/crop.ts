@@ -1,3 +1,4 @@
+import { updateElement, mirrorOf, type ExcalidrawImageElement } from "@excalidraw-clone/scene"
 import {
   boundsCenter,
   pointAdd,
@@ -5,8 +6,6 @@ import {
   type Bounds,
   type Point,
 } from "@excalidraw-clone/geometry"
-import { mirrorOf, type ExcalidrawImageElement } from "@excalidraw-clone/scene"
-import { updateElement } from "../../draft"
 import type { ToolEffect, ToolContext, ToolEvent } from "../../types"
 import type { ResizeHandle, SelectionState, Transition } from "./types"
 import { findHandleAt } from "./handles"

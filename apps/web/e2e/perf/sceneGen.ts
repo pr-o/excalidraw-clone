@@ -22,7 +22,7 @@ const CELL_H = 200
 /** Elements per cell (the cluster built by `cluster`). */
 const PER_CELL = 12
 
-export function generateScene(n: number, seed = 1): El[] {
+function generateScene(n: number, seed = 1): El[] {
   const rand = rng(seed)
   let counter = 0
   const id = (p: string): string => `${p}-${(counter++).toString(36)}`

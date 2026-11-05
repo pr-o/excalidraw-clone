@@ -1,6 +1,6 @@
 "use client"
 import { iconHTML } from "@excalidraw-clone/ui"
-import React, { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 
 /** Milliseconds of pointer/keyboard inactivity before the chrome fades out. */
 const IDLE_FADE_MS = 3000

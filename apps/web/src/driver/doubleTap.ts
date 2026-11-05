@@ -1,5 +1,5 @@
 /** Two touch taps closer than this in time (ms) and space (px) are a double-tap. */
-export const DOUBLE_TAP_MS = 300
+const DOUBLE_TAP_MS = 300
 const DOUBLE_TAP_SLOP = 24
 /** A press that drifts or lingers past these is not a tap. */
 const TAP_MOVE_SLOP = 10

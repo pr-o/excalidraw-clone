@@ -1,4 +1,11 @@
-import { boundsCenter, clamp, rotatePoint, type Axis, type Point } from "@excalidraw-clone/geometry"
+import {
+  boundsCenter,
+  clamp,
+  rotatePoint,
+  type Axis,
+  type Bounds,
+  type Point,
+} from "@excalidraw-clone/geometry"
 import { DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE } from "./defaults"
 import { normalizeSpans, remapSpansForText, sanitizeSpans, type TextSpan } from "./spans"
 import type { ExcalidrawElement, ExcalidrawTableElement } from "./types"
@@ -138,7 +145,7 @@ export interface ResizeAnchor {
  *  edge/corner opposite the dragged handle stays put. */
 export const fitTableBox = (
   t: ExcalidrawTableElement,
-  box: { x: number; y: number; width: number; height: number },
+  box: Bounds,
   anchor: ResizeAnchor,
 ): ExcalidrawTableElement => {
   const s = settleTable({ ...t, ...box }, t)
@@ -286,12 +293,8 @@ export const setTrackSize = (
   return withSizes(t, { [key]: tracks.map((s, i) => (i === index ? Math.max(min, size) : s)) })
 }
 
-export interface CellRect {
-  x: number
-  y: number
-  width: number
-  height: number
-}
+/** A cell's box in table-local coordinates. */
+export type CellRect = Bounds
 
 /** Cell box in table-local coordinates (origin at the table's top-left). */
 export const cellRect = (t: ExcalidrawTableElement, row: number, col: number): CellRect => ({

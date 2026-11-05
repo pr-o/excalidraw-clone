@@ -1,5 +1,9 @@
-import { type ExcalidrawTableElement, setTrackSize, toTableLocal } from "@excalidraw-clone/scene"
-import { replaceElements } from "../../draft"
+import {
+  replaceElements,
+  type ExcalidrawTableElement,
+  setTrackSize,
+  toTableLocal,
+} from "@excalidraw-clone/scene"
 import type { ToolEffect, ToolEvent } from "../../types"
 import { buildRecommitEffect } from "./recommit"
 import type { SelectionState, Transition } from "./types"

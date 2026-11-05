@@ -2,14 +2,7 @@
 import { fitToContent } from "@excalidraw-clone/geometry"
 import { getElementBounds, type ExcalidrawElement, type Scene } from "@excalidraw-clone/scene"
 import { FindOverlay } from "@excalidraw-clone/ui"
-import React, {
-  useDeferredValue,
-  useEffect,
-  useEffectEvent,
-  useMemo,
-  useRef,
-  useState,
-} from "react"
+import { useDeferredValue, useEffect, useEffectEvent, useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import {
   collectSearchableItems,

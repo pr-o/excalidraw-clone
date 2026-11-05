@@ -155,6 +155,7 @@ export {
   sanitizeFiles,
 } from "./validate"
 export { imageFileIds } from "./image-files"
+export { deleteElements, patchElement, replaceElements, updateElement } from "./draft"
 export { isBoundLabel } from "./bound-label"
 export type { BoundLabel } from "./bound-label"
 export { elementShadow, shadowMargin } from "./shadow"

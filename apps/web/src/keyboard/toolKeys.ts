@@ -8,7 +8,7 @@ export type ToolKeyMap = Record<ToolName, string>
 export type ToolKeyOverrides = Partial<ToolKeyMap>
 
 /** Plain keys the editor handles itself (help, space-pan); never bindable to a tool. */
-export const RESERVED_KEYS: readonly string[] = ["?", "/", " "]
+const RESERVED_KEYS: readonly string[] = ["?", "/", " "]
 
 export type ToolKeyError = "modifier" | "notPrintable" | "reserved" | "taken"
 

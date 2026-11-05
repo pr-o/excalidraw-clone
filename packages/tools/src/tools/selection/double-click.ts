@@ -1,5 +1,5 @@
-import type { Point } from "@excalidraw-clone/geometry"
 import {
+  patchElement,
   cellAtLocal,
   isLinearElement,
   LABELABLE_TYPES,
@@ -7,7 +7,7 @@ import {
   newLabelForLinear,
   toTableLocal,
 } from "@excalidraw-clone/scene"
-import { patchElement } from "../../draft"
+import type { Point } from "@excalidraw-clone/geometry"
 import type { ToolContext } from "../../types"
 import { buildBendRemoveEffect } from "./bend"
 import { findHandleAt } from "./handles"

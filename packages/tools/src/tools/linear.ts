@@ -3,6 +3,7 @@ import {
   addBackRef,
   BINDING_GAP,
   bindingTargetAt,
+  patchElement,
   pointsPatch,
   type ExcalidrawElement,
   type PointBinding,
@@ -11,7 +12,6 @@ import {
   addDraftEffect,
   discardDraftEffect,
   patchDraftEffect,
-  patchElement,
   selectAndSwitchEffects,
 } from "../draft"
 import type { Modifiers, ToolEffect, ToolEvent } from "../types"

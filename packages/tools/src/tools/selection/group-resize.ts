@@ -1,7 +1,6 @@
+import { replaceElements, type ExcalidrawElement, resizeElements } from "@excalidraw-clone/scene"
 import type { Point } from "@excalidraw-clone/geometry"
-import { type ExcalidrawElement, resizeElements } from "@excalidraw-clone/scene"
 import type { Modifiers, ToolEffect, ToolContext, ToolEvent } from "../../types"
-import { replaceElements } from "../../draft"
 import { buildRecommitEffect } from "./recommit"
 import { anchorSides, computeResize, type ResizeOrigin } from "./resize"
 import type { ResizeHandle, SelectionState, Transition } from "./types"
