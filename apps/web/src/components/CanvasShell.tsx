@@ -45,8 +45,7 @@ export function CanvasShell({
         c.style.width = `${w}px`
         c.style.height = `${h}px`
       }
-      const ctx = canvas.getContext("2d")
-      ctx?.setTransform(dpr, 0, 0, dpr, 0, 0)
+      // The renderer reads the pixel ratio off each canvas (pixelRatioOf) on every frame.
     }
 
     resize()

@@ -144,6 +144,8 @@ const drawGroupResizeChrome = (
 export interface DrawSelectionChromeOptions {
   /** True for the dedicated overlay canvas (clear it first); false when overlaying on the main canvas (preserve existing draws). */
   clearBackground: boolean
+  /** Device pixels per CSS pixel of the target canvas (see `pixelRatioOf`). */
+  pixelRatio?: number
 }
 
 export const drawSelectionChrome = (
@@ -159,6 +161,9 @@ export const drawSelectionChrome = (
 ): void => {
   ctx.setTransform(1, 0, 0, 1, 0, 0)
   if (options.clearBackground) ctx.clearRect(0, 0, canvas.width, canvas.height)
+  // Everything after this draws in CSS pixels; guides, lasso and measurements reuse it.
+  const r = options.pixelRatio ?? 1
+  ctx.setTransform(r, 0, 0, r, 0, 0)
   const byId = new Map(elements.map((e) => [e.id, e]))
   if (highlightIds.length > 0) {
     for (const id of highlightIds) {

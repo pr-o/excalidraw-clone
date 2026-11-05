@@ -14,13 +14,15 @@ export const drawCropDim = (
   el: ExcalidrawImageElement,
   img: HTMLImageElement,
   view: ViewTransform,
+  pixelRatio = 1,
 ): void => {
   const c = el.crop ?? { x: 0, y: 0, width: 1, height: 1 }
   const kx = el.width / c.width
   const ky = el.height / c.height
   ctx.save()
   ctx.globalCompositeOperation = "destination-over"
-  ctx.setTransform(view.zoom, 0, 0, view.zoom, view.scrollX * view.zoom, view.scrollY * view.zoom)
+  const s = view.zoom * pixelRatio
+  ctx.setTransform(s, 0, 0, s, view.scrollX * s, view.scrollY * s)
   applyElementTransform(ctx, el)
   ctx.beginPath()
   ctx.rect(-c.x * kx, -c.y * ky, kx, ky)

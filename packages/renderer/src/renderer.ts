@@ -19,6 +19,7 @@ import {
   drawUserGuides,
 } from "./overlay"
 import { drawMeasurements, selectionMeasurements } from "./measurements"
+import { pixelRatioOf } from "./pixel-ratio"
 import { ShapeCache } from "./shape-cache"
 import { resolveColor } from "./theme-colors"
 import type { CanvasRendererOptions, GridOptions, Theme } from "./types"
@@ -233,11 +234,15 @@ export class CanvasRenderer {
       ctx.fillRect(0, 0, canvas.width, canvas.height)
     }
     const { scrollX, scrollY, zoom } = this.viewTransform
-    ctx.setTransform(zoom, 0, 0, zoom, scrollX * zoom, scrollY * zoom)
-    drawGrid(ctx, canvas, this.viewTransform, this.grid, this.theme)
+    const ratio = pixelRatioOf(canvas)
+    const scale = zoom * ratio
+    ctx.setTransform(scale, 0, 0, scale, scrollX * scale, scrollY * scale)
+    const cssWidth = canvas.width / ratio
+    const cssHeight = canvas.height / ratio
+    drawGrid(ctx, cssWidth, cssHeight, this.viewTransform, this.grid, this.theme)
     const elements = this.scene.getElements()
     const getImage = (id: string): HTMLImageElement | undefined => this.imageMap.get(id)
-    const view = viewportSceneRect(this.viewTransform, canvas.width, canvas.height)
+    const view = viewportSceneRect(this.viewTransform, cssWidth, cssHeight)
     const byId = new Map(elements.map((e) => [e.id, e] as const))
     const occludeBg = resolveColor(
       this.canvasBg === "transparent" ? "#ffffff" : this.canvasBg,
@@ -285,7 +290,7 @@ export class CanvasRenderer {
       this.theme,
       this.marquee,
       this.highlight,
-      { clearBackground: onOverlay },
+      { clearBackground: onOverlay, pixelRatio: pixelRatioOf(this.overlayCanvas ?? this.canvas) },
     )
     drawAlignmentGuides(ctx, this.guides, this.viewTransform, this.theme)
     if (this.showMeasurements) {
@@ -297,7 +302,13 @@ export class CanvasRenderer {
     if (cropEl?.type === "image" && cropEl.fileId !== null) {
       const img = this.imageMap.get(cropEl.fileId)
       if (img && img.complete && img.naturalWidth > 0)
-        drawCropDim(ctx, cropEl, img, this.viewTransform)
+        drawCropDim(
+          ctx,
+          cropEl,
+          img,
+          this.viewTransform,
+          pixelRatioOf(this.overlayCanvas ?? this.canvas),
+        )
     }
   }
 }

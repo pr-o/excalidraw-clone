@@ -6,6 +6,7 @@ export const DEPENDS_ON: readonly string[] = [GEOMETRY_NAME, SCENE_NAME]
 export { CanvasRenderer, preloadSharedImage } from "./renderer"
 export type { CanvasRendererOptions, GridOptions, Theme } from "./types"
 export type { MarqueeBox } from "./overlay"
+export { pixelRatioOf } from "./pixel-ratio"
 export { resolveColor } from "./theme-colors"
 export { exportBounds, renderToSVG } from "./svg"
 export {

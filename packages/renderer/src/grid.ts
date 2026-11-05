@@ -8,7 +8,9 @@ const GRID_COLOR: Record<Theme, string> = {
 
 export const drawGrid = (
   ctx: CanvasRenderingContext2D,
-  canvas: HTMLCanvasElement,
+  /** The canvas's size in CSS pixels (what the view transform maps to). */
+  width: number,
+  height: number,
   view: ViewTransform,
   grid: GridOptions,
   theme: Theme,
@@ -16,7 +18,7 @@ export const drawGrid = (
   if (!grid.enabled) return
   if (grid.size <= 0) return
   const topLeft = viewportToScene({ x: 0, y: 0 }, view)
-  const bottomRight = viewportToScene({ x: canvas.width, y: canvas.height }, view)
+  const bottomRight = viewportToScene({ x: width, y: height }, view)
   const minX = Math.floor(topLeft.x / grid.size) * grid.size
   const maxX = Math.ceil(bottomRight.x / grid.size) * grid.size
   const minY = Math.floor(topLeft.y / grid.size) * grid.size

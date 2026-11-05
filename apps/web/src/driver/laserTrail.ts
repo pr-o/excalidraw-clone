@@ -1,4 +1,5 @@
 import { sceneToViewport, type Point, type ViewTransform } from "@excalidraw-clone/geometry"
+import { pixelRatioOf } from "@excalidraw-clone/renderer"
 
 interface TrailPoint {
   x: number
@@ -85,6 +86,9 @@ export class LaserTrail {
     ctx.setTransform(1, 0, 0, 1, 0, 0)
     ctx.clearRect(0, 0, canvas.width, canvas.height)
     if (this.points.length < 2) return
+    // The trail is drawn in CSS pixels, at the canvas's pixel ratio.
+    const r = pixelRatioOf(canvas)
+    ctx.setTransform(r, 0, 0, r, 0, 0)
     const view = this.getView()
     const nowT = this.now()
     ctx.lineCap = "round"

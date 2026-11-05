@@ -115,8 +115,8 @@ export const drawMeasurements = (
   view: ViewTransform,
   theme: Theme,
 ): void => {
+  // Screen space (CSS px, at the canvas's pixel ratio) is already set by drawSelectionChrome.
   ctx.save()
-  ctx.setTransform(1, 0, 0, 1, 0, 0)
   ctx.font = FONT
   ctx.textAlign = "center"
   ctx.textBaseline = "middle"
