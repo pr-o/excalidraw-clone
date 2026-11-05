@@ -19,15 +19,11 @@ export function reconcileFrameMembership(
   draft: ExcalidrawElement[],
   reconciledPrev?: readonly ExcalidrawElement[],
 ): void {
-  const frameEls = draft.filter((e) => e.type === "frame" && !e.isDeleted)
-  const frames = frameEls.map((f) => ({
-    id: f.id,
-    b: { x: f.x, y: f.y, width: f.width, height: f.height },
-  }))
+  const frames = draft.filter((e) => e.type === "frame" && !e.isDeleted)
   let unchanged: Set<ExcalidrawElement> | null = null
   if (reconciledPrev) {
     const prevFrames = reconciledPrev.filter((e) => e.type === "frame" && !e.isDeleted)
-    if (prevFrames.length === frameEls.length && prevFrames.every((f, i) => f === frameEls[i]))
+    if (prevFrames.length === frames.length && prevFrames.every((f, i) => f === frames[i]))
       unchanged = new Set(reconciledPrev)
   }
   for (let i = 0; i < draft.length; i += 1) {
@@ -38,7 +34,7 @@ export function reconcileFrameMembership(
     if (isBoundLabel(e)) continue
     let owner: string | null = null
     const eb = getElementBounds(e)
-    for (const frame of frames) if (boundsContains(frame.b, eb)) owner = frame.id
+    for (const frame of frames) if (boundsContains(frame, eb)) owner = frame.id
     if (e.frameId !== owner) draft[i] = { ...e, frameId: owner }
   }
 }

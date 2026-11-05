@@ -84,10 +84,8 @@ export { expandIdsToGroups, groupElements, ungroupElements } from "./groups"
 export { expandIdsToFrameMembers, reconcileFrameMembership } from "./frames"
 export { lockElements, unlockAll, unlockElements } from "./locking"
 export { flipElements, mirrorOf } from "./flip"
-export type { FlipAxis } from "./flip"
 export { resetCrop } from "./reset-crop"
 export { resizeElements } from "./resize-group"
-export type { ResizeBounds } from "./resize-group"
 export { bringForward, bringToFront, sendBackward, sendToBack } from "./z-order"
 export {
   GRADIENT_TYPES,
@@ -217,6 +215,7 @@ export {
   TABLE_PAD_X,
   TABLE_PAD_Y,
 } from "./table"
+export type { ResizeAnchor } from "./table"
 export type { CellRect, CellSpans, CountLines } from "./table"
 export {
   addComment,

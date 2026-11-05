@@ -1,12 +1,17 @@
 import {
+  type Bounds,
   type EdgeKind,
   type Point,
   type PolygonShapeKind,
   boundsCenter,
+  clamp,
+  dot,
   edgePointToward,
+  lerp,
   mirroredShapeVertices,
   normalize,
   pointAdd,
+  pointDistance,
   pointScale,
   polygonEdgePointToward,
 } from "@excalidraw-clone/geometry"
@@ -15,22 +20,16 @@ import { routeElbow, sideCenter, sideOf, type Side } from "./elbow"
 import { mirrorOf } from "./flip"
 import { hitTestElement } from "./hit-test"
 import { pointsPatch } from "./points-patch"
-import type { ElementType, ExcalidrawElement, PointBinding } from "./types"
+import { LABELABLE_TYPES } from "./reconcile-bound-text"
+import type { ElementType, ExcalidrawArrowElement, ExcalidrawElement, PointBinding } from "./types"
 import { isBoundLabel } from "./bound-label"
 
 export const BINDING_GAP = 4
 /** How far outside a shape's edge (scene px) an arrow endpoint still binds to it. */
-export const BINDING_PROXIMITY = 12
+const BINDING_PROXIMITY = 12
 
 export const BINDABLE_TYPES: ReadonlySet<ElementType> = new Set<ElementType>([
-  "rectangle",
-  "diamond",
-  "ellipse",
-  "triangle",
-  "parallelogram",
-  "hexagon",
-  "pentagon",
-  "octagon",
+  ...LABELABLE_TYPES,
   "image",
   "text",
   "table",
@@ -51,32 +50,29 @@ const polygonKindFor = (type: ElementType): PolygonShapeKind | null =>
     ? type
     : null
 
+/** The topmost shape an arrow end at `point` binds to: one under the point, else
+ *  one whose edge is within BINDING_PROXIMITY (where users aim arrows). */
 export const bindingTargetAt = (
   point: Point,
   elements: readonly ExcalidrawElement[],
 ): ExcalidrawElement | null => {
-  for (let i = elements.length - 1; i >= 0; i -= 1) {
-    const el = elements[i]!
-    if (!canBindTo(el) || el.locked) continue
-    if (isBoundLabel(el)) continue
-    if (hitTestElement(el, point)) return el
-  }
-  // Near miss: a point just outside a shape's edge (where users aim arrows) still binds.
-  for (let i = elements.length - 1; i >= 0; i -= 1) {
-    const el = elements[i]!
-    if (!canBindTo(el) || el.locked) continue
-    if (isBoundLabel(el)) continue
+  const candidates = elements
+    .filter((el) => canBindTo(el) && !el.locked && !isBoundLabel(el))
+    .reverse()
+  const hit = candidates.find((el) => hitTestElement(el, point))
+  if (hit) return hit
+  // Near miss: step the point up to BINDING_PROXIMITY towards the shape's centre.
+  const near = candidates.find((el) => {
     const center = boundsCenter(getElementBounds(el))
-    const d = Math.hypot(center.x - point.x, center.y - point.y)
-    if (d === 0) continue
+    const d = pointDistance(center, point)
+    if (d === 0) return false
     const k = Math.min(BINDING_PROXIMITY, d) / d
-    const nudged = { x: point.x + (center.x - point.x) * k, y: point.y + (center.y - point.y) * k }
-    if (hitTestElement(el, nudged)) return el
-  }
-  return null
+    return hitTestElement(el, { x: lerp(point.x, center.x, k), y: lerp(point.y, center.y, k) })
+  })
+  return near ?? null
 }
 
-const perpHalfExtent = (bounds: ReturnType<typeof getElementBounds>, perp: Point): number =>
+const perpHalfExtent = (bounds: Bounds, perp: Point): number =>
   (Math.abs(perp.x) * bounds.width) / 2 + (Math.abs(perp.y) * bounds.height) / 2
 
 export const computeBoundEndpoint = (
@@ -110,35 +106,95 @@ export const computeFocus = (target: ExcalidrawElement, endpoint: Point, toward:
   const perp: Point = { x: -dir.y, y: dir.x }
   const halfPerp = perpHalfExtent(bounds, perp)
   if (halfPerp === 0) return 0
-  const perpComp = (endpoint.x - center.x) * perp.x + (endpoint.y - center.y) * perp.y
-  return Math.max(-1, Math.min(1, perpComp / halfPerp))
+  const offset = { x: endpoint.x - center.x, y: endpoint.y - center.y }
+  return clamp(dot(offset, perp) / halfPerp, -1, 1)
 }
 
-const liveTarget = (
+interface LiveBinding {
+  binding: PointBinding
+  target: ExcalidrawElement
+}
+
+/** The binding and its target, when the target still exists and can be bound to. */
+const liveBinding = (
   binding: PointBinding | null,
   byId: Map<string, ExcalidrawElement>,
-): ExcalidrawElement | null => {
-  if (!binding) return null
-  const t = byId.get(binding.elementId)
-  if (!t || !canBindTo(t)) return null
-  return t
+): LiveBinding | null => {
+  const target = binding && byId.get(binding.elementId)
+  return binding && target && canBindTo(target) ? { binding, target } : null
 }
 
-/** Re-anchor an arrow to the bounding box of its absolute points. */
-const patchFromAbsolutePoints = (
-  arrow: ExcalidrawElement,
+const centerOf = (el: ExcalidrawElement): Point => boundsCenter(getElementBounds(el))
+
+const samePoints = (a: readonly Point[], b: readonly Point[]): boolean =>
+  a.length === b.length && a.every((p, k) => p.x === b[k]!.x && p.y === b[k]!.y)
+
+/** The arrow re-anchored to its absolute points, with the given bindings. */
+const withAbsolutePoints = (
+  arrow: ExcalidrawArrowElement,
   abs: readonly Point[],
-  startBinding: PointBinding | null,
-  endBinding: PointBinding | null,
-): ExcalidrawElement => {
-  return {
-    ...arrow,
-    ...pointsPatch(abs),
-    startBinding,
-    endBinding,
-  } as ExcalidrawElement
+  start: LiveBinding | null,
+  end: LiveBinding | null,
+): ExcalidrawArrowElement => ({
+  ...arrow,
+  ...pointsPatch(abs),
+  startBinding: start?.binding ?? null,
+  endBinding: end?.binding ?? null,
+})
+
+/** Elbow arrow: each bound end leaves its shape from the side facing the other end. */
+const routeElbowArrow = (
+  arrow: ExcalidrawArrowElement,
+  abs: readonly Point[],
+  start: LiveBinding | null,
+  end: LiveBinding | null,
+): ExcalidrawArrowElement | null => {
+  let startAbs = abs[0]!
+  let endAbs = abs[abs.length - 1]!
+  const startRef = end ? centerOf(end.target) : endAbs
+  const endRef = start ? centerOf(start.target) : startAbs
+  let startSide: Side | null = null
+  let endSide: Side | null = null
+  if (start) {
+    const b = getElementBounds(start.target)
+    startSide = sideOf(boundsCenter(b), startRef)
+    startAbs = sideCenter(b, startSide, start.binding.gap)
+  }
+  if (end) {
+    const b = getElementBounds(end.target)
+    endSide = sideOf(boundsCenter(b), endRef)
+    endAbs = sideCenter(b, endSide, end.binding.gap)
+  }
+  const routed = routeElbow(startAbs, endAbs, startSide, endSide)
+  return routed.length < 2 ? null : withAbsolutePoints(arrow, routed, start, end)
 }
 
+/** Straight or bent arrow: bound ends sit on the target's edge, facing the next point
+ *  (or, for a straight arrow, the other end's target). Bend points stay put. */
+const attachArrowEnds = (
+  arrow: ExcalidrawArrowElement,
+  abs: readonly Point[],
+  start: LiveBinding | null,
+  end: LiveBinding | null,
+): ExcalidrawArrowElement => {
+  let startAbs = abs[0]!
+  let endAbs = abs[abs.length - 1]!
+  const hasBends = abs.length > 2
+  if (start) {
+    const toward = hasBends ? abs[1]! : end ? centerOf(end.target) : endAbs
+    const { gap, focus } = start.binding
+    startAbs = computeBoundEndpoint(start.target, toward, gap, focus)
+  }
+  if (end) {
+    const toward = hasBends ? abs[abs.length - 2]! : start ? centerOf(start.target) : startAbs
+    const { gap, focus } = end.binding
+    endAbs = computeBoundEndpoint(end.target, toward, gap, focus)
+  }
+  return withAbsolutePoints(arrow, [startAbs, ...abs.slice(1, -1), endAbs], start, end)
+}
+
+/** Mutate-time invariant: bound arrow ends follow their targets, bindings to gone
+ *  or unbindable targets are dropped, and elbow arrows are re-routed. */
 export const reconcileBindings = (draft: ExcalidrawElement[]): void => {
   const byId = new Map(draft.map((e) => [e.id, e]))
   for (let i = 0; i < draft.length; i += 1) {
@@ -146,75 +202,39 @@ export const reconcileBindings = (draft: ExcalidrawElement[]): void => {
     if (arrow.type !== "arrow") continue
     if (!arrow.elbowed && !arrow.startBinding && !arrow.endBinding) continue
 
-    // Drop bindings whose target is gone or no longer bindable.
-    const startTarget = liveTarget(arrow.startBinding, byId)
-    const endTarget = liveTarget(arrow.endBinding, byId)
-    const startBinding = startTarget ? arrow.startBinding : null
-    const endBinding = endTarget ? arrow.endBinding : null
+    const start = liveBinding(arrow.startBinding, byId)
+    const end = liveBinding(arrow.endBinding, byId)
+    const bindingsKept =
+      (start?.binding ?? null) === arrow.startBinding && (end?.binding ?? null) === arrow.endBinding
 
-    const pts = arrow.points
-    if (pts.length < 2) {
-      if (startBinding !== arrow.startBinding || endBinding !== arrow.endBinding) {
-        draft[i] = { ...arrow, startBinding, endBinding }
+    if (arrow.points.length < 2) {
+      if (!bindingsKept) {
+        draft[i] = {
+          ...arrow,
+          startBinding: start?.binding ?? null,
+          endBinding: end?.binding ?? null,
+        }
       }
       continue
     }
-    const abs: Point[] = pts.map((p) => ({ x: arrow.x + p.x, y: arrow.y + p.y }))
-    let startAbs = abs[0]!
-    let endAbs = abs[abs.length - 1]!
-
-    if (arrow.elbowed) {
-      const startRef = endTarget ? boundsCenter(getElementBounds(endTarget)) : endAbs
-      const endRef = startTarget ? boundsCenter(getElementBounds(startTarget)) : startAbs
-      let startSide: Side | null = null
-      let endSide: Side | null = null
-      if (startTarget) {
-        const b = getElementBounds(startTarget)
-        startSide = sideOf(boundsCenter(b), startRef)
-        startAbs = sideCenter(b, startSide, startBinding!.gap)
-      }
-      if (endTarget) {
-        const b = getElementBounds(endTarget)
-        endSide = sideOf(boundsCenter(b), endRef)
-        endAbs = sideCenter(b, endSide, endBinding!.gap)
-      }
-      const routed = routeElbow(startAbs, endAbs, startSide, endSide)
-      if (routed.length < 2) continue
-      const next = patchFromAbsolutePoints(arrow, routed, startBinding, endBinding)
-      const unchanged =
-        startBinding === arrow.startBinding &&
-        endBinding === arrow.endBinding &&
-        next.x === arrow.x &&
-        next.y === arrow.y &&
-        next.type === "arrow" &&
-        next.points.length === pts.length &&
-        next.points.every((p, k) => p.x === pts[k]!.x && p.y === pts[k]!.y)
-      if (!unchanged) draft[i] = next
+    const abs = arrow.points.map((p) => pointAdd(arrow, p))
+    if (!arrow.elbowed) {
+      draft[i] = attachArrowEnds(arrow, abs, start, end)
       continue
     }
-
-    const hasBends = abs.length > 2
-    if (startTarget) {
-      const toward = hasBends
-        ? abs[1]!
-        : endTarget
-          ? boundsCenter(getElementBounds(endTarget))
-          : endAbs
-      startAbs = computeBoundEndpoint(startTarget, toward, startBinding!.gap, startBinding!.focus)
+    const routed = routeElbowArrow(arrow, abs, start, end)
+    // Re-routing every arrow on every mutate would replace untouched ones: keep the
+    // same object when nothing moved, so reference-comparing consumers stay cheap.
+    if (
+      routed &&
+      !(
+        bindingsKept &&
+        routed.x === arrow.x &&
+        routed.y === arrow.y &&
+        samePoints(routed.points, arrow.points)
+      )
+    ) {
+      draft[i] = routed
     }
-    if (endTarget) {
-      const toward = hasBends
-        ? abs[abs.length - 2]!
-        : startTarget
-          ? boundsCenter(getElementBounds(startTarget))
-          : startAbs
-      endAbs = computeBoundEndpoint(endTarget, toward, endBinding!.gap, endBinding!.focus)
-    }
-    draft[i] = patchFromAbsolutePoints(
-      arrow,
-      [startAbs, ...abs.slice(1, abs.length - 1), endAbs],
-      startBinding,
-      endBinding,
-    )
   }
 }

@@ -1,6 +1,5 @@
+import { newSeed } from "./factories"
 import type { ExcalidrawElement } from "./types"
-
-const newNonce = (): number => Math.floor(Math.random() * 2 ** 31)
 
 /** Patches (fresh versionNonce, bumped updated) for matched, live elements not yet in `locked` state. */
 const setLocked = (
@@ -11,7 +10,7 @@ const setLocked = (
   const idSet = new Set(ids)
   return elements
     .filter((el) => idSet.has(el.id) && !el.isDeleted && el.locked !== locked)
-    .map((el) => ({ ...el, locked, versionNonce: newNonce(), updated: Date.now() }))
+    .map((el) => ({ ...el, locked, versionNonce: newSeed(), updated: Date.now() }))
 }
 
 /** Returns locked patches (fresh versionNonce, bumped updated) for the matched
@@ -32,5 +31,5 @@ export const unlockElements = (
 export function unlockAll(elements: readonly ExcalidrawElement[]): ExcalidrawElement[] {
   return elements
     .filter((el) => el.locked && !el.isDeleted)
-    .map((el) => ({ ...el, locked: false, versionNonce: newNonce(), updated: Date.now() }))
+    .map((el) => ({ ...el, locked: false, versionNonce: newSeed(), updated: Date.now() }))
 }

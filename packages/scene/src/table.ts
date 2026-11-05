@@ -126,13 +126,20 @@ export const reconcileTables = (
   }
 }
 
+/** Which edge of a resized box stays put on each axis: the one opposite the dragged
+ *  handle ("end" = right/bottom). */
+export interface ResizeAnchor {
+  x: "start" | "end"
+  y: "start" | "end"
+}
+
 /** The table resized into `box`, settled (min sizes, auto-grown rows); when it
  *  comes out bigger than `box` it grows away from the anchored sides, so the
  *  edge/corner opposite the dragged handle stays put. */
 export const fitTableBox = (
   t: ExcalidrawTableElement,
   box: { x: number; y: number; width: number; height: number },
-  anchor: { x: "start" | "end"; y: "start" | "end" },
+  anchor: ResizeAnchor,
 ): ExcalidrawTableElement => {
   const s = settleTable({ ...t, ...box }, t)
   return {

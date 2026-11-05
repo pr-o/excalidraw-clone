@@ -1,3 +1,4 @@
+import { boundsCenter, pointAdd, rotatePoint } from "@excalidraw-clone/geometry"
 import { mirrorOf } from "./flip"
 import type { ExcalidrawElement, ExcalidrawImageElement } from "./types"
 
@@ -21,13 +22,10 @@ export function resetCrop(
     // Hidden strip left of / above the visible region, in screen-local px.
     const offX = (mx < 0 ? 1 - c.x - c.width : c.x) * W
     const offY = (my < 0 ? 1 - c.y - c.height : c.y) * H
-    const ox = (W - e.width) / 2 - offX
-    const oy = (H - e.height) / 2 - offY
-    const cos = Math.cos(e.angle)
-    const sin = Math.sin(e.angle)
-    const cx = e.x + e.width / 2 + ox * cos - oy * sin
-    const cy = e.y + e.height / 2 + ox * sin + oy * cos
-    out.push({ ...e, x: cx - W / 2, y: cy - H / 2, width: W, height: H, crop: null })
+    // The full image's centre, offset from the cropped box's centre (turned by the angle).
+    const shift = { x: (W - e.width) / 2 - offX, y: (H - e.height) / 2 - offY }
+    const c2 = pointAdd(boundsCenter(e), rotatePoint(shift, { x: 0, y: 0 }, e.angle))
+    out.push({ ...e, x: c2.x - W / 2, y: c2.y - H / 2, width: W, height: H, crop: null })
   }
   return out
 }

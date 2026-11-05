@@ -1,23 +1,7 @@
 import { clamp } from "@excalidraw-clone/geometry"
-import type { ElementType, ExcalidrawBinaryFile, ExcalidrawElement } from "./types"
+import { ELEMENT_TYPES, type ExcalidrawBinaryFile, type ExcalidrawElement } from "./types"
 
-const ELEMENT_TYPES: ReadonlySet<string> = new Set<ElementType>([
-  "rectangle",
-  "diamond",
-  "ellipse",
-  "triangle",
-  "parallelogram",
-  "hexagon",
-  "pentagon",
-  "octagon",
-  "arrow",
-  "line",
-  "freedraw",
-  "text",
-  "image",
-  "frame",
-  "table",
-])
+const KNOWN_TYPES: ReadonlySet<string> = new Set(ELEMENT_TYPES)
 
 const LINEAR_TYPES: ReadonlySet<string> = new Set(["arrow", "line", "freedraw"])
 
@@ -53,7 +37,7 @@ export function sanitizeElement(raw: unknown): ExcalidrawElement | null {
   if (typeof raw !== "object" || raw === null) return null
   const el = raw as Record<string, unknown>
   if (typeof el.id !== "string" || el.id === "") return null
-  if (typeof el.type !== "string" || !ELEMENT_TYPES.has(el.type)) return null
+  if (typeof el.type !== "string" || !KNOWN_TYPES.has(el.type)) return null
   if (LINEAR_TYPES.has(el.type) && !(Array.isArray(el.points) && el.points.every(isPoint))) {
     return null
   }

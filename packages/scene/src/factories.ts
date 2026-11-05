@@ -7,6 +7,7 @@ import {
 import { nanoid } from "nanoid"
 import { mirrorOf } from "./flip"
 import type {
+  BoundElement,
   ExcalidrawArrowElement,
   ExcalidrawDiamondElement,
   ExcalidrawElementBase,
@@ -45,7 +46,8 @@ import {
 import { NOTE_PADDING } from "./reconcile-bound-text"
 import { emptyCells, TABLE_DEFAULT_COLS, TABLE_DEFAULT_ROWS, tableGeometry } from "./table"
 
-const newSeed = (): number => Math.floor(Math.random() * 2 ** 31)
+/** A random 31-bit integer: rough.js seeds and version nonces. */
+export const newSeed = (): number => Math.floor(Math.random() * 2 ** 31)
 
 export interface NewElementInput {
   x: number
@@ -245,12 +247,7 @@ export const newTable = (input: NewTableInput): ExcalidrawTableElement => {
   }
 }
 
-export interface NewNoteInput {
-  x: number
-  y: number
-  width?: number
-  height?: number
-}
+export type NewNoteInput = Pick<NewElementInput, "x" | "y" | "width" | "height">
 
 export const NOTE_BG_COLOR = "#ffec99"
 
@@ -310,6 +307,16 @@ export const newLabelFor = (container: {
     verticalAlign: "middle",
     containerId: container.id,
   })
+}
+
+/** `container` with a centred `label` bound to it: both elements, the container's
+ *  back-reference included. `container.type` must be in LABELABLE_TYPES. */
+export const withLabel = <T extends Parameters<typeof newLabelFor>[0]>(
+  container: T,
+  label: string,
+): { container: T & { boundElements: BoundElement[] }; text: ExcalidrawTextElement } => {
+  const text = { ...newLabelFor(container), text: label, originalText: label }
+  return { container: { ...container, boundElements: [{ id: text.id, type: "text" }] }, text }
 }
 
 /** Empty centered label text bound to a linear `container` (arrow/line),

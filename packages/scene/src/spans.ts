@@ -20,14 +20,20 @@ const ITALIC = 2
 const FLAG: Record<SpanStyle, number> = { bold: BOLD, italic: ITALIC }
 const NONE: SpanFlags = { bold: false, italic: false }
 
-const flagsOfSpan = (s: { bold?: unknown; italic?: unknown }): number =>
+/** Style bits of a span or a SpanFlags value. */
+const bitsOf = (s: { bold?: unknown; italic?: unknown }): number =>
   (s.bold === true ? BOLD : 0) | (s.italic === true ? ITALIC : 0)
+
+const flagsOf = (bits: number): SpanFlags => ({
+  bold: (bits & BOLD) !== 0,
+  italic: (bits & ITALIC) !== 0,
+})
 
 /** Per-character style bits; overlapping spans union their styles. */
 const toBits = (spans: readonly TextSpan[] | undefined, len: number): Uint8Array => {
   const bits = new Uint8Array(len)
   for (const s of spans ?? []) {
-    const f = flagsOfSpan(s)
+    const f = bitsOf(s)
     const lo = Math.max(0, s.start)
     const hi = Math.min(len, s.end)
     for (let i = lo; i < hi; i += 1) bits[i] = bits[i]! | f
@@ -84,8 +90,7 @@ export const flagsAt = (
   pos: number,
 ): SpanFlags => {
   if (len === 0) return NONE
-  const f = toBits(spans, len)[pos > 0 ? Math.min(pos, len) - 1 : 0]!
-  return { bold: (f & BOLD) !== 0, italic: (f & ITALIC) !== 0 }
+  return flagsOf(toBits(spans, len)[pos > 0 ? Math.min(pos, len) - 1 : 0]!)
 }
 
 /** True when every character of [start,end) has the style (empty range: false). */
@@ -145,9 +150,7 @@ export const remapSpans = (
   insertStyle?: SpanFlags,
 ): TextSpan[] => {
   const bits = toBits(spans, oldLen)
-  const inherit = flagsAt(spans, oldLen, edit.start)
-  const f = insertStyle ?? inherit
-  const ins = (f.bold ? BOLD : 0) | (f.italic ? ITALIC : 0)
+  const ins = bitsOf(insertStyle ?? flagsAt(spans, oldLen, edit.start))
   const next = new Uint8Array(oldLen - (edit.end - edit.start) + edit.insertLength)
   next.set(bits.subarray(0, edit.start), 0)
   next.fill(ins, edit.start, edit.start + edit.insertLength)
@@ -189,7 +192,7 @@ export const sliceRuns = (
     const f = bits[i]!
     let j = i + 1
     while (j < hi && bits[j] === f) j += 1
-    runs.push({ text: text.slice(i, j), bold: (f & BOLD) !== 0, italic: (f & ITALIC) !== 0 })
+    runs.push({ text: text.slice(i, j), ...flagsOf(f) })
     i = j
   }
   return runs

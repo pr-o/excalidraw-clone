@@ -1,20 +1,17 @@
 import { boundsCenter } from "@excalidraw-clone/geometry"
 import { BINDING_GAP, computeBoundEndpoint } from "./bindings"
 import { DEFAULT_FONT_SIZE } from "./defaults"
+import { addArrowBackRefs } from "./binding-refs"
 import {
   newArrow,
   newDiamond,
   newEllipse,
-  newLabelFor,
   newLabelForLinear,
   newRectangle,
+  withLabel,
 } from "./factories"
-import type {
-  BoundElement,
-  ExcalidrawArrowElement,
-  ExcalidrawElement,
-  ExcalidrawTextElement,
-} from "./types"
+import { LABELABLE_TYPES } from "./reconcile-bound-text"
+import type { ExcalidrawArrowElement, ExcalidrawElement, ExcalidrawTextElement } from "./types"
 import { isBoundLabel } from "./bound-label"
 import { layerGraph } from "./layering"
 
@@ -253,19 +250,10 @@ export function layoutFlowchart(f: MermaidFlowchart): ExcalidrawElement[] {
     mainPos += band + LAYER_GAP
   }
 
-  const refs = new Map<string, BoundElement[]>()
-  const addRef = (id: string, ref: BoundElement): void => {
-    refs.set(id, [...(refs.get(id) ?? []), ref])
-  }
-  const labels: ExcalidrawTextElement[] = []
-  for (const n of f.nodes) {
-    const shape = shapes.get(n.id)!
-    const text = { ...newLabelFor(shape), text: n.label, originalText: n.label }
-    labels.push(text)
-    addRef(shape.id, { id: text.id, type: "text" })
-  }
+  const labelled = f.nodes.map((n) => withLabel(shapes.get(n.id)!, n.label))
 
-  const arrows: ExcalidrawElement[] = []
+  const arrows: ExcalidrawArrowElement[] = []
+  const arrowLabels: ExcalidrawTextElement[] = []
   for (const e of f.edges) {
     if (e.from === e.to) continue
     const from = shapes.get(e.from)!
@@ -287,39 +275,31 @@ export function layoutFlowchart(f: MermaidFlowchart): ExcalidrawElement[] {
       strokeStyle: e.style === "dotted" ? "dashed" : base.strokeStyle,
       strokeWidth: e.style === "thick" ? 4 : base.strokeWidth,
     }
-    addRef(from.id, { id: arrow.id, type: "arrow" })
-    addRef(to.id, { id: arrow.id, type: "arrow" })
-    if (e.label) {
-      const width = e.label.length * CHAR_W
-      const text = newLabelForLinear(arrow)
-      arrows.push(arrow, {
-        ...text,
-        x: text.x - width / 2,
-        width,
-        text: e.label,
-        originalText: e.label,
-      })
-      arrow.boundElements = [{ id: text.id, type: "text" }]
-    } else arrows.push(arrow)
+    if (!e.label) {
+      arrows.push(arrow)
+      continue
+    }
+    const width = e.label.length * CHAR_W
+    const text = newLabelForLinear(arrow)
+    arrowLabels.push({
+      ...text,
+      x: text.x - width / 2,
+      width,
+      text: e.label,
+      originalText: e.label,
+    })
+    arrows.push({ ...arrow, boundElements: [{ id: text.id, type: "text" }] })
   }
 
-  const boundShapes = f.nodes.map((n) => {
-    const shape = shapes.get(n.id)!
-    return { ...shape, boundElements: refs.get(shape.id) ?? null }
-  })
-  return [...boundShapes, ...labels, ...arrows]
+  const out: ExcalidrawElement[] = [
+    ...labelled.map((l) => l.container),
+    ...labelled.map((l) => l.text),
+    ...arrows,
+    ...arrowLabels,
+  ]
+  for (const arrow of arrows) addArrowBackRefs(out, arrow)
+  return out
 }
-
-const NODE_TYPES = new Set<ExcalidrawElement["type"]>([
-  "rectangle",
-  "diamond",
-  "ellipse",
-  "triangle",
-  "parallelogram",
-  "hexagon",
-  "pentagon",
-  "octagon",
-])
 
 // `#` first so the codes it introduces are not re-escaped; `%` would start a
 // `%%` comment, `;` splits statements and `|` ends an edge label.
@@ -344,7 +324,7 @@ export function exportMermaidFlowchart(
 ): string {
   const live = elements.filter((e) => !e.isDeleted)
   const picked = ids && ids.length > 0 ? new Set(ids) : null
-  const nodes = live.filter((e) => NODE_TYPES.has(e.type) && (!picked || picked.has(e.id)))
+  const nodes = live.filter((e) => LABELABLE_TYPES.has(e.type) && (!picked || picked.has(e.id)))
   const idOf = new Map(nodes.map((e, i) => [e.id, nodeId(i)]))
   const labelOf = new Map<string, string>()
   for (const e of live) {

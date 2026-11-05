@@ -2,22 +2,26 @@ import type { Point, UserGuides } from "@excalidraw-clone/geometry"
 import type { Comment } from "./comments"
 import type { TextSpan } from "./spans"
 
-export type ElementType =
-  | "rectangle"
-  | "diamond"
-  | "ellipse"
-  | "triangle"
-  | "parallelogram"
-  | "hexagon"
-  | "pentagon"
-  | "octagon"
-  | "arrow"
-  | "line"
-  | "freedraw"
-  | "text"
-  | "image"
-  | "frame"
-  | "table"
+/** Every element type. `ElementType` and the trust-boundary check both derive from it. */
+export const ELEMENT_TYPES = [
+  "rectangle",
+  "diamond",
+  "ellipse",
+  "triangle",
+  "parallelogram",
+  "hexagon",
+  "pentagon",
+  "octagon",
+  "arrow",
+  "line",
+  "freedraw",
+  "text",
+  "image",
+  "frame",
+  "table",
+] as const
+
+export type ElementType = (typeof ELEMENT_TYPES)[number]
 
 export type FillStyle = "hachure" | "cross-hatch" | "solid"
 export type StrokeStyle = "solid" | "dashed" | "dotted"

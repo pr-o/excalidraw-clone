@@ -58,10 +58,10 @@ export function cloneElementsWithNewIds(
       next.groupIds = next.groupIds.map(remapGroup)
     }
 
-    if (next.frameId != null) {
+    if (next.frameId !== null) {
       next.frameId = remap(next.frameId)
     }
-    if (next.boundElements != null) {
+    if (next.boundElements !== null) {
       const kept = next.boundElements.filter((b) => idMap.has(b.id))
       next.boundElements = kept.map((b) => ({ ...b, id: remap(b.id) }))
     }
@@ -69,7 +69,7 @@ export function cloneElementsWithNewIds(
       next.startBinding = remapBinding(next.startBinding)
       next.endBinding = remapBinding(next.endBinding)
     }
-    if (next.type === "text" && next.containerId != null) {
+    if (next.type === "text" && next.containerId !== null) {
       next.containerId = remap(next.containerId)
     }
     return next

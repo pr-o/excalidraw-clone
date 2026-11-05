@@ -1,4 +1,4 @@
-import { getElementBounds } from "./bounds"
+import { getElementBounds, getElementsBounds } from "./bounds"
 import type { ExcalidrawElement } from "./types"
 
 export type AlignEdge = "left" | "centerX" | "right" | "top" | "centerY" | "bottom"
@@ -15,13 +15,15 @@ export function alignElements(
   edge: AlignEdge,
 ): PositionPatch[] {
   if (elements.length < 2) return []
-  const items = elements.map((el) => ({ el, b: getElementBounds(el) }))
-  const minX = Math.min(...items.map(({ b }) => b.x))
-  const maxX = Math.max(...items.map(({ b }) => b.x + b.width))
-  const minY = Math.min(...items.map(({ b }) => b.y))
-  const maxY = Math.max(...items.map(({ b }) => b.y + b.height))
+  const all = getElementsBounds(elements)
+  if (!all) return []
+  const minX = all.x
+  const maxX = all.x + all.width
+  const minY = all.y
+  const maxY = all.y + all.height
   const centerX = (minX + maxX) / 2
   const centerY = (minY + maxY) / 2
+  const items = elements.map((el) => ({ el, b: getElementBounds(el) }))
 
   return items.map(({ el, b }) => {
     let { x, y } = el
@@ -91,12 +93,13 @@ export function distributeElements(
  * rows stack with `gap` between them, and elements are vertically centered.
  */
 export function tidyElements(elements: readonly ExcalidrawElement[], gap = 24): PositionPatch[] {
-  if (elements.length < 2) return []
+  const all = getElementsBounds(elements)
+  if (elements.length < 2 || !all) return []
   const items = elements
     .map((el) => ({ el, b: getElementBounds(el) }))
     .sort((p, q) => p.b.y + p.b.height / 2 - (q.b.y + q.b.height / 2))
-  const originX = Math.min(...items.map(({ b }) => b.x))
-  let y = Math.min(...items.map(({ b }) => b.y))
+  const originX = all.x
+  let y = all.y
 
   const rows: { items: typeof items; top: number; bottom: number }[] = []
   for (const it of items) {

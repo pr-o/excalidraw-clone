@@ -1,5 +1,5 @@
 import { rotatePoint, type Point } from "@excalidraw-clone/geometry"
-import { fitTableBox, type ExcalidrawElement } from "@excalidraw-clone/scene"
+import { fitTableBox, type ExcalidrawElement, type ResizeAnchor } from "@excalidraw-clone/scene"
 import type { Modifiers, ToolEffect, ToolContext, ToolEvent } from "../../types"
 import { buildRecommitEffect } from "./recommit"
 import type { ResizeHandle, SelectionState, Transition } from "./types"
@@ -106,8 +106,6 @@ export const computeResize = (
   return { x, y, width, height }
 }
 
-type Side = "start" | "end"
-
 /** Which side of the resized `box` stays put on each axis: the edge opposite
  *  the dragged handle — which, once the drag crosses over it (negative size,
  *  normalised by computeResize), is the box's start edge again. */
@@ -115,8 +113,14 @@ export const anchorSides = (
   origin: ResizeOrigin,
   handle: ResizeHandle,
   box: { x: number; y: number; width: number; height: number },
-): { x: Side; y: Side } => {
-  const side = (moves: boolean, o0: number, size: number, b0: number, bSize: number): Side => {
+): ResizeAnchor => {
+  const side = (
+    moves: boolean,
+    o0: number,
+    size: number,
+    b0: number,
+    bSize: number,
+  ): ResizeAnchor["x"] => {
     const fixed = moves ? o0 + size : o0
     const dEnd = Math.abs(b0 + bSize - fixed)
     const dStart = Math.abs(b0 - fixed)
