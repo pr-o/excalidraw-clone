@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useId, useMemo, useState } from "react"
 
 export interface PaletteCommand {
   id: string
@@ -29,7 +29,9 @@ function PaletteBody({
   className,
 }: Omit<CommandPaletteProps, "open">): React.ReactElement {
   const [query, setQuery] = useState("")
-  const [hovered, setHighlight] = useState(0)
+  const [picked, setPicked] = useState(0)
+  const listId = useId()
+  const optionId = (id: string): string => `${listId}-${id}`
 
   const filtered = useMemo(() => {
     if (query.trim() === "") return commands
@@ -42,19 +44,24 @@ function PaletteBody({
   }, [commands, query])
 
   // Derived, not synced: a narrower filter clamps the highlight to the last match.
-  const highlight = Math.min(hovered, Math.max(0, filtered.length - 1))
+  const highlight = Math.min(picked, Math.max(0, filtered.length - 1))
+  const current = filtered[highlight]
+
+  const run = (command: PaletteCommand | undefined): void => {
+    command?.perform()
+    onClose()
+  }
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>): void => {
     if (e.key === "ArrowDown") {
       e.preventDefault()
-      setHighlight(Math.min(highlight + 1, filtered.length - 1))
+      setPicked(Math.min(highlight + 1, filtered.length - 1))
     } else if (e.key === "ArrowUp") {
       e.preventDefault()
-      setHighlight(Math.max(highlight - 1, 0))
+      setPicked(Math.max(highlight - 1, 0))
     } else if (e.key === "Enter") {
       e.preventDefault()
-      filtered[highlight]?.perform()
-      onClose()
+      run(current)
     } else if (e.key === "Escape") {
       e.preventDefault()
       onClose()
@@ -76,26 +83,29 @@ function PaletteBody({
         <input
           autoFocus
           type="text"
+          role="combobox"
+          aria-label={t("palette.title")}
+          aria-expanded
+          aria-controls={listId}
+          aria-activedescendant={current ? optionId(current.id) : undefined}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={onKeyDown}
           placeholder={t("palette.placeholder")}
           className="w-full border-b border-panel-subtle px-4 py-3 text-sm outline-none"
         />
-        <ul role="listbox" className="max-h-80 overflow-auto py-1">
+        <ul id={listId} role="listbox" className="max-h-80 overflow-auto py-1">
           {filtered.length === 0 && (
             <li className="px-4 py-2 text-sm text-muted">{t("palette.empty")}</li>
           )}
           {filtered.map((c, i) => (
             <li
               key={c.id}
+              id={optionId(c.id)}
               role="option"
               aria-selected={i === highlight}
-              onMouseEnter={() => setHighlight(i)}
-              onClick={() => {
-                c.perform()
-                onClose()
-              }}
+              onMouseEnter={() => setPicked(i)}
+              onClick={() => run(c)}
               className={`flex cursor-pointer items-center justify-between px-4 py-2 text-sm ${i === highlight ? "bg-accent-soft" : ""}`}
             >
               <span>{c.label}</span>

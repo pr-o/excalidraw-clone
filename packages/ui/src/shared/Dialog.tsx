@@ -30,17 +30,11 @@ export function Dialog({
     if (!open && dlg.open) dlg.close()
   }, [open])
 
-  useEffect(() => {
-    const dlg = ref.current
-    if (!dlg) return
-    const handler = (): void => onClose()
-    dlg.addEventListener("close", handler)
-    return () => dlg.removeEventListener("close", handler)
-  }, [onClose])
-
   return (
     <dialog
       ref={ref}
+      // Escape closes a modal <dialog> natively; this reports every close to the owner.
+      onClose={onClose}
       className={`m-auto rounded-xl bg-panel p-0 text-app shadow-panel backdrop:bg-black/40 ${className ?? ""}`}
       aria-labelledby={titleId}
     >

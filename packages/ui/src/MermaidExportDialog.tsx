@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { Dialog } from "./shared/Dialog"
+import { Button } from "./shared/Button"
 
 export interface MermaidExportDialogProps {
   t: (key: string) => string
@@ -60,21 +61,10 @@ function MermaidExportBody({
         </p>
       )}
       <div className="flex justify-end gap-2">
-        <button
-          type="button"
-          onClick={onClose}
-          className="rounded border border-panel px-3 py-1 text-sm"
-        >
-          {t("common.close")}
-        </button>
-        <button
-          type="button"
-          data-testid="mermaid-copy"
-          onClick={copy}
-          className="rounded bg-accent px-3 py-1 text-sm text-white"
-        >
+        <Button onClick={onClose}>{t("common.close")}</Button>
+        <Button variant="primary" data-testid="mermaid-copy" onClick={copy}>
           {t("mermaid.copy")}
-        </button>
+        </Button>
       </div>
     </Dialog>
   )

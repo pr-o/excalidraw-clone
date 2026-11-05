@@ -1,15 +1,15 @@
-import type {
-  AlignEdge,
-  GraphLayoutMode,
-  DistributeAxis,
-  ExcalidrawElement,
-  ExcalidrawTextElement,
-  FillStyle,
-  Roughness,
-  Roundness,
-  SpanStyle,
-  StrokeStyle,
-  StrokeWidth,
+import {
+  isLinearElement,
+  type AlignEdge,
+  type GraphLayoutMode,
+  type DistributeAxis,
+  type ExcalidrawElement,
+  type ExcalidrawTextElement,
+  type FillStyle,
+  type Roughness,
+  type SpanStyle,
+  type StrokeStyle,
+  type StrokeWidth,
 } from "@excalidraw-clone/scene"
 import { Icon } from "./shared/Icon"
 import { ArrangeSection, FlipRow, GroupSection } from "./properties/ArrangeSections"
@@ -92,13 +92,12 @@ export function PropertiesPanel({
 }: PropertiesPanelProps): React.ReactElement | null {
   if (selectedElements.length === 0) return null
 
-  const common = <V,>(key: string): V | undefined => commonValue<V>(selectedElements, key)
-  const strokeWidth = common<StrokeWidth>("strokeWidth")
-  const roundness = common<Roundness>("roundness")
+  const strokeWidth = commonValue(selectedElements, "strokeWidth")
+  const roundness = commonValue(selectedElements, "roundness")
   const isRound = roundness !== undefined && roundness !== null
   const isSharp = roundness !== undefined && !isRound
-  const allLinear = selectedElements.every((e) => e.type === "arrow" || e.type === "line")
-  const allArrow = selectedElements.every((e) => e.type === "arrow")
+  const allLinear = selectedElements.every(isLinearElement)
+  const allArrow = allLinear && selectedElements.every((e) => e.type === "arrow")
   const sole = selectedElements.length === 1 ? selectedElements[0] : undefined
   const soleTable = sole?.type === "table" ? sole : undefined
   const canGroup = selectedElements.length >= 2
@@ -131,7 +130,7 @@ export function PropertiesPanel({
         <Swatches
           t={t}
           colors={STROKE_COLORS}
-          current={common<string>("strokeColor")}
+          current={commonValue(selectedElements, "strokeColor")}
           pick={(c) => onChange({ strokeColor: c })}
           prefix="stroke"
         />
@@ -172,7 +171,7 @@ export function PropertiesPanel({
       <BackgroundSection
         t={t}
         selectedElements={selectedElements}
-        backgroundColor={common<string>("backgroundColor")}
+        backgroundColor={commonValue(selectedElements, "backgroundColor")}
         onChange={onChange}
       />
 
@@ -223,14 +222,14 @@ export function PropertiesPanel({
 
       <ShadowSection t={t} selectedElements={selectedElements} onChange={onChange} />
 
-      {(allLinear || allArrow) && <Divider />}
-
       {allLinear && (
-        <ArrowheadsSection t={t} selectedElements={selectedElements} onChange={onChange} />
-      )}
-
-      {allArrow && (
-        <ArrowTypeSection t={t} selectedElements={selectedElements} onChange={onChange} />
+        <>
+          <Divider />
+          <ArrowheadsSection t={t} selectedElements={selectedElements} onChange={onChange} />
+          {allArrow && (
+            <ArrowTypeSection t={t} selectedElements={selectedElements} onChange={onChange} />
+          )}
+        </>
       )}
 
       <TextSection
@@ -248,16 +247,17 @@ export function PropertiesPanel({
         </>
       )}
 
-      {(canGroup || canUngroup) && <Divider />}
-
       {(canGroup || canUngroup) && (
-        <GroupSection
-          t={t}
-          canGroup={canGroup}
-          canUngroup={canUngroup}
-          onGroup={onGroup}
-          onUngroup={onUngroup}
-        />
+        <>
+          <Divider />
+          <GroupSection
+            t={t}
+            canGroup={canGroup}
+            canUngroup={canUngroup}
+            onGroup={onGroup}
+            onUngroup={onUngroup}
+          />
+        </>
       )}
 
       {canGroup && (

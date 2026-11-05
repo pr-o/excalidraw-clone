@@ -1,7 +1,7 @@
 import type { ToolName } from "@excalidraw-clone/tools"
 import { useEffect, useRef, useState } from "react"
 import { MoreShapesMenu } from "./MoreShapesMenu"
-import { useCloseOnEscape } from "./shared/useCloseOnEscape"
+import { useDismiss } from "./shared/useDismiss"
 import { IconButton } from "./shared/IconButton"
 import { Icon } from "./shared/Icon"
 import { DEFAULT_TOOL_KEYS } from "./toolKeys"
@@ -83,15 +83,7 @@ export function Toolbar({
   ]
   const [overflowOpen, setOverflowOpen] = useState(false)
   const overflowRef = useRef<HTMLDivElement | null>(null)
-  useCloseOnEscape(overflowOpen, setOverflowOpen)
-  useEffect(() => {
-    if (!overflowOpen) return
-    const onDown = (e: PointerEvent): void => {
-      if (!overflowRef.current?.contains(e.target as Node)) setOverflowOpen(false)
-    }
-    document.addEventListener("pointerdown", onDown, true)
-    return () => document.removeEventListener("pointerdown", onDown, true)
-  }, [overflowOpen])
+  useDismiss(overflowOpen, setOverflowOpen, overflowRef)
 
   const renderItem = (name: ToolName, inMenu = false): React.ReactElement => (
     <IconButton

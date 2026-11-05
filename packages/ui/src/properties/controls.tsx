@@ -51,12 +51,27 @@ interface EyeDropperApi {
 const eyeDropperCtor = (): (new () => EyeDropperApi) | undefined =>
   (globalThis as { EyeDropper?: new () => EyeDropperApi }).EyeDropper
 
-export function commonValue<V>(items: readonly object[], key: string): V | undefined {
+/** A key that at least one member of the union `T` has (e.g. `endArrowhead`). */
+export type KeyOfAny<T> = T extends unknown ? keyof T : never
+/** The type of `K` on the members of `T` that have it. */
+export type ValueOfAny<T, K extends PropertyKey> = T extends unknown
+  ? K extends keyof T
+    ? T[K]
+    : never
+  : never
+
+/** The value every item has for `key`, or undefined when they differ (or there are none). */
+export function commonValue<T extends object, K extends KeyOfAny<T>>(
+  items: readonly T[],
+  key: K,
+): ValueOfAny<T, K> | undefined {
   if (items.length === 0) return undefined
-  const get = (item: object): unknown => (item as Record<string, unknown>)[key]
-  const first = get(items[0] as object)
-  return items.every((item) => get(item) === first) ? (first as V) : undefined
+  const get = (item: T): unknown => (item as Record<PropertyKey, unknown>)[key]
+  const first = get(items[0]!)
+  return items.every((item) => get(item) === first) ? (first as ValueOfAny<T, K>) : undefined
 }
+
+type ElementKey = KeyOfAny<ExcalidrawElement>
 
 const COLLAPSED_KEY = "excalidraw-properties-collapsed-ids"
 
@@ -133,20 +148,24 @@ export function Choice({
 }
 
 /** A row of mutually exclusive buttons, each patching `field` with its value. */
-export function ChoiceRow<V>({
+export function ChoiceRow<K extends ElementKey>({
   field,
   items,
   group,
   from,
   onChange,
 }: {
-  field: string
-  items: readonly (readonly [value: V, testId: string, label: React.ReactNode])[]
+  field: K
+  items: readonly (readonly [
+    value: ValueOfAny<ExcalidrawElement, K>,
+    testId: string,
+    label: React.ReactNode,
+  ])[]
   group?: string | undefined
-  from: readonly object[]
+  from: readonly ExcalidrawElement[]
   onChange: OnChange
 }): React.ReactElement {
-  const current = commonValue<V>(from, field)
+  const current = commonValue(from, field)
   return (
     <div
       className={`flex gap-1${group ? " mt-1" : ""}`}

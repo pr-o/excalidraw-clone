@@ -1,6 +1,7 @@
 import type { LibraryItem } from "@excalidraw-clone/scene"
 import { useState } from "react"
 import { PanelHeader, type PanelSibling, PanelToggle } from "./shared/PanelToggle"
+import { RenameInput } from "./shared/RenameInput"
 
 export interface LibraryPanelProps {
   t: (key: string) => string
@@ -27,12 +28,10 @@ interface ItemTileProps {
   readOnly: boolean
   renderThumbnail: (item: LibraryItem) => string
   onItemClick: (item: LibraryItem) => void
-  renamingId: string | null
-  draftName: string
-  setDraftName: (v: string) => void
+  renaming: boolean
   startRename: (item: LibraryItem) => void
-  commitRename: (id: string) => void
-  cancelRename: () => void
+  onRename: (id: string, name: string) => void
+  endRename: () => void
   menuOpenId: string | null
   setMenuOpenId: (id: string | null) => void
   onDelete: (id: string) => void
@@ -62,16 +61,12 @@ function ItemTile(props: ItemTileProps): React.ReactElement {
           className="h-full w-full object-contain"
         />
       </button>
-      {!props.readOnly && props.renamingId === item.id ? (
-        <input
-          autoFocus
-          value={props.draftName}
-          onChange={(e) => props.setDraftName(e.target.value)}
-          onBlur={() => props.commitRename(item.id)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") props.commitRename(item.id)
-            if (e.key === "Escape") props.cancelRename()
-          }}
+      {!props.readOnly && props.renaming ? (
+        <RenameInput
+          initial={item.name}
+          label={props.t("library.rename")}
+          onRename={(name) => props.onRename(item.id, name)}
+          onDone={props.endRename}
           className="mt-1 w-full rounded border px-1 text-xs"
         />
       ) : (
@@ -127,30 +122,19 @@ function ItemTile(props: ItemTileProps): React.ReactElement {
 
 export function LibraryPanel(props: LibraryPanelProps): React.ReactElement {
   const [renamingId, setRenamingId] = useState<string | null>(null)
-  const [draftName, setDraftName] = useState("")
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null)
 
   const startRename = (item: LibraryItem): void => {
     setRenamingId(item.id)
-    setDraftName(item.name)
     setMenuOpenId(null)
   }
-  const commitRename = (id: string): void => {
-    const trimmed = draftName.trim()
-    if (trimmed !== "") props.onRename(id, trimmed)
-    setRenamingId(null)
-  }
-  const cancelRename = (): void => setRenamingId(null)
 
   const tileCommon = {
     renderThumbnail: props.renderThumbnail,
     onItemClick: props.onItemClick,
-    renamingId,
-    draftName,
-    setDraftName,
     startRename,
-    commitRename,
-    cancelRename,
+    onRename: props.onRename,
+    endRename: () => setRenamingId(null),
     menuOpenId,
     setMenuOpenId,
     onDelete: props.onDelete,
@@ -226,6 +210,7 @@ export function LibraryPanel(props: LibraryPanelProps): React.ReactElement {
                     item={item}
                     testId={`template-item-${item.id}`}
                     readOnly
+                    renaming={false}
                     {...tileCommon}
                   />
                 ))}
@@ -251,6 +236,7 @@ export function LibraryPanel(props: LibraryPanelProps): React.ReactElement {
                   item={item}
                   testId={`library-item-${item.id}`}
                   readOnly={false}
+                  renaming={renamingId === item.id}
                   {...tileCommon}
                 />
               ))}

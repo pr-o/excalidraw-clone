@@ -1,6 +1,7 @@
 import { ARRAY_DUPLICATE_MAX_TRACKS, type ArrayDuplicateOptions } from "@excalidraw-clone/scene"
 import { useState } from "react"
 import { Dialog } from "./shared/Dialog"
+import { Button } from "./shared/Button"
 
 export interface ArrayDuplicateDialogProps {
   t: (key: string) => string
@@ -83,21 +84,15 @@ function ArrayDuplicateBody({
           {t("arrayDuplicate.copies")}: <span data-testid="array-copies">{copies}</span>
         </p>
         <div className="flex justify-end gap-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded border border-panel px-3 py-1 text-sm"
-          >
-            {t("arrayDuplicate.cancel")}
-          </button>
-          <button
+          <Button onClick={onClose}>{t("arrayDuplicate.cancel")}</Button>
+          <Button
+            variant="primary"
             type="submit"
             data-testid="array-duplicate-confirm"
             disabled={copies <= 0}
-            className="rounded bg-accent px-3 py-1 text-sm text-white disabled:opacity-50"
           >
             {t("arrayDuplicate.confirm")}
-          </button>
+          </Button>
         </div>
       </form>
     </Dialog>

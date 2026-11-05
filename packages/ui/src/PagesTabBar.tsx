@@ -1,5 +1,6 @@
 import { useRef, useState } from "react"
 import { Icon } from "./shared/Icon"
+import { RenameInput } from "./shared/RenameInput"
 
 // Small icon button inside a page tab (40px on touch).
 const TAB_BTN =
@@ -44,19 +45,8 @@ export function PagesTabBar({
   className,
 }: PagesTabBarProps): React.ReactElement {
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [draftName, setDraftName] = useState("")
   const [drag, setDrag] = useState<DragState | null>(null)
   const barRef = useRef<HTMLElement>(null)
-
-  const startRename = (id: string, currentName: string): void => {
-    setEditingId(id)
-    setDraftName(currentName)
-  }
-
-  const commitRename = (id: string): void => {
-    if (draftName.trim().length > 0) onRename(id, draftName.trim())
-    setEditingId(null)
-  }
 
   const handleTabPointerDown =
     (id: string) =>
@@ -165,16 +155,12 @@ export function PagesTabBar({
             )}
 
             {editing && !readOnly ? (
-              <input
-                autoFocus
-                data-testid={`page-rename-input-${page.id}`}
-                value={draftName}
-                onChange={(e) => setDraftName(e.target.value)}
-                onBlur={() => commitRename(page.id)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") commitRename(page.id)
-                  if (e.key === "Escape") setEditingId(null)
-                }}
+              <RenameInput
+                initial={page.name}
+                label={t("pages.rename")}
+                onRename={(name) => onRename(page.id, name)}
+                onDone={() => setEditingId(null)}
+                testId={`page-rename-input-${page.id}`}
                 className="w-24 rounded border border-panel bg-panel px-1"
               />
             ) : (
@@ -182,7 +168,7 @@ export function PagesTabBar({
                 type="button"
                 data-testid={`page-switch-${page.id}`}
                 onClick={() => onSwitch(page.id)}
-                onDoubleClick={readOnly ? undefined : () => startRename(page.id, page.name)}
+                onDoubleClick={readOnly ? undefined : () => setEditingId(page.id)}
                 className={`max-w-[8rem] truncate px-0.5 ${active ? "font-medium" : ""}`}
               >
                 {page.name}

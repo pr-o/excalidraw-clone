@@ -1,4 +1,5 @@
 import { Dialog } from "./shared/Dialog"
+import { Button } from "./shared/Button"
 
 export interface ResetCanvasDialogProps {
   t: (key: string) => string
@@ -20,20 +21,10 @@ export function ResetCanvasDialog({
     <Dialog t={t} open={open} onClose={onClose} title={t("reset.title")} className={className}>
       <p className="mb-4 text-sm text-muted">{t("reset.body")}</p>
       <div className="flex justify-end gap-2">
-        <button
-          type="button"
-          onClick={onClose}
-          className="rounded border border-panel px-3 py-1 text-sm"
-        >
-          {t("reset.cancel")}
-        </button>
-        <button
-          type="button"
-          onClick={onConfirm}
-          className="rounded bg-danger px-3 py-1 text-sm text-white"
-        >
+        <Button onClick={onClose}>{t("reset.cancel")}</Button>
+        <Button variant="danger" onClick={onConfirm}>
           {t("reset.confirm")}
-        </button>
+        </Button>
       </div>
     </Dialog>
   )

@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react"
+import { fireEvent, render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { describe, expect, it, vi } from "vitest"
 import { HamburgerMenu, type HamburgerMenuProps } from "../src/HamburgerMenu"
@@ -78,6 +78,20 @@ describe("HamburgerMenu", () => {
     render(<HamburgerMenu {...baseProps()} onOpenChange={onOpenChange} />)
     await userEvent.click(screen.getByRole("button", { name: /menu/i }))
     expect(onOpenChange).toHaveBeenCalledWith(true)
+  })
+
+  it("closes on a press outside it, not on a press inside it", () => {
+    const onOpenChange = vi.fn()
+    render(
+      <div>
+        <button type="button">elsewhere</button>
+        <HamburgerMenu {...baseProps()} open onOpenChange={onOpenChange} />
+      </div>,
+    )
+    fireEvent.pointerDown(screen.getByRole("menu"))
+    expect(onOpenChange).not.toHaveBeenCalled()
+    fireEvent.pointerDown(screen.getByText("elsewhere"))
+    expect(onOpenChange).toHaveBeenCalledWith(false)
   })
 
   it("clicking 'Open file' fires onOpenFile and closes the menu", async () => {

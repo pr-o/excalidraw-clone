@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { Dialog } from "./shared/Dialog"
+import { Button } from "./shared/Button"
 
 export interface ToolKeysRow {
   tool: string
@@ -104,25 +105,19 @@ function ToolKeysBody({
         ))}
       </ul>
       <div className="flex justify-end gap-2">
-        <button
-          type="button"
+        <Button
           data-testid="tool-keys-reset-all"
           disabled={rows.every((r) => r.isDefault)}
           onClick={() => {
             onResetAll()
             setError(null)
           }}
-          className="rounded border border-panel px-3 py-1 text-sm disabled:opacity-50"
         >
           {t("toolKeys.resetAll")}
-        </button>
-        <button
-          type="button"
-          onClick={onClose}
-          className="rounded bg-accent px-3 py-1 text-sm text-white"
-        >
+        </Button>
+        <Button variant="primary" onClick={onClose}>
           {t("common.close")}
-        </button>
+        </Button>
       </div>
     </Dialog>
   )

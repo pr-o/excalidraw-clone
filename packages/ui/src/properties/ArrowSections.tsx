@@ -30,8 +30,8 @@ export function ArrowheadsSection({
   return (
     <Section id="arrowheads" label={t("properties.arrowheads")}>
       {(["start", "end"] as const).map((end) => {
-        const field = `${end}Arrowhead`
-        const value = commonValue<Arrowhead | null>(selectedElements, field)
+        const field = `${end}Arrowhead` as const
+        const value = commonValue(selectedElements, field)
         return (
           <div key={end} className="mb-1 flex items-center gap-1">
             <span className="w-8 text-[10px] text-muted">
