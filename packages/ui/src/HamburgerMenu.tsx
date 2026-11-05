@@ -24,6 +24,8 @@ export interface HamburgerMenuProps {
   onViewModeToggle?: () => void
   rulersVisible?: boolean
   onRulersToggle?: () => void
+  measurementsVisible?: boolean
+  onMeasurementsToggle?: () => void
   minimapVisible?: boolean
   onMinimapToggle?: () => void
   commentsOpen?: boolean
@@ -163,6 +165,19 @@ export function HamburgerMenu(props: HamburgerMenuProps): React.ReactElement {
             >
               {props.t("menu.rulers")}
               <span className="text-xs text-muted">{props.rulersVisible ? "✓" : ""}</span>
+            </button>
+          )}
+          {props.onMeasurementsToggle && !props.viewMode && (
+            <button
+              type="button"
+              role="menuitemcheckbox"
+              aria-checked={props.measurementsVisible ?? false}
+              data-testid="menu-measurements"
+              onClick={wrap(props.onMeasurementsToggle)}
+              className="flex w-full items-center justify-between rounded px-3 py-2 text-left text-sm hover:bg-panel-hover"
+            >
+              {props.t("menu.measurements")}
+              <span className="text-xs text-muted">{props.measurementsVisible ? "✓" : ""}</span>
             </button>
           )}
           {props.onMinimapToggle && (

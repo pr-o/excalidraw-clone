@@ -147,6 +147,7 @@
     "language": "Language",
     "canvasBg": "Canvas background",
     "rulers": "Rulers",
+    "measurements": "Measurements",
     "viewMode": "View mode",
     "minimap": "Minimap",
     "toolKeys": "Keyboard shortcuts…",

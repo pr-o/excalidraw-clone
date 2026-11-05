@@ -44,6 +44,7 @@ const VIEW_SHORTCUTS: readonly Shortcut[] = [
   { keys: "Space (hold)", label: "shortcuts:pan" },
   { keys: "Cmd/Ctrl+'", label: "shortcuts:toggleGrid" },
   { keys: "Shift+R", label: "shortcuts:toggleRulers" },
+  { keys: "Shift+M", label: "shortcuts:toggleMeasurements" },
   { keys: "Alt+R", label: "shortcuts:viewMode" },
   { keys: "Alt+M", label: "shortcuts:toggleMinimap" },
   { keys: "Cmd/Ctrl+/", label: "shortcuts:commandPalette" },

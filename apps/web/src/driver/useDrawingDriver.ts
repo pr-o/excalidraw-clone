@@ -73,6 +73,7 @@ export function useDrawingDriver({
     })
     rendererRef.current = renderer
     renderer.setShowUserGuides(initial.rulersVisible && !isReadOnly(initial))
+    renderer.setShowMeasurements(initial.measurementsVisible && !isReadOnly(initial))
     renderer.start()
     onReady?.(renderer)
     const stopFontRefit = refitTextWhenFontsLoad(scene, renderer)

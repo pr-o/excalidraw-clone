@@ -41,6 +41,8 @@ export function MenuHost({
   const viewMode = useAppStore((s) => s.viewMode)
   const rulersVisible = useAppStore((s) => s.rulersVisible)
   const toggleRulers = useAppStore((s) => s.toggleRulers)
+  const measurementsVisible = useAppStore((s) => s.measurementsVisible)
+  const toggleMeasurements = useAppStore((s) => s.toggleMeasurements)
   const minimapVisible = useAppStore((s) => s.minimapVisible)
   const toggleMinimap = useAppStore((s) => s.toggleMinimap)
   const commentsPanelOpen = useAppStore((s) => s.commentsPanelOpen)
@@ -63,6 +65,8 @@ export function MenuHost({
       onViewModeToggle={toggleViewMode}
       rulersVisible={rulersVisible}
       onRulersToggle={toggleRulers}
+      measurementsVisible={measurementsVisible}
+      onMeasurementsToggle={toggleMeasurements}
       minimapVisible={minimapVisible}
       onMinimapToggle={toggleMinimap}
       commentsOpen={commentsPanelOpen}

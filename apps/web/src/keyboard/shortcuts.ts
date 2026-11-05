@@ -292,6 +292,10 @@ const RULES: readonly Rule[] = [
     (c) => !c.isMeta && !c.e.altKey && c.e.shiftKey && c.key === "r",
     () => store().toggleRulers(),
   ),
+  command(
+    (c) => !c.isMeta && !c.e.altKey && c.e.shiftKey && c.key === "m",
+    () => store().toggleMeasurements(),
+  ),
 ]
 
 /** View mode: only navigation, find, help and the laser survive. */

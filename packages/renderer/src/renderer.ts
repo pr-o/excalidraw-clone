@@ -13,6 +13,7 @@ import {
   drawSelectionChrome,
   drawUserGuides,
 } from "./overlay"
+import { drawMeasurements, selectionMeasurements } from "./measurements"
 import { ShapeCache } from "./shape-cache"
 import { resolveColor } from "./theme-colors"
 import type { CanvasRendererOptions, GridOptions, Theme } from "./types"
@@ -77,6 +78,7 @@ export class CanvasRenderer {
   private guides: readonly AlignmentGuide[] = []
   private lasso: readonly Point[] = []
   private showUserGuides = false
+  private showMeasurements = false
 
   private dirty = false
   private rafId: number | null = null
@@ -189,6 +191,12 @@ export class CanvasRenderer {
     this.requestRedraw()
   }
 
+  /** Measurement mode: the selection's size and its distances to neighbours. */
+  setShowMeasurements(show: boolean): void {
+    this.showMeasurements = show
+    this.requestRedraw()
+  }
+
   preloadImage(fileId: string, dataURL: string): Promise<void> {
     return preloadSharedImage(fileId, dataURL)
   }
@@ -285,6 +293,10 @@ export class CanvasRenderer {
       { clearBackground: onOverlay },
     )
     drawAlignmentGuides(ctx, this.guides, this.viewTransform, this.theme)
+    if (this.showMeasurements) {
+      const m = selectionMeasurements(elements, this.selection)
+      if (m) drawMeasurements(ctx, m, this.viewTransform, this.theme)
+    }
     drawLasso(ctx, this.lasso, this.viewTransform, this.theme)
     const cropEl = this.cropId === null ? undefined : elements.find((e) => e.id === this.cropId)
     if (cropEl?.type === "image" && cropEl.fileId !== null) {

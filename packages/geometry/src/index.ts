@@ -24,6 +24,8 @@ export {
 export { snapPointToGrid } from "./snap"
 export type { GridSnap, SnapModifiers } from "./snap"
 export { computeAlignmentSnap } from "./alignment-guides"
+export { measureGaps } from "./measure"
+export type { GapMeasurement } from "./measure"
 export type { AlignmentGuide, AlignmentSnapResult, UserGuides } from "./alignment-guides"
 export { hitTestUserGuide, rulerTickStep, rulerTicks, USER_GUIDE_HIT_TOLERANCE_PX } from "./rulers"
 export type { RulerTick } from "./rulers"

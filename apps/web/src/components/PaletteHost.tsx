@@ -77,6 +77,12 @@ export function PaletteHost({ scene }: { scene: Scene }): React.ReactElement {
       perform: () => useAppStore.getState().toggleRulers(),
     },
     {
+      id: "measurements",
+      label: t("menu.measurements"),
+      hint: "Shift+M",
+      perform: () => useAppStore.getState().toggleMeasurements(),
+    },
+    {
       id: "minimap",
       label: t("palette.toggleMinimap"),
       hint: "Alt+M",
