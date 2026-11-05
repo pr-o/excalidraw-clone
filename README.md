@@ -12,7 +12,7 @@ A hand-drawn style whiteboard in the spirit of [Excalidraw](https://excalidraw.c
 
 **Drawing** — rectangle, ellipse, diamond, triangle, parallelogram, hexagon, pentagon, octagon, line, arrow (straight, multi-point, elbow), freehand, text with bold/italic and bullets, sticky notes, tables, frames, images (with crop), stickers. Hand-drawn rendering with rough.js, stroke/fill/roughness/opacity, gradients and drop shadows, light and dark themes.
 
-**Diagramming** — arrows bind to shapes and follow them, arrow labels, flowchart quick-create (Ctrl/Cmd+Arrow), auto layout (tree top-down / left-right, radial), align / distribute / tidy, alignment guides, snap to grid, rulers with guides, Mermaid flowchart import and export.
+**Diagramming** — arrows bind to shapes and follow them, arrow labels, flowchart quick-create (Ctrl/Cmd+Arrow), auto layout (tree top-down / left-right, radial), align / distribute / tidy, alignment guides, snap to grid, rulers with guides, measurement mode (selection size and distances to neighbouring shapes, Shift+M), Mermaid flowchart import and export.
 
 **Editing** — selection, lasso, eraser, groups, locking, flip, z-order, duplicate and array-duplicate, copy/paste (shapes, text and images), copy/paste style, undo/redo with a history panel, find on canvas, layers panel, command palette, rebindable tool keys, keyboard navigation of elements, context menus, touch gestures (pinch, long-press, double-tap).
 
@@ -26,7 +26,7 @@ A hand-drawn style whiteboard in the spirit of [Excalidraw](https://excalidraw.c
 
 ## Getting started
 
-Requires Node ≥ 22 and pnpm ≥ 10.
+Requires Node ≥ 22.22.1 and pnpm ≥ 10.
 
 ```bash
 pnpm install
@@ -169,10 +169,11 @@ The arrows are **one-way**: UI tells tools which is active; tools commit to scen
 - **Unit tests** (Vitest, per package) cover the geometry, scene model and its invariants, tools as pure reducers, rendering against a recording canvas, persistence against `fake-indexeddb`, and React components with Testing Library.
 - **End-to-end tests** (Playwright, `apps/web/e2e`) drive the real app: drawing and editing, files and exports, multiple tabs, paste and drop, accessibility scans (axe) in both themes, touch layouts, and performance budgets on large scenes (`e2e/perf`).
 - Bugs are fixed test-first where possible: a regression test that fails before the fix.
+- **CI** (GitHub Actions, `.github/workflows/ci.yml`) runs on every push and pull request to `main` and `develop`: format, lint, typecheck, unit tests, build and a production dependency audit, then the full Playwright suite against the production build.
 
 ## React and Next.js notes
 
-- React 19.2: `useSyncExternalStore` for the scene, `useEffectEvent` instead of suppressed effect dependencies, form Actions with `useFormStatus`, async transitions, `useOptimistic`, `useDeferredValue`, `ref` as a prop, and `preload()` for the hand-drawn font.
+- React 19 (the 19.2 APIs): `useSyncExternalStore` for the scene, `useEffectEvent` instead of suppressed effect dependencies, form Actions with `useFormStatus`, async transitions, `useOptimistic`, `useDeferredValue`, `ref` as a prop, and `preload()` for the hand-drawn font.
 - `eslint-plugin-react-hooks` v7 with its React-Compiler-based rules enabled as errors; there are no hook-rule suppressions.
 - The React Compiler itself is **not** enabled: a few components read the mutable `Scene` during render, which the compiler would memoize into stale values.
 - The app is client-only (`next/dynamic` with `ssr: false`): the editor needs `window`, canvas and storage APIs from the first render.
