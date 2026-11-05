@@ -9,7 +9,7 @@ import {
 } from "@excalidraw-clone/scene"
 import type { Drawable } from "roughjs/bin/core"
 import type { RoughGenerator } from "roughjs/bin/generator"
-import { wrapRich, type WrappedLine } from "../text-metrics"
+import { alignAnchorX, runLeft, wrapRich, type WrappedLine } from "../text-metrics"
 import { parseHex } from "../theme-colors"
 import { strokeOptions } from "./options"
 
@@ -106,12 +106,7 @@ export const layoutTableCells = (
       const inner = rect.width - 2 * TABLE_PAD_X
       const { lines, width } = wrapCellText(text, spans, bold, inner, measure)
       const top = rect.y + (rect.height - lines.length * lineHeight) / 2
-      const x =
-        t.textAlign === "center"
-          ? rect.x + rect.width / 2
-          : t.textAlign === "right"
-            ? rect.x + rect.width - TABLE_PAD_X
-            : rect.x + TABLE_PAD_X
+      const x = rect.x + TABLE_PAD_X + alignAnchorX(t.textAlign, inner)
       lines.forEach((l, i) => {
         // Hanging bullet indent only makes sense against a left edge.
         const indent = t.textAlign === "left" ? l.indent : 0
@@ -124,13 +119,7 @@ export const layoutTableCells = (
           bold,
         }
         if (spans) {
-          const total = width(l.text, l.start)
-          let left =
-            t.textAlign === "center"
-              ? x - total / 2
-              : t.textAlign === "right"
-                ? x - total
-                : x + indent
+          let left = runLeft(t.textAlign, x + indent, width(l.text, l.start))
           line.runs = sliceRuns(text, spans, l.start, l.start + l.text.length).map((r) => {
             const run = { text: r.text, x: left, bold: bold || r.bold, italic: r.italic }
             left += measure(r.text, run.bold, r.italic)

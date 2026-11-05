@@ -1,11 +1,10 @@
 import type { ExcalidrawElement } from "@excalidraw-clone/scene"
 import type { Drawable } from "roughjs/bin/core"
 import type { RoughGenerator } from "roughjs/bin/generator"
-import { arrowShape } from "./arrow"
 import { diamondShape } from "./diamond"
 import { ellipseShape } from "./ellipse"
 import { freedrawShape } from "./freedraw"
-import { lineShape } from "./line"
+import { linearShape } from "./linear"
 import { polygonShape } from "./polygon"
 import { rectangleShape } from "./rectangle"
 import { tableShape } from "./table"
@@ -22,9 +21,8 @@ export const generateShape = (
     case "diamond":
       return diamondShape(element, gen)
     case "line":
-      return lineShape(element, gen)
     case "arrow":
-      return arrowShape(element, gen)
+      return linearShape(element, gen)
     case "freedraw":
       return freedrawShape(element, gen)
     case "frame":
@@ -42,12 +40,3 @@ export const generateShape = (
       return []
   }
 }
-
-export { rectangleShape, rectangleOptions } from "./rectangle"
-export { ellipseShape } from "./ellipse"
-export { diamondShape } from "./diamond"
-export { polygonShape } from "./polygon"
-export { lineShape } from "./line"
-export { arrowShape } from "./arrow"
-export { freedrawShape } from "./freedraw"
-export { drawText } from "./text"

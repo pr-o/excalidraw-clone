@@ -1,38 +1,17 @@
 import type { ExcalidrawTextElement } from "@excalidraw-clone/scene"
 import { sliceRuns } from "@excalidraw-clone/scene"
 import {
+  alignAnchorX,
+  alignTopY,
   fontSpec,
   layoutLabel,
   makeMeasure,
   runFont,
+  runLeft,
   splitLines,
   wrapRich,
   type WrappedLine,
 } from "../text-metrics"
-
-const horizontalOffset = (e: ExcalidrawTextElement): number => {
-  switch (e.textAlign) {
-    case "center":
-      return e.width / 2
-    case "right":
-      return e.width
-    case "left":
-    default:
-      return 0
-  }
-}
-
-const verticalOffset = (e: ExcalidrawTextElement, totalHeight: number): number => {
-  switch (e.verticalAlign) {
-    case "middle":
-      return (e.height - totalHeight) / 2
-    case "bottom":
-      return e.height - totalHeight
-    case "top":
-    default:
-      return 0
-  }
-}
 
 /** Free text the user gave a fixed width (side-handle resize): it word-wraps
  *  at e.width. Missing autoResize (old documents) counts as auto-resizing. */
@@ -101,14 +80,14 @@ export const drawText = (
   ctx.fillStyle = fillColor ?? e.strokeColor
   ctx.textBaseline = "top"
 
-  const baseY = verticalOffset(e, totalHeight)
+  const baseY = alignTopY(e.verticalAlign, e.height, totalHeight)
   if (!rich) {
     ctx.font = fontSpec(fontSize, e.fontFamily, weight, style)
     ctx.textAlign = e.textAlign
     for (let i = 0; i < lines.length; i += 1) {
       const l = lines[i]!
       // Hanging indent only makes sense against a left edge.
-      const x = horizontalOffset(e) + (e.textAlign === "left" ? l.indent * scale : 0)
+      const x = alignAnchorX(e.textAlign, e.width) + (e.textAlign === "left" ? l.indent * scale : 0)
       ctx.fillText(l.text, x, baseY + i * lineHeightPx)
     }
     ctx.restore()
@@ -119,13 +98,9 @@ export const drawText = (
   ctx.textAlign = "left"
   for (let i = 0; i < lines.length; i += 1) {
     const l = lines[i]!
-    const total = measure(l.text, l.start)
-    let x =
-      e.textAlign === "center"
-        ? e.width / 2 - total / 2
-        : e.textAlign === "right"
-          ? e.width - total
-          : l.indent * scale
+    const anchor =
+      alignAnchorX(e.textAlign, e.width) + (e.textAlign === "left" ? l.indent * scale : 0)
+    let x = runLeft(e.textAlign, anchor, measure(l.text, l.start))
     const y = baseY + i * lineHeightPx
     for (const r of sliceRuns(e.text, e.spans, l.start, l.start + l.text.length)) {
       ctx.font = runFont(fontSize, e.fontFamily, weight, style, r)

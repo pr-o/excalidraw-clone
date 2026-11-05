@@ -1,6 +1,6 @@
 import { newRectangle } from "@excalidraw-clone/scene"
 import { describe, expect, it } from "vitest"
-import { rectangleOptions } from "../src/shapes/rectangle"
+import { filledShapeOptions } from "../src/shapes/options"
 import { strokeLineDash } from "../src/shapes/stroke-dash"
 
 describe("strokeLineDash", () => {
@@ -21,10 +21,10 @@ describe("shape options carry strokeLineDash", () => {
       ...newRectangle({ x: 0, y: 0, width: 5, height: 5 }),
       strokeStyle: "dashed" as const,
     }
-    expect(rectangleOptions(r).strokeLineDash).toEqual([8, 8])
+    expect(filledShapeOptions(r).strokeLineDash).toEqual([8, 8])
   })
   it("solid rectangle passes []", () => {
     const r = newRectangle({ x: 0, y: 0, width: 5, height: 5 })
-    expect(rectangleOptions(r).strokeLineDash).toEqual([])
+    expect(filledShapeOptions(r).strokeLineDash).toEqual([])
   })
 })

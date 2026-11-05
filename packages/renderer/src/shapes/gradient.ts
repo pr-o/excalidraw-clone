@@ -10,6 +10,10 @@ export interface GradientLine {
   to: string
 }
 
+/** Two decimals, so trig noise (cos 90° ≈ 6e-17) never leaks into SVG attributes;
+ *  `+ 0` turns -0 into 0. */
+export const roundForSvg = (n: number): number => Math.round(n * 100) / 100 + 0
+
 /** The element-local gradient axis spanning its bounding box, or null when the
  *  element has no gradient to draw (wrong type, non-solid or transparent fill).
  *  Gradient-capable shapes are GRADIENT_TYPES. */
@@ -24,13 +28,11 @@ export const gradientLine = (el: ExcalidrawElement): GradientLine | null => {
   const half = (Math.abs(dx * el.width) + Math.abs(dy * el.height)) / 2
   const cx = el.width / 2
   const cy = el.height / 2
-  // Rounded so trig noise (cos 90° ≈ 6e-17) doesn't leak into SVG attributes.
-  const r = (n: number): number => Math.round(n * 100) / 100 + 0 // +0 turns -0 into 0
   return {
-    x1: r(cx - dx * half),
-    y1: r(cy - dy * half),
-    x2: r(cx + dx * half),
-    y2: r(cy + dy * half),
+    x1: roundForSvg(cx - dx * half),
+    y1: roundForSvg(cy - dy * half),
+    x2: roundForSvg(cx + dx * half),
+    y2: roundForSvg(cy + dy * half),
     to: g.to,
   }
 }

@@ -1,9 +1,13 @@
 import {
+  boundsExpand,
+  boundsFromPoints,
+  rotatePoint,
+  type Bounds,
+  type Point,
+} from "@excalidraw-clone/geometry"
+import {
   elementShadow,
   hasSpans,
-  LABELABLE_TYPES,
-  LINEAR_LABELABLE_TYPES,
-  mirrorOf,
   shadowMargin,
   sliceRuns,
   isBoundLabel,
@@ -17,11 +21,14 @@ import type {
   TextSpan,
 } from "@excalidraw-clone/scene"
 import { RoughSVG } from "roughjs/bin/svg"
+import { labelOptions, transformMirror } from "./draw-element"
 import { generateShape } from "./shapes"
-import { gradientLine, gradientTakes, withFill } from "./shapes/gradient"
+import { gradientLine, gradientTakes, roundForSvg, withFill } from "./shapes/gradient"
 import { layoutTableCells } from "./shapes/table"
 import { isFixedWidthText, OCCLUSION_PADDING } from "./shapes/text"
 import {
+  alignAnchorX,
+  alignTopY,
   fontFamilyName,
   layoutLabel,
   measureText,
@@ -114,8 +121,8 @@ export function renderToSVG(scene: Scene, opts: SVGRenderOptions = {}): string {
   const bbox = exportBounds(elements, padding)
   const width = Math.max(1, bbox.width)
   const height = Math.max(1, bbox.height)
-  const doc = document.implementation.createDocument(SVG_NS, "svg", null)
-  const root = doc.documentElement
+  const doc = document.implementation.createDocument(SVG_NS, null, null)
+  const root = doc.appendChild(doc.createElementNS(SVG_NS, "svg"))
   root.setAttribute("xmlns", SVG_NS)
   root.setAttribute("width", String(width))
   root.setAttribute("height", String(height))
@@ -141,7 +148,7 @@ export function renderToSVG(scene: Scene, opts: SVGRenderOptions = {}): string {
     )
   }
 
-  const rsvg = new RoughSVG(root as unknown as SVGSVGElement)
+  const rsvg = new RoughSVG(root)
 
   const measure = opts.measure ?? defaultMeasure()
   const byId = new Map(elements.map((e) => [e.id, e] as const))
@@ -150,17 +157,11 @@ export function renderToSVG(scene: Scene, opts: SVGRenderOptions = {}): string {
     theme,
   )
   for (const el of elements) {
-    const container = isBoundLabel(el) ? byId.get(el.containerId) : undefined
+    const label = isBoundLabel(el) ? labelOptions(byId.get(el.containerId), labelBg) : undefined
     const backing =
-      measure && container && LINEAR_LABELABLE_TYPES.has(container.type)
-        ? { background: labelBg, measure }
-        : undefined
+      measure && label?.occlusionBg ? { background: label.occlusionBg, measure } : undefined
     const labelLayout =
-      el.type === "text" &&
-      el.text.length > 0 &&
-      measure &&
-      container &&
-      LABELABLE_TYPES.has(container.type)
+      el.type === "text" && el.text.length > 0 && measure && label?.fit
         ? layoutLabel(
             el.text,
             { width: el.width, height: el.height },
@@ -328,6 +329,8 @@ function appendTableText(
   }
 }
 
+const ORIGIN: Point = { x: 0, y: 0 }
+
 function createGroup(doc: Document, el: ExcalidrawElement): SVGGElement {
   const group = doc.createElementNS(SVG_NS, "g")
   group.setAttribute("transform", elementTransform(el))
@@ -343,33 +346,19 @@ function createGroup(doc: Document, el: ExcalidrawElement): SVGGElement {
 function appendShadowFilter(doc: Document, group: SVGGElement, el: ExcalidrawElement): void {
   const sh = elementShadow(el)
   if (!sh) return
-  const cos = Math.cos(-el.angle)
-  const sin = Math.sin(-el.angle)
-  const [mx, my] = el.type === "image" || el.type === "text" ? mirrorOf(el) : [1, 1]
-  const r = (n: number): number => Math.round(n * 100) / 100 + 0
-  const dx = r(mx * (sh.offsetX * cos - sh.offsetY * sin))
-  const dy = r(my * (sh.offsetX * sin + sh.offsetY * cos))
+  const [mx, my] = transformMirror(el)
+  const local = rotatePoint({ x: sh.offsetX, y: sh.offsetY }, ORIGIN, -el.angle)
+  const dx = roundForSvg(mx * local.x)
+  const dy = roundForSvg(my * local.y)
   // Local-space region covering the element, its points and the shadow, so nothing is clipped.
-  const xs = [0, el.width]
-  const ys = [0, el.height]
-  if (el.type === "line" || el.type === "arrow" || el.type === "freedraw") {
-    for (const p of el.points) {
-      xs.push(p.x)
-      ys.push(p.y)
-    }
-  }
-  const m = shadowMargin(el) + el.strokeWidth + 8
-  const x = Math.min(...xs) - m
-  const y = Math.min(...ys) - m
+  const extent: Point[] = [ORIGIN, { x: el.width, y: el.height }]
+  const points = "points" in el ? el.points : []
+  const region = boundsExpand(
+    boundsFromPoints([...extent, ...points]),
+    shadowMargin(el) + el.strokeWidth + 8,
+  )
   const id = `shadow-${el.id}`
-  const filter = svgEl(doc, "filter", {
-    id,
-    filterUnits: "userSpaceOnUse",
-    x,
-    y,
-    width: Math.max(...xs) - Math.min(...xs) + 2 * m,
-    height: Math.max(...ys) - Math.min(...ys) + 2 * m,
-  })
+  const filter = svgEl(doc, "filter", { id, filterUnits: "userSpaceOnUse", ...region })
   filter.appendChild(
     svgEl(doc, "feDropShadow", { dx, dy, stdDeviation: sh.blur / 2, "flood-color": sh.color }),
   )
@@ -386,11 +375,9 @@ function elementTransform(el: ExcalidrawElement): string {
   if (el.angle !== 0) {
     parts.push(`rotate(${(el.angle * 180) / Math.PI} ${cx} ${cy})`)
   }
-  if (el.type === "image" || el.type === "text") {
-    const [mx, my] = mirrorOf(el)
-    if (mx !== 1 || my !== 1) {
-      parts.push(`translate(${cx} ${cy}) scale(${mx} ${my}) translate(${-cx} ${-cy})`)
-    }
+  const [mx, my] = transformMirror(el)
+  if (mx !== 1 || my !== 1) {
+    parts.push(`translate(${cx} ${cy}) scale(${mx} ${my}) translate(${-cx} ${-cy})`)
   }
   return parts.join(" ")
 }
@@ -425,8 +412,8 @@ function textNode(
   const lines = layout?.wrapped ?? splitLines(el.text)
   const lineHeightPx = fontSize * el.lineHeight
   const totalHeight = lines.length * lineHeightPx
-  const baseY = verticalOffset(el, totalHeight)
-  const x = horizontalAnchorX(el)
+  const baseY = alignTopY(el.verticalAlign, el.height, totalHeight)
+  const x = alignAnchorX(el.textAlign, el.width)
   const rich = hasSpans(el)
   if (rich) text.setAttribute("xml:space", "preserve")
 
@@ -467,36 +454,9 @@ function anchorFor(align: ExcalidrawTextElement["textAlign"]): string {
   }
 }
 
-function horizontalAnchorX(el: ExcalidrawTextElement): number {
-  switch (el.textAlign) {
-    case "center":
-      return el.width / 2
-    case "right":
-      return el.width
-    case "left":
-    default:
-      return 0
-  }
-}
-
-function verticalOffset(el: ExcalidrawTextElement, totalHeight: number): number {
-  switch (el.verticalAlign) {
-    case "middle":
-      return (el.height - totalHeight) / 2
-    case "bottom":
-      return el.height - totalHeight
-    case "top":
-    default:
-      return 0
-  }
-}
-
 /** Export frame for `elements`: their unrotated boxes grown by each one's
  *  shadow reach, plus `padding` on every side; 100x100 at the origin when empty. */
-export function exportBounds(
-  elements: readonly ExcalidrawElement[],
-  padding: number,
-): { x: number; y: number; width: number; height: number } {
+export function exportBounds(elements: readonly ExcalidrawElement[], padding: number): Bounds {
   if (elements.length === 0) return { x: 0, y: 0, width: 100, height: 100 }
   let minX = Infinity
   let minY = Infinity

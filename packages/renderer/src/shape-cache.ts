@@ -6,11 +6,13 @@ import { themedElement } from "./theme-colors"
 import type { Theme } from "./types"
 
 interface ShapeCacheEntry {
-  versionNonce: number
   theme: Theme
   drawables: readonly Drawable[]
 }
 
+/** rough.js drawables per element. Elements are immutable (an edit replaces the
+ *  object), so the object itself is the cache key; only the theme can change
+ *  what one element draws. */
 export class ShapeCache {
   private cache = new WeakMap<ExcalidrawElement, ShapeCacheEntry>()
 
@@ -20,11 +22,9 @@ export class ShapeCache {
     theme: Theme = "light",
   ): readonly Drawable[] {
     const entry = this.cache.get(element)
-    if (entry && entry.versionNonce === element.versionNonce && entry.theme === theme) {
-      return entry.drawables
-    }
+    if (entry?.theme === theme) return entry.drawables
     const drawables = generateShape(themedElement(element, theme), generator)
-    this.cache.set(element, { versionNonce: element.versionNonce, theme, drawables })
+    this.cache.set(element, { theme, drawables })
     return drawables
   }
 

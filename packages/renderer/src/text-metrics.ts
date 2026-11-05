@@ -1,4 +1,11 @@
-import { BULLET, sliceRuns, type FontFamily, type TextSpan } from "@excalidraw-clone/scene"
+import {
+  BULLET,
+  sliceRuns,
+  type FontFamily,
+  type TextAlign,
+  type TextSpan,
+  type VerticalAlign,
+} from "@excalidraw-clone/scene"
 
 const FAMILY_NAMES: Record<FontFamily, string> = {
   1: '"Caveat", cursive',
@@ -202,3 +209,19 @@ export const measureText = (
   ctx.font = prevFont
   return { width, height: lines.length * fontSize * lineHeight }
 }
+
+/** A line's anchor across a box `width` wide: its left edge, centre or right edge. */
+export const alignAnchorX = (align: TextAlign, width: number): number =>
+  align === "center" ? width / 2 : align === "right" ? width : 0
+
+/** Top of a block `contentHeight` tall inside a box `height` tall. */
+export const alignTopY = (align: VerticalAlign, height: number, contentHeight: number): number =>
+  align === "middle"
+    ? (height - contentHeight) / 2
+    : align === "bottom"
+      ? height - contentHeight
+      : 0
+
+/** Left edge of a run `width` wide whose alignment anchor is at `anchorX`. */
+export const runLeft = (align: TextAlign, anchorX: number, width: number): number =>
+  align === "center" ? anchorX - width / 2 : align === "right" ? anchorX - width : anchorX
