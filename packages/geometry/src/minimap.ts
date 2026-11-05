@@ -1,4 +1,4 @@
-import type { Bounds, Point, ViewTransform } from "./types"
+import type { Bounds, Point } from "./types"
 
 /** Uniform scene -> minimap mapping: minimap = (scene - origin) * scale + offset. */
 export interface MinimapFit {
@@ -8,14 +8,6 @@ export interface MinimapFit {
   offsetX: number
   offsetY: number
 }
-
-/** The scene-space rectangle the main canvas currently shows. */
-export const viewportSceneRect = (v: ViewTransform, vw: number, vh: number): Bounds => ({
-  x: -v.scrollX,
-  y: -v.scrollY,
-  width: vw / v.zoom,
-  height: vh / v.zoom,
-})
 
 /** Fit the union of content bounds and the viewport into a w x h panel, centred, with padding. */
 export const minimapFit = (
@@ -52,16 +44,4 @@ export const sceneToMinimap = (p: Point, f: MinimapFit): Point => ({
 export const minimapToScene = (p: Point, f: MinimapFit): Point => ({
   x: (p.x - f.offsetX) / f.scale + f.originX,
   y: (p.y - f.offsetY) / f.scale + f.originY,
-})
-
-/** Same zoom, scrolled so `scenePoint` sits at the viewport centre. */
-export const centerViewOn = (
-  scenePoint: Point,
-  v: ViewTransform,
-  vw: number,
-  vh: number,
-): ViewTransform => ({
-  zoom: v.zoom,
-  scrollX: vw / 2 / v.zoom - scenePoint.x,
-  scrollY: vh / 2 / v.zoom - scenePoint.y,
 })

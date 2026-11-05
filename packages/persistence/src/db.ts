@@ -1,8 +1,8 @@
 import type { ExcalidrawBinaryFile, ExcalidrawData, LibraryItem } from "@excalidraw-clone/scene"
-import { type IDBPDatabase, openDB } from "idb"
+import { type DBSchema, type IDBPDatabase, openDB } from "idb"
 
 export const DB_NAME = "excalidraw-clone"
-export const DB_VERSION = 4
+const DB_VERSION = 4
 export const FILES_STORE = "files"
 export const LIBRARY_STORE = "library_items"
 export const SNAPSHOTS_STORE = "snapshots"
@@ -16,7 +16,7 @@ export interface Snapshot {
   document: ExcalidrawData
 }
 
-export interface ExcalidrawDB {
+interface ExcalidrawDB extends DBSchema {
   files: { key: string; value: ExcalidrawBinaryFile }
   library_items: { key: string; value: LibraryItem }
   snapshots: { key: string; value: Snapshot }

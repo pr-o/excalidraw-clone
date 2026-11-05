@@ -259,12 +259,6 @@ export interface ExcalidrawPage {
   comments?: readonly Comment[]
 }
 
-export interface SceneSnapshot {
-  elements: readonly ExcalidrawElement[]
-  appState?: ExcalidrawAppStateSnapshot
-  files?: ExcalidrawFiles
-}
-
 export interface ExcalidrawData {
   type: "excalidraw"
   version: 3

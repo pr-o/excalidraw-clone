@@ -1,5 +1,7 @@
 import {
+  imageFileIds,
   sanitizeElements,
+  sanitizeFiles,
   type ExcalidrawBinaryFile,
   type LibraryItem,
 } from "@excalidraw-clone/scene"
@@ -23,13 +25,12 @@ export async function putLibraryItem(item: LibraryItem): Promise<void> {
 
 export async function getLibraryItem(id: string): Promise<LibraryItem | undefined> {
   const db = await getDB()
-  return (await db.get(LIBRARY_STORE, id)) as LibraryItem | undefined
+  return db.get(LIBRARY_STORE, id)
 }
 
 export async function getAllLibraryItems(): Promise<LibraryItem[]> {
   const db = await getDB()
-  const items = (await db.getAll(LIBRARY_STORE)) as LibraryItem[]
-  return items.sort((a, b) => b.created - a.created)
+  return (await db.getAll(LIBRARY_STORE)).sort((a, b) => b.created - a.created)
 }
 
 export async function deleteLibraryItem(id: string): Promise<void> {
@@ -62,15 +63,6 @@ export async function exportLibraryFile(): Promise<Blob> {
   return new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" })
 }
 
-function collectFileIds(item: LibraryItem): string[] {
-  const ids: string[] = []
-  for (const el of item.elements) {
-    const fid = (el as unknown as { fileId?: string }).fileId
-    if (typeof fid === "string") ids.push(fid)
-  }
-  return ids
-}
-
 export async function importLibraryFile(blob: Blob): Promise<{ added: number; skipped: number }> {
   const text = await blob.text()
   let parsed: unknown
@@ -90,7 +82,8 @@ export async function importLibraryFile(blob: Blob): Promise<{ added: number; sk
     throw new Error("importLibraryFile: libraryItems is not an array")
   }
 
-  const files = p.files ?? {}
+  // Untrusted file: only well-formed image records are stored.
+  const files = sanitizeFiles(p.files)
   for (const bin of Object.values(files)) {
     await putFile(bin)
   }
@@ -114,9 +107,8 @@ export async function importLibraryFile(blob: Blob): Promise<{ added: number; sk
       skipped++
       continue
     }
-    const referencedIds = collectFileIds(item)
     const itemFiles: Record<string, ExcalidrawBinaryFile> = {}
-    for (const fid of referencedIds) {
+    for (const fid of imageFileIds(item.elements)) {
       const bin = files[fid] ?? (await getFile(fid))
       if (bin) itemFiles[fid] = bin
     }

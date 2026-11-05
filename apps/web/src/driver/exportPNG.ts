@@ -3,6 +3,7 @@ import { embedTextChunk, getFile, PNG_EXCALIDRAW_KEYWORD } from "@excalidraw-clo
 import { CanvasRenderer, exportBounds } from "@excalidraw-clone/renderer"
 import {
   buildExcalidrawData,
+  imageFileIds,
   newPage,
   Scene,
   type ExcalidrawElement,
@@ -39,12 +40,8 @@ export async function exportToPNG(
     viewTransform: { scrollX: -bbox.x + PADDING, scrollY: -bbox.y + PADDING, zoom: opts.scale },
   })
 
-  const fileIds = new Set<string>()
-  for (const el of live) {
-    if (el.type === "image" && el.fileId !== null) fileIds.add(el.fileId)
-  }
   const loads: Promise<void>[] = []
-  for (const id of fileIds) {
+  for (const id of imageFileIds(live)) {
     const file = await getFile(id)
     if (file) loads.push(renderer.preloadImage(id, file.dataURL))
   }

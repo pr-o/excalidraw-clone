@@ -220,6 +220,24 @@ describe("migrate — table validation", () => {
 })
 
 describe("migrate: malformed pages from untrusted files", () => {
+  it("drops malformed entries from the files map instead of storing them", () => {
+    const good = {
+      id: "f1",
+      mimeType: "image/png",
+      dataURL: "data:image/png;base64,AA",
+      created: 1,
+    }
+    const out = migrate({
+      type: "excalidraw",
+      version: 3,
+      source: "x",
+      activePageId: "p1",
+      pages: [{ id: "p1", name: "A", elements: [] }],
+      files: { f1: good, f2: 7, f3: { id: "f3", dataURL: "javascript:alert(1)" } },
+    })
+    expect(out.files).toEqual({ f1: good })
+  })
+
   it("tolerates a page with no element list and non-object entries", () => {
     const out = migrate({
       type: "excalidraw",

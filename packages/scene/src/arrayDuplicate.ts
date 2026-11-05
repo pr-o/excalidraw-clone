@@ -1,6 +1,8 @@
+import { clamp } from "@excalidraw-clone/geometry"
 import { getElementsBounds } from "./bounds"
 import { cloneElementsWithNewIds, expandIdsToCopyClosure } from "./clone"
 import type { ExcalidrawElement } from "./types"
+import { finiteOr, isFiniteNumber } from "./validate"
 
 export const ARRAY_DUPLICATE_MAX_TRACKS = 20
 export const ARRAY_DUPLICATE_MAX_ELEMENTS = 2000
@@ -13,8 +15,7 @@ export interface ArrayDuplicateOptions {
 }
 
 const clampTracks = (n: number): number =>
-  Number.isFinite(n) ? Math.min(ARRAY_DUPLICATE_MAX_TRACKS, Math.max(1, Math.floor(n))) : 1
-const finite = (n: number): number => (Number.isFinite(n) ? n : 0)
+  isFiniteNumber(n) ? clamp(Math.floor(n), 1, ARRAY_DUPLICATE_MAX_TRACKS) : 1
 
 /** Clones the copy-closure of the unlocked `ids` into a rows x cols grid; the
  *  original occupies cell [0,0], so rows*cols-1 copies come back (fresh ids,
@@ -34,8 +35,8 @@ export function arrayDuplicate(
   if (!bounds) return []
   const rows = clampTracks(opts.rows)
   const cols = clampTracks(opts.cols)
-  const pitchX = bounds.width + finite(opts.gapX)
-  const pitchY = bounds.height + finite(opts.gapY)
+  const pitchX = bounds.width + finiteOr(opts.gapX, 0)
+  const pitchY = bounds.height + finiteOr(opts.gapY, 0)
   const out: ExcalidrawElement[] = []
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {

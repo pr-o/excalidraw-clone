@@ -1,4 +1,5 @@
-import type { ElementType, ExcalidrawElement } from "./types"
+import { clamp } from "@excalidraw-clone/geometry"
+import type { ElementType, ExcalidrawBinaryFile, ExcalidrawElement } from "./types"
 
 const ELEMENT_TYPES: ReadonlySet<string> = new Set<ElementType>([
   "rectangle",
@@ -20,13 +21,18 @@ const ELEMENT_TYPES: ReadonlySet<string> = new Set<ElementType>([
 
 const LINEAR_TYPES: ReadonlySet<string> = new Set(["arrow", "line", "freedraw"])
 
-const finite = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v)
+/** A usable number from untrusted data: rejects NaN, ±Infinity and numeric strings. */
+export const isFiniteNumber = (v: unknown): v is number =>
+  typeof v === "number" && Number.isFinite(v)
+
+/** `v` when it is a finite number, otherwise `fallback`. */
+export const finiteOr = (v: unknown, fallback: number): number => (isFiniteNumber(v) ? v : fallback)
 
 const isPoint = (p: unknown): boolean =>
   typeof p === "object" &&
   p !== null &&
-  finite((p as { x?: unknown }).x) &&
-  finite((p as { y?: unknown }).y)
+  isFiniteNumber((p as { x?: unknown }).x) &&
+  isFiniteNumber((p as { y?: unknown }).y)
 
 /**
  * Makes an untrusted element (opened file, pasted clipboard, imported library)
@@ -51,21 +57,20 @@ export function sanitizeElement(raw: unknown): ExcalidrawElement | null {
   if (LINEAR_TYPES.has(el.type) && !(Array.isArray(el.points) && el.points.every(isPoint))) {
     return null
   }
-  const num = (v: unknown): number => (finite(v) ? v : 0)
   return {
     ...el,
-    x: num(el.x),
-    y: num(el.y),
-    width: num(el.width),
-    height: num(el.height),
-    angle: num(el.angle),
+    x: finiteOr(el.x, 0),
+    y: finiteOr(el.y, 0),
+    width: finiteOr(el.width, 0),
+    height: finiteOr(el.height, 0),
+    angle: finiteOr(el.angle, 0),
     ...(el.type === "text" && typeof el.text !== "string" ? { text: "" } : {}),
     groupIds: Array.isArray(el.groupIds) ? el.groupIds : [],
     boundElements: Array.isArray(el.boundElements) ? el.boundElements : null,
     frameId: typeof el.frameId === "string" ? el.frameId : null,
     isDeleted: el.isDeleted === true,
     locked: el.locked === true,
-    opacity: finite(el.opacity) ? Math.min(100, Math.max(0, el.opacity)) : 100,
+    opacity: clamp(finiteOr(el.opacity, 100), 0, 100),
     link: typeof el.link === "string" ? el.link : null,
   } as unknown as ExcalidrawElement
 }
@@ -77,6 +82,32 @@ export function sanitizeElements(raw: unknown): ExcalidrawElement[] {
   for (const item of raw) {
     const el = sanitizeElement(item)
     if (el) out.push(el)
+  }
+  return out
+}
+
+/** One stored image from an untrusted document or library: a record with an id
+ *  and a `data:` URL, or null. */
+export function sanitizeBinaryFile(raw: unknown): ExcalidrawBinaryFile | null {
+  if (typeof raw !== "object" || raw === null) return null
+  const f = raw as Record<string, unknown>
+  if (typeof f.id !== "string" || f.id === "") return null
+  if (typeof f.dataURL !== "string" || !f.dataURL.startsWith("data:")) return null
+  return {
+    id: f.id,
+    mimeType: typeof f.mimeType === "string" ? f.mimeType : "application/octet-stream",
+    dataURL: f.dataURL,
+    created: finiteOr(f.created, 0),
+  }
+}
+
+/** An untrusted `files` map, keyed by each file's own id; malformed entries are dropped. */
+export function sanitizeFiles(raw: unknown): Record<string, ExcalidrawBinaryFile> {
+  const out: Record<string, ExcalidrawBinaryFile> = {}
+  if (typeof raw !== "object" || raw === null) return out
+  for (const value of Object.values(raw)) {
+    const file = sanitizeBinaryFile(value)
+    if (file) out[file.id] = file
   }
   return out
 }

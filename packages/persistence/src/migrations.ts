@@ -1,7 +1,10 @@
 import {
   SCENE_FORMAT_VERSION,
+  finiteOr,
+  isFiniteNumber,
   sanitizeComments,
   sanitizeElements,
+  sanitizeFiles,
   sanitizeSpans,
   sanitizeTable,
   type ExcalidrawData,
@@ -74,24 +77,19 @@ const clamp01 = (n: number): number => Math.min(1, Math.max(0, n))
 /** Crop is stored as 0..1 fractions; upstream files use pixels + natural size, or omit it. */
 function normalizeCrop(crop: unknown): unknown {
   if (crop === undefined || crop === null) return null
-  const c = crop as Record<string, number>
+  const c = crop as Record<string, unknown>
   const { naturalWidth: nw, naturalHeight: nh } = c
   if (typeof nw !== "number" || typeof nh !== "number") return crop
   // Untrusted input: a missing/NaN field must not leak NaN into the fractions.
-  const num = (v: unknown): number => (typeof v === "number" && Number.isFinite(v) ? v : 0)
-  if (!(nw > 0 && nh > 0 && num(c.width) > 0 && num(c.height) > 0)) return null
-  const x = clamp01(num(c.x) / nw)
-  const y = clamp01(num(c.y) / nh)
-  return {
-    x,
-    y,
-    width: Math.min(num(c.width) / nw, 1 - x),
-    height: Math.min(num(c.height) / nh, 1 - y),
-  }
+  const width = finiteOr(c.width, 0)
+  const height = finiteOr(c.height, 0)
+  if (!(nw > 0 && nh > 0 && width > 0 && height > 0)) return null
+  const x = clamp01(finiteOr(c.x, 0) / nw)
+  const y = clamp01(finiteOr(c.y, 0) / nh)
+  return { x, y, width: Math.min(width / nw, 1 - x), height: Math.min(height / nh, 1 - y) }
 }
 
-const numbers = (v: unknown): number[] =>
-  Array.isArray(v) ? v.filter((n): n is number => typeof n === "number" && Number.isFinite(n)) : []
+const numbers = (v: unknown): number[] => (Array.isArray(v) ? v.filter(isFiniteNumber) : [])
 
 /** Guides come from untrusted files: keep only finite numbers, drop anything else. */
 function normalizeGuides(guides: unknown): { guides?: { x: number[]; y: number[] } } {
@@ -119,6 +117,7 @@ function normalizePages(data: AnyData): AnyData {
     : []
   return {
     ...data,
+    ...(data.files === undefined ? {} : { files: sanitizeFiles(data.files) }),
     pages: pages.map(({ guides, comments, elements, ...page }) => ({
       ...page,
       ...normalizeGuides(guides),

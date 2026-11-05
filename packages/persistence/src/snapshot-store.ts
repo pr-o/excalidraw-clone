@@ -14,9 +14,7 @@ let lastCreatedAt = 0
 // split meta/doc into two stores if snapshots get large.
 async function allNewestFirst(): Promise<Snapshot[]> {
   const db = await getDB()
-  return ((await db.getAll(SNAPSHOTS_STORE)) as Snapshot[]).sort(
-    (a, b) => b.createdAt - a.createdAt,
-  )
+  return (await db.getAll(SNAPSHOTS_STORE)).sort((a, b) => b.createdAt - a.createdAt)
 }
 
 export async function saveSnapshot(name: string, document: ExcalidrawData): Promise<SnapshotMeta> {
@@ -35,7 +33,7 @@ export async function listSnapshots(): Promise<SnapshotMeta[]> {
 
 export async function loadSnapshot(id: string): Promise<ExcalidrawData | null> {
   const db = await getDB()
-  const snapshot = (await db.get(SNAPSHOTS_STORE, id)) as Snapshot | undefined
+  const snapshot = await db.get(SNAPSHOTS_STORE, id)
   return snapshot ? migrate(snapshot.document) : null
 }
 

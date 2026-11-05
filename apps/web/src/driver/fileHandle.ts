@@ -7,11 +7,10 @@ import {
   serializeDocument,
   toExcalidrawBlob,
 } from "@excalidraw-clone/persistence"
-import type { ExcalidrawFiles } from "@excalidraw-clone/scene"
+import { imageFileIds, type ExcalidrawFiles } from "@excalidraw-clone/scene"
 import i18next from "i18next"
 import { notify } from "../components/LiveAnnouncer"
 import type { PageRecord } from "./pages"
-import { referencedFileIds } from "./saveFile"
 
 /**
  * "Save" writes back to the file the drawing came from, as a desktop app does, using the
@@ -103,8 +102,9 @@ export async function pickDrawingFile(): Promise<File | null> {
 
 async function documentBlob(pages: readonly PageRecord[], activePageId: string): Promise<Blob> {
   // Only the images this document uses: the browser store also holds pictures from
-  // deleted elements and other drawings, which must not leak into a shared file.
-  const used = referencedFileIds(pages)
+  // other drawings, which must not leak into a shared file. Deleted elements count,
+  // since they stay in the file for undo.
+  const used = imageFileIds(pages.flatMap((p) => p.scene.getElementsIncludingDeleted()))
   const files = (await getAllFiles()).filter((f) => used.has(f.id))
   const record = Object.fromEntries(files.map((f) => [f.id, f])) as ExcalidrawFiles
   return toExcalidrawBlob(serializeDocument(pages, activePageId, undefined, record))

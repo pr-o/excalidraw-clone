@@ -1,7 +1,8 @@
-import type { Bounds } from "./types"
+import { boundsSpan } from "./bounds"
+import type { Axis, Bounds } from "./types"
 
 export interface AlignmentGuide {
-  axis: "x" | "y"
+  axis: Axis
   position: number
   start: number
   end: number
@@ -20,86 +21,56 @@ export interface AlignmentSnapResult {
   guides: readonly AlignmentGuide[]
 }
 
-interface AxisTriple {
-  near: number
-  center: number
-  far: number
+/** A box's near edge, centre and far edge along `axis`: the values that snap. */
+const snapValues = (b: Bounds, axis: Axis): readonly [number, number, number] => {
+  const [start, end] = boundsSpan(b, axis)
+  return [start, (start + end) / 2, end]
 }
 
-const xTriple = (b: Bounds): AxisTriple => ({
-  near: b.x,
-  center: b.x + b.width / 2,
-  far: b.x + b.width,
-})
-
-const yTriple = (b: Bounds): AxisTriple => ({
-  near: b.y,
-  center: b.y + b.height / 2,
-  far: b.y + b.height,
-})
+const crossAxis = (axis: Axis): Axis => (axis === "x" ? "y" : "x")
 
 interface AxisMatch {
-  distance: number
+  /** Shift along the axis that lands the moving value on the target. */
   correction: number
+  /** Where the guide is drawn, and its extent along the other axis. */
   position: number
-  perpStart: number
-  perpEnd: number
+  start: number
+  end: number
 }
 
-/** Finds the single closest (moving-value, candidate-value) pair within
- *  `thresholdWorld` for one axis, comparing near/center/far of the moving
- *  box against near/center/far of every candidate. Returns null when
- *  nothing is within threshold. */
+const isCloser = (best: AxisMatch | null, correction: number, threshold: number): boolean =>
+  Math.abs(correction) <= threshold &&
+  (best === null || Math.abs(correction) < Math.abs(best.correction))
+
+/** The single closest (moving value, target) pair within `threshold` on one
+ *  axis. Targets are every candidate's near/centre/far and the user guide
+ *  lines; the first pair wins a tie. */
 const bestAxisMatch = (
-  movingBounds: Bounds,
-  candidateBounds: readonly Bounds[],
-  axis: "x" | "y",
-  thresholdWorld: number,
+  moving: Bounds,
+  candidates: readonly Bounds[],
+  axis: Axis,
+  threshold: number,
   lines: readonly number[],
 ): AxisMatch | null => {
-  const movingTriple = axis === "x" ? xTriple(movingBounds) : yTriple(movingBounds)
-  const movingValues = [movingTriple.near, movingTriple.center, movingTriple.far]
-  const movingPerpStart = axis === "x" ? movingBounds.y : movingBounds.x
-  const movingPerpEnd =
-    axis === "x" ? movingBounds.y + movingBounds.height : movingBounds.x + movingBounds.width
-
+  const movingValues = snapValues(moving, axis)
+  const [movingStart, movingEnd] = boundsSpan(moving, crossAxis(axis))
   let best: AxisMatch | null = null
-  for (const candidate of candidateBounds) {
-    const candidateTriple = axis === "x" ? xTriple(candidate) : yTriple(candidate)
-    const candidateValues = [candidateTriple.near, candidateTriple.center, candidateTriple.far]
-    const candidatePerpStart = axis === "x" ? candidate.y : candidate.x
-    const candidatePerpEnd =
-      axis === "x" ? candidate.y + candidate.height : candidate.x + candidate.width
-
+  for (const candidate of candidates) {
+    const [candidateStart, candidateEnd] = boundsSpan(candidate, crossAxis(axis))
+    const start = Math.min(movingStart, candidateStart)
+    const end = Math.max(movingEnd, candidateEnd)
     for (const mv of movingValues) {
-      for (const cv of candidateValues) {
-        const distance = Math.abs(cv - mv)
-        if (distance > thresholdWorld) continue
-        if (best === null || distance < best.distance) {
-          best = {
-            distance,
-            correction: cv - mv,
-            position: cv,
-            perpStart: Math.min(movingPerpStart, candidatePerpStart),
-            perpEnd: Math.max(movingPerpEnd, candidatePerpEnd),
-          }
-        }
+      for (const cv of snapValues(candidate, axis)) {
+        if (isCloser(best, cv - mv, threshold))
+          best = { correction: cv - mv, position: cv, start, end }
       }
     }
   }
   // A guide line spans the whole canvas, so its visual just tracks the moving box.
   for (const line of lines) {
     for (const mv of movingValues) {
-      const distance = Math.abs(line - mv)
-      if (distance > thresholdWorld) continue
-      if (best === null || distance < best.distance) {
-        best = {
-          distance,
-          correction: line - mv,
-          position: line,
-          perpStart: movingPerpStart,
-          perpEnd: movingPerpEnd,
-        }
+      if (isCloser(best, line - mv, threshold)) {
+        best = { correction: line - mv, position: line, start: movingStart, end: movingEnd }
       }
     }
   }
@@ -117,31 +88,10 @@ export const computeAlignmentSnap = (
   thresholdWorld: number,
   lines: UserGuides = { x: [], y: [] },
 ): AlignmentSnapResult => {
+  const x = bestAxisMatch(movingBounds, candidateBounds, "x", thresholdWorld, lines.x)
+  const y = bestAxisMatch(movingBounds, candidateBounds, "y", thresholdWorld, lines.y)
   const guides: AlignmentGuide[] = []
-  let dx = 0
-  let dy = 0
-
-  const xMatch = bestAxisMatch(movingBounds, candidateBounds, "x", thresholdWorld, lines.x)
-  if (xMatch) {
-    dx = xMatch.correction
-    guides.push({
-      axis: "x",
-      position: xMatch.position,
-      start: xMatch.perpStart,
-      end: xMatch.perpEnd,
-    })
-  }
-
-  const yMatch = bestAxisMatch(movingBounds, candidateBounds, "y", thresholdWorld, lines.y)
-  if (yMatch) {
-    dy = yMatch.correction
-    guides.push({
-      axis: "y",
-      position: yMatch.position,
-      start: yMatch.perpStart,
-      end: yMatch.perpEnd,
-    })
-  }
-
-  return { dx, dy, guides }
+  if (x) guides.push({ axis: "x", position: x.position, start: x.start, end: x.end })
+  if (y) guides.push({ axis: "y", position: y.position, start: y.start, end: y.end })
+  return { dx: x?.correction ?? 0, dy: y?.correction ?? 0, guides }
 }

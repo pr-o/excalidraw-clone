@@ -1,7 +1,7 @@
 "use client"
 import { getFile } from "@excalidraw-clone/persistence"
 import { renderToSVG } from "@excalidraw-clone/renderer"
-import { Scene, type ExcalidrawElement } from "@excalidraw-clone/scene"
+import { imageFileIds, Scene, type ExcalidrawElement } from "@excalidraw-clone/scene"
 import type { ExportOptions } from "@excalidraw-clone/ui"
 import { handwrittenFontFaceCSS } from "./exportFonts"
 
@@ -23,11 +23,9 @@ export async function renderExportSVG(
   const background = opts.background === "transparent" ? "transparent" : canvasBg
   const live = elements.filter((e) => !e.isDeleted)
   const files = new Map<string, string>()
-  for (const el of live) {
-    if (el.type === "image" && el.fileId !== null && !files.has(el.fileId)) {
-      const bin = await loadFile(el.fileId)
-      if (bin) files.set(el.fileId, bin.dataURL)
-    }
+  for (const id of imageFileIds(live)) {
+    const bin = await loadFile(id)
+    if (bin) files.set(id, bin.dataURL)
   }
   const fontFaceCSS = embedFonts ? await handwrittenFontFaceCSS(live) : undefined
   return renderToSVG(new Scene(live), {

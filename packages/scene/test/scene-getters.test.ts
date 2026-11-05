@@ -1,12 +1,10 @@
 import { describe, expect, it, vi } from "vitest"
 import { Scene, newRectangle } from "../src"
-import type { ExcalidrawElement } from "../src"
 
-class TestScene extends Scene {
-  publicSetElements(next: readonly ExcalidrawElement[]): void {
-    this.setElements(next)
-  }
-}
+const addRectangle = (s: Scene): void =>
+  s.mutate((d) => {
+    d.push(newRectangle({ x: 0, y: 0 }))
+  })
 
 describe("Scene — empty state", () => {
   it("constructs with no elements", () => {
@@ -28,23 +26,23 @@ describe("Scene — getters filter deleted", () => {
 
 describe("Scene — subscribe", () => {
   it("returns an unsubscribe function", () => {
-    const s = new TestScene()
+    const s = new Scene()
     const fn = vi.fn()
     const unsubscribe = s.subscribe(fn)
-    s.publicSetElements([newRectangle({ x: 0, y: 0 })])
+    addRectangle(s)
     expect(fn).toHaveBeenCalledTimes(1)
     unsubscribe()
-    s.publicSetElements([newRectangle({ x: 0, y: 0 })])
+    addRectangle(s)
     expect(fn).toHaveBeenCalledTimes(1)
   })
 
   it("multiple listeners all fire", () => {
-    const s = new TestScene()
+    const s = new Scene()
     const a = vi.fn()
     const b = vi.fn()
     s.subscribe(a)
     s.subscribe(b)
-    s.publicSetElements([newRectangle({ x: 0, y: 0 })])
+    addRectangle(s)
     expect(a).toHaveBeenCalledTimes(1)
     expect(b).toHaveBeenCalledTimes(1)
   })

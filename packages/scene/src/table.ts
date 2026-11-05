@@ -1,7 +1,8 @@
-import { rotatePoint, type Point } from "@excalidraw-clone/geometry"
+import { boundsCenter, clamp, rotatePoint, type Axis, type Point } from "@excalidraw-clone/geometry"
 import { DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE } from "./defaults"
 import { normalizeSpans, remapSpansForText, sanitizeSpans, type TextSpan } from "./spans"
 import type { ExcalidrawElement, ExcalidrawTableElement } from "./types"
+import { finiteOr, isFiniteNumber } from "./validate"
 
 export const TABLE_MIN_ROW = 28
 export const TABLE_MIN_COL = 40
@@ -17,9 +18,9 @@ export const TABLE_LINE_HEIGHT = 1.25
 
 const EPS = 1e-6
 
-export const sum = (xs: readonly number[]): number => xs.reduce((a, b) => a + b, 0)
+const sum = (xs: readonly number[]): number => xs.reduce((a, b) => a + b, 0)
 
-const clampTracks = (n: number): number => Math.min(TABLE_MAX_TRACKS, Math.max(1, Math.floor(n)))
+const clampTracks = (n: number): number => clamp(Math.floor(n), 1, TABLE_MAX_TRACKS)
 
 const evenSplit = (total: number, n: number): number[] => Array.from({ length: n }, () => total / n)
 
@@ -64,9 +65,8 @@ export const fitTable = (t: ExcalidrawTableElement): ExcalidrawTableElement => {
     t.cells.every((r) => r.length === t.cols) &&
     (t.cellSpans === undefined ||
       (t.cellSpans.length === t.rows && t.cellSpans.every((r) => r.length === t.cols)))
-  const base = wellFormed
-    ? t
-    : (sanitizeTable(t as unknown as Record<string, unknown>) as unknown as ExcalidrawTableElement)
+  // Repair, then trust: sanitizeTable returns the untyped record it was given, fixed.
+  const base = wellFormed ? t : (sanitizeTable(t) as unknown as ExcalidrawTableElement)
   const colWidths = fitTrack(base.colWidths, base.width, TABLE_MIN_COL)
   const rowHeights = fitTrack(base.rowHeights, base.height, TABLE_MIN_ROW)
   const width = sum(colWidths)
@@ -164,7 +164,7 @@ const spansPatch = (
 
 /** Mirror the grid for a flip: x reverses columns, y reverses rows (the header
  *  flag stays on row 0). Text is moved, never mirrored glyph-wise. */
-export const flipTable = (t: ExcalidrawTableElement, axis: "x" | "y"): ExcalidrawTableElement => {
+export const flipTable = (t: ExcalidrawTableElement, axis: Axis): ExcalidrawTableElement => {
   const rev = <T>(xs: readonly T[]): T[] => [...xs].reverse()
   const grid = <T>(g: readonly (readonly T[])[]): (readonly T[])[] =>
     axis === "x" ? g.map(rev) : rev(g)
@@ -184,12 +184,12 @@ const withSizes = (
   return { ...next, width: sum(next.colWidths), height: sum(next.rowHeights) }
 }
 
-const clampIndex = (i: number, n: number): number => Math.min(n - 1, Math.max(0, i))
+const clampIndex = (i: number, n: number): number => clamp(i, 0, n - 1)
 
 /** Insert a row so it ends up at `index` (0..rows); a no-op at the 50-row cap. */
 export const insertRow = (t: ExcalidrawTableElement, index: number): ExcalidrawTableElement => {
   if (t.rows >= TABLE_MAX_TRACKS) return t
-  const at = Math.min(t.rows, Math.max(0, index))
+  const at = clamp(index, 0, t.rows)
   const height = t.rowHeights[clampIndex(at === t.rows ? at - 1 : at, t.rows)]!
   const rowHeights = [...t.rowHeights.slice(0, at), height, ...t.rowHeights.slice(at)]
   const cells = [...t.cells.slice(0, at), Array(t.cols).fill(""), ...t.cells.slice(at)]
@@ -203,7 +203,7 @@ export const insertRow = (t: ExcalidrawTableElement, index: number): ExcalidrawT
 
 export const insertCol = (t: ExcalidrawTableElement, index: number): ExcalidrawTableElement => {
   if (t.cols >= TABLE_MAX_TRACKS) return t
-  const at = Math.min(t.cols, Math.max(0, index))
+  const at = clamp(index, 0, t.cols)
   const width = t.colWidths[clampIndex(at === t.cols ? at - 1 : at, t.cols)]!
   const colWidths = [...t.colWidths.slice(0, at), width, ...t.colWidths.slice(at)]
   const cells = t.cells.map((r) => [...r.slice(0, at), "", ...r.slice(at)])
@@ -296,8 +296,7 @@ export const cellRect = (t: ExcalidrawTableElement, row: number, col: number): C
 
 /** Scene point -> table-local point (undoing the table's rotation). */
 export const toTableLocal = (t: ExcalidrawTableElement, p: Point): Point => {
-  const center: Point = { x: t.x + t.width / 2, y: t.y + t.height / 2 }
-  const q = t.angle === 0 ? p : rotatePoint(p, center, -t.angle)
+  const q = t.angle === 0 ? p : rotatePoint(p, boundsCenter(t), -t.angle)
   return { x: q.x - t.x, y: q.y - t.y }
 }
 
@@ -370,22 +369,19 @@ export const autoGrowRows = (
 export const tableText = (t: ExcalidrawTableElement): string =>
   t.cells.map((r) => r.join(" ")).join("\n")
 
-const finite = (v: unknown, fallback: number): number =>
-  typeof v === "number" && Number.isFinite(v) ? v : fallback
-
 const sizesOf = (v: unknown, n: number, min: number, fallback: number): number[] => {
   const raw = Array.isArray(v) ? v : []
-  return Array.from({ length: n }, (_, i) => Math.max(min, finite(raw[i], fallback)))
+  return Array.from({ length: n }, (_, i) => Math.max(min, finiteOr(raw[i], fallback)))
 }
 
 /** Trust-boundary normalizer for a persisted table: clamps rows/cols to 1..50,
  *  pads/truncates the track and cell arrays to match, coerces cells to strings,
  *  and re-derives width/height from the tracks. Invalid input becomes a
  *  default 3x3 table (keeping the element's id/position/style fields). */
-export const sanitizeTable = (el: Record<string, unknown>): Record<string, unknown> => {
-  const valid = (v: unknown): boolean => typeof v === "number" && Number.isFinite(v)
-  const rows = valid(el.rows) ? clampTracks(el.rows as number) : TABLE_DEFAULT_ROWS
-  const cols = valid(el.cols) ? clampTracks(el.cols as number) : TABLE_DEFAULT_COLS
+export const sanitizeTable = (input: object): Record<string, unknown> => {
+  const el = input as Record<string, unknown>
+  const rows = isFiniteNumber(el.rows) ? clampTracks(el.rows) : TABLE_DEFAULT_ROWS
+  const cols = isFiniteNumber(el.cols) ? clampTracks(el.cols) : TABLE_DEFAULT_COLS
   const colWidths = sizesOf(el.colWidths, cols, TABLE_MIN_COL, TABLE_DEFAULT_COL)
   const rowHeights = sizesOf(el.rowHeights, rows, TABLE_MIN_ROW, TABLE_DEFAULT_ROW)
   const rawCells = Array.isArray(el.cells) ? el.cells : []
@@ -420,7 +416,7 @@ export const sanitizeTable = (el: Record<string, unknown>): Record<string, unkno
     width: sum(colWidths),
     height: sum(rowHeights),
     headerRow: typeof el.headerRow === "boolean" ? el.headerRow : true,
-    fontSize: valid(el.fontSize) && (el.fontSize as number) > 0 ? el.fontSize : DEFAULT_FONT_SIZE,
+    fontSize: isFiniteNumber(el.fontSize) && el.fontSize > 0 ? el.fontSize : DEFAULT_FONT_SIZE,
     fontFamily: family === 1 || family === 2 || family === 3 ? family : DEFAULT_FONT_FAMILY,
     textAlign: el.textAlign === "center" || el.textAlign === "right" ? el.textAlign : "left",
   }

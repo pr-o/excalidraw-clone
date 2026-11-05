@@ -1,4 +1,5 @@
-import type { Bounds } from "./types"
+import { boundsContains } from "./bounds"
+import type { Axis, Bounds } from "./types"
 
 /** One distance read-out: a straight line from the selection to its nearest
  *  neighbour on one side. `axis` is the direction the line runs ("x" is
@@ -6,7 +7,7 @@ import type { Bounds } from "./types"
  *  other axis. */
 export interface GapMeasurement {
   side: "left" | "right" | "top" | "bottom"
-  axis: "x" | "y"
+  axis: Axis
   from: number
   to: number
   at: number
@@ -23,12 +24,6 @@ const overlap = (a0: number, a1: number, b0: number, b1: number): [number, numbe
   const hi = Math.min(a1, b1)
   return hi > lo ? [lo, hi] : null
 }
-
-const contains = (outer: Bounds, inner: Bounds): boolean =>
-  outer.x <= inner.x &&
-  outer.y <= inner.y &&
-  outer.x + outer.width >= inner.x + inner.width &&
-  outer.y + outer.height >= inner.y + inner.height
 
 /**
  * Distances from `selection` to the nearest thing on each of its four sides.
@@ -56,7 +51,7 @@ export const measureGaps = (selection: Bounds, others: readonly Bounds[]): GapMe
   for (const o of others) {
     const oRight = o.x + o.width
     const oBottom = o.y + o.height
-    if (contains(o, selection)) {
+    if (boundsContains(o, selection)) {
       const midX = (left + right) / 2
       const midY = (top + bottom) / 2
       offer({ side: "left", axis: "x", from: o.x, to: left, at: midY, distance: left - o.x })

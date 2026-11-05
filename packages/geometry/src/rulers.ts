@@ -1,5 +1,5 @@
 import type { UserGuides } from "./alignment-guides"
-import type { Point } from "./types"
+import type { Axis, Point } from "./types"
 
 const MIN_LABEL_SPACING_PX = 50
 
@@ -42,7 +42,7 @@ export const hitTestUserGuide = (
   guides: UserGuides,
   at: Point,
   zoom: number,
-): { axis: "x" | "y"; index: number } | null => {
+): { axis: Axis; index: number } | null => {
   const tol = USER_GUIDE_HIT_TOLERANCE_PX / zoom
   const xi = guides.x.findIndex((g) => Math.abs(g - at.x) <= tol)
   if (xi >= 0) return { axis: "x", index: xi }

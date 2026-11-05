@@ -141,13 +141,20 @@ export type {
   PointBinding,
   Roughness,
   Roundness,
-  SceneSnapshot,
   StrokeStyle,
   StrokeWidth,
   TextAlign,
   VerticalAlign,
 } from "./types"
-export { sanitizeElement, sanitizeElements } from "./validate"
+export {
+  finiteOr,
+  isFiniteNumber,
+  sanitizeBinaryFile,
+  sanitizeElement,
+  sanitizeElements,
+  sanitizeFiles,
+} from "./validate"
+export { imageFileIds } from "./image-files"
 export { isBoundLabel } from "./bound-label"
 export type { BoundLabel } from "./bound-label"
 export { elementShadow, shadowMargin } from "./shadow"

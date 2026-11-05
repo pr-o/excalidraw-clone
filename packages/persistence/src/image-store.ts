@@ -1,6 +1,6 @@
 import type { ExcalidrawBinaryFile } from "@excalidraw-clone/scene"
 import { blobToDataURL, sha256Hex } from "./binary"
-import { _resetDBForTesting as _resetSharedDB, FILES_STORE, getDB } from "./db"
+import { FILES_STORE, getDB } from "./db"
 
 export async function putFile(file: ExcalidrawBinaryFile): Promise<void> {
   const db = await getDB()
@@ -9,12 +9,12 @@ export async function putFile(file: ExcalidrawBinaryFile): Promise<void> {
 
 export async function getFile(id: string): Promise<ExcalidrawBinaryFile | undefined> {
   const db = await getDB()
-  return (await db.get(FILES_STORE, id)) as ExcalidrawBinaryFile | undefined
+  return db.get(FILES_STORE, id)
 }
 
 export async function getAllFiles(): Promise<ExcalidrawBinaryFile[]> {
   const db = await getDB()
-  return (await db.getAll(FILES_STORE)) as ExcalidrawBinaryFile[]
+  return db.getAll(FILES_STORE)
 }
 
 export async function deleteFile(id: string): Promise<void> {
@@ -41,6 +41,3 @@ export async function addImageFromBlob(blob: Blob): Promise<ExcalidrawBinaryFile
   await putFile(file)
   return file
 }
-
-/** Test-only: re-exported from the shared DB module for backward-compat with the existing test setup. */
-export const _resetDBForTesting = _resetSharedDB

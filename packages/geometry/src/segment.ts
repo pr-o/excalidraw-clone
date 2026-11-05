@@ -1,3 +1,4 @@
+import { clamp } from "./scalar"
 import type { Point } from "./types"
 import { pointDistance } from "./vector"
 
@@ -6,9 +7,6 @@ export const distancePointToSegment = (p: Point, a: Point, b: Point): number => 
   const dy = b.y - a.y
   const lenSq = dx * dx + dy * dy
   if (lenSq === 0) return pointDistance(p, a)
-  let t = ((p.x - a.x) * dx + (p.y - a.y) * dy) / lenSq
-  t = t < 0 ? 0 : t > 1 ? 1 : t
-  const projX = a.x + t * dx
-  const projY = a.y + t * dy
-  return Math.hypot(p.x - projX, p.y - projY)
+  const t = clamp(((p.x - a.x) * dx + (p.y - a.y) * dy) / lenSq, 0, 1)
+  return Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy))
 }
