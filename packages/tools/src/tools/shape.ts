@@ -91,7 +91,7 @@ export const shapeReduce = ({
 }
 
 /** A drag-to-draw box tool: `factory` builds the element for each new box. */
-export const shapeTool = (
+const shapeTool = (
   name: ToolName,
   factory: (box: Bounds) => ExcalidrawElement,
 ): Tool<ShapeState, ToolEvent> => ({
