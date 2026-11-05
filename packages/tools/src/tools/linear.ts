@@ -3,17 +3,18 @@ import {
   addBackRef,
   BINDING_GAP,
   bindingTargetAt,
-  type LinearPatch,
   pointsPatch,
+  type ExcalidrawElement,
+  type PointBinding,
 } from "@excalidraw-clone/scene"
-import type { ExcalidrawArrowElement, ExcalidrawElement } from "@excalidraw-clone/scene"
 import {
   addDraftEffect,
   discardDraftEffect,
   patchDraftEffect,
+  patchElement,
   selectAndSwitchEffects,
 } from "../draft"
-import type { Modifiers, ToolEffect } from "../types"
+import type { Modifiers, ToolEffect, ToolEvent } from "../types"
 
 export type LinearState =
   | { phase: "idle" }
@@ -30,7 +31,8 @@ export const LINEAR_INITIAL: LinearState = { phase: "idle" }
 
 const SNAP_STEP = Math.PI / 4
 
-export const constrainAngle = (start: Point, at: Point): Point => {
+/** `at`, turned about `start` to the nearest 45° direction (same distance). */
+const constrainAngle = (start: Point, at: Point): Point => {
   const dx = at.x - start.x
   const dy = at.y - start.y
   if (dx === 0 && dy === 0) return at
@@ -48,17 +50,15 @@ const bindIdAt = (
   bindTargets: readonly ExcalidrawElement[] | undefined,
 ): string | null => (bindTargets ? (bindingTargetAt(at, bindTargets)?.id ?? null) : null)
 
-export const linearPatch = (start: Point, end: Point): LinearPatch => pointsPatch([start, end])
+/** The line's end for a pointer at `at`: Shift snaps it to 45° steps. */
+const endPoint = (start: Point, at: Point, modifiers: Modifiers): Point =>
+  modifiers.shift ? constrainAngle(start, at) : at
+
+const binding = (elementId: string): PointBinding => ({ elementId, focus: 0, gap: BINDING_GAP })
 
 interface LinearReducerArgs {
   state: LinearState
-  event:
-    | { type: "pointerDown"; at: Point }
-    | { type: "pointerMove"; at: Point }
-    | { type: "pointerUp"; at: Point }
-    | { type: "escape" }
-    | { type: "doubleClick"; at: Point }
-    | { type: "delete" }
+  event: ToolEvent
   modifiers: Modifiers
   factory: (start: Point) => ExcalidrawElement
   bindTargets?: readonly ExcalidrawElement[]
@@ -86,61 +86,44 @@ export const linearReduce = ({
     }
     return [state, []]
   }
+  const id = state.elementId
   switch (event.type) {
     case "pointerMove": {
-      const end = modifiers.shift ? constrainAngle(state.start, event.at) : event.at
-      const id = state.elementId
-      const patch = linearPatch(state.start, end)
+      const end = endPoint(state.start, event.at, modifiers)
       return [
         { ...state, current: end, endBindId: bindIdAt(end, bindTargets) },
-        [patchDraftEffect(id, patch)],
+        [patchDraftEffect(id, pointsPatch([state.start, end]))],
       ]
     }
     case "pointerUp": {
-      const end = modifiers.shift ? constrainAngle(state.start, event.at) : event.at
-      const id = state.elementId
-      const patch = linearPatch(state.start, end)
-      const next: LinearState = { phase: "idle" }
-      const zero = end.x === state.start.x && end.y === state.start.y
-      if (zero) {
-        return [next, [discardDraftEffect(id)]]
+      const end = endPoint(state.start, event.at, modifiers)
+      if (end.x === state.start.x && end.y === state.start.y) {
+        return [{ phase: "idle" }, [discardDraftEffect(id)]]
       }
-      const startBindId = state.startBindId
+      const { startBindId } = state
       const endBindId = bindIdAt(end, bindTargets)
+      const patch = {
+        ...pointsPatch([state.start, end]),
+        ...(startBindId ? { startBinding: binding(startBindId) } : {}),
+        ...(endBindId ? { endBinding: binding(endBindId) } : {}),
+      }
       return [
-        next,
+        { phase: "idle" },
         [
           {
             kind: "mutation",
             apply: (draft) => {
-              const i = draft.findIndex((e) => e.id === id)
-              if (i < 0) return
-              let arrow = { ...draft[i]!, ...patch } as ExcalidrawArrowElement
-              if (startBindId) {
-                arrow = {
-                  ...arrow,
-                  startBinding: { elementId: startBindId, focus: 0, gap: BINDING_GAP },
-                }
-                addBackRef(draft, startBindId, id)
-              }
-              if (endBindId) {
-                arrow = {
-                  ...arrow,
-                  endBinding: { elementId: endBindId, focus: 0, gap: BINDING_GAP },
-                }
-                addBackRef(draft, endBindId, id)
-              }
-              draft[i] = arrow
+              patchElement(draft, id, patch)
+              if (startBindId) addBackRef(draft, startBindId, id)
+              if (endBindId) addBackRef(draft, endBindId, id)
             },
           },
           ...selectAndSwitchEffects(id),
         ],
       ]
     }
-    case "escape": {
-      const id = state.elementId
+    case "escape":
       return [{ phase: "idle" }, [discardDraftEffect(id)]]
-    }
     default:
       return [state, []]
   }

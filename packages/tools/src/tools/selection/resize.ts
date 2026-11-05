@@ -1,6 +1,7 @@
-import { rotatePoint, type Point } from "@excalidraw-clone/geometry"
+import { rotatePoint, type Bounds, type Point } from "@excalidraw-clone/geometry"
 import { fitTableBox, type ExcalidrawElement, type ResizeAnchor } from "@excalidraw-clone/scene"
 import type { Modifiers, ToolEffect, ToolContext, ToolEvent } from "../../types"
+import { CLEAR_GUIDES } from "../../types"
 import { buildRecommitEffect } from "./recommit"
 import type { ResizeHandle, SelectionState, Transition } from "./types"
 import { snapResizeToUserGuides } from "./alignment"
@@ -21,7 +22,7 @@ export const computeResize = (
   start: Point,
   at: Point,
   modifiers: Modifiers,
-): { x: number; y: number; width: number; height: number } => {
+): Bounds => {
   // The box is resized in the element's own (unrotated) frame, so the drag is
   // measured along its axes; a turned element's handles move along turned axes.
   const angle = origin.angle
@@ -112,7 +113,7 @@ export const computeResize = (
 export const anchorSides = (
   origin: ResizeOrigin,
   handle: ResizeHandle,
-  box: { x: number; y: number; width: number; height: number },
+  box: Bounds,
 ): ResizeAnchor => {
   const side = (
     moves: boolean,
@@ -160,10 +161,7 @@ export const buildResizeMoveEffect = (
   }
 }
 
-export const buildResizeCommitEffect = (elementId: string): ToolEffect =>
-  buildRecommitEffect([elementId])
-
-export const buildResizeRevertEffect = (elementId: string, origin: ResizeOrigin): ToolEffect => ({
+const buildResizeRevertEffect = (elementId: string, origin: ResizeOrigin): ToolEffect => ({
   kind: "mutation",
   apply: (draft) => {
     const i = draft.findIndex((e) => e.id === elementId)
@@ -211,14 +209,11 @@ export const reduceResizing = (
       ]
     }
     case "pointerUp":
-      return [
-        { phase: "idle" },
-        [buildResizeCommitEffect(state.elementId), { kind: "setGuides", guides: [] }],
-      ]
+      return [{ phase: "idle" }, [buildRecommitEffect([state.elementId]), CLEAR_GUIDES]]
     case "escape":
       return [
         { phase: "idle" },
-        [buildResizeRevertEffect(state.elementId, state.origin), { kind: "setGuides", guides: [] }],
+        [buildResizeRevertEffect(state.elementId, state.origin), CLEAR_GUIDES],
       ]
     default:
       return [state, []]

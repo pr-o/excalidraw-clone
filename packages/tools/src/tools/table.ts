@@ -8,11 +8,8 @@ import {
   TABLE_MIN_COL,
   TABLE_MIN_ROW,
 } from "@excalidraw-clone/scene"
-import type { Tool, ToolContext, ToolEvent } from "../types"
-import { computeBox, SHAPE_INITIAL, type ShapeState, shapeReduce } from "./shape"
-
-/** A press-release shorter than this (px, both axes) is a click, not a drag. */
-const CLICK_SLOP = 4
+import type { Tool, ToolEvent } from "../types"
+import { CLICK_SLOP, computeBox, SHAPE_INITIAL, type ShapeState, shapeReduce } from "./shape"
 
 const signed = (d: number, size: number): number => (d < 0 ? -size : size)
 
@@ -22,7 +19,7 @@ const signed = (d: number, size: number): number => (d < 0 ? -size : size)
 export const tableTool: Tool<ShapeState, ToolEvent> = {
   name: "table",
   initial: SHAPE_INITIAL,
-  reduce(state, event, ctx: ToolContext) {
+  reduce(state, event, ctx) {
     const modifiers = { ...ctx.modifiers, shift: false }
     let routed: ToolEvent = event
     if (state.phase === "drawing" && event.type === "pointerUp") {

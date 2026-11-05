@@ -5,6 +5,7 @@ import {
   hitTestElement,
   isBoundLabel,
 } from "@excalidraw-clone/scene"
+import { deleteElements, replaceElements } from "../draft"
 import type { Tool, ToolContext, ToolEffect, ToolEvent } from "../types"
 import { NO_EFFECTS } from "../types"
 
@@ -71,26 +72,6 @@ const idsUnder = (
   })
 }
 
-const markDeleted =
-  (ids: readonly string[]) =>
-  (draft: ExcalidrawElement[]): void => {
-    const set = new Set(ids)
-    for (let i = 0; i < draft.length; i += 1) {
-      const e = draft[i]!
-      if (set.has(e.id) && !e.isDeleted) draft[i] = { ...e, isDeleted: true }
-    }
-  }
-
-const restore =
-  (before: readonly ExcalidrawElement[]) =>
-  (draft: ExcalidrawElement[]): void => {
-    const byId = new Map(before.map((e) => [e.id, e]))
-    for (let i = 0; i < draft.length; i += 1) {
-      const original = byId.get(draft[i]!.id)
-      if (original) draft[i] = original
-    }
-  }
-
 const eraseAt = (
   state: Erasing,
   points: readonly Point[],
@@ -105,7 +86,7 @@ const eraseAt = (
   if (ids.length === 0) return [state, NO_EFFECTS]
   return [
     { ...state, erasedIds: [...state.erasedIds, ...ids] },
-    [{ kind: "mutation", apply: markDeleted(ids), skipHistory: true }],
+    [{ kind: "mutation", apply: (draft) => deleteElements(draft, ids), skipHistory: true }],
   ]
 }
 
@@ -134,14 +115,20 @@ export const eraserTool: Tool<EraserState, ToolEvent> = {
           ERASER_INITIAL,
           state.erasedIds.length === 0
             ? NO_EFFECTS
-            : [{ kind: "mutation", apply: markDeleted(state.erasedIds) }],
+            : [{ kind: "mutation", apply: (draft) => deleteElements(draft, state.erasedIds) }],
         ]
       case "escape":
         return [
           ERASER_INITIAL,
           state.erasedIds.length === 0
             ? NO_EFFECTS
-            : [{ kind: "mutation", apply: restore(state.before), skipHistory: true }],
+            : [
+                {
+                  kind: "mutation",
+                  apply: (draft) => replaceElements(draft, state.before),
+                  skipHistory: true,
+                },
+              ],
         ]
       default:
         return [state, NO_EFFECTS]

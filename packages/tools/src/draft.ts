@@ -28,17 +28,39 @@ export const updateElement = <T extends ExcalidrawElement = ExcalidrawElement>(
   if (next) draft[i] = next
 }
 
+/** Put each of `replacements` in place of the draft element with its id; draft
+ *  elements without a replacement (and replacements without one) are left alone. */
+export const replaceElements = (
+  draft: ExcalidrawElement[],
+  replacements: readonly ExcalidrawElement[],
+): void => {
+  const byId = new Map(replacements.map((e) => [e.id, e]))
+  for (let i = 0; i < draft.length; i += 1) {
+    const replacement = byId.get(draft[i]!.id)
+    if (replacement) draft[i] = replacement
+  }
+}
+
+/** Soft-delete (tombstone) the draft elements `ids`, keeping them for undo. */
+export const deleteElements = (draft: ExcalidrawElement[], ids: readonly string[]): void => {
+  const set = new Set(ids)
+  for (let i = 0; i < draft.length; i += 1) {
+    const e = draft[i]!
+    if (set.has(e.id) && !e.isDeleted) draft[i] = { ...e, isDeleted: true }
+  }
+}
+
 /** Splice the draft element with `id` out; no-op when absent. */
-export const removeElement = (draft: ExcalidrawElement[], id: string): void => {
+const removeElement = (draft: ExcalidrawElement[], id: string): void => {
   const i = draft.findIndex((e) => e.id === id)
   if (i >= 0) draft.splice(i, 1)
 }
 
-/** Effect: append `element` to the scene as a live (not-yet-committed) draft. */
-export const addDraftEffect = (element: ExcalidrawElement): ToolEffect => ({
+/** Effect: append `elements` to the scene as live (not-yet-committed) drafts. */
+export const addDraftEffect = (...elements: ExcalidrawElement[]): ToolEffect => ({
   kind: "mutation",
   apply: (draft) => {
-    draft.push(element)
+    draft.push(...elements)
   },
   skipHistory: true,
 })
@@ -50,10 +72,12 @@ export const patchDraftEffect = (id: string, patch: Partial<ExcalidrawElement>):
   skipHistory: true,
 })
 
-/** Effect: throw away the in-progress element `id` without recording history. */
-export const discardDraftEffect = (id: string): ToolEffect => ({
+/** Effect: throw away the in-progress elements `ids` without recording history. */
+export const discardDraftEffect = (...ids: string[]): ToolEffect => ({
   kind: "mutation",
-  apply: (draft) => removeElement(draft, id),
+  apply: (draft) => {
+    for (const id of ids) removeElement(draft, id)
+  },
   skipHistory: true,
 })
 
@@ -61,4 +85,14 @@ export const discardDraftEffect = (id: string): ToolEffect => ({
 export const selectAndSwitchEffects = (id: string): readonly ToolEffect[] => [
   { kind: "select", ids: [id] },
   { kind: "switchTool", tool: "selection" },
+]
+
+/** Effects that commit the in-progress element `id`: its final `patch` (recorded in
+ *  history, unlike the draft frames before it), then select it and switch back. */
+export const commitDraftEffects = (
+  id: string,
+  patch: Partial<ExcalidrawElement>,
+): readonly ToolEffect[] => [
+  { kind: "mutation", apply: (draft) => patchElement(draft, id, patch) },
+  ...selectAndSwitchEffects(id),
 ]

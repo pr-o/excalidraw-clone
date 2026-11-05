@@ -1,24 +1,10 @@
 import type { Point } from "@excalidraw-clone/geometry"
 import { type ExcalidrawElement, resizeElements } from "@excalidraw-clone/scene"
 import type { Modifiers, ToolEffect, ToolContext, ToolEvent } from "../../types"
+import { replaceElements } from "../../draft"
 import { buildRecommitEffect } from "./recommit"
 import { anchorSides, computeResize, type ResizeOrigin } from "./resize"
 import type { ResizeHandle, SelectionState, Transition } from "./types"
-
-/** Overwrite each draft element that appears in `next` with its
- *  replacement, matched by id. Elements not present in `next` (locked,
- *  deleted, or passenger labels — see `resizeElements`) are left
- *  untouched. */
-const applyReplacements = (
-  draft: ExcalidrawElement[],
-  next: readonly ExcalidrawElement[],
-): void => {
-  const byId = new Map(next.map((e) => [e.id, e]))
-  for (let i = 0; i < draft.length; i += 1) {
-    const replacement = byId.get(draft[i]!.id)
-    if (replacement) draft[i] = replacement
-  }
-}
 
 /** Absolute, path-independent per-frame move effect: always scales from the
  *  pristine `originalElements` snapshot captured at pointerDown, relative
@@ -42,7 +28,7 @@ export const buildGroupResizeMoveEffect = (
   return {
     kind: "mutation",
     apply: (draft) =>
-      applyReplacements(
+      replaceElements(
         draft,
         resizeElements(originalElements, ids, origin, box, anchorSides(origin, handle, box)),
       ),
@@ -50,14 +36,12 @@ export const buildGroupResizeMoveEffect = (
   }
 }
 
-export const buildGroupResizeCommitEffect = (ids: readonly string[]): ToolEffect =>
-  buildRecommitEffect(ids)
-
-export const buildGroupResizeRevertEffect = (
+/** Escape: every member back as it was at pointerDown. */
+const buildGroupResizeRevertEffect = (
   originalElements: readonly ExcalidrawElement[],
 ): ToolEffect => ({
   kind: "mutation",
-  apply: (draft) => applyReplacements(draft, originalElements),
+  apply: (draft) => replaceElements(draft, originalElements),
   skipHistory: true,
 })
 
@@ -84,7 +68,7 @@ export const reduceGroupResizing = (
       ]
     }
     case "pointerUp":
-      return [{ phase: "idle" }, [buildGroupResizeCommitEffect(state.ids)]]
+      return [{ phase: "idle" }, [buildRecommitEffect(state.ids)]]
     case "escape":
       return [{ phase: "idle" }, [buildGroupResizeRevertEffect(state.originalElements)]]
     default:

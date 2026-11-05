@@ -1,27 +1,29 @@
-import type { Point } from "@excalidraw-clone/geometry"
-import type { ExcalidrawElement } from "@excalidraw-clone/scene"
+import type { Bounds, Point } from "@excalidraw-clone/geometry"
 import {
-  addDraftEffect,
-  discardDraftEffect,
-  patchDraftEffect,
-  patchElement,
-  selectAndSwitchEffects,
-} from "../draft"
-import type { Modifiers, Tool, ToolContext, ToolEffect, ToolEvent, ToolName } from "../types"
-
-export interface ShapeBox {
-  x: number
-  y: number
-  width: number
-  height: number
-}
+  newDiamond,
+  newEllipse,
+  newFrame,
+  newHexagon,
+  newOctagon,
+  newParallelogram,
+  newPentagon,
+  newRectangle,
+  newTriangle,
+  type ExcalidrawElement,
+} from "@excalidraw-clone/scene"
+import { addDraftEffect, commitDraftEffects, discardDraftEffect, patchDraftEffect } from "../draft"
+import type { Modifiers, Tool, ToolEffect, ToolEvent, ToolName } from "../types"
 
 export type ShapeState =
   { phase: "idle" } | { phase: "drawing"; start: Point; current: Point; elementId: string }
 
 export const SHAPE_INITIAL: ShapeState = { phase: "idle" }
 
-export const computeBox = (down: Point, at: Point, mods: Modifiers): ShapeBox => {
+/** A press-release shorter than this (px, both axes) is a click, not a drag. */
+export const CLICK_SLOP = 4
+
+/** The box dragged from `down` to `at`: Shift makes it square, Alt grows it from the centre. */
+export const computeBox = (down: Point, at: Point, mods: Modifiers): Bounds => {
   let dx = at.x - down.x
   let dy = at.y - down.y
   if (mods.shift) {
@@ -41,16 +43,10 @@ export const computeBox = (down: Point, at: Point, mods: Modifiers): ShapeBox =>
 
 interface ShapeReducerArgs {
   state: ShapeState
-  event:
-    | { type: "pointerDown"; at: Point }
-    | { type: "pointerMove"; at: Point }
-    | { type: "pointerUp"; at: Point }
-    | { type: "escape" }
-    | { type: "doubleClick"; at: Point }
-    | { type: "delete" }
+  event: ToolEvent
   modifiers: Modifiers
   /** Factory that produces a fresh element with the given box. Return value owns its own id/seed/etc. */
-  factory: (box: ShapeBox) => ExcalidrawElement
+  factory: (box: Bounds) => ExcalidrawElement
 }
 
 export const shapeReduce = ({
@@ -82,20 +78,8 @@ export const shapeReduce = ({
     case "pointerUp": {
       const box = computeBox(state.start, event.at, modifiers)
       const id = state.elementId
-      const next: ShapeState = { phase: "idle" }
-      if (box.width === 0 || box.height === 0) {
-        return [next, [discardDraftEffect(id)]]
-      }
-      return [
-        next,
-        [
-          {
-            kind: "mutation",
-            apply: (draft) => patchElement(draft, id, box),
-          },
-          ...selectAndSwitchEffects(id),
-        ],
-      ]
+      const empty = box.width === 0 || box.height === 0
+      return [{ phase: "idle" }, empty ? [discardDraftEffect(id)] : commitDraftEffects(id, box)]
     }
     case "escape": {
       const id = state.elementId
@@ -109,11 +93,22 @@ export const shapeReduce = ({
 /** A drag-to-draw box tool: `factory` builds the element for each new box. */
 export const shapeTool = (
   name: ToolName,
-  factory: (box: ShapeBox) => ExcalidrawElement,
+  factory: (box: Bounds) => ExcalidrawElement,
 ): Tool<ShapeState, ToolEvent> => ({
   name,
   initial: SHAPE_INITIAL,
-  reduce(state, event, ctx: ToolContext) {
+  reduce(state, event, ctx) {
     return shapeReduce({ state, event, modifiers: ctx.modifiers, factory })
   },
 })
+
+// The drag-a-box tools.
+export const rectangleTool = shapeTool("rectangle", (box) => newRectangle(box))
+export const ellipseTool = shapeTool("ellipse", (box) => newEllipse(box))
+export const diamondTool = shapeTool("diamond", (box) => newDiamond(box))
+export const triangleTool = shapeTool("triangle", (box) => newTriangle(box))
+export const parallelogramTool = shapeTool("parallelogram", (box) => newParallelogram(box))
+export const hexagonTool = shapeTool("hexagon", (box) => newHexagon(box))
+export const pentagonTool = shapeTool("pentagon", (box) => newPentagon(box))
+export const octagonTool = shapeTool("octagon", (box) => newOctagon(box))
+export const frameTool = shapeTool("frame", (box) => newFrame(box))

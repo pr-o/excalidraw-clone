@@ -242,6 +242,12 @@ export type ExcalidrawElement =
   | ExcalidrawFrameElement
   | ExcalidrawTableElement
 
+/** Arrows and lines: drawn through `points`, bindable at both ends, labelled at the midpoint. */
+export type ExcalidrawLinearElement = ExcalidrawArrowElement | ExcalidrawLineElement
+
+export const isLinearElement = (e: ExcalidrawElement): e is ExcalidrawLinearElement =>
+  e.type === "arrow" || e.type === "line"
+
 export type ExcalidrawAppStateSnapshot = Record<string, unknown>
 
 export interface ExcalidrawBinaryFile {

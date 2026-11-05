@@ -105,6 +105,7 @@ export {
 } from "./bindings"
 export { SCENE_FORMAT_SOURCE, SCENE_FORMAT_VERSION, buildExcalidrawData } from "./json"
 
+export { ELEMENT_TYPES, isLinearElement } from "./types"
 export type {
   Arrowhead,
   BoundElement,
@@ -123,6 +124,7 @@ export type {
   ExcalidrawHexagonElement,
   ExcalidrawImageElement,
   ExcalidrawLineElement,
+  ExcalidrawLinearElement,
   ExcalidrawLinearBase,
   ExcalidrawOctagonElement,
   ExcalidrawPage,

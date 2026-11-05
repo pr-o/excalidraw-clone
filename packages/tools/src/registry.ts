@@ -1,24 +1,26 @@
 import { arrowTool } from "./tools/arrow"
 import { commentTool } from "./tools/comment"
-import { diamondTool } from "./tools/diamond"
-import { ellipseTool } from "./tools/ellipse"
 import { eraserTool } from "./tools/eraser"
-import { frameTool } from "./tools/frame"
 import { freedrawTool } from "./tools/freedraw"
-import { hexagonTool } from "./tools/hexagon"
 import { imageTool } from "./tools/image"
 import { laserTool } from "./tools/laser"
 import { lassoTool } from "./tools/lasso"
 import { lineTool } from "./tools/line"
 import { noteTool } from "./tools/note"
-import { octagonTool } from "./tools/octagon"
-import { parallelogramTool } from "./tools/parallelogram"
-import { pentagonTool } from "./tools/pentagon"
-import { rectangleTool } from "./tools/rectangle"
 import { selectionTool } from "./tools/selection"
+import {
+  diamondTool,
+  ellipseTool,
+  frameTool,
+  hexagonTool,
+  octagonTool,
+  parallelogramTool,
+  pentagonTool,
+  rectangleTool,
+  triangleTool,
+} from "./tools/shape"
 import { tableTool } from "./tools/table"
 import { textTool } from "./tools/text"
-import { triangleTool } from "./tools/triangle"
 import type { AnyToolEvent, Tool, ToolName } from "./types"
 
 export const TOOLS: Record<ToolName, Tool<unknown, AnyToolEvent>> = {

@@ -7,10 +7,8 @@ import {
 import type { ToolContext, ToolEvent } from "../../types"
 import type { SelectionState, Transition } from "./types"
 
-export const marqueeBounds = (a: { x: number; y: number }, b: { x: number; y: number }): Bounds =>
-  boundsFromPoints([a, b])
-
-export const elementsInsideMarquee = (
+/** Live, unlocked elements lying wholly inside the marquee. */
+const elementsInsideMarquee = (
   marquee: Bounds,
   elements: readonly ExcalidrawElement[],
 ): readonly string[] => {
@@ -33,16 +31,12 @@ export const reduceMarquee = (
     return [{ ...state, current: event.at }, []]
   }
   if (event.type === "pointerUp") {
-    const bounds = marqueeBounds(state.start, event.at)
-    const enclosed = expandIdsToGroups(
-      elementsInsideMarquee(bounds, ctx.readElements()),
-      ctx.readElements(),
-    )
-    if (state.baseSelection.length > 0) {
-      const merged = Array.from(new Set([...state.baseSelection, ...enclosed]))
-      return [{ phase: "idle" }, [{ kind: "select", ids: merged }]]
-    }
-    return [{ phase: "idle" }, [{ kind: "select", ids: enclosed }]]
+    const elements = ctx.readElements()
+    const marquee = boundsFromPoints([state.start, event.at])
+    const enclosed = expandIdsToGroups(elementsInsideMarquee(marquee, elements), elements)
+    // Shift-marquee adds to the selection it started from.
+    const ids = [...new Set([...state.baseSelection, ...enclosed])]
+    return [{ phase: "idle" }, [{ kind: "select", ids }]]
   }
   if (event.type === "escape") {
     return [{ phase: "idle" }, []]

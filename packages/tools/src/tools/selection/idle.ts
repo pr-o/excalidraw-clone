@@ -4,7 +4,9 @@ import {
   expandIdsToFrameMembers,
   expandIdsToGroups,
   getElementsBounds,
+  isLinearElement,
 } from "@excalidraw-clone/scene"
+import { deleteElements } from "../../draft"
 import type { ToolContext, ToolEffect, ToolEvent } from "../../types"
 import { buildBendInsertEffect } from "./bend"
 import { reduceDoubleClick } from "./double-click"
@@ -24,24 +26,15 @@ const startHandleDrag = (
     const selected = handle.ids
       .map((id) => elements.find((el) => el.id === id))
       .filter((el): el is ExcalidrawElement => !!el && !el.isDeleted)
+    // findHandleAt only reports this handle for 2+ live members, so this is a guard.
     const bounds = getElementsBounds(selected)
-    // Defensive: findHandleAt already required 2+ non-deleted members to
-    // produce this hit from this same `elements` snapshot, so `bounds`
-    // is never actually null here — kept for the same reason similar
-    // guards are kept elsewhere in this codebase (cheap insurance).
     if (!bounds) return [{ phase: "idle" }, []]
     return [
       {
         phase: "groupResizing",
         handle: handle.handle,
         ids: handle.ids,
-        origin: {
-          x: bounds.x,
-          y: bounds.y,
-          width: bounds.width,
-          height: bounds.height,
-          angle: 0,
-        },
+        origin: { ...bounds, angle: 0 },
         originalElements: selected,
         start: at,
       },
@@ -49,86 +42,82 @@ const startHandleDrag = (
     ]
   }
   const e = elements.find((el) => el.id === handle.elementId)
-  if (e && handle.kind === "resize") {
-    return [
-      {
-        phase: "resizing",
-        handle: handle.handle,
-        elementId: handle.elementId,
-        origin: snapshotElementBox(e),
-        start: at,
-      },
-      [],
-    ]
+  if (!e) return null
+  const { elementId } = handle
+  switch (handle.kind) {
+    case "resize":
+      return [
+        {
+          phase: "resizing",
+          handle: handle.handle,
+          elementId,
+          origin: snapshotElementBox(e),
+          start: at,
+        },
+        [],
+      ]
+    case "tableBorder":
+      if (e.type !== "table") return null
+      return [
+        {
+          phase: "tableResizing",
+          elementId,
+          axis: handle.axis,
+          index: handle.index,
+          original: e,
+          start: at,
+        },
+        [],
+      ]
+    case "rotate": {
+      const center = boundsCenter(e)
+      return [
+        {
+          phase: "rotating",
+          elementId,
+          origin: { angle: e.angle },
+          center,
+          pointerAngleAtStart: pointerAngle(center, at),
+        },
+        [],
+      ]
+    }
+    case "endpoint":
+      if (!isLinearElement(e)) return null
+      return [
+        {
+          phase: "endpointDragging",
+          elementId,
+          end: handle.end,
+          origin: snapshotLinear(e),
+          candidateBindId: null,
+        },
+        [],
+      ]
+    case "bend":
+      if (!isLinearElement(e)) return null
+      return [
+        { phase: "bendDragging", elementId, index: handle.index, origin: snapshotLinear(e) },
+        [],
+      ]
+    case "bendAdd": {
+      if (!isLinearElement(e)) return null
+      // A new bend point is inserted, then dragged like an existing one.
+      const index = handle.segmentIndex + 1
+      return [
+        { phase: "bendDragging", elementId, index, origin: snapshotLinear(e) },
+        [buildBendInsertEffect(elementId, index, handle.at)],
+      ]
+    }
   }
-  if (e && e.type === "table" && handle.kind === "tableBorder") {
-    return [
-      {
-        phase: "tableResizing",
-        elementId: handle.elementId,
-        axis: handle.axis,
-        index: handle.index,
-        original: e,
-        start: at,
-      },
-      [],
-    ]
-  }
-  if (e && handle.kind === "rotate") {
-    const center = boundsCenter(e)
-    return [
-      {
-        phase: "rotating",
-        elementId: handle.elementId,
-        origin: { angle: e.angle },
-        center,
-        pointerAngleAtStart: pointerAngle(center, at),
-      },
-      [],
-    ]
-  }
-  if (e && handle.kind === "endpoint") {
-    return [
-      {
-        phase: "endpointDragging",
-        elementId: handle.elementId,
-        end: handle.end,
-        origin: snapshotLinear(e),
-        candidateBindId: null,
-      },
-      [],
-    ]
-  }
-  if (e && handle.kind === "bend") {
-    return [
-      {
-        phase: "bendDragging",
-        elementId: handle.elementId,
-        index: handle.index,
-        origin: snapshotLinear(e),
-      },
-      [],
-    ]
-  }
-  if (e && handle.kind === "bendAdd") {
-    return [
-      {
-        phase: "bendDragging",
-        elementId: handle.elementId,
-        index: handle.segmentIndex + 1,
-        origin: snapshotLinear(e),
-      },
-      [buildBendInsertEffect(handle.elementId, handle.segmentIndex + 1, handle.at)],
-    ]
-  }
-  return null
 }
 
 export const reduceIdle = (event: ToolEvent, ctx: ToolContext): Transition => {
   if (event.type === "pointerDown") {
-    // Prefer handle hits if they occur on a single-selected element.
-    const handle = findHandleAt(event.at, ctx.selectedIds, ctx.readElements(), ctx.viewTransform)
-    const started = handle && startHandleDrag(handle, event.at, ctx.readElements())
+    const elements = ctx.readElements()
+    // A handle of the selection wins over the element under it.
+    const handle = findHandleAt(event.at, ctx.selectedIds, elements, ctx.viewTransform)
+    const started = handle && startHandleDrag(handle, event.at, elements)
     if (started) return started
     const hit = ctx.hitTest(event.at)
     if (!hit) {
@@ -143,13 +132,13 @@ export const reduceIdle = (event: ToolEvent, ctx: ToolContext): Transition => {
       ]
     }
     const alreadySelected = ctx.selectedIds.includes(hit.id)
-    const hitIds = expandIdsToGroups([hit.id], ctx.readElements())
+    const hitIds = expandIdsToGroups([hit.id], elements)
     const baseMovedIds = alreadySelected
       ? ctx.selectedIds
       : ctx.modifiers.shift
         ? Array.from(new Set([...ctx.selectedIds, ...hitIds]))
         : hitIds
-    const movedIds = expandIdsToFrameMembers(baseMovedIds, ctx.readElements())
+    const movedIds = expandIdsToFrameMembers(baseMovedIds, elements)
     const selectionEffects: readonly ToolEffect[] = alreadySelected
       ? []
       : ctx.modifiers.shift
@@ -177,15 +166,7 @@ export const reduceIdle = (event: ToolEvent, ctx: ToolContext): Transition => {
     return [
       { phase: "idle" },
       [
-        {
-          kind: "mutation",
-          apply: (draft) => {
-            for (let i = 0; i < draft.length; i += 1) {
-              const e = draft[i]!
-              if (ids.includes(e.id)) draft[i] = { ...e, isDeleted: true }
-            }
-          },
-        },
+        { kind: "mutation", apply: (draft) => deleteElements(draft, ids) },
         { kind: "select", ids: [] },
       ],
     ]

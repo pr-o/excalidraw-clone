@@ -8,6 +8,8 @@ export const cross = (a: Vector, b: Vector): number => a.x * b.y - a.y * b.x
 
 export const vectorLength = (v: Vector): number => Math.hypot(v.x, v.y)
 
+export const midpoint = (a: Point, b: Point): Point => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 })
+
 export const pointDistance = (a: Point, b: Point): number => Math.hypot(a.x - b.x, a.y - b.y)
 
 export const normalize = (v: Vector): Vector => {

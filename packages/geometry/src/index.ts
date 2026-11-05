@@ -1,6 +1,17 @@
 export { PACKAGE_NAME, PACKAGE_VERSION } from "./version"
 export type { Axis, Point, Vector, Bounds, ViewTransform } from "./types"
-export { pointAdd, pointScale, dot, cross, vectorLength, pointDistance, normalize } from "./vector"
+export {
+  pointAdd,
+  pointScale,
+  dot,
+  cross,
+  vectorLength,
+  pointDistance,
+  midpoint,
+  normalize,
+} from "./vector"
+export { resizeHandles, rotationHandlePoint, ROTATION_HANDLE_OFFSET } from "./handles"
+export type { ResizeHandle } from "./handles"
 export { clamp, lerp } from "./scalar"
 export { rotatePoint } from "./rotation"
 export {
