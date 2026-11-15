@@ -29,7 +29,7 @@ export function PagePickerFlyout({
       role="menu"
       data-testid="page-picker-flyout"
       style={{ position: "fixed", left: pos.left, top: pos.top }}
-      className="z-50 min-w-[180px] rounded-lg bg-panel py-1 shadow-xl"
+      className="z-50 min-w-[180px] rounded-lg bg-panel py-1 shadow-panel"
     >
       {pages.map((page) => (
         <button

@@ -102,7 +102,7 @@ function Group({
 }): React.ReactElement {
   return (
     <section>
-      <h3 className="mb-2 text-sm font-semibold">{title}</h3>
+      <h3 className="mb-2 text-sm font-medium">{title}</h3>
       <dl className="space-y-1 text-sm">
         {items.map((s) => (
           <div key={`${s.keys}-${s.label}`} className="flex items-center justify-between">

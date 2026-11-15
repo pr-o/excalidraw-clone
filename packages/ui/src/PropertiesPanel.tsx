@@ -113,7 +113,7 @@ export function PropertiesPanel({
     >
       {onClose && (
         <div className="sticky -top-3 z-10 -mx-3 -mt-3 flex items-center justify-between bg-panel px-3 py-1 min-[480px]:hidden">
-          <span className="text-sm font-semibold">{t("properties.label")}</span>
+          <span className="text-sm font-medium">{t("properties.label")}</span>
           <button
             type="button"
             onClick={onClose}

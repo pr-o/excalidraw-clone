@@ -26,8 +26,8 @@ const HANDLE_SIZE = 8
 const ROTATION_HANDLE_RADIUS = 5
 
 const SELECTION_STROKE: Record<Theme, string> = {
-  light: "#6965db",
-  dark: "#a5a5ff",
+  light: "#2f5d8a",
+  dark: "#7fb0e0",
 }
 
 const SELECTION_FILL: Record<Theme, string> = {
@@ -36,8 +36,8 @@ const SELECTION_FILL: Record<Theme, string> = {
 }
 
 const BINDING_HIGHLIGHT: Record<Theme, string> = {
-  light: "#6965db",
-  dark: "#a8a5ff",
+  light: "#2f5d8a",
+  dark: "#7fb0e0",
 }
 
 export interface MarqueeBox {

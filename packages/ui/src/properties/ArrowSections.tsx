@@ -34,7 +34,7 @@ export function ArrowheadsSection({
         const value = commonValue(selectedElements, field)
         return (
           <div key={end} className="mb-1 flex items-center gap-1">
-            <span className="w-8 text-[10px] text-muted">
+            <span className="w-8 text-[11px] text-muted">
               {t(`properties.arrowhead${end === "start" ? "Start" : "End"}`)}
             </span>
             <div className="flex flex-1 flex-wrap gap-0.5">

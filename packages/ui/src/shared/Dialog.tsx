@@ -39,7 +39,7 @@ export function Dialog({
       aria-labelledby={titleId}
     >
       <div className="flex items-center justify-between border-b border-panel-subtle px-4 py-3">
-        <h2 id={titleId} className="text-base font-semibold">
+        <h2 id={titleId} className="text-base font-medium">
           {title}
         </h2>
         <button

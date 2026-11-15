@@ -10,7 +10,7 @@ import {
 } from "@excalidraw-clone/scene"
 import { useAppStore } from "../store"
 
-const GHOST_STROKE = "#6b46c1"
+const GHOST_STROKE = "#2f5d8a"
 
 /** Drops a copy of `item` (fresh ids, files stored) with its origin at (x, y) and selects it. */
 export function placeLibraryItem(item: LibraryItem, x: number, y: number, scene: Scene): void {

@@ -20,8 +20,8 @@ const MINIMAP_H = 140
 const PADDING = 8
 
 const COLORS = {
-  light: { image: "#adb5bd", frame: "#868e96" },
-  dark: { image: "#5c5f66", frame: "#a3a3a3" },
+  light: { image: "#b0aca5", frame: "#8a867f" },
+  dark: { image: "#5f5f5f", frame: "#a3a3a3" },
 } as const
 
 /** Whole-page navigation panel: cheap bounds-rect drawing (no rough.js), a
