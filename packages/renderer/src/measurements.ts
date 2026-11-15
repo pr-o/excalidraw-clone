@@ -65,8 +65,8 @@ const LABEL_TEXT: Record<Theme, string> = {
   dark: "#121212",
 }
 const SIZE_FILL: Record<Theme, string> = {
-  light: "#6965db",
-  dark: "#a5a5ff",
+  light: "#2f5d8a",
+  dark: "#7fb0e0",
 }
 
 const FONT = "500 12px system-ui, sans-serif"
