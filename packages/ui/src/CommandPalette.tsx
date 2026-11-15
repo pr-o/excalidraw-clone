@@ -77,7 +77,7 @@ function PaletteBody({
       <div
         role="dialog"
         aria-label={t("palette.title")}
-        className="w-[480px] rounded-lg bg-panel shadow-xl"
+        className="w-[480px] rounded-lg bg-panel shadow-panel"
         onClick={(e) => e.stopPropagation()}
       >
         <input

@@ -7,8 +7,8 @@ import { viewOf } from "../store/slices/view"
 import { applyGuideDrag, guideValueAt, RULER_SIZE, type GuideDrag } from "../driver/userGuides"
 
 const COLORS = {
-  light: { bg: "#f8f9fa", tick: "#adb5bd", text: "#495057", marker: "#0ea5e9" },
-  dark: { bg: "#232329", tick: "#5c5f66", text: "#ced4da", marker: "#38bdf8" },
+  light: { bg: "#f8f7f5", tick: "#b0aca5", text: "#4f4c47", marker: "#0ea5e9" },
+  dark: { bg: "#242424", tick: "#5f5f5f", text: "#d0d0d0", marker: "#38bdf8" },
 } as const
 
 /** Top ruler (labels scene x, drags out horizontal guides) or left ruler

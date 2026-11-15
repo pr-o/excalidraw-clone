@@ -24,7 +24,7 @@ export function ContextMenu({ x, y, items, onClose }: ContextMenuProps): React.R
       role="menu"
       data-testid="context-menu"
       style={{ position: "fixed", left: pos.left, top: pos.top }}
-      className="z-50 min-w-[180px] rounded-lg bg-panel py-1 shadow-xl"
+      className="z-50 min-w-[180px] rounded-lg bg-panel py-1 shadow-panel"
     >
       {items.map((item) => (
         <button

@@ -1,6 +1,7 @@
 "use client"
 import type { ExcalidrawElement, Scene } from "@excalidraw-clone/scene"
 import { useState } from "react"
+import { Icon } from "@excalidraw-clone/ui"
 import { useTranslation } from "react-i18next"
 import {
   clampLinkOverlayPos,
@@ -67,11 +68,12 @@ export function LinkOverlay({ scene }: { scene: Scene }): React.ReactElement | n
       type="button"
       data-testid="link-indicator"
       title={sanitizeLinkHref(target.link) ?? ""}
+      aria-label={sanitizeLinkHref(target.link) ?? ""}
       onClick={() => openLink(target.link)}
       style={{ position: "absolute", left: `${left}px`, top: `${top}px` }}
-      className="z-40 rounded border border-panel bg-panel px-1 py-0.5 text-xs leading-none shadow-panel hover:bg-accent-soft"
+      className="z-40 rounded border border-panel bg-panel px-1 py-1 leading-none text-muted shadow-panel hover:bg-accent-soft"
     >
-      &#128279;
+      <Icon name="link" />
     </button>
   )
 }

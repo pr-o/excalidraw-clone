@@ -145,7 +145,7 @@ export function CommentThread({
         {[comment, ...comment.replies].map((m) => (
           <li key={m.id} data-testid="comment-message">
             <p className="whitespace-pre-wrap break-words">{m.text}</p>
-            <p className="text-[10px] text-muted">{time(m.createdAt)}</p>
+            <p className="text-[11px] text-muted">{time(m.createdAt)}</p>
           </li>
         ))}
       </ul>

@@ -3,20 +3,20 @@
 
 :root {
   color-scheme: light;
-  --bg-app: #fafafa;
+  --bg-app: #f9f8f6;
   --bg-canvas: #ffffff;
   --fg-app: #1e1e1e;
   --shadow-app: 0 1px 3px rgba(0, 0, 0, 0.08);
 
   --color-panel-bg: #ffffff;
-  --color-panel-bg-subtle: #f9fafb;
-  --color-panel-hover: #f3f4f6;
-  --color-panel-active: #e5e7eb;
-  --color-border: #d1d5db;
-  --color-border-subtle: #e5e7eb;
-  --color-text-muted: #6b7280;
-  --color-accent: #7c3aed;
-  --color-accent-soft: #ede9fe;
+  --color-panel-bg-subtle: #f8f7f5;
+  --color-panel-hover: #f0efec;
+  --color-panel-active: #e5e3df;
+  --color-border: #d4d1cc;
+  --color-border-subtle: #e8e6e2;
+  --color-text-muted: #6a6761;
+  --color-accent: #2f5d8a;
+  --color-accent-soft: #e4ecf4;
   --color-danger: #dc2626;
   --color-danger-soft: #fef2f2;
   --color-danger-border: #fca5a5;
@@ -37,8 +37,8 @@
   --color-border: #4d4d4d;
   --color-border-subtle: #3a3a3a;
   --color-text-muted: #a3a3a3;
-  --color-accent: #8b5cf6;
-  --color-accent-soft: rgb(139 92 246 / 0.18);
+  --color-accent: #44759f;
+  --color-accent-soft: rgb(100 160 215 / 0.2);
   --color-danger: #f87171;
   --color-danger-soft: rgb(248 113 113 / 0.15);
   --color-danger-border: rgb(248 113 113 / 0.4);

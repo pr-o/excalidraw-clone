@@ -173,7 +173,7 @@ export function TableCellEditor({ scene, table, cell }: Props): React.ReactEleme
           color: styled ? "transparent" : table.strokeColor,
           caretColor: table.strokeColor,
           background: "transparent",
-          border: "2px solid #6965db",
+          border: "2px solid #2f5d8a",
           outline: "none",
           resize: "none",
           overflow: "auto",
