@@ -3,6 +3,7 @@ import {
   type ExcalidrawArrowElement,
   type ExcalidrawElement,
   removeBackRef,
+  replaceElements,
   duplicateElements,
   isBoundLabel,
 } from "@excalidraw-clone/scene"
@@ -57,16 +58,11 @@ const buildDragMoveEffect = (ids: readonly string[], dx: number, dy: number): To
   skipHistory: true,
 })
 
-/** Undoes a drag by translating by the negation of the total translation
- *  applied over the drag (raw pointer travel plus any baked-in alignment
- *  correction). */
-const buildDragRevertEffect = (
-  ids: readonly string[],
-  appliedDx: number,
-  appliedDy: number,
-): ToolEffect => ({
+/** Undoes a drag by restoring the elements as they were at pointerDown. A
+ *  reverse translation would leave behind the arrow bindings the drag tore off. */
+const buildDragRevertEffect = (original: readonly ExcalidrawElement[]): ToolEffect => ({
   kind: "mutation",
-  apply: (draft) => translateElements(draft, ids, -appliedDx, -appliedDy),
+  apply: (draft) => replaceElements(draft, original),
   skipHistory: true,
 })
 
@@ -96,10 +92,8 @@ export const reduceDragging = (
             ctrl: ctx.modifiers.ctrl,
             meta: ctx.modifiers.meta,
           })
-          const gridSnapDx = snapped.x - anchor.x
-          const gridSnapDy = snapped.y - anchor.y
-          const dx = gridSnapDx + (event.at.x - state.last.x)
-          const dy = gridSnapDy + (event.at.y - state.last.y)
+          const dx = snapped.x - anchor.x + (event.at.x - state.last.x)
+          const dy = snapped.y - anchor.y + (event.at.y - state.last.y)
           return [
             {
               ...state,
@@ -107,8 +101,6 @@ export const reduceDragging = (
               firstMove: false,
               alignDx: 0,
               alignDy: 0,
-              gridSnapDx,
-              gridSnapDy,
             },
             [buildDragMoveEffect(state.movedIds, dx, dy), CLEAR_GUIDES],
           ]
@@ -155,17 +147,7 @@ export const reduceDragging = (
           ],
         ]
       }
-      return [
-        { phase: "idle" },
-        [
-          buildDragRevertEffect(
-            state.movedIds,
-            state.last.x - state.start.x + state.alignDx + state.gridSnapDx,
-            state.last.y - state.start.y + state.alignDy + state.gridSnapDy,
-          ),
-          CLEAR_GUIDES,
-        ],
-      ]
+      return [{ phase: "idle" }, [buildDragRevertEffect(state.original), CLEAR_GUIDES]]
     }
     default:
       return [state, []]

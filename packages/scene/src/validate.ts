@@ -1,4 +1,5 @@
 import { clamp } from "@excalidraw-clone/geometry"
+import { DEFAULT_FONT_SIZE, DEFAULT_LINE_HEIGHT, DEFAULT_STROKE_WIDTH } from "./defaults"
 import { ELEMENT_TYPES, type ExcalidrawBinaryFile, type ExcalidrawElement } from "./types"
 
 const KNOWN_TYPES: ReadonlySet<string> = new Set(ELEMENT_TYPES)
@@ -11,6 +12,10 @@ export const isFiniteNumber = (v: unknown): v is number =>
 
 /** `v` when it is a finite number, otherwise `fallback`. */
 export const finiteOr = (v: unknown, fallback: number): number => (isFiniteNumber(v) ? v : fallback)
+
+/** A positive finite number from untrusted data, else `fallback` (a zero or negative size breaks layout). */
+const positiveOr = (v: unknown, fallback: number): number =>
+  isFiniteNumber(v) && v > 0 ? v : fallback
 
 const isPoint = (p: unknown): boolean =>
   typeof p === "object" &&
@@ -30,7 +35,7 @@ const isPoint = (p: unknown): boolean =>
  * Repaired rather than dropped (older or hand-made files lose nothing, and the
  * type-specific sanitizers — tables, spans, crop — still get to run): missing
  * or non-finite `x`, `y`, `width`, `height` and `angle` become 0, `text` becomes
- * "", and `groupIds`, `boundElements`, `frameId`, `isDeleted`, `locked`,
+ * "", `strokeWidth`, `fontSize` and `lineHeight` fall back to their defaults, and `groupIds`, `boundElements`, `frameId`, `isDeleted`, `locked`,
  * `opacity` and `link` get their neutral defaults.
  */
 export function sanitizeElement(raw: unknown): ExcalidrawElement | null {
@@ -48,6 +53,11 @@ export function sanitizeElement(raw: unknown): ExcalidrawElement | null {
     width: finiteOr(el.width, 0),
     height: finiteOr(el.height, 0),
     angle: finiteOr(el.angle, 0),
+    strokeWidth: finiteOr(el.strokeWidth, DEFAULT_STROKE_WIDTH),
+    ...(el.type === "text" || el.type === "table"
+      ? { fontSize: positiveOr(el.fontSize, DEFAULT_FONT_SIZE) }
+      : {}),
+    ...(el.type === "text" ? { lineHeight: positiveOr(el.lineHeight, DEFAULT_LINE_HEIGHT) } : {}),
     ...(el.type === "text" && typeof el.text !== "string" ? { text: "" } : {}),
     groupIds: Array.isArray(el.groupIds) ? el.groupIds : [],
     boundElements: Array.isArray(el.boundElements) ? el.boundElements : null,

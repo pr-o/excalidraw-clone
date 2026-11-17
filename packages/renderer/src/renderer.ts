@@ -33,7 +33,11 @@ const IDENTITY: ViewTransform = { scrollX: 0, scrollY: 0, zoom: 1 }
 const SHARED_SHAPE_CACHE = new ShapeCache()
 
 /** Decoded images, shared by every renderer. Image ids are content hashes, so an
- *  id always means the same bytes. Each page gets its own renderer, so a
+ *  id always means the same bytes.
+ *  shortcut: entries are only dropped by `unloadImage` (nothing calls it) or a failed
+ *  load, so a session that opens hundreds of large images keeps them all decoded;
+ *  upgrade by pruning to the open document's file ids, once every path that
+ *  re-preloads (library, snapshots, undo) is covered. Each page gets its own renderer, so a
  *  per-renderer map left images blank after a page switch or reload. */
 const SHARED_IMAGES = new Map<string, HTMLImageElement>()
 const SHARED_IMAGE_LOADS = new Map<string, Promise<void>>()
@@ -51,7 +55,13 @@ export function preloadSharedImage(fileId: string, dataURL: string): Promise<voi
       for (const renderer of RUNNING) renderer.requestRedraw()
       resolve()
     }
-    img.onerror = () => resolve()
+    img.onerror = () => {
+      // Forget the failure so a later preload (same bytes, e.g. after a transient
+      // decode error) can try again instead of staying blank until reload.
+      SHARED_IMAGES.delete(fileId)
+      SHARED_IMAGE_LOADS.delete(fileId)
+      resolve()
+    }
   })
   img.src = dataURL
   SHARED_IMAGES.set(fileId, img)

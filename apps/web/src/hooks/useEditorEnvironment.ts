@@ -3,7 +3,9 @@ import { getFile } from "@excalidraw-clone/persistence"
 import type { CanvasRenderer } from "@excalidraw-clone/renderer"
 import { setTableMeasurer } from "@excalidraw-clone/scene"
 import type { i18n as I18n } from "i18next"
+import i18next from "i18next"
 import { useEffect } from "react"
+import { notify } from "../components/LiveAnnouncer"
 import { hydrateUI } from "../driver/hydration"
 import { pickAndUploadImage } from "../driver/imageUpload"
 import { tableLineCounter } from "../driver/tableOps"
@@ -51,11 +53,15 @@ export function useImageToolUpload(renderer: CanvasRenderer | null): void {
     if (activeTool !== "image") return
     let cancelled = false
     void (async () => {
-      const event = await pickAndUploadImage({ x: 100, y: 100 })
-      if (cancelled || !event) return
-      const bin = await getFile(event.fileId)
-      if (bin && renderer) void renderer.preloadImage(bin.id, bin.dataURL)
-      useAppStore.getState().dispatchToolEvent?.(event)
+      try {
+        const event = await pickAndUploadImage({ x: 100, y: 100 })
+        if (cancelled || !event) return
+        const bin = await getFile(event.fileId)
+        if (bin && renderer) void renderer.preloadImage(bin.id, bin.dataURL)
+        useAppStore.getState().dispatchToolEvent?.(event)
+      } catch {
+        notify(i18next.t("a11y.openFailed"))
+      }
     })()
     return () => {
       cancelled = true

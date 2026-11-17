@@ -30,6 +30,12 @@ describe("sanitizeElement", () => {
     expect(fixed.opacity).toBe(100)
   })
 
+  it("repairs missing or non-positive text sizing", () => {
+    const t = newText({ x: 0, y: 0, text: "hi" })
+    const fixed = sanitizeElement({ ...t, fontSize: undefined, lineHeight: 0, strokeWidth: "x" })!
+    expect(fixed).toMatchObject({ fontSize: 20, lineHeight: 1.25, strokeWidth: 2 })
+  })
+
   it("drops what cannot be repaired", () => {
     const ok = newRectangle({ x: 0, y: 0, width: 1, height: 1 })
     expect(sanitizeElement(null)).toBeNull()

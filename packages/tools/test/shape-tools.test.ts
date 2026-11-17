@@ -126,6 +126,16 @@ describe.each(TOOLS)("$name tool: creation flow", ({ tool, type }) => {
     expect(up[1].some((e) => e.kind === "switchTool")).toBe(false)
   })
 
+  it("pointerUp after a click with pointer jitter (under the slop) drops the element", () => {
+    const ctx = makeCtx()
+    const draft: ExcalidrawElement[] = []
+    const down = tool.reduce(tool.initial, { type: "pointerDown", at: point(10, 10) }, ctx)
+    applyMutation(down[1], draft)
+    const up = tool.reduce(down[0], { type: "pointerUp", at: point(12, 11) }, ctx)
+    applyMutation(up[1], draft)
+    expect(draft).toEqual([])
+  })
+
   it("escape mid-draw removes the element and returns to idle", () => {
     const ctx = makeCtx()
     const draft: ExcalidrawElement[] = []

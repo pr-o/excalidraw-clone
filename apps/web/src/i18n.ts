@@ -8,12 +8,8 @@ import koShortcuts from "./locales/ko/shortcuts.json"
 let initialized = false
 
 export function ensureI18n(initialLocale: "en" | "ko"): typeof i18next {
-  if (initialized) {
-    if (i18next.language !== initialLocale) {
-      void i18next.changeLanguage(initialLocale)
-    }
-    return i18next
-  }
+  // Later locale changes are applied by useEditorEnvironment's effect, never during render.
+  if (initialized) return i18next
   void i18next.use(initReactI18next).init({
     lng: initialLocale,
     fallbackLng: "en",

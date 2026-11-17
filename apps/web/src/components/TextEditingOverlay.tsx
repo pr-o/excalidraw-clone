@@ -20,6 +20,8 @@ export function TextEditingOverlay({ scene }: { scene: Scene }): React.ReactElem
   const rich = useRichText()
   const { ref, value, setValue, spans } = rich
   const mirror = useRef<HTMLDivElement | null>(null)
+  // Escape moves focus away, which fires onBlur; that blur must not save the rename.
+  const cancelling = useRef(false)
 
   // Loads the edited element's text into the editor. An Effect Event: it reads the
   // latest editor state, but only a change of the edited element re-runs it.
@@ -41,6 +43,10 @@ export function TextEditingOverlay({ scene }: { scene: Scene }): React.ReactElem
 
   if (target.type === "frame") {
     const commitName = (): void => {
+      if (cancelling.current) {
+        cancelling.current = false
+        return
+      }
       const trimmed = value.trim()
       const changed = target.name !== (trimmed === "" ? null : trimmed)
       scene.mutate(
@@ -66,6 +72,7 @@ export function TextEditingOverlay({ scene }: { scene: Scene }): React.ReactElem
           }
           if (e.key === "Escape") {
             e.preventDefault()
+            cancelling.current = true
             setId(null)
             focusCanvas()
           }

@@ -74,12 +74,22 @@ export function migrate(raw: unknown): ExcalidrawData {
 
 const clamp01 = (n: number): number => Math.min(1, Math.max(0, n))
 
+/** Untrusted fractions: finite, inside the image and non-empty, else uncropped (a
+ *  zero-size crop would divide by zero when the user next crops). */
+function normalizeFractionalCrop(c: Record<string, unknown>): unknown {
+  const x = clamp01(finiteOr(c.x, 0))
+  const y = clamp01(finiteOr(c.y, 0))
+  const width = Math.min(finiteOr(c.width, 0), 1 - x)
+  const height = Math.min(finiteOr(c.height, 0), 1 - y)
+  return width > 0 && height > 0 ? { x, y, width, height } : null
+}
+
 /** Crop is stored as 0..1 fractions; upstream files use pixels + natural size, or omit it. */
 function normalizeCrop(crop: unknown): unknown {
   if (crop === undefined || crop === null) return null
   const c = crop as Record<string, unknown>
   const { naturalWidth: nw, naturalHeight: nh } = c
-  if (typeof nw !== "number" || typeof nh !== "number") return crop
+  if (typeof nw !== "number" || typeof nh !== "number") return normalizeFractionalCrop(c)
   // Untrusted input: a missing/NaN field must not leak NaN into the fractions.
   const width = finiteOr(c.width, 0)
   const height = finiteOr(c.height, 0)
