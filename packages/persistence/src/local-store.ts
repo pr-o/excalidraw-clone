@@ -22,7 +22,12 @@ export function saveScene(data: ExcalidrawData): boolean {
 }
 
 export function loadScene(): ExcalidrawData | null {
-  const raw = localStorage.getItem(SCENE_KEY)
+  let raw: string | null
+  try {
+    raw = localStorage.getItem(SCENE_KEY)
+  } catch {
+    return null // storage blocked: start fresh instead of crashing
+  }
   if (raw === null) return null
   try {
     const parsed: unknown = JSON.parse(raw)
@@ -48,9 +53,9 @@ export function saveUI(snapshot: Record<string, unknown>): void {
 }
 
 export function loadUI(): Record<string, unknown> | null {
-  const raw = localStorage.getItem(UI_KEY)
-  if (raw === null) return null
   try {
+    const raw = localStorage.getItem(UI_KEY)
+    if (raw === null) return null
     const parsed: unknown = JSON.parse(raw)
     if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) return null
     return parsed as Record<string, unknown>
@@ -60,6 +65,10 @@ export function loadUI(): Record<string, unknown> | null {
 }
 
 export function clearLocal(): void {
-  localStorage.removeItem(SCENE_KEY)
-  localStorage.removeItem(UI_KEY)
+  try {
+    localStorage.removeItem(SCENE_KEY)
+    localStorage.removeItem(UI_KEY)
+  } catch {
+    // storage blocked: nothing stored to clear
+  }
 }

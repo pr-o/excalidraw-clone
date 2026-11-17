@@ -78,7 +78,9 @@ export const shapeReduce = ({
     case "pointerUp": {
       const box = computeBox(state.start, event.at, modifiers)
       const id = state.elementId
-      const empty = box.width === 0 || box.height === 0
+      // A click with a little pointer jitter is not a drawing; a thin but long box still is.
+      const empty =
+        box.width === 0 || box.height === 0 || (box.width < CLICK_SLOP && box.height < CLICK_SLOP)
       return [{ phase: "idle" }, empty ? [discardDraftEffect(id)] : commitDraftEffects(id, box)]
     }
     case "escape": {

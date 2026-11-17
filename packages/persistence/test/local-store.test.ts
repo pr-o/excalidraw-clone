@@ -91,3 +91,19 @@ describe("local-store: failure handling", () => {
     expect(saveScene(sampleData())).toBe(true)
   })
 })
+
+describe("local-store: blocked storage", () => {
+  it("does not throw when localStorage access throws", () => {
+    const boom = vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+      throw new DOMException("blocked", "SecurityError")
+    })
+    const rm = vi.spyOn(Storage.prototype, "removeItem").mockImplementation(() => {
+      throw new DOMException("blocked", "SecurityError")
+    })
+    expect(loadScene()).toBeNull()
+    expect(loadUI()).toBeNull()
+    expect(() => clearLocal()).not.toThrow()
+    boom.mockRestore()
+    rm.mockRestore()
+  })
+})

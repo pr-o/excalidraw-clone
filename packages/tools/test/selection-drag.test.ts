@@ -578,3 +578,21 @@ describe("selection — Alt-drag duplicates", () => {
     expect(draft).toHaveLength(1)
   })
 })
+
+describe("selection — Escape mid-drag of a bound arrow", () => {
+  it("restores the binding it tore off on the first move", () => {
+    const draft = makeBoundPair()
+    const arrow = draft[1] as ExcalidrawArrowElement
+    const ctx = makeCtx({ hitTest: () => arrow, readElements: () => draft, selectedIds: ["ar"] })
+    let s = pressAt(ctx, 25, 50) // clear of the endpoint and midpoint handles
+    s = selectionTool.reduce(s[0], { type: "pointerMove", at: point(45, 90) }, ctx)
+    applyMutation(s[1], draft)
+    expect((draft[1] as ExcalidrawArrowElement).endBinding).toBeNull() // torn off mid-drag
+    s = selectionTool.reduce(s[0], { type: "escape" }, ctx)
+    applyMutation(s[1], draft)
+    const back = draft[1] as ExcalidrawArrowElement
+    expect(back.x).toBe(arrow.x)
+    expect(back.endBinding?.elementId).toBe("t")
+    expect(draft[0]!.boundElements).toHaveLength(1)
+  })
+})

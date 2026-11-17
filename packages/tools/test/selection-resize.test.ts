@@ -232,3 +232,20 @@ describe("selection — group resize (2+ selection)", () => {
     expect([outB.x, outB.y, outB.width, outB.height]).toEqual([200, 0, 100, 100])
   })
 })
+
+describe("computeResize — Shift aspect lock past the opposite edge", () => {
+  it("follows the axis the pointer moved most, even when the box has flipped", async () => {
+    const { computeResize } = await import("../src/tools/selection/resize")
+    const origin = { x: 0, y: 0, width: 200, height: 100, angle: 0 }
+    // se corner dragged 10px right but 400px up: height is now -300, far larger than width.
+    const box = computeResize(
+      origin,
+      "se",
+      point(200, 100),
+      point(210, -300),
+      withModifiers({ shift: true }),
+    )
+    expect(box.width / box.height).toBeCloseTo(2)
+    expect(box.height).toBeCloseTo(300)
+  })
+})

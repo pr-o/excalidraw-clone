@@ -67,6 +67,22 @@ describe("migrate — image crop normalisation", () => {
     return (migrate(data).pages[0]!.elements[0] as unknown as { crop: unknown }).crop
   }
 
+  it("repairs or drops a malformed fractional crop", () => {
+    expect(load({ x: 0.1, y: 0.2, width: 0.5, height: 0.5 })).toEqual({
+      x: 0.1,
+      y: 0.2,
+      width: 0.5,
+      height: 0.5,
+    })
+    expect(load({ x: 0, y: 0, width: 0, height: 0.5 })).toBeNull()
+    expect(load({ x: "a", y: 0, width: 2, height: 0.5 })).toEqual({
+      x: 0,
+      y: 0,
+      width: 1,
+      height: 0.5,
+    })
+  })
+
   it("converts upstream pixel crop (with natural size) to fractions", () => {
     const crop = { x: 20, y: 10, width: 60, height: 40, naturalWidth: 200, naturalHeight: 100 }
     expect(load(crop)).toEqual({ x: 0.1, y: 0.1, width: 0.3, height: 0.4 })

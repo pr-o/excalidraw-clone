@@ -22,12 +22,8 @@ export type SelectionState =
        *  moved elements' live position (on top of raw pointer travel). */
       alignDx: number
       alignDy: number
-      /** One-time grid-snap offset baked into the live position on the
-       *  drag's first move (if grid was enabled then); never reset for the
-       *  rest of the drag. Needed so escape's revert can undo it — it isn't
-       *  part of raw pointer travel or `alignDx`/`alignDy`. */
-      gridSnapDx: number
-      gridSnapDy: number
+      /** The scene at pointerDown, restored by Escape (undoes torn-off bindings too). */
+      original: readonly ExcalidrawElement[]
       /** Alt was held at press: copy `movedIds` on the first move instead. */
       dupPending?: boolean
       /** Ids of the copies once made (`movedIds` then points at them). */

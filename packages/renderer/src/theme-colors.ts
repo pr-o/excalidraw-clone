@@ -91,6 +91,8 @@ export const resolveColor = (color: string, theme: Theme): string => {
   const [h, s, l] = rgbToHsl(parsed.r, parsed.g, parsed.b)
   const [r, g, b] = hslToRgb(h, s, invertLightness(l))
   const out = `#${hex2(r)}${hex2(g)}${hex2(b)}${parsed.alphaHex}`
+  // A file can hold arbitrarily many distinct colors; real documents use a handful.
+  if (darkCache.size >= 1000) darkCache.clear()
   darkCache.set(color, out)
   return out
 }

@@ -1,5 +1,5 @@
 import { Scene } from "@excalidraw-clone/scene"
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 import { CanvasRenderer, preloadSharedImage } from "../src/renderer"
 import { createMockCanvas } from "../src/test-utils/mock-canvas"
 
@@ -31,5 +31,23 @@ describe("CanvasRenderer.preloadImage", () => {
     // A second renderer (another page) and the free function reuse the same load.
     expect(b.preloadImage("shared-1", DATA)).toBe(first)
     expect(preloadSharedImage("shared-1", DATA)).toBe(first)
+  })
+
+  it("forgets a failed load so the next preload retries", async () => {
+    class BrokenImage {
+      onload: (() => void) | null = null
+      onerror: (() => void) | null = null
+      set src(_: string) {
+        queueMicrotask(() => this.onerror?.())
+      }
+    }
+    vi.stubGlobal("Image", BrokenImage)
+    try {
+      const first = preloadSharedImage("broken-1", DATA)
+      await first
+      expect(preloadSharedImage("broken-1", DATA)).not.toBe(first)
+    } finally {
+      vi.unstubAllGlobals()
+    }
   })
 })

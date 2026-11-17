@@ -73,6 +73,22 @@ test("double-click renames a frame", async ({ page }) => {
   expect(frame.name).toBe("Login flow")
 })
 
+test("Escape cancels a frame rename", async ({ page }) => {
+  await freshCanvas(page, "toolbar-frame")
+  await drawSurroundingFrame(page)
+
+  await page.locator('[data-testid="toolbar-selection"]').click()
+  await dblClickCanvas(page, { x: 200, y: 160 })
+  const input = page.locator('[data-testid="frame-name-input"]')
+  await input.waitFor({ state: "visible" })
+  await input.fill("Discard me")
+  await page.keyboard.press("Escape")
+  await page.waitForTimeout(900)
+
+  const frame = (await readScene<SceneEl>(page)).find((e) => e.type === "frame")!
+  expect(frame.name).not.toBe("Discard me")
+})
+
 test("dragging a member out clears frameId; deleting the frame releases members", async ({
   page,
 }) => {

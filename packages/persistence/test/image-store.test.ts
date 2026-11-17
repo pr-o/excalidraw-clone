@@ -86,3 +86,11 @@ describe("addImageFromBlob", () => {
     expect(all.length).toBe(1)
   })
 })
+
+describe("addImageFromBlob size cap", () => {
+  it("rejects images over the cap", async () => {
+    const { addImageFromBlob, MAX_IMAGE_BYTES } = await import("../src/image-store")
+    const big = new Blob([new Uint8Array(MAX_IMAGE_BYTES + 1)], { type: "image/png" })
+    await expect(addImageFromBlob(big)).rejects.toThrow(/25 MB/)
+  })
+})

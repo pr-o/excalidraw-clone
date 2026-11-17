@@ -31,6 +31,7 @@ function pickImageBlob(): Promise<Blob | null> {
     const input = document.createElement("input")
     input.type = "file"
     input.accept = "image/png,image/jpeg,image/webp,image/svg+xml"
+    input.oncancel = () => resolve(null)
     input.onchange = () => {
       const f = input.files?.[0]
       resolve(f ?? null)

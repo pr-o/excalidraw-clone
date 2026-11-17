@@ -357,7 +357,9 @@ function appendShadowFilter(doc: Document, group: SVGGElement, el: ExcalidrawEle
     boundsFromPoints([...extent, ...points]),
     shadowMargin(el) + el.strokeWidth + 8,
   )
-  const id = `shadow-${el.id}`
+  // shortcut: ids differing only in odd characters could share a filter, when ids
+  // are no longer random uuids. `)` or spaces would break the url(#...) reference.
+  const id = `shadow-${el.id.replace(/[^\w-]/g, "_")}`
   const filter = svgEl(doc, "filter", { id, filterUnits: "userSpaceOnUse", ...region })
   filter.appendChild(
     svgEl(doc, "feDropShadow", { dx, dy, stdDeviation: sh.blur / 2, "flood-color": sh.color }),

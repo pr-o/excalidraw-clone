@@ -67,7 +67,7 @@ export const computeResize = (
   }
   if (modifiers.shift && origin.width > 0 && origin.height > 0) {
     const aspect = origin.width / origin.height
-    if (Math.abs(width / Math.max(height, 1)) > aspect) {
+    if (Math.abs(width) / Math.max(Math.abs(height), 1) > aspect) {
       const newH = Math.abs(width) / aspect
       const sign = height < 0 ? -1 : 1
       // Anchor adjustment for handles whose y was moved by the drag.

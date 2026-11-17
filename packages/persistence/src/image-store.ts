@@ -27,7 +27,11 @@ export async function clearAllFiles(): Promise<void> {
   await db.clear(FILES_STORE)
 }
 
+/** Images live as base64 in memory and in every saved document. */
+export const MAX_IMAGE_BYTES = 25 * 1024 * 1024
+
 export async function addImageFromBlob(blob: Blob): Promise<ExcalidrawBinaryFile> {
+  if (blob.size > MAX_IMAGE_BYTES) throw new Error("addImageFromBlob: image is larger than 25 MB")
   const id = await sha256Hex(blob)
   const existing = await getFile(id)
   if (existing) return existing
